@@ -1,0 +1,37 @@
+# Symlinked directories (junctions into Dropbox)
+scripts/
+data/
+output/
+
+# Paper (added manually, not symlinked)
+# paper/ is tracked
+
+# Stata artifacts
+*.log
+*.smcl
+
+# LaTeX artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.run.xml
+*.bcf
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+
+# Claude Code local state
+.claude/state/
