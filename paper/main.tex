@@ -19,7 +19,7 @@ We are grateful to David Buller for helping prepare the data. This project great
   Emilia Tjernstr\"{o}m\footremember{mq}{Macquarie University, emilia.tjernstrom@mq.edu.au
   }
 }
-{\small \centering \date{This version: February 2026 \\ 
+{\small \centering \date{This version: March 2026 \\ 
 Please click  \href{https://www.econometricsociety.org/event_papers/view/265/450}{here} for the latest version of the paper}}
 
 \clearpage\maketitle
@@ -136,7 +136,7 @@ While our panel data results are similar to these studies, we show that the aver
 Another set of papers explores the role of misallocation and barriers to sectoral mobility and uncover evidence consistent with the notion that rural non-migrants face external constraints or costs that keep them from relocating to urban labor markets.
 \cite{adamopoulosMisallocationSelectionProductivity2022} use data from China to examine the interaction between misallocation and selection, finding that distortionary policies disproportionately affect more productive farmers, making them less likely to work in agriculture, which in turn leads to lower agricultural productivity overall.
 \cite{gaiMigrationCostsSorting2024} focus in on migration costs as the chief barrier, also in China, finding that reduced migration barriers would increase productivity and GDP alike.
-\cite{pulidoBarriersMobilitySorting2021} explicitly incorporate barriers to mobility into a selection model and find that they act as significant productivity constraints on both sectors.\footnote{Relatedly, a counterfactual simulation in \cite{bryanAggregateProductivityEffects2019}, based on a structural model that incorporates sorting and agglomeration effects, suggests that removing barriers to mobility would increase productivity by 22 percent. They further argue that this is likely a lower bound on the gains from removing migration barriers, as their main analysis excludes self-employed individuals, who likely have an even greater variance in earnings.}
+\cite{pulidoBarriersMobilitySorting2021} explicitly incorporate barriers to mobility into a selection model and find that they act as significant productivity constraints on both sectors.\footnote{Relatedly, a counterfactual simulation in \cite{bryanAggregateProductivityEffects2019}, based on a structural model that incorporates sorting and agglomeration effects, suggests that removing barriers to mobility would increase productivity by 22 percent. They further argue that this is likely a lower bound on the gains from removing migration barriers, as their main analysis excludes self-employed individuals, who likely have an even greater variance in earnings. Even in a developed-country context with smaller spatial gaps, \cite{heiseLaborMisallocation2023} estimate a 5 percent gain in aggregate output per worker from removing spatial frictions in Germany, with gains of 17 percent in the lower-productivity East, similar in magnitude to the estimate in \citet{bryanAggregateProductivityEffects2019}.}
 Similarly, the estimates in \cite{bryanUnderinvestmentProfitableTechnology2014}, based on experimentally-induced seasonal migration, suggest that urban migration increases consumption by 33 percent. 
 
 A key innovation in our paper is our ability to extrapolate the returns to migration to non-migrant subpopulations. 
@@ -279,6 +279,11 @@ This assumption ensures that utility shocks generate transitory movements across
 It also implies that $\nu_{it}^{l}$ is orthogonal to the unobserved components of consumption, which simplifies the mapping from the model to the empirical specification.
 Under this assumption, migration decisions respond to temporary, idiosyncratic factors that do not reflect systematic differences in productivity across sectors.
 
+An important consequence of this assumption is that the period-by-period location choice rule derived below is equivalent to the solution of a fully forward-looking dynamic optimization problem.
+Two conditions deliver this equivalence: the i.i.d.\ assumption ensures that future utility shocks are independent of the current location choice, so there is no informational option value; and the time-invariant productivity assumption (equations~\ref{eq:y_it_U}--\ref{eq:y_it_R}) ensures that payoffs do not depend on past locations, so there is no state dependence in returns.
+Together, these eliminate any channel through which today's choice affects future welfare, reducing the dynamic problem to a sequence of static comparisons.
+If non-pecuniary factors were instead persistent---or if migration experience altered productivity---the interpretation of trajectories as reflecting comparative advantage would be less precise.
+
 Workers choose their location for period $t$ by comparing expected utility across locations. 
 At the end of each period, a worker observes current consumption and utility shocks and forms expectations over future shocks. 
 She chooses the urban location in period $t$ if her expected utility in the urban sector exceeds expected utility in the rural sector. 
@@ -287,7 +292,7 @@ Following \cite{lemieuxEstimatingEffectsUnions1998}, we assume that the average 
     \beta \equiv \beta_t^U - \beta_t^R,\label{eq:beta}
 \end{equation}
 is constant over time, while allowing the level of average consumption in each location to vary over time.
-Abstracting away from covariates, or equivalently assuming that observable characteristics affect consumption symmetrically across locations, we can rewrite the urban choice rule as 
+Abstracting away from covariates, or equivalently assuming that observable characteristics affect consumption symmetrically across locations, we can rewrite the urban choice rule as\footnote{Covariates $x_{it}$ do not appear in the decision rule because under the symmetric covariate assumption ($\gamma^U = \gamma^R$), their contribution cancels in the urban-rural comparison.} 
 \begin{equation}\label{eq:decision-rule}
     E\!\left[V_{it}^U\right] > E\!\left[V_{it}^R\right]
     \;\Longleftrightarrow\;
@@ -307,8 +312,9 @@ where $l \in \{R,U\}$ denotes location and $\varepsilon_{i t}$ captures transito
 Because $D_{it}$ is binary, we can write observed consumption as a random coefficient model in which the return to urban location varies across workers.
 In particular, combining the sector-specific consumption equations yields
 \begin{align}
-    y_{it}&=\beta^R+\theta_i + \tau_i +(\beta+\phi \theta_i)D_{it}+  x_{it}'\gamma^R + D_{it}x_{it}'(\gamma^U-\gamma^R) + \varepsilon_{it}.\label{eq:generalized-consumption-eq}
+    y_{it}&=\beta^R+\theta_i + \tau_i +(\beta+\phi \theta_i)D_{it}+  x_{it}'\gamma^R + D_{it}x_{it}'(\gamma^U-\gamma^R) + \varepsilon_{it},\label{eq:generalized-consumption-eq}
 \end{align}
+\noindent where $\beta^R$ suppresses the time subscript from equations \eqref{eq:y_it_U}--\eqref{eq:y_it_R} because in estimation, period effects absorb the time-varying level of average consumption.
 
 The worker-specific return to urban location is therefore $\Delta_i \equiv \beta + \phi\theta_{i}$, which depends on comparative advantage.
 Since $\theta_{i}$ also affects location choices through the decision rule derived above, the return to urban location is correlated with $D_{it}$.
@@ -318,7 +324,7 @@ This places the model in the class of correlated random coefficient (CRC) models
 
 % This is more general than a standard fixed-effect model since we allow for the possibility that $\theta_{i}$ has a different impact on urban and rural consumption. 
 
-To simplify the empirical specification, we assume that observable characteristics affect consumption symmetrically across locations, so that $\gamma^U=\gamma^R$.
+We assume that observable characteristics affect consumption symmetrically across locations, so that $\gamma^U=\gamma^R$.
 Under this restriction, equation \eqref{eq:generalized-consumption-eq} simplifies to: 
 \begin{align}
     y_{it}&=\beta^R+\theta_i + \tau_i +(\beta+\phi \theta_i)D_{it}+  x_{it}'\gamma + \varepsilon_{it}.\tag{10$'$}\label{eq:generalized-consumption-eq-simple}
@@ -379,38 +385,30 @@ The LCA restriction assumes that the return to urban location varies linearly wi
 \begin{equation}\label{eq:LCA-restriction}
 \Delta_i = \beta + \phi\,\theta_i .
 \end{equation}
+
 Since comparative advantage also determines average rural consumption in the model, the LCA restriction implies a linear relationship between average returns and average rural consumption across migration trajectories.
 As a result, variation in outcomes among switchers identifies the relationship between returns and comparative advantage, which in turn allows us to extrapolate returns for non-migrants.
+Since $\tau_i$ does not affect location choices, trajectory-specific differences in $\mu_{\underline{d}}$ identify differences in average comparative advantage.
 
 We do not restrict the sign of this relationship; instead, we allow the data to determine whether returns to migration increase or decrease with comparative advantage.
 Our estimation strategy follows \cite{tjernstromCommentSuri2011}, who show how to implement this restriction within a GRC framework using GMM.
 For a chosen baseline switcher trajectory $\underline d_0 \in \mathcal D_S$, we can write the restricted GRC model as:
 \begin{align}
     y_{it} =& \sum_{\underline d \in \mathcal D \setminus \{d_T\}}
-    \mu_{\underline d}\,\mathbbm{1}\{\underline d_i=\underline d\} + \Delta_{\underline d_0} D_{it} \\
+    \mu_{\underline d}\,\mathbbm{1}\{\underline d_i=\underline d\} + \Delta_{\underline d_0} D_{it} \nonumber \\
     & + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
-    \phi(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,\mathbbm{1}\{\underline d_i=\underline d\} \\
+    \phi(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,\mathbbm{1}\{\underline d_i=\underline d\} \nonumber\\
     & + \Big(\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0})\Big)\,D_{it}\,\mathbbm{1}\{\underline d_i=d_T\} + \varepsilon_{it}.
     \label{eq:restricted-GRC}
-\end{align}
-
-
-We do not restrict the sign of the relationship between returns to migration and comparative advantage; rather, we allow this to be determined by the data.
-This yields the following restricted GRC model:
-\begin{align}
-        y_{i t} = & \sum_{\underline{d} \in \mathcal{D} \setminus d_{T}} \mu_{\underline{d}}+
-        \Delta_{\underline{d}_0} d_{i t}+\sum_{\underline{d} \in \mathcal{D} \backslash \underline{d}_0} \phi\left(\mu_{\underline{d}}-\mu_{\underline{d}_0}\right) d_{i t} \mathbbm{1}\left\{d_i=\underline{d}\right\} \label{eq:restricted-GRC} \\ \notag 
-    & + \left(\mu_{\underline{d}_T}+\phi\left(\mu_{\underline{d}_T}-\mu_{\underline{d}_0}\right)\right) d_{i t} \mathbbm{1}\left\{\sum_{t=1}^T d_{i t}=T\right\}+\varepsilon_{i t}\label{eq:restricted-GRC}
-\end{align}
-\noindent for some baseline trajectory $d_{0} \in \mathcal{D}_{S}$. 
-
-% and letting $\mu_{i} = \tau_{i} + \theta_{i}$
+\end{align} 
+\noindent for some baseline trajectory $d_{0} \in \mathcal{D}_{S}$.\footnote{The always-urban group ($\underline d_i = d_T$) receives a separate composite coefficient in the last line because these workers have $\sum_t D_{it} = T$ and are not in $\mathcal D_S$.
+Their trajectory-specific return is therefore parameterized directly rather than through the switcher summation.}
 
 The relationship in the LCA restriction forms the basis of how we identify returns to non-migrants in our model.
-Taking expectations of equation \eqref{eq:LCA-restriction} within migration trajectories implies that average returns satisfy the following equality for any two trajectories \(d \neq d^{'}\) the following equality holds:
+Taking expectations of equation \eqref{eq:LCA-restriction} within migration trajectories implies that for any two switcher trajectories $\underline{d} \neq \underline{d}'$ with distinct average rural consumption, average returns satisfy:
 
 \begin{equation}
-\phi = \frac{\Delta_{\underline{d}} - \Delta_{\underline{d}^{'}}}{\mu_{d} - \mu_{\underline{d}^{'}}},\ \ \mu_{\underline{d}} \neq \mu_{\underline{d}^{'}}.\label{eq:phi-proposition1}
+    \phi = \frac{\Delta_{\underline{d}} - \Delta_{\underline{d}'}}{\mu_{\underline{d}} - \mu_{\underline{d}'}},\ \ \mu_{\underline{d}} \neq \mu_{\underline{d}'}.\label{eq:phi-proposition1}
 \end{equation}
 
 If the LCA parameter, $\phi$, is positive, then urban location has higher returns for the people with higher average consumption in the rural market.
@@ -433,9 +431,28 @@ We can refer to these two scenarios as migration being either ``pro-rich'' (posi
 %   observing \(\phi < 0\) does not allow us to infer the direction of the
 %   correlation between location-specific skills, \(\rho\).}
 
-We estimate the restricted model in Eq. \eqref{eq:restricted-GRC} using Generalized Method of Moments (GMM), as in \cite{tjernstromCommentSuri2011}. 
-While the key identifying variation comes from the switchers in the balanced panel, we include observations that appear in a subset of panel waves in our estimation.
-We include an ``unbalanced'' dummy variable that takes a value of one for individuals with at least one missing round of data, as well as the interaction between the ``unbalanced'' dummy and the urban indicator.
+
+Before turning to estimation, we collect below the assumptions that underlie identification:
+\begin{enumerate}[label=\textup{(A\arabic*)},leftmargin=*,itemsep=2pt]
+    \item Location-specific productivities $\theta_i^U$ and $\theta_i^R$ are time-invariant.
+    \item Non-pecuniary utility shocks $\nu_{it}^l$ are i.i.d.\ across individuals, time, and locations, so that migration trajectories reflect comparative advantage rather than shock persistence.
+    \item The average rural-urban consumption gap $\beta$ is constant over time.
+    \item Observable characteristics affect consumption symmetrically across locations ($\gamma^U = \gamma^R$).
+    \item The linear comparative advantage restriction $\Delta_i = \beta + \phi\,\theta_i$.
+\end{enumerate}
+% We assess the empirical support for A5 using Hansen's $J$-test in Section \ref{sec:grc-returns}.
+
+We estimate the restricted model in Eq. \eqref{eq:restricted-GRC} using two-step efficient Generalized Method of Moments (GMM), as in \cite{tjernstromCommentSuri2011}. 
+Let $\varepsilon_{it}$ denote the residual from equation \eqref{eq:restricted-GRC}. The moment conditions are
+\begin{equation}\label{eq:gmm-moments}
+    E\!\left[\varepsilon_{it} \cdot z_{it}\right] = 0,
+\end{equation}
+where the instrument vector $z_{it}$ consists of trajectory indicators $\mathbbm{1}\{\underline{d}_i = \underline{d}\}$, the urban indicator $D_{it}$, interactions $D_{it} \cdot \mathbbm{1}\{\underline{d}_i = \underline{d}\}$ for each switcher trajectory, and the covariate vector $x_{it}$.
+The number of moment conditions exceeds the number of parameters, and we test the overidentifying restrictions using Hansen's $J$-statistic.
+Standard errors are clustered at the individual level.
+
+While the key identifying variation comes from the switchers in the balanced panel, we also include observations that appear in a subset of panel waves in our estimation.
+We include an ``unbalanced'' dummy variable that takes a value of one for individuals with at least one missing round of data, as well as the interaction between the ``unbalanced'' dummy and the urban indicator.\footnote{Since unbalanced individuals lack complete trajectories, all trajectory indicators equal zero for them. They therefore do not contribute to identifying the trajectory-specific parameters $\mu_{\underline{d}}$ or the slope $\phi$. They only help estimate the covariate coefficients $\gamma$ and the unbalanced level effects. This inclusion is valid under two assumptions: (i) attrition is independent of $\varepsilon_{it}$ conditional on $D_{it}$ and $x_{it}$, and (ii) covariate effects on consumption are common across balanced and unbalanced individuals.}
 Appendix \ref{app:balanced_panel} shows results using the balanced panel.
 
 \section{Data}\label{sec:data}
@@ -454,7 +471,7 @@ Our data include detailed information on tens of thousands of individuals across
     \end{adjustwidth}
 \end{table}
 
-Table \ref{tab:data_overview} provides an overview of our data sources. For Indonesia, we use data from all five waves of the Indonesia Family Life Survey, which was collected between 1993 and 2015.\footnote{We organized and cleaned the Indonesia data from the raw IFLS data files, following \cite{kleemansLabourMarketResponses2018}, \cite{hamoryReevaluatingAgriculturalProductivity2021} and \cite{kleemansMigrationChoiceRisk}.} For China and Tanzania, we use data that was generously made available by \cite{lagakosMigrationCostsObservational2020}, and that comes from the China Family Panel Study (4 waves) and the Tanzania National Panel Study (3 waves).\footnote{\cite{lagakosMigrationCostsObservational2020} also use data from South Africa, Ghana, and Malawi. We exclude the South Africa sample because of data quality concerns, and we do not use data from Ghana and Malawi because these data cover only 2 waves, while we need at least 3 waves to test our overidentification assumption. We are grateful to David Lagakos, Samuel Marshall, Mushfiq Mobarak, Corey Vernot, and Michael Waugh for sharing their data.}
+Table \ref{tab:data_overview} provides an overview of our data sources. For Indonesia, we use data from all five waves of the Indonesia Family Life Survey, which was collected between 1993 and 2015.\footnote{We organize and cleaned the Indonesia data from the raw IFLS data files, following \cite{kleemansLabourMarketResponses2018}, \cite{hamoryReevaluatingAgriculturalProductivity2021} and \cite{kleemansMigrationChoiceRisk}.} For China and Tanzania, we use data that was generously made available by \cite{lagakosMigrationCostsObservational2020}, and that comes from the China Family Panel Study (4 waves) and the Tanzania National Panel Study (3 waves).\footnote{\cite{lagakosMigrationCostsObservational2020} also use data from South Africa, Ghana, and Malawi. We exclude the South Africa sample because of data quality concerns, and we do not use data from Ghana and Malawi because these data cover only 2 waves, while we need at least 3 waves to test our overidentification assumption. We are grateful to David Lagakos, Samuel Marshall, Mushfiq Mobarak, Corey Vernot, and Michael Waugh for sharing their data.}
 For all countries, we restrict the data to individuals aged 16 and above with non-missing information on urban/rural status and total consumption.\footnote{When studying returns to working in a non-agricultural sector rather than in agriculture, we restrict the sample to those with non-missing information on sector. We can only do that for Indonesia because we do not have sectoral data for China and Tanzania.} Sections \ref{subsec:Indonesia-data}, \ref{subsec:China-data}, and \ref{subsec:Tanzania-data} provide more detail on each of these datasets. 
 %\footnote{When studying sector of employment or income, we adjust the sample restrictions accordingly, keeping only those with non-missing information on sector or income, respectively.} 
 
@@ -714,7 +731,7 @@ As is the case in the two other countries, we estimate a consistently negative s
 
 \subsubsection{Hukou Restrictions and $J$-test Rejection in China}\label{sec:hukou}
 
-As we estimate the restricted GRC model using GMM, we can test the validity of our overidentifying restrictions using Hansen's $J$-test. 
+As we estimate the restricted GRC model using GMM, we can test the validity of our overidentifying restrictions (and, thereby, the empirical support for assumption A5) using Hansen's $J$-test. 
 Overidentifying restrictions arise when the number of moment conditions exceeds the number of estimated parameters, and the $J$-test checks whether these moment conditions hold jointly.\footnote{Specifically, the LCA restriction constrains trajectory-specific returns to satisfy $\Delta_{\underline{d}} = \beta + \phi(\mu_{\underline{d}} - \mu_{\underline{d}_0})$, generating overidentifying restrictions testable via the Hansen $J$-statistic. }
 
 When the $J$-test fails to reject, we interpret the LCA restriction as providing a reasonable approximation to the heterogeneity structure, supporting extrapolation to non-switchers. 
@@ -809,7 +826,7 @@ This may reflect different mortality patterns, which would also skew attrition p
 In this paper, we aim to reconcile divergent estimates on the returns to rural-urban migration in developing countries by accounting for the role of selection and heterogeneity in returns to migration. Motivated by a multi-period Roy model, we formulate a correlated random coefficient model that allows for location-specific skills and heterogeneous returns.  
 We use a person’s migration history as the relevant dimension of heterogeneity, which we interpret as a person’s revealed preference for location and that is conveniently observable in the data. 
 Then, we build on \cite{suriSelectionComparativeAdvantage2011}, 
-\cite{lemieuxEstimatingEffectsUnions1998}, and   \cite{tjernstromCommentSuri2011} to leverage a linear relationship between comparative and absolute advantage that allows us to extrapolate the returns identified from migrant sub-populations to non-migrants.
+\cite{lemieuxEstimatingEffectsUnions1998}, and   \cite{tjernstromCommentSuri2011} to leverage a linear relationship between returns to migration and comparative advantage that allows us to extrapolate the returns identified from migrant sub-populations to non-migrants.
 The group of non-migrants plays a central role in debates on misallocation, whereby non-migrants may reside in areas where they do not live up to their economic potential. 
 Moreover, this group is of specific interest to policymakers determining whether to promote migration as a development strategy.
 
