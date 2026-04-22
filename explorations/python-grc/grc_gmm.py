@@ -48,6 +48,8 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from scipy import optimize
+from scipy.stats import chi2
 
 
 def _as_ndarray(x) -> np.ndarray:
@@ -216,39 +218,349 @@ class RestrictedGRC:
                  + (kappa + phi*(kappa - mu_base)) * 1{always} * D_it
                  + X_cov * gamma.
         """
-        raise NotImplementedError("M3 will fill this in.")
+        y = data["y"]
+        D = data["D"]
+        never_d = data["never_d"]
+        sw_d = data["sw_d"]
+        always_d = data["always_d"]
+        X_cov = data["X_cov"]
+        switchers = data["switchers"]
+        base = data["base"]
+        base_idx = switchers.index(base)
+        S = len(switchers)
+
+        mu_never = theta[0]
+        mu_s = theta[1:1 + S]
+        kappa = theta[1 + S]
+        Delta_base = theta[2 + S]
+        phi = theta[3 + S]
+        gamma = theta[4 + S:]
+
+        mu_base = mu_s[base_idx]
+        fit = mu_never * never_d + sw_d @ mu_s
+        fit = fit + Delta_base * D
+        coef_phi = (mu_s - mu_base) * phi
+        coef_phi[base_idx] = 0.0
+        fit = fit + (sw_d * D[:, None]) @ coef_phi
+        fit = fit + (kappa + phi * (kappa - mu_base)) * always_d * D
+        if X_cov.shape[1] > 0:
+            fit = fit + X_cov @ gamma
+        return y - fit
 
     def _moments_individual(self, theta: np.ndarray, data: dict) -> np.ndarray:
-        """Return n x m matrix of per-observation moments ``g_it``."""
-        raise NotImplementedError("M3 will fill this in.")
+        """Return n x m matrix of per-observation moments ``g_it = z_it * eps_it``."""
+        eps = self._residuals(theta, data)
+        return data["Z"] * eps[:, None]
+
+    def _objective(self, theta: np.ndarray, data: dict,
+                   W: np.ndarray) -> float:
+        """GMM objective n * g_bar' W g_bar (Stata's convention)."""
+        g = self._moments_individual(theta, data).sum(axis=0) / data["n"]
+        return float(g @ W @ g) * data["n"]
 
     def _cluster_S(self, theta: np.ndarray, data: dict) -> np.ndarray:
         """Cluster-robust long-run variance of the stacked moment.
 
-        Computes ``S = (1/n) * sum_i g_i g_i'`` with
-        ``g_i = sum_{t in T_i} g_it``; this is the Stata convention under
-        ``vce(cluster pid)``.
+        S = (1/n) * sum_i g_i g_i' where g_i = sum_{t in T_i} z_it * eps_it.
         """
-        raise NotImplementedError("M3 will fill this in.")
+        g = self._moments_individual(theta, data)
+        ids = data["ids"]
+        _, inv = np.unique(ids, return_inverse=True)
+        G_clust = inv.max() + 1
+        m = g.shape[1]
+        cluster_sum = np.zeros((G_clust, m))
+        np.add.at(cluster_sum, inv, g)
+        return cluster_sum.T @ cluster_sum / data["n"]
 
     def _gradient_of_g(self, theta: np.ndarray, data: dict) -> np.ndarray:
-        """Mean Jacobian ``G = d g_bar / d theta``, shape (m, p)."""
-        raise NotImplementedError("M3 will fill this in.")
+        """Mean Jacobian ``G = d g_bar / d theta``, shape (m, p).
+
+        ``g_bar = (1/n) sum Z' eps``, so ``d g_bar / d theta = -(1/n) Z'
+        d fit / d theta``. We build ``d fit / d theta`` analytically.
+        """
+        D = data["D"]
+        never_d = data["never_d"]
+        sw_d = data["sw_d"]
+        always_d = data["always_d"]
+        X_cov = data["X_cov"]
+        Z = data["Z"]
+        switchers = data["switchers"]
+        base = data["base"]
+        base_idx = switchers.index(base)
+        S = len(switchers)
+        n = data["n"]
+
+        kappa = theta[1 + S]
+        phi = theta[3 + S]
+        mu_s = theta[1:1 + S]
+        mu_base = mu_s[base_idx]
+
+        dfit_cols = []
+        # d/d mu_never
+        dfit_cols.append(never_d)
+        # d/d mu_s for each s
+        for j in range(S):
+            col = sw_d[:, j].copy()
+            if j == base_idx:
+                # mu_base enters negatively in each non-base (mu_s - mu_base) * D
+                # and in (kappa - mu_base) * always * D.
+                col = col - phi * (sw_d.sum(axis=1) - sw_d[:, base_idx]) * D
+                col = col - phi * always_d * D
+            else:
+                col = col + phi * sw_d[:, j] * D
+            dfit_cols.append(col)
+        # d/d kappa: from (kappa + phi*(kappa - mu_base))*always*D = (1+phi)*kappa*always*D - phi*mu_base*always*D
+        dfit_cols.append((1.0 + phi) * always_d * D)
+        # d/d Delta_base
+        dfit_cols.append(D)
+        # d/d phi
+        col_phi = np.zeros_like(D)
+        for j in range(S):
+            if j == base_idx:
+                continue
+            col_phi = col_phi + (mu_s[j] - mu_base) * sw_d[:, j] * D
+        col_phi = col_phi + (kappa - mu_base) * always_d * D
+        dfit_cols.append(col_phi)
+        # d/d gamma
+        for k in range(X_cov.shape[1]):
+            dfit_cols.append(X_cov[:, k])
+
+        dfit = np.column_stack(dfit_cols)
+        G = -(Z.T @ dfit) / n
+        return G
+
+    # ------------------------------------------------------------------
+    # Initial values (mirrors `initial_values` in 0_programs.do)
+    # ------------------------------------------------------------------
+    def _ols_initial_values(self, data: dict) -> np.ndarray:
+        """OLS of y on [never, always, switcher_s, X_cov] with no constant.
+
+        Returns the coefficient vector in that column order. Mirrors
+        Stata's ``initial_values`` program (OLS without constant on the
+        trajectory-dummy/switcher block).
+        """
+        y = data["y"]
+        cols = [data["never_d"][:, None], data["always_d"][:, None], data["sw_d"]]
+        if data["X_cov"].shape[1] > 0:
+            cols.append(data["X_cov"])
+        X = np.column_stack(cols)
+        beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+        return beta
+
+    def _choose_base(self, data: dict) -> int:
+        """Mirror ``initial_values``' base-trajectory rule.
+
+        Pick the switcher with the largest |t| on its switcher*D
+        coefficient in OLS of y on always, always*D, switcher_s,
+        switcher_s*D, restricted to switchers with N_s / T > 5. Use
+        cluster-robust SEs at individual id (Stata ``vce(cluster pid)``).
+        """
+        y = data["y"]
+        D = data["D"]
+        sw_d = data["sw_d"]
+        always_d = data["always_d"]
+        switchers = data["switchers"]
+
+        cols = [always_d, always_d * D]
+        for j in range(len(switchers)):
+            cols.append(sw_d[:, j])
+            cols.append(sw_d[:, j] * D)
+        X = np.column_stack(cols)
+        beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+        resid = y - X @ beta
+        n = len(y)
+        k = X.shape[1]
+
+        ids = data["ids"]
+        _, inv = np.unique(ids, return_inverse=True)
+        G_clust = inv.max() + 1
+        score = X * resid[:, None]
+        cluster_sum = np.zeros((G_clust, X.shape[1]))
+        np.add.at(cluster_sum, inv, score)
+        meat = cluster_sum.T @ cluster_sum
+        XtX_inv = np.linalg.pinv(X.T @ X)
+        adj = (G_clust / max(G_clust - 1, 1)) * ((n - 1) / max(n - k, 1))
+        V = adj * XtX_inv @ meat @ XtX_inv
+        se = np.sqrt(np.maximum(np.diag(V), 0.0))
+
+        if "period" in data["df"].columns:
+            T = int(data["df"]["period"].nunique())
+        else:
+            T = 5
+
+        max_t = -np.inf
+        base = switchers[0]
+        for j, s in enumerate(switchers):
+            col = 2 + 2 * j + 1  # switcher_s * D
+            if se[col] == 0:
+                continue
+            t = abs(beta[col] / se[col])
+            N_s = int((sw_d[:, j] != 0).sum())
+            if N_s / T > 5 and t > max_t:
+                max_t = t
+                base = s
+        return int(base)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
     def fit(self, df: pd.DataFrame, verbose: bool = False) -> "RestrictedGRC":
-        """Two-step efficient GMM.
+        """Two-step efficient GMM (identity, then S^{-1})."""
+        data = self._build_design(df)
+        data["Z"] = self._build_instruments(data)
+        data["n"] = len(data["y"])
+        data["base"] = int(self.base_trajectory
+                           if self.base_trajectory is not None
+                           else self._choose_base(data))
 
-        Step 1: identity weighting, scipy optimizer from OLS initial values.
-        Step 2: ``W = S_hat^{-1}`` using cluster-robust S at step-1 theta.
+        switchers = data["switchers"]
+        S = len(switchers)
+        K = data["X_cov"].shape[1]
+        p = 1 + S + 1 + 1 + 1 + K
+        m = data["Z"].shape[1]
 
-        After step 2, compute cluster-robust analytic variance and
-        Hansen's J at the final theta.
-        """
-        raise NotImplementedError("M3 will fill this in.")
+        # Initial values from OLS (matches initial_values in 0_programs.do).
+        beta0 = self._ols_initial_values(data)
+        # beta0 layout: [never, always, sw_1..sw_S, covariates...]
+        mu_never0 = beta0[0]
+        kappa0 = beta0[1]
+        mu_s0 = beta0[2:2 + S]
+        gamma0 = beta0[2 + S:]
+        Delta_base0 = 0.0
+        phi0 = -1.0  # Stata default in run_grc: {phi=-1}
+        theta0 = np.concatenate([
+            [mu_never0], mu_s0, [kappa0, Delta_base0, phi0], gamma0,
+        ])
+
+        # Analytic gradient of the objective ``n * g_bar' W g_bar``:
+        # grad = 2 * n * G' W g_bar, where G = d g_bar / d theta.
+        def grad(theta: np.ndarray, W: np.ndarray) -> np.ndarray:
+            g = self._moments_individual(theta, data).sum(axis=0) / data["n"]
+            G_jac = self._gradient_of_g(theta, data)
+            return 2.0 * data["n"] * (G_jac.T @ W @ g)
+
+        # Step 1: identity weights. L-BFGS-B with analytic gradient is
+        # more robust than BFGS on this design (phi-mu_base coupling).
+        W1 = np.eye(m)
+        res1 = optimize.minimize(
+            self._objective, theta0, args=(data, W1),
+            jac=lambda t, *a: grad(t, W1),
+            method="L-BFGS-B",
+            options={"gtol": 1e-8, "maxiter": self.maxiter, "disp": verbose},
+        )
+        theta1 = res1.x
+
+        # Step 2: efficient weights W = S^{-1}.
+        S_mat = self._cluster_S(theta1, data)
+        try:
+            W2 = np.linalg.inv(S_mat)
+        except np.linalg.LinAlgError:
+            W2 = np.linalg.pinv(S_mat)
+        res2 = optimize.minimize(
+            self._objective, theta1, args=(data, W2),
+            jac=lambda t, *a: grad(t, W2),
+            method="L-BFGS-B",
+            options={"gtol": 1e-10, "maxiter": self.maxiter, "disp": verbose},
+        )
+        theta = res2.x
+        self.theta_ = theta
+        self.converged_ = bool(res2.success)
+
+        # Cluster-robust variance: V = (1/n) * (G' W G)^{-1} with efficient W.
+        G_mat = self._gradient_of_g(theta, data)
+        S_final = self._cluster_S(theta, data)
+        try:
+            W_final = np.linalg.inv(S_final)
+        except np.linalg.LinAlgError:
+            W_final = np.linalg.pinv(S_final)
+        GtWG = G_mat.T @ W_final @ G_mat
+        try:
+            V = np.linalg.inv(GtWG) / data["n"]
+        except np.linalg.LinAlgError:
+            V = np.linalg.pinv(GtWG) / data["n"]
+        self.vcov_ = V
+        se = np.sqrt(np.maximum(np.diag(V), 0.0))
+
+        # Hansen's J at final theta with the same efficient weight.
+        g_bar = self._moments_individual(theta, data).sum(axis=0) / data["n"]
+        J = float(data["n"] * g_bar @ W_final @ g_bar)
+        J_df = m - p
+        J_pval = float(1.0 - chi2.cdf(J, max(J_df, 1))) if J_df > 0 else float("nan")
+
+        # Name parameters (mirrors Stata-style equation labels).
+        names = ["mu:never"]
+        names += [f"mu:switcher_{s}" for s in switchers]
+        names += ["kappa:_cons", "Delta_base:_cons", "phi:_cons"]
+        names += [f"xb:{c}" for c in data["cov_names"]]
+
+        self.param_names_ = names
+        self.coef_ = dict(zip(names, theta))
+        self.se_ = dict(zip(names, se))
+        self.J_stat_ = J
+        self.J_df_ = J_df
+        self.J_pval_ = J_pval
+        self.n_obs_ = data["n"]
+        self.n_clusters_ = int(len(np.unique(data["ids"])))
+        self.switchers_ = switchers
+        self._data_ = data
+        return self
+
+    # ------------------------------------------------------------------
+    # Post-estimation linear combinations (mirrors `nlcom` in run_grc).
+    # ------------------------------------------------------------------
+    def delta_never(self) -> tuple[float, float]:
+        """Delta_never = Delta_base + phi * (mu_never - mu_base)."""
+        S = len(self.switchers_)
+        base = self._data_["base"]
+        base_idx = self.switchers_.index(base)
+        mu_never = self.theta_[0]
+        mu_base = self.theta_[1 + base_idx]
+        Delta_base = self.theta_[2 + S]
+        phi = self.theta_[3 + S]
+        est = Delta_base + phi * (mu_never - mu_base)
+        grad = np.zeros_like(self.theta_)
+        grad[0] = phi
+        grad[1 + base_idx] = -phi
+        grad[2 + S] = 1.0
+        grad[3 + S] = mu_never - mu_base
+        se = float(np.sqrt(grad @ self.vcov_ @ grad))
+        return float(est), se
+
+    def delta_always(self) -> tuple[float, float]:
+        """Delta_always = Delta_base + phi * (kappa - mu_base)."""
+        S = len(self.switchers_)
+        base = self._data_["base"]
+        base_idx = self.switchers_.index(base)
+        mu_base = self.theta_[1 + base_idx]
+        kappa = self.theta_[1 + S]
+        Delta_base = self.theta_[2 + S]
+        phi = self.theta_[3 + S]
+        est = Delta_base + phi * (kappa - mu_base)
+        grad = np.zeros_like(self.theta_)
+        grad[1 + base_idx] = -phi
+        grad[1 + S] = phi
+        grad[2 + S] = 1.0
+        grad[3 + S] = kappa - mu_base
+        se = float(np.sqrt(grad @ self.vcov_ @ grad))
+        return float(est), se
 
     def summary(self) -> str:
-        """Return a textual summary of estimates (M3 fills in body)."""
-        raise NotImplementedError("M3 will fill this in.")
+        lines = [
+            "Restricted GRC (two-step efficient GMM)",
+            f"N obs = {self.n_obs_}, N clusters = {self.n_clusters_}",
+            f"Base switcher trajectory = {self._data_['base']}",
+            f"J-stat = {self.J_stat_:.4f}, df = {self.J_df_}, "
+            f"p = {self.J_pval_:.4f}",
+            f"Converged: {self.converged_}",
+            "",
+            f"{'parameter':<35} {'estimate':>12} {'se':>12}",
+        ]
+        for name in self.param_names_:
+            lines.append(
+                f"{name:<35} {self.coef_[name]:>12.6f} {self.se_[name]:>12.6f}"
+            )
+        dn, dn_se = self.delta_never()
+        da, da_se = self.delta_always()
+        lines.append(f"{'Delta_never':<35} {dn:>12.6f} {dn_se:>12.6f}")
+        lines.append(f"{'Delta_always':<35} {da:>12.6f} {da_se:>12.6f}")
+        return "\n".join(lines)
