@@ -10,144 +10,216 @@
 %==============================================================================
 
 The estimation sample is unbalanced: in country $c$ with wave count
-$T_c \in\{3,4,5\}$, between $88.6\%$ and $95.7\%$ of individuals are
-observed in strictly fewer than $T_c$ waves. Following
-Section~\ref{subsec:empirical-model}, a trajectory label
-$\underline d_i\in\mathcal{D}$ is defined only for individuals observed
-in all $T_c$ waves. Unbalanced observers are not assigned a trajectory.
-Rather than discarding them, we pool them into the estimating equation
-through a single indicator $U_i\equiv\mathbf{1}\{|\mathcal{T}_i|<T_c\}$,
-interacted with the urban dummy:
+$T_c \in \{3,4,5\}$, between \textbf{[X\%]} and \textbf{[Y\%]} of
+individuals are observed in strictly fewer than $T_c$
+waves.\footnote{Placeholder---unbalanced-observer shares to be pulled
+from the country-specific summary-stats tables. Do not confuse with the
+non-switcher shares (88.6\%--95.7\%) reported in
+Tables~\ref{tab:summary_stats_CHN_unb} and \ref{tab:summary_stats_TZA_unb}.}
+The trajectory label
+$\underline d_i\in\mathcal D$ of Section~\ref{subsec:empirical-model} is
+defined only for individuals observed in all $T_c$ waves; unbalanced
+observers have no trajectory label. Rather than discard them, we pool
+them into the estimating equation through a single indicator
+$U_i \equiv \mathbf 1\{|\mathcal T_i|<T_c\}$ interacted with the urban
+dummy. Augmenting the restricted GRC of
+Equation~\eqref{eq:restricted-GRC} with these terms gives
 \begin{equation}
 \label{eq:restricted-grc-unbalanced}
 \begin{aligned}
-y_{it} = \; &
-\sum_{\underline d \in \mathcal{D}} \mu_{\underline d}\,
-\mathbbm{1}\{\underline d_i=\underline d\}
-+
-\sum_{\underline d \in \mathcal{D}_S} \Delta_{\underline d}\,
-\mathbbm{1}\{\underline d_i=\underline d\}\, D_{it} \\
-& +\, \alpha\, U_i
-+ \pi\, U_i\, D_{it}
-+ x_{it}'\gamma
-+ \varepsilon_{it},
+y_{it} =\; &
+\sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm 1\{\underline d_i=\underline d\}
++ \Delta_{\underline d_0}\,D_{it} \\
+& + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
+    \phi\,(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,
+    \mathbbm 1\{\underline d_i=\underline d\} \\
+& + \Big(\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0})\Big)\,D_{it}\,
+    \mathbbm 1\{\underline d_i=d_T\} \\
+& + \alpha\,U_i + \pi\,U_i\,D_{it} + x_{it}'\gamma + \varepsilon_{it}.
 \end{aligned}
 \end{equation}
-with the linear comparative advantage restriction
-$\Delta_{\underline d}=\beta+\phi\,E[\theta_i\mid\underline d_i=\underline d]$
-imposed on the switcher coefficients as in the restricted GRC of
-Section~\ref{subsec:empirical-model}. Because $\underline d_i$ is
-undefined when $U_i=1$, the indicators
-$\{\mathbbm{1}\{\underline d_i=\underline d\}\}_{\underline d\in\mathcal{D}}$
-are identically zero on the unbalanced subsample. The pair
-$(\alpha, \pi)$ absorbs the level and the average urban return of the
-unbalanced stratum through a single pooled cell.
+Because $\underline d_i$ is undefined when $U_i=1$, the trajectory
+indicators $\mathbbm 1\{\underline d_i=\underline d\}$ are identically
+zero on the unbalanced subsample. The pair $(\alpha,\pi)$ absorbs the
+level and average urban return on the unbalanced stratum, and the single
+coefficient vector $\gamma$ imposes that covariate effects are common
+across the two strata.
 
-\begin{assumption}[Missing at random, conditional on covariates]
+\begin{assumption}[Missing at random]
 \label{ass:mar}
-$U_i \perp (\theta_i, \tau_i, \{\nu_{it}^l\}_{t,l})\mid x_{i1},\dots,x_{iT_c}$.
+$U_i \perp \big(\theta_i,\tau_i,\{\nu_{it}^l\}_{t,l},\{(x_{it},\varepsilon_{it})\}_{t\in\mathcal T_i}\big) \mid w_i$,
+where $w_i$ is a vector of covariates observed for every individual
+(baseline demographics and wave-of-first-observation indicators).
 \end{assumption}
 
-Assumption~\ref{ass:mar} requires that non-response depends at most on
-observed covariates. We view this as defensible in the CFPS, IFLS, and
-TZNPS samples given the rich demographic controls, and probe it
-directly through the balanced-panel comparison in
-Section~\ref{sec:robustness}.
+Assumption~\ref{ass:mar} is the standard ignorability condition for
+unbalanced panels in the tradition of \citet{rubin1976inference} and
+\citet[ch.~17-19]{wooldridge2010econometric}: non-response depends at
+most on pre-determined observables, and the joint distribution of
+observed covariates and shocks on the unbalanced stratum is, conditional
+on $w_i$, the same as on the balanced stratum. The rich demographic
+controls in CFPS, IFLS, and TZNPS make this plausible;
+Section~\ref{sec:robustness} tests it directly by comparing
+balanced-only and pooled estimates.
+
+\begin{assumption}[Common covariate effects]
+\label{ass:common-gamma}
+The partial effect of $x_{it}$ on log consumption is the same in the
+balanced and unbalanced strata.
+\end{assumption}
+
+Equation~\eqref{eq:restricted-grc-unbalanced} encodes
+Assumption~\ref{ass:common-gamma} through the single coefficient vector
+$\gamma$. The assumption is directly testable: replace $x_{it}'\gamma$
+with $x_{it}'\gamma + U_i\,x_{it}'\delta$ and test $\delta=0$.
 
 \begin{proposition}[Pooling balanced and unbalanced observers]
 \label{prop:pooling}
-Under the identifying assumptions of Section~\ref{subsec:empirical-model}
-and Assumption~\ref{ass:mar}, the two-step GMM estimator of
-\eqref{eq:restricted-grc-unbalanced} is consistent and asymptotically
-normal for $(\beta,\phi,\gamma)$ and for the collection of
-balanced-panel trajectory parameters
-$\{(\mu_{\underline d},\Delta_{\underline d})\}_{\underline d\in\mathcal{D}}$.
-Its asymptotic variance is weakly smaller than that of the
-corresponding estimator restricted to balanced observers only.
+Let
+\[
+\theta_0 \equiv \big(\Delta_{\underline d_0},\,\phi,\,
+\{\mu_{\underline d}\}_{\underline d \in \mathcal D\setminus\{d_T\}},\,
+\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0}),\,\alpha,\,\pi,\,\gamma\big).
+\]
+Under Assumptions~(A1)--(A5) of Section~\ref{subsec:empirical-model}
+and Assumptions~\ref{ass:mar}--\ref{ass:common-gamma}, the two-step
+GMM estimator of \eqref{eq:restricted-grc-unbalanced} is
+$\sqrt n$-consistent and asymptotically normal for $\theta_0$. The
+trajectory-specific returns
+$\Delta_{\underline d} = \Delta_{\underline d_0} + \phi(\mu_{\underline d}-\mu_{\underline d_0})$
+for $\underline d \in \mathcal D$ inherit consistency and asymptotic
+normality by the delta method. Let
+$\vartheta^{\mathrm{bal}}\equiv\big(\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\}_{\underline d\in\mathcal D\setminus\{d_T\}},\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0}),\gamma\big)$
+denote the sub-vector of $\theta_0$ common to both estimators. The
+pooled-estimator asymptotic variance of $\hat\vartheta^{\mathrm{bal}}$
+is weakly smaller than that of the corresponding estimator restricted
+to balanced observers only; the inequality is strict whenever the
+covariates are informative about the trajectory parameters.
 \end{proposition}
 
 \begin{proof}
-The argument has two steps: an orthogonality step that isolates the
-contribution of balanced observers to
-$\{(\mu_{\underline d},\Delta_{\underline d})\}$, and a consistency
-step for the covariate and nuisance parameters.
+The argument has four steps: validity of the pooled moment conditions
+(Step 1); identification and standard non-linear GMM asymptotics
+(Step 2); an algebraic relationship between the pooled and balanced-only
+estimators (Step 3); and a partitioned-inverse argument for the
+efficiency comparison (Step 4).
 
-\emph{Step 1 (orthogonality).}
-By construction, $\mathbbm{1}\{\underline d_i=\underline d\}=0$ for
-every $\underline d\in\mathcal{D}$ whenever $U_i=1$, because the
-trajectory label is only defined on the balanced subsample. Hence for
-every $\underline d\in\mathcal{D}$ and every wave $t$,
-\begin{equation*}
-\mathbbm{1}\{\underline d_i=\underline d\}\cdot U_i = 0,
-\qquad
-\mathbbm{1}\{\underline d_i=\underline d\}\cdot U_i D_{it} = 0.
-\end{equation*}
-The design matrix therefore block-separates: the balanced regressors
-$W_1 \equiv \bigl(\mathbbm{1}\{\underline d_i=\underline d\},\,
-\mathbbm{1}\{\underline d_i=\underline d\}\, D_{it}\bigr)_{\underline
-d\in\mathcal{D}}$ are orthogonal in the sample to the unbalanced
-controls $W_2\equiv(U_i,\, U_i D_{it})$. By the
-Frisch--Waugh--Lovell theorem, the GMM estimator of $(\mu,\Delta)$ is
-numerically equal to the estimator obtained by first partialling out
-$W_2$ and $x_{it}$, then fitting the residuals to the residualised
-$W_1$ using only the balanced subsample.
+\textit{Step 1. Moment validity.}
+Let the individual-period moment function be
+$g_{it}(\theta) \equiv z_{it}\cdot\varepsilon_{it}(\theta)$, with
+$z_{it}$ collecting the trajectory indicators
+$\mathbbm 1\{\underline d_i=\underline d\}$, the urban indicator
+$D_{it}$, the switcher interactions
+$D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$, the pair
+$(U_i,\,U_i D_{it})$, and the covariates $x_{it}$. For inference under
+individual-level clustering we stack within individual,
+$g_i(\theta) \equiv \sum_{t\in\mathcal T_i} g_{it}(\theta)$, and treat
+$\{g_i\}_{i=1}^n$ as i.i.d.\ across $i$; the efficient weighting matrix
+$\hat S^{-1}$ estimates the variance of $g_i$ across $i$, so all
+asymptotic variances in what follows are cluster-robust at the
+individual level, consistent with the main paper's inference procedure.
+The population moment condition is $E[g_i(\theta_0)] = 0$. On the
+balanced subsample, Assumptions~(A1)--(A5) give
+$E[\varepsilon_{it}\mid\underline d_i, D_{it}, x_{it}] = 0$ at each
+observed $t$, which delivers the moment condition there. On the
+unbalanced subsample, the switcher moments are identically zero because
+$\mathbbm 1\{\underline d_i=\underline d\}\equiv 0$ when $U_i=1$; the
+remaining moments $(U_i,\,U_i D_{it},\,x_{it})$ have expectation zero
+by Assumption~\ref{ass:mar}, which delivers
+$(x_{it},\varepsilon_{it})\perp U_i \mid w_i$ at each
+$t\in\mathcal T_i$, together with Assumption~\ref{ass:common-gamma},
+which makes $\gamma$ well-defined across strata.
 
-\emph{Step 2 (consistency of the partialling-out).}
-Step~1 requires consistent estimation of $(\gamma,\alpha,\pi)$ from
-the pooled sample. Under the time-invariant comparative advantage and
-i.i.d. shock assumptions, the conditional mean of $y_{it}$ given
-$(\underline d_i, D_{it}, U_i, x_{it})$ separates additively as in
-\eqref{eq:restricted-grc-unbalanced}. Under
-Assumption~\ref{ass:mar}, $U_i$ carries no information about
-$(\theta_i,\tau_i,\nu)$ beyond what $x_{it}$ already contains, so
-$E[\varepsilon_{it}\mid\underline d_i, D_{it}, U_i, x_{it}]=0$ on both
-strata. Standard GMM arguments \citep{hansen1982gmm} deliver
-$\sqrt{n}$-consistency and asymptotic normality of the full parameter
-vector in \eqref{eq:restricted-grc-unbalanced}, including the balanced
-$(\mu_{\underline d},\Delta_{\underline d})$.
+\textit{Step 2. Identification and asymptotics.}
+The balanced-block moments identify
+$\big(\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\}_{\underline d\in\mathcal D\setminus\{d_T\}},\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0})\big)$
+as argued in Section~\ref{subsec:restricted-grc-model}: the
+trajectory-indicator moments identify the $\{\mu_{\underline d}\}$ as
+fixed effects in the regression, and $\phi$ is identified from the
+cross-trajectory ratio of switcher returns to rural-consumption
+differences in Equation~\eqref{eq:phi-proposition1}. Identification of
+$\phi$ requires that at least two switcher trajectories have distinct
+trajectory means: there exist $\underline d,\underline d'\in\mathcal D_S$
+with $\mu_{\underline d}\neq\mu_{\underline d'}$, which we assume
+throughout and which is satisfied in all three panels. The LCA
+restriction of Equation~\eqref{eq:LCA-restriction} then delivers the
+remaining components. The $(U_i,U_iD_{it})$ block identifies
+$(\alpha,\pi)$, and the $x_{it}$ block identifies $\gamma$. Under the
+usual regularity conditions---compact parameter space, continuous
+differentiability of $g_{it}$ in $\theta$, global identification of
+$\theta_0$, and finite fourth moments of
+$(z_{it},\varepsilon_{it})$---the standard non-linear GMM arguments
+\citep{hansen1982gmm,neweyMcFadden1994} deliver $\sqrt n$-consistency
+and asymptotic normality of $\hat\theta$.
 
-\emph{Step 3 (efficiency).}
-Let $\hat\gamma^{\mathrm{pool}}$ denote the covariate coefficient
-estimated on the full sample and $\hat\gamma^{\mathrm{bal}}$ the
-analogous estimator on balanced observers only. Under
-Assumption~\ref{ass:mar}, both are consistent for $\gamma$, and
-$\hat\gamma^{\mathrm{pool}}$ has weakly smaller asymptotic variance
-because it uses strictly more observations. The partialling-out
-residual $M_{W_2,x}y$ that enters Step~1 therefore has weakly smaller
-variance under pooling, which carries over to
-$(\mu_{\underline d},\Delta_{\underline d})$ via the sandwich variance
-formula.
+\textit{Step 3. Relation to the balanced-only estimator.}
+Because the switcher moments vanish identically on the unbalanced
+subsample, the components of the score for
+$(\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\})$ are zero on that
+stratum: the sample average of the switcher-moment score equals the
+balanced-only sample average. By the GMM partialling-out result of
+\citet[Thm.~6.1]{neweyMcFadden1994}, the pooled estimator of the
+trajectory sub-vector is asymptotically equivalent, up to
+$o_p(n^{-1/2})$, to the balanced-only estimator with
+$\hat\gamma^{\mathrm{pool}}$ plugged in for $\gamma$. The claim is
+asymptotic, not an exact algebraic identity; the efficient weighting
+matrix $\hat S^{-1}$ couples moment blocks, so the pooled and
+balanced-only finite-sample first-order conditions differ, but the
+higher-order discrepancy is $o_p(n^{-1/2})$ and does not affect the
+limiting distribution.
+
+\textit{Step 4. Efficiency.}
+Write the asymptotic information matrix as
+\[
+I = \begin{pmatrix} I_{\vartheta\vartheta} & I_{\vartheta\gamma} \\
+I_{\gamma\vartheta} & I_{\gamma\gamma} \end{pmatrix},
+\]
+where $\vartheta$ collects all components of $\theta_0$ other than
+$\gamma$. Partitioned inversion gives
+$\mathrm{AVar}(\hat\vartheta) = \big(I_{\vartheta\vartheta} - I_{\vartheta\gamma}I_{\gamma\gamma}^{-1}I_{\gamma\vartheta}\big)^{-1}$.
+The pooled and balanced-only versions of $I_{\vartheta\vartheta}$
+coincide on the trajectory-parameter block, because the corresponding
+score is zero on the unbalanced subsample. Under
+Assumption~\ref{ass:mar} and Assumption~\ref{ass:common-gamma}, the
+unbalanced observations contribute additively (through the efficient
+weighting matrix) to the $x_{it}$-block information, so the pooled
+$I_{\gamma\gamma}$ is weakly larger than the balanced-only analogue. It
+follows that $I_{\gamma\gamma}^{-1}$ is weakly smaller under pooling,
+that the correction
+$I_{\vartheta\gamma}I_{\gamma\gamma}^{-1}I_{\gamma\vartheta}$ is weakly
+smaller, and that $\mathrm{AVar}(\hat\vartheta)$ is weakly smaller. The
+inequality is strict whenever $I_{\vartheta\gamma}\neq 0$, i.e.,
+whenever the covariates are informative about the trajectory
+parameters.
 \end{proof}
 
 \begin{remark}
-The orthogonality of Step~1 is the substantive content of the
-proposition. Because the trajectory indicators are identically zero
-for unbalanced observers, the unbalanced subsample does not contribute
-directly to the identification of any $\Delta_{\underline d}$ of
-economic interest; it enters
+Because the trajectory indicators are identically zero for unbalanced
+observers, the unbalanced subsample does not contribute directly to the
+identification of any switcher return; it enters
 \eqref{eq:restricted-grc-unbalanced} only through the estimation of
-$\gamma$, period shifters, and the pooled pair $(\alpha,\pi)$. As a
-result, the balanced-panel estimates are robust to substantially
-stronger forms of mis-specification for the unbalanced stratum than
-Assumption~\ref{ass:mar} requires: even if attrition were
-non-ignorable on the unbalanced subsample, the bias would operate only
-through $\hat\gamma$, and the block structure of the score implies
-that the induced bias in $\hat\Delta_{\underline d}$ is of smaller
-order whenever $\hat\gamma^{\mathrm{pool}}\overset{p}{\to}\gamma$.
-The pooled specification is therefore conservative: it never loses
-information relative to the balanced-only estimator and is weakly more
-efficient whenever $\gamma$ is correctly specified in both strata.
+$\gamma$ (which subsumes period effects) and the pooled pair
+$(\alpha,\pi)$. The
+balanced-panel estimates are therefore robust to forms of
+misspecification on the unbalanced stratum that
+Assumption~\ref{ass:mar} does not rule out: even if attrition on that
+stratum were non-ignorable, the bias would operate only through
+$\hat\gamma$, and the block structure of the score implies that the
+induced bias in $\hat\Delta_{\underline d}$ is of smaller order
+whenever $\hat\gamma^{\mathrm{pool}}\overset{p}{\to}\gamma$.
 \end{remark}
 
 \begin{remark}
-An immediate corollary is that the empirical gap between the
-balanced-only and pooled estimates of $\Delta_{\underline d}$,
-reported in Tables~\ref{tab:GRC_IDN_consumption_urban_bal},
+The balanced/pooled gap in estimates of $\Delta_{\underline d}$, reported
+in Tables~\ref{tab:GRC_IDN_consumption_urban_bal},
 \ref{tab:GRC_CHN_consumption_urban_bal}, and
-\ref{tab:GRC_TZA_consumption_urban_bal}, provides a direct empirical
-check on Assumption~\ref{ass:mar}: systematic divergence would signal
-either mis-specified covariate effects across strata or a violation of
+\ref{tab:GRC_TZA_consumption_urban_bal}, is a direct empirical check on
+the joint null that Assumptions~\ref{ass:mar} and
+\ref{ass:common-gamma} both hold. Systematic divergence would signal
+either misspecified covariate effects across strata or a violation of
 MAR that contaminates $\hat\gamma^{\mathrm{pool}}$. The close
-correspondence we observe is consistent with both conditions holding
-in the CFPS, IFLS, and TZNPS panels.
+correspondence across CFPS, IFLS, and TZNPS is consistent with the
+joint null. Separating the two conditions would require additional
+structure.
 \end{remark}

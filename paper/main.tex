@@ -452,7 +452,7 @@ The number of moment conditions exceeds the number of parameters, and we test th
 Standard errors are clustered at the individual level.
 
 While the key identifying variation comes from the switchers in the balanced panel, we also include observations that appear in a subset of panel waves in our estimation.
-We include an ``unbalanced'' dummy variable that takes a value of one for individuals with at least one missing round of data, as well as the interaction between the ``unbalanced'' dummy and the urban indicator.\footnote{Since unbalanced individuals lack complete trajectories, all trajectory indicators equal zero for them. They therefore do not contribute to identifying the trajectory-specific parameters $\mu_{\underline{d}}$ or the slope $\phi$. They only help estimate the covariate coefficients $\gamma$ and the unbalanced level effects. This inclusion is valid under two assumptions: (i) attrition is independent of $\varepsilon_{it}$ conditional on $D_{it}$ and $x_{it}$, and (ii) covariate effects on consumption are common across balanced and unbalanced individuals.}
+We include an ``unbalanced'' dummy variable that takes a value of one for individuals with at least one missing round of data, as well as the interaction between the ``unbalanced'' dummy and the urban indicator.\footnote{Since unbalanced individuals lack complete trajectories, all trajectory indicators equal zero for them. They therefore do not contribute to identifying the trajectory-specific parameters $\mu_{\underline{d}}$ or the slope $\phi$, and enter estimation only through the covariate coefficients $\gamma$ and the pooled level effects $(\alpha,\pi)$. Proposition~\ref{prop:pooling} formalizes this approach and shows that the resulting pooled estimator is $\sqrt n$-consistent, asymptotically normal, and weakly more efficient than the analogous estimator restricted to balanced observers, under a missing-at-random condition and a common-covariate-effects condition (Assumptions~\ref{ass:mar} and \ref{ass:common-gamma}).}
 Appendix \ref{app:balanced_panel} shows results using the balanced panel.
 
 \section{Data}\label{sec:data}
@@ -787,8 +787,9 @@ Rural hukou holders who have not migrated confront different barriers than urban
 % PROBABLY DISCUSS OLS TABLE HERE. OLD TEXT: Table \ref{tab:OLS_cons_urb_bal} repeats this analysis for the balanced sample. Sample sizes are naturally smaller, but the results are qualitatively similar.
 
 
-In this section, we present results for the restricted GRC model, estimated using the balanced panel. 
-Since sample attrition can be correlated with aging, employment, and migration trajectories, we believe that it is important to examine whether our results are robust to restricting the sample to a balanced panel.
+Our baseline results pool balanced and unbalanced observers: the latter are absorbed into a single pooled cell through the $U_i$ indicator and its interaction with the urban dummy.
+Proposition~\ref{prop:pooling} in Appendix~\ref{app:pooling} shows that this pooling is consistent under our identifying assumptions and a standard missing-at-random condition on attrition, and that the balanced-panel trajectory estimates remain consistent even when attrition in the unbalanced stratum is non-ignorable.
+We nonetheless verify empirically that the baseline estimates do not depend on partial observers by re-estimating the restricted GRC on the balanced subsample.
 Tables \ref{tab:GRC_IDN_consumption_urban_bal}, \ref{tab:GRC_CHN_consumption_urban_bal}, and \ref{tab:GRC_TZA_consumption_urban_bal}  show the results for Indonesia, China, and Tanzania, respectively.
 The results for China and Tanzania, shown in Tables \ref{tab:GRC_CHN_consumption_urban_bal} and \ref{tab:GRC_TZA_consumption_urban_bal}, are nearly identical to those obtained in the full sample.
 
@@ -916,5 +917,11 @@ We conclude that individuals are inefficiently sorted across space and that prom
 % \input{tables/temp/summary_stats_CHN_unb_3waves}
 % \input{tables/temp/summary_stats_TZA_unb_2waves}
 % \input{tables/temp/summary_stats_TZA_unb_3waves}
+
+
+\newpage
+\section{Consistency of the pooled estimator}\label{app:pooling}
+
+\input{unbalanced_proposition}
 
 \end{document}
