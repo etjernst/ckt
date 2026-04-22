@@ -1,0 +1,156 @@
+\documentclass{article}[11pt]
+% Set the document class to "article" with 12pt font size
+
+\input{preamble}
+
+\title{Econometrica R \& R}
+\author{}
+\date{}
+
+\begin{document}
+
+\setlength{\parindent}{0pt} % For some reason doesn't work in the preamble but works if I put it here
+\setlength{\parskip}{\smallskipamount}
+
+\pagestyle{fancy}
+\fancyhead{} % clear header fields
+\fancyhead[L]{Econometrica-MS-21760 \hfill Response to Editor}
+% \fancyhead[R]{\nouppercase{\leftmark}}
+\renewcommand{\thetable}{E-\arabic{table}}
+\renewcommand{\thefigure}{E-\arabic{figure}}
+
+\onehalfspacing
+\section*{Editor's Comments}
+
+\begin{enumerate}
+\item I still have a little bit of an issue with the framing of the paper. 
+You write that the weak identification robust intervals reconcile the results. 
+In the abstract you write: ``only accounting for the weak instrument problem are we able to reconcile the results.'' I see it a bit differently, or at least don't quite see you make that point. You have a slightly different data set from Suri, which leads to different results. Had you had the exact same data (say if we lived in the world where the data had been posted), presumably you would have had the exact same estimates as Suri (as long as neither made a mistake). This would be true irrespective of weak instrument problems, that is, irrespective of whether the reported standard errors are actually correct. So, the differences between panel A and B in table 2 are due to the inability to get the exact same data. They are surprisingly large, and that may be related to the weak instrument problem. Figure 1 reflects on that. I would like to see that figure in table form, so make it easier to see the variation. I would also like to see how the standard errors change with these different samples. For example, panel B, column 2 has a standard error of 0.00121. Is that a number you see in over these 10,000 samples?
+\begin{quote}
+    Thank you for this comment. We have revised the abstract and introduction to highlight that the reason our point estimates differ as much as they do from the original paper is likely due to a combination of data differences and weak identification.
+
+    The revised abstract is below in italics, with changes in red, for your convenience:
+
+    \emph{This paper illustrates and addresses weak identification concerns in the correlated random coefficient (CRC) model that \citet{S2011} uses to study agricultural technology adoption.
+    \textcolor{red}{Using the publicly available  dataset, which differs slightly from the version used in \citet{S2011}, we obtain different point estimates for the paper's main CRC model.
+    To understand why these differences are as large as they are,} we recast the CRC model as a more general random coefficient model in which the returns to hybrid adoption are restricted to be linear in comparative advantage.
+    This reveals that the key structural parameter in the CRC model ($\phi$), which governs the relationship between baseline productivity and the returns to adoption, is prone to a weak identification problem We then propose a procedure to conduct weak-identification robust inference on $\phi$ using test inversion.
+   \textcolor{red}{Our weak-identification robust confidence intervals contain the original \citet{S2011} point estimates, which suggests that the difference in results may be attributable to some combination of data differences and weak identification.}}
+
+    We have also revised the introduction in a few places to better align with this framing. The revised sentences are below for convenience:
+
+    \emph{\textcolor{red}{Our reanalysis, using the publicly available version of \citet{S2011}'s panel dataset, yields different point estimates for $\phi$ compared to \citet{S2011}'s original results.}}
+
+    \emph{\textcolor{red}{Our weak-identification robust confidence intervals for $\phi$ are negative and overlap with \citet{S2011}'s original point estimates. 
+    This suggests that the different point estimates we obtain may reflect both data discrepancies and potential weak identification concerns.}}\\
+
+    As per your recommendation, we also converted Figure 1 to Table A.2. This table demonstrates that we see standard errors that are even smaller than 0.00121. For the specification with the full sample with base controls (which corresponds to Panel B, Column 2 in Table 2), the median standard error across the 10,000 samples is 0.00163.\footnote{The standard deviation of the standard error for this specification is particularly high, and for about 29\% of samples the variance estimator is not reported due to invertibility issues.} The minimum standard error that we observe across all specifications in Table A.2 is 0.000103. 
+\end{quote}
+
+\item For the panel C re-analysis can you also include a row with point estimates and normal distribution based standard errors (ignoring the weak instrument problem). That would make it easier to see the differences arising from the weak instrument problem. In some sense I see the differences between Panel B (or really between normal-distribution based confidence intervals in Panel C) and panel C as the key issue. You identify, and that is important, that weak-instrument problems matter here.
+\begin{quote}
+   As we clarify below, Panel C of this table reports the estimates from the unrestricted GrRC parameters which do not provide a point-estimate of $\phi$. We added the restricted GrRC point-estimates and the 95\% confidence intervals, but as we demonstrate in the simulations, these confidence intervals would also suffer from similar weak identification issues as the CRC confidence intervals.
+\end{quote}
+\item The heading on table 3, should that be GrRC instead of Restricted GRC?
+\begin{quote}
+     Thank you for this question. The estimates of $\mu_{\underline{h}}$ and $\Delta_{\underline{h}}$ that are reported in Table 3 are the unrestricted GrRC estimates, which we use to construct the WIR CI. We have now made this explicit in the table by adding ``Unrestricted" to the heading of the last panel in the table. 
+\end{quote}
+\item Is there a way to make the simulations in table 3 mimic the Suri data setting? At the moment it seems a very different data generating process. Could you also report the mean and standard deviation of the standard errors in those simulations?
+\begin{quote}
+    Thank you for this comment. Our simulation design was indeed not calibrated to the data setting in Suri. Since we do not have Suri's data, it was not completely obvious how to mimic her data setting. We have implemented what we think is a reasonable way to do so: we use Suri's CRC estimates of the structural parameters $\beta$ and $\phi$ and then use our dataset to set the remaining parameters.
+
+    Before we provide the details of the design, it is worth comparing the simulation results from this design to our original one (included below in Table \ref{tab:sim_crc_grc_cov_bias} for your reference). One of the main differences in the design due to the empirical calibration is that there is proportionately greater variance coming from the time-invariant component $\mu_i$ relative to $\varepsilon_{it}$. In terms of the simulation results, we see that the normaled-based CI using the CRC point estimators suffer from more noticeable under-coverage in finite samples in the empirically calibrated design relative to the design in the original submission. Overall, we agree that the empirically calibrated simulation design is better suited for our comment, as it takes the estimates of the structural parameters from the original paper and tailors the remaining parameters to our dataset to examine how weak identification can affect the finite-sample performance of the estimators and inference methods in question.
+    
+We provide the details of the design below. Let the outcome be given by $ y_{it} =\mu_{i}+(\beta+\phi\theta_{i})h_{it}+u_{it}$ for $ i=1,\dots,n$, $ t=1,2$, where $\theta_{i}=\mu_{i}-E[\mu_{i}]$, $\mu_{i}|(h_{i1},h_{i2})\overset{i.i.d.}{\sim} N(\mu_{(h_{i1},h_{i2})},\sigma_{\mu}^2)$, $ u_{it}|(h_{i1},h_{i2})\overset{i.i.d.}{\sim} N(0,\sigma_u^2)$. 
+\begin{enumerate}
+\item We set the proportions of the different adoption trajectories to their sample proportions in our dataset: $\pi_{(0,0)}=0.26$, $\pi_{(0,1)}=0.08$,  $\pi_{(1,0)}=0.13$, $\pi_{(1,1)}=0.53$.
+\item We set $\mu_{(0,0)}$ and $\mu_{(0,1)}$ to their respective values in the first column of Panel C in Table 2, which are the unrestricted GrRC parameters. The group-specific ATT of adoption is given by $\Delta_{\underline{h}}=\beta+\phi(\mu_{\underline{h}}-E[\mu_i])$.
+\item We vary the difference between $\mu_{(1,0)}$ and $\mu_{(0,1)}$, which is the source of weak identification, by setting $\mu_{(1,0)}=\mu_{(0,1)}+\eta$.
+\item In order to obtain the parameter value of $\mu_{(1,1)}$, we use the unrestricted GrRC estimates of $\kappa_{(1,1)}$ and all of our parameter values to solve for $\mu_{(1,1)}$.\footnote{
+\begin{eqnarray}
+    \kappa_{(1,1)}&\equiv&\mu_{(1,1)}+\Delta_{(1,1)}=\mu_{(1,1)}+\beta+\phi\left(\mu_{(1,1)}-\sum_{\underline{h}\in\underline{H}^2}\mu_{\underline{h}}\pi_{\underline{h}}\right)\nonumber\\
+    &=&\mu_{(1,1)}+\beta+\phi\left(\mu_{(1,1)}(1-\pi_{(1,1)})-\sum_{\underline{h}\in\mathcal{H}^2\setminus (1,1)}\mu_{\underline{h}}\pi_{\underline{h}}\right)
+\end{eqnarray}
+Solving for $\mu_{(1,1)}$ yields
+\begin{eqnarray}
+   \mu_{(1,1)}&=&\frac{\kappa_{(1,1)}-\beta+\phi\sum_{\underline{h}\in\mathcal{H}^2\setminus (1,1)}\mu_{\underline{h}}\pi_{\underline{h}}}{1+\phi(1-\pi_{(1,1)})}
+\end{eqnarray}}
+\item In order to empirically calibrate $\sigma_{\mu}^2$ and $\sigma_u^2$, we run a random effects regression of yield on trajectory fixed effects as well as their interactions with hybrid adoption. This allows us to obtain estimates of the variance of the time-invariant and idiosyncratic components in our data. These results demonstrate that the proportion of variation coming from the time-invariant component is much higher in the data than we had set it in the prior simulations.
+\end{enumerate}
+We consider different values for $\mu_{(1,0)}-\mu_{(0,1)}\in\{0.1,0.25,0.5,1\}$. In our dataset (first column, Table 2 Panel C), this difference is about 0.25, but we thought it would be good to consider smaller and larger values of that difference as well.
+
+
+\end{quote}
+\item On page 4, is the $\mu_{i} = \tau_{i} + \theta_{i}$ and $\Delta_{i} = \beta + \phi \theta_{i}$ just definitional? In what sense is it a
+restriction?
+\begin{quote}
+Thanks for the question. We think that $\mu_i=\tau_i+\theta_i$ can be viewed as more definitional---or, to be precise, a labeling exercise. Given the conditions imposed in \citet{S2011}, $E[\tau_i|h_i]=E[\tau_i]$ and $E[\theta_i|h_i]\neq E[\theta_i]=0$, $\tau_i$ is termed the `absolute advantage', and it is the component of $\mu_i$ that is mean-independent of the trajectories $h_i$ (but has a non-zero mean), whereas $\theta_i$ is termed the `comparative advantage', which may depend on $h_i$, but has mean zero (i.e., its value is relative to the mean agent in the population). 
+
+In contrast, $\Delta_i=\beta+\phi\theta_i$ is a meaningful restriction and is what we refer to as the LCA restriction. To see the implied restriction,  $E[\Delta_i|\theta_i,\tau_i]=\beta+\phi\theta_i$, so that treatment effect heterogeneity only depends on comparative advantage and is precisely linear in it. The nonparametric version of this restriction is given by $E[\Delta_i|\theta_i,\tau_i]=E[\Delta_i|\theta_i]$.\footnote{Putting all these pieces together yields $\Delta_i=E[\Delta_i|\theta_i]$, which rules out any other unobservable drivers of treatment effect heterogeneity.}
+\end{quote}
+\item You can include the online appendix as part of the paper, but stay within the 15 page limit.
+\begin{quote}
+    Thank you. We have renamed it appendix and kept the total page count at 15 pages.
+\end{quote}
+\item A couple of times you report 3 digits for point estimates and 4 digits for standard errors. Make sure you always report the same number of digits for point estimates and standard errors, probably 3.
+\begin{quote}
+We apologize for this inconsistency. We fixed this issue throughout and kept the number of digits for the estimates and standard errors at 3 as per your suggestion.
+\end{quote}
+\end{enumerate}
+
+
+\bibliography{GrRCref.bib}
+
+\setcounter{figure}{0}
+
+\begin{landscape}
+\renewcommand{\arraystretch}{1.2}
+\begin{table}[ht]
+{
+\resizebox{1.45\textwidth}{!}{
+
+\begin{threeparttable}
+\caption{CRC and Restricted GrRC Point Estimation and Weak-identification Robust Inference on $\phi$ ($\phi=-0.5)$}\label{tab:sim_crc_grc_cov_bias}
+\begin{tabular}{@{}cccccccccccccccc@{}}
+    \toprule
+    $\mu_{(0,1)}-\mu_{(1,0)}$ & \multicolumn{7}{c}{CRC} & \multicolumn{7}{c}{Restricted GrRC} & \multicolumn{1}{c}{WIR CI}\\
+    \cmidrule(lr){2-8}\cmidrule(lr){9-15} \cmidrule(lr){16-16}
+        & Mean & Median & SD & MAE & RMSE & SE/SD & Cov. & Mean   & Median & SD & MAE & RMSE & SE/SD & Cov. & Cov.\\
+    \multicolumn{13}{l}{$n=1,000$}\\
+    
+     $0.1$  &  2.23  & -0.15 & 6.20  & 2.95  & 6.78  & 10.10 & 0.939    & -0.35 & -0.48 & 14.60 & 2.96  & 14.60 & 19.00    & 0.999 & 0.950  \\
+     $0.25$ &  0.79  & -0.36 & 4.08  & 1.53  & 4.28  & 6.28  & 0.945    & -0.16 & -0.41 & 8.58  & 1.46  & 8.59  & 8.57     & 0.998 & 0.940 \\
+     $0.5$  &  -0.31 & -0.48 & 1.14  & 0.40  & 1.16  & 1.76  & 0.969    & -0.33 & -0.48 & 1.94  & 0.36  & 1.95  & 1.55     & 0.991 & 0.945 \\
+     $1$    &  -0.48 & -0.50 & 0.20  & 0.15  & 0.20  & 1.19  & 0.985    & -0.49 & -0.50 & 0.17  & 0.13  & 0.17  & 0.98     & 0.963 & 0.947 \\
+    
+     \multicolumn{13}{l}{$n=2,000$}\\
+    
+     $0.1$  &  1.94  & -0.15 & 5.39  & 2.65  & 5.92  & 8.20  & 0.979    & -0.87 & -0.44 & 24.90 & 3.21  & 24.90 & 20.20     & 0.999  & 0.940  \\
+     $0.25$ &  0.17  & -0.45 & 2.74  & 0.90  & 2.82  & 3.95  & 0.981    & -0.42 & -0.47 & 6.64  & 0.87  & 6.64  & 8.56      & 0.997  & 0.950 \\
+     $0.5$  &  -0.45 & -0.49 & 0.33  & 0.22  & 0.34  & 1.17  & 0.986    & -0.46 & -0.49 & 0.28  & 0.20  & 0.28  & 0.97      & 0.977  & 0.944 \\
+     $1$    &  -0.49 & -0.50 & 0.13  & 0.10  & 0.13  & 1.23  & 0.984    & -0.49 & -0.50 & 0.12  & 0.09  & 0.12  & 1.00      & 0.963  & 0.954 \\
+    \multicolumn{13}{l}{$n=5,000$}\\
+    
+     $0.1$  &  1.07  & -0.30 & 3.77  & 1.79  & 4.08  & 5.84  & 0.998    & -0.50 & -0.42 & 11.70 & 1.66  & 11.70 & 9.52     & 0.999 & 0.944  \\
+     $0.25$ &  -0.37 & -0.48 & 0.73  & 0.33  & 0.74  & 1.49  & 0.995    & -0.42 & -0.49 & 1.27  & 0.28  & 1.27  & 1.63     & 0.990 & 0.955  \\
+     $0.5$  &  -0.49 & -0.50 & 0.17  & 0.13  & 0.17  & 1.19  & 0.986    & -0.49 & -0.50 & 0.15  & 0.12  & 0.15  & 1.01     & 0.963 & 0.950  \\
+     $1$    &  -0.50 & -0.50 & 0.08  & 0.06  & 0.08  & 1.24  & 0.985    & -0.50 & -0.50 & 0.07  & 0.06  & 0.07  & 1.00     & 0.951 & 0.948  \\
+    \bottomrule
+    \end{tabular}
+
+{\footnotesize\begin{tablenotes}[flushleft]
+\item 
+\item{
+\emph{Notes}: The above table presents simulation statistics for the estimators of $\phi$ as well as the coverage of the weak-identification robust confidence interval ($WIR ~CI$). SD, MAE, RMSE and SE/SD abbreviate the simulation standard deviation, median absolute error, root-mean squared error, and the ratio of the average standard error to the simulation standard deviation, respectively. Cov. abbreviates coverage probability for a 95\% confidence interval. The summary statistics are computed using 5,000 simulation replications. The outcome in our design is given by 
+	$
+y_{it} =\mu_{i}+(\beta+\phi\theta_{i})h_{it}+u_{it}$ for $i=1,\dots,n$, $t=1,2$, where $\theta_{i}=\mu_{i}-E[\mu_{i}]$, $\mu_{i}|(h_{i1},h_{i2})\overset{i.i.d.}{\sim} N(\mu_{(h_{i1},h_{i2})},\sigma_{\mu}^2)$, $u_{it}|(h_{i1},h_{i2})\overset{i.i.d.}{\sim} N(0,\sigma_u^2)$. We set $\beta = 0.25$, $\mu_{(0,0)}=1$, $\mu_{(0,1)}=0$, $\mu_{(1,0)}=-\eta$, $\mu_{(1,1)}=3$, $\sigma_{\mu}^2=0.25$, $\sigma_u^2=1$, $\pi_{(0,1)}+\pi_{(1,0)}=0.2$, $\pi_{(0,1)}=\pi_{(1,0)}$, $\pi_{(0,0)}=\pi_{(1,1)}$. For the CRC and Restricted GrRC, the simulation results are based on the replications where the estimator in question converges. Since $WIR~CI$ is based on closed-form estimators, we report its simulation coverage probability across all simulations. }
+
+\end{tablenotes}}
+\end{threeparttable}
+    }
+}
+\end{table}
+
+\end{landscape}
+
+\end{document}

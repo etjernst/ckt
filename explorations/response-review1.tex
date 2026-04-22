@@ -1,0 +1,65 @@
+\documentclass{article}[11pt]
+% Set the document class to "article" with 12pt font size
+
+\input{preamble}
+
+\title{Econometrica R \& R}
+\author{}
+\date{}
+
+\begin{document}
+
+\setlength{\parindent}{0pt} % For some reason doesn't work in the preamble but works if I put it here
+\setlength{\parskip}{\smallskipamount}
+
+\pagestyle{fancy}
+\fancyhead{} % clear header fields
+\fancyhead[L]{Econometrica-MS-21760 \hfill Response to R1}
+
+\onehalfspacing
+
+%==============================================================================
+\section*{Reviewer 1's Comments}
+%==============================================================================
+This comment is very informative about the identification challenge in CRC models. My
+suggestions below are mainly about how this comment relates to the literature.
+
+\begin{enumerate}
+  \item Comparison with the discussion of identification in \citet{S2011}.
+    \begin{itemize}
+      \item The comment seems to suggests that \citet{S2011} did not discuss the identification challenges in CRC models. However, it should be noted that \citet{S2011} did recognize and discuss these challenges towards the end of section 4.5.1. Empirical Identification of the CRC Model. Specifically, \citet{S2011} acknowledged that $\phi$ can be identified based on two different ratios of reduced-form parameters. 
+      \begin{quote}
+        We apologize that our comment came across as implying that \citet{S2011} did not consider these issues. 
+        This was certainly not our intention.
+        We respond to the three points in this section below.
+    \end{quote}
+      \item Furthermore, \citet{S2011} informally assessed whether the denominator in the identification formula is bounded away from zero. While the authors' reduced-form approach provides valuable insights, it is important to give credit to \citet{S2011} for addressing the identification challenges and considering the identification strength, even if they chose to pursue a minimum distance approach.
+      \item Therefore, I recommend that the manuscript provides a fairer representation of Suri (2011)'s contributions in this regard.
+      \begin{quote}
+        We have revised our comment to highlight the discussion in \citet{S2011} and the paper's acknowledgement of the possibility for weak identification in the following footnote in the introduction:
+        
+        \textit{It is worth noting that \citet{S2011} discusses ways of estimating $\phi$ as a combination of production function reduced-form parameters and recognizes that identification of $\phi$ relies on a specific restriction on these parameters. Specifically, see the discussion in Section 4.5.1 in \citet{S2011}, where the author also informally assesses whether the denominator in these reduced-form expressions is bounded away from zero.}
+
+        We also tone down the language suggesting that we ``uncover'' the potential for weak identification in the first sentence of that paragraph:
+        
+        \textit{We investigate these discrepancies and relate them to the potential for weak identification of $\phi$.}
+          
+      \end{quote}
+    \end{itemize}
+    
+  \item Comparison with the estimation strategy of \citet{V2020}
+  \begin{itemize}
+      \item The authors might want to cite a recent paper by \citet{V2020} , who also proposed a similar approach to extrapolate from ``movers'' to ``stayers'' using correlated random coefficient models. I think it would be helpful if the authors compare their approach since \citet{V2020} also proposed an estimator based on reduced-form estimates. Suri (2011) is also the empirical example of \citet{V2020}. In my view, the authors made a clear contribution by proposing the Anderson-Rubin confidence interval.
+  \end{itemize}
+\begin{quote}
+    First of all, we would like to clarify that the omission of \citet{V2020}'s paper was unintentional. We had cited it in a previous draft but the discussion and citation got dropped as we attempted to shorten the paper into the current comment. We apologize for this oversight.\newline 
+    
+    Following your advice, and requests by the editor, we have added the following footnote in the introduction right after we mention the linearity-in-comparative-advantage restriction:\\
+    
+    \emph{\citet{V2020} shows that the approach of \citet{S2011} relies on a linear extrapolation that is valid if the factors that determine selection other than the treatment effect are uncorrelated with outcomes, and proposes a more robust extrapolation approach that allows for selection into treatment to be correlated with treatment effects as well as (a subset of) covariates. }
+\end{quote}
+\end{enumerate}
+
+\bibliography{GrRCref.bib}
+
+\end{document}

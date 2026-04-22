@@ -1,0 +1,244 @@
+\documentclass{article}[11pt]
+% Set the document class to "article" with 12pt font size
+
+\input{preamble}
+
+\title{Econometrica R \& R}
+\author{}
+\date{}
+
+\begin{document}
+
+\setlength{\parindent}{0pt} % For some reason doesn't work in the preamble but works if I put it here
+\setlength{\parskip}{\medskipamount}
+
+\pagestyle{fancy}
+\fancyhead{} % clear header fields
+\fancyhead[L]{Econometrica-MS-21760 \hfill Response to R2}
+
+\onehalfspacing
+
+%==============================================================================
+\section*{Reviewer 2's Comments}
+%==============================================================================
+
+% Redefine the way table numbers are displayed
+\renewcommand{\thetable}{R2-\arabic{table}}
+
+I enjoyed reading this comment on \citet{S2011}. The authors try to highlight a weak identification problem in the paper and then provide a solution that is a more general model that nests the original model in \citet{S2011}. I also appreciate the authors wanting these methods to be used more widely.
+
+\begin{enumerate}
+  \item I feel like any empirical method cannot be devoid of the particular context and question one is trying to answer. I appreciate that they feel that these CRC methods are not used enough and that \citet{S2011} is mostly cited for the findings of the paper and not the methods, but maybe that is totally ok. Chamberlain’s CRE approach is not used that much either.  
+    \begin{quote}
+    We completely agree that the research context and question should determine the empirical method. It was not our intention to suggest that CRC models should be used more in empirical research. 
+    We have toned down the conclusion section, which we agree sounded unnecessarily evangelical, to instead simply highlight the fact that---for a highly influential paper that makes a methodological contribution---it is somewhat noteworthy that very few citations refer to the methodological contribution.  
+    We now simply state that our approach may be useful for any researchers who do wish to study models like the one in \citet{S2011}.
+    We reproduce the relevant conclusion paragraph below for ease of reference:
+    \begin{quote}
+        \textit{Despite being well-known and widely-cited in development economics, it is worth noting that most citations of \citet{S2011} do not discuss her methodological contribution or the selection patterns implied by a negative $\phi$. 
+        Instead of leading to a nuanced discussion of different forms of heterogeneity, the article is often cited as generic evidence of the presence of heterogeneity in the returns to technology adoption. 
+        This superficial reading misses an opportunity to inform policies aimed at stimulating technology adoption since optimal program design often hinges more on the specific form of heterogeneous returns than on the mere existence of heterogeneity. 
+        We hope that, by highlighting how to detect potential weak-identification concerns and conduct weak-identification robust inference on the key structural parameter of the model, our approach may be useful for applied researchers who wish to study models like the one in Suri (2011).}
+    \end{quote}
+\end{quote}
+  \begin{itemize}
+      \item[(a)] The reason I say this is the authors show the weak identification problem (with caveats, see comment 2 below) for a model that is not the preferred model in \citet{S2011}. The authors abstract from covariates, which is absolutely fine for exogenous covariates but for endogenous covariates this is an issue as those covariates interact with the adoption history and create more variation which would likely solve this weak identification problem, especially if these covariates are continuous. In most empirical contexts, especially in the case of agricultural production functions, endogenous covariates are absolutely key. Can the authors show what happens with endogenous covariates?
+      \begin{quote}
+          Thank you for this excellent point. Since this comment closely relates to the next one, we reply to both together in the following response.
+      \end{quote}
+
+      \item[(b)] The authors do say ``For simplicity, we consider a model without covariates, but our results extend to the inclusion of additively separable covariates as in (1)'' (page 5). However, the projection in equation (2) is incorrect for the model with endogenous covariates (this would require (2) to include interactions with continuous covariates).
+      \begin{quote}
+      Thank you for these excellent points. We apologize for not spelling out that our results extend to the inclusion of exogeneous covariates only. We clarify this at the beginning of Section 3.1 in the revised manuscript when explaining that we will abstract from covariates:\\
+      \emph{For simplicity, we consider a model without covariates, but our results extend to the inclusion of exogeneous, additively separable covariates as in Equation (1).}\newline
+      
+      Of course, we fully agree that the inclusion of endogenous covariates is important in many settings including in \citet{S2011}. The reason we focused on the model with only hybrid adoption being endogeneous is that it is the natural first step as in \citet{S2011}, and the main conclusion regarding the sign of $\phi$ does not change when allowing fertilizer to be endogenous.\newline 
+      
+      Having said that, your point is well-taken. 
+      In the following, we therefore show that we can accommodate the endogenous covariate case in our setting and present the weak-identification robust confidence interval for $\phi$ using this augmented specification.
+      Due to strict page limits, we have not included these results in the paper; however, we report them below and have requested the editor's guidance regarding the possibility of this extension and the empirical results to the online appendix.\newline
+
+      First, we demonstrate how to extend our approach to endogenous covariates. 
+      Suppose that we have a vector of exogenous covariates $x_{it}$ as well as an endogenous covariate $f_{it}$ in the following random coefficient model,
+      \begin{eqnarray}
+      y_{it}&=&\mu_i+\Delta_i h_{it}+f_{it}\gamma+x_{it}'\delta+\epsilon_{it}, 
+      \end{eqnarray}
+where $\mu_i=\tau_i+\theta_i$. \newline
+
+Now assume that $E[\tau_i|h_i,f_{i1},f_{i2},x_{i1},x_{i2}]=E[\tau_i]$, but allow comparative advantage to depend on fertilizer use,  $E[\theta_i|h_{i},f_{i1},f_{i2},x_{i1},x_{i2}]=E[\theta_i|h_i,f_{i1},f_{i2}]$. Following \citet{S2011}'s specification with the endogenous regressor case, we let
+\begin{eqnarray}E[\theta_i|h_i=\underline{h},f_{i1},f_{i2}]=\theta_{\underline{h}}^0+\theta_{\underline{h}}^{1}f_{i1}+\theta_{\underline{h}}^{2}f_{i2}.\label{eq:theta_proj_hf}\end{eqnarray}
+Under the LCA restriction, $\Delta_i=\beta+\phi \theta_i$, as well as the above conditional mean restrictions, it follows that 
+$$E[\Delta_i|h_i=\underline{h},f_{i1},f_{i2}]=\beta+\phi\theta_{\underline{h}}^0+\phi\theta_{\underline{h}}^{1}f_{i1}+\phi\theta_{\underline{h}}^{2}f_{i2}.$$
+
+As a result, we can view the resulting CRC model as a restricted version of the following model \begin{eqnarray}\label{eq:endo_grrc} y_{it}&=&\sum_{\underline{h}\in\mathcal{H}^2\backslash\{(1,1)\}}
+(\mu_{\underline{h}}^0+\mu_{\underline{h}}^{1}f_{i1}+\mu_{\underline{h}}^{2}f_{i2}+\Delta_{\underline{h}}^0h_{it}+\Delta_{\underline{h}}^{1}f_{i1}h_{it}+\Delta_{\underline{h}}^{2}f_{i2}h_{it})1\{h_i=\underline{h}\}\nonumber\\
+&&+(\kappa_{(1,1)}^0+\kappa_{(1,1)}^{1}f_{i1}+\kappa_{(1,1)}^{2}f_{i2})h_{it}1\{h_i=(1,1)\}+f_{it}\gamma+x_{it}'\delta+\varepsilon_{it}.
+\end{eqnarray}
+The restrictions implied by the LCA as well as the conditional mean restrictions for $j=0,1,2$\footnote{We maintain the normalization that $\theta_i=\mu_i-E[\mu_i]$. From the projection $E[\mu_i|h_i=\underline{h},f_{1i},f_{2i}]=\mu_{\underline{h}}^0+\mu_{\underline{h}}^1f_{i1}+\mu_{\underline{h}}^2f_{i2}$ and the law of iterated expectations, we have that $E[\mu_i|f_{i1},f_{i2}]=E[\mu_i^0]+E[\mu_i^1f_{i1}]+E[\mu_i^2f_{i2}]$, where $E[\mu_i^0]=\sum_{\underline{h}\in\mathcal{H}}\pi_{\underline{h}}\mu_{\underline{h}}^0$ and $E[\mu_i^jf_{ij}]=\sum_{\underline{h}\in\mathcal{H}^2}\pi_{\underline{h}}E[\mu_i^jf_{ij}|h_i=\underline{h}]$ for $j=1,2$. By the definition of $\theta_i$ it follows that the conditional expectation of $\theta_i$ equals to the difference between the conditional and unconditional expectations of $\mu_i$,
+$$E[\theta_i|h_i=\underline{h},f_{i1},f_{i2}]=\mu_{\underline{h}}^0+\mu_{\underline{h}}^1f_{i1}+\mu_{\underline{h}}^2f_{i2}-E[\mu_i^0]-E[\mu_i^1f_{i1}]-E[\mu_i^2f_{i2}]$$
+Taking differences between the conditional expectations for two trajectories for two different hybrid trajectories yields the connection between the differences in $\theta_{\underline{h}}^j$ and $\mu_{\underline{h}}^j$,
+\begin{eqnarray}E[\theta_i|h_i=\underline{h},f_{i1},f_{i2}]-
+E[\theta_i|h_i=\underline{h}',f_{i1},f_{i2}]&=&\mu_{\underline{h}}^0-\mu_{\underline{h}'}^0+(\mu_{\underline{h}}^1-\mu_{\underline{h}'}^1)f_{i1}+(\mu_{\underline{h}}^2-\mu_{\underline{h}'}^2)f_{i2}\\
+&=&\theta_{\underline{h}}^0-\theta_{\underline{h}'}^0+(\theta_{\underline{h}}^1-\theta_{\underline{h}'}^1)f_{i1}+(\theta_{\underline{h}}^2-\theta_{\underline{h}'}^2)f_{i2},\end{eqnarray}
+where the last equality follows from the projection in \eqref{eq:theta_proj_hf}.
+} yield the following
+\begin{eqnarray}\mu_{\underline{h}}^j-\mu_{\underline{h}'}^j~&=&\theta_{\underline{h}}^j-\theta_{\underline{h}'}^j\\
+\Delta_{\underline{h}}^j-\Delta_{\underline{h}'}^j&=&\phi(\theta_{\underline{h}}^j-\theta_{\underline{h}'}^j)
+\end{eqnarray}
+We can then obtain a weak-identification robust confidence interval on $\phi$ using test inversion of the Wald statistic of the following hypothesis:
+$$H_0:~
+\Delta_{\underline{h}}^j-\Delta_{\underline{h}'}^j=\phi_0(\mu_{\underline{h}}^j-\mu_{\underline{h}'}^j),~ j=0,1,2.$$
+
+
+Table \ref{tab:grc_crc_endo} in this response letter provides the CRC estimates as well as the weak-identification robust confidence interval on $\phi$ that allow for fertilizer use to be endogenous. The main conclusions from this exercise are essentially identical to that of the results assuming fertilizer is exogeneous: (1) we cannot replicate the negative and statistically significant $\phi$ using the CRC estimator when allowing fertilizer to be endogeneous, (2) we obtain negative confidence intervals for $\phi$ using our weak-identification robust confidence intervals for all specifications that include covariates.
+      \end{quote}
+  \end{itemize}
+  \item Related, I am wondering more broadly how much of a weak identification problem this is. Aside from focusing on the base model, the authors also focus on the 2 period model. How does this generalize to more periods (footnote 8 does not give enough guidance here)?
+    \begin{quote}
+        Our results extend to any finite $T$.
+        We focus on the two-period case because this is what is reported in \citet{S2011}. While we agree that the generalization to multiple periods is useful, it is beyond the scope of this comment which is concerned with reconciling the results in \citet{S2011}, especially given the editor's strict guidance on the length of the comment. 
+        \newline
+    
+        We do agree that the footnote addressing this issue (footnote 8 in the original submission) is too terse. 
+        In the revised comment, we clarify the underlying issue in more detail in footnote 9 (reproduced here for your convenience):\\
+        \emph{With more than two switcher subpopulations, as in the $T>2$ case, the confidence interval may be empty if the over-identifying restrictions are violated. This is reminiscent of the behavior of the Anderson-Rubin confidence sets in the weak-instrument setting with over-identifying restrictions \citep{ASS2019}. In our context, the over-identifying restrictions arise from assuming that $\phi$ is time-invariant. One empirically compelling approach to address this issue is to allow this parameter to vary across time.}
+    \end{quote}
+  
+  \begin{itemize}
+    \item[(a)] Given how extensive data has become over the last decade, do we expect most applications to be limited to two periods? What if there are more? What if there are many more? 
+    \begin{quote}
+    % [Emilia, can you provide examples of other data? How many time periods are available now from Tegemeo?]
+    
+    We first would like to emphasize that the CRC and Chamberlain's CRE approach are meant for fixed-$T$ panel data. Our results extend to any finite $T$.     
+    As mentioned above, our theoretical analysis can accommodate any number of time periods. We illustrate the results using the two-period panel following \citet{S2011}. 
+    Second, while panel data are becoming more available, few household panel data sets are much longer than 3-5 waves. 
+    The Tegemeo dataset, of which \cite{S2011} and our paper use two waves, ended after 5 waves. 
+    The Indonesian Family Life Survey (IFLS) is one of the longer household panel surveys and also consists of 5 waves. 
+    \end{quote}
+    \item[(b)] Is there a way to build a test for weak identification (using your analogy to the weak instruments literature)?
+    \begin{quote}        
+    This is a really interesting comment, yet it is beyond the scope of a comment on \citet{S2011}, especially given the page constraints imposed by the editor.
+    \end{quote}
+    \item[(c)] A smaller point, the authors say ``We call the restriction on response heterogeneity in this model—i.e., the assumption that the returns to hybrid adoption are linear in comparative advantage—the LCA restriction and therefore refer to $\phi$ as the LCA parameter.'' This is not right, this is not an assumption. The projection is used purely as a way to estimate the model (as it is in Chamberlain’s original CRE case). It is not a behavioral (or causal) interpretation of the heterogeneity process. It is just a linear projection used to estimate the model (there is an analogy to IV here too I guess).
+    \begin{quote}
+    We apologize for the confusion. We believe that the reviewer is referring to the projection step of $E[\theta_i|h_{i1},h_{i2}]$. We fully agree that the expression of $E[\theta_i|h_{i1},h_{i2}]$ as a fully interacted linear model of $h_{i1}$ and $h_{i2}$ is merely a projection. In the case of \citet{S2011}, it does not even impose linearity, unlike the Chamberlain's CRE approach, since it relies on the fully interacted model of the binary variables, $h_{i1}$ and $h_{i2}$.\newline  
+    
+    By the LCA restriction, however, we are referring to $\Delta_i=\beta +\phi \theta_i$. This imposes a specific restriction on response heterogeneity, specifically that it is linear in comparative advantage. To avoid this confusion, we clarified what we mean by the LCA restriction in the first sentence of Section 3.3:
+
+    \emph{
+    Next, we impose the LCA restriction on the GrRC model, specifically $\Delta_i=\beta+\phi \theta_i$, \dots}\newline
+    
+    It is also worth noting that in the presence of covariates, this assumption together with the projection of $\theta_i$ on $h_{i1}$ and $h_{i2}$ implicitly restricts the types of selection models that are compatible with this assumption. 
+    This is precisely the point made in \citet{V2020} which motivates their more robust extrapolation approach. 
+    \end{quote}
+  \end{itemize}
+  \item There has been a lot of work over the last decade on CRC models in econometrics. If the aim of this comment is really to have these methods used more, then I think the authors need to engage with that literature and argue why these methods are preferred. I will mention a few papers, but there are, of course, many more. 
+  \begin{itemize}
+      \item[(a)] There are now multiple IV methods (one recent example is Masten and Torgovitsky (2016)) to estimate these models---admittedly these are limited in what exactly they can estimate but even the base model in \citet{S2011} is extremely limited in what it can estimate, especially for the distribution of the heterogeneity itself (the extended model with fertilizer does much better here due to the endogenous regressor being continuous). Heckman et al (2010) have a test for the CRC model which I think approaches what I asked for in comment 2 above. Gao et al (2015) have a semiparametric estimation of such models with an interesting nonparametric test for the correlation between regressors and the random coefficients. There is also the extensive literature on marginal treatment effects that is related. And there are now even quantile CRC models (see Graham et al 2018). I think the authors need to situate this paper in that literature and explain why their methods have value over all these methods in the literature.
+      \begin{quote}
+          We greatly appreciate the desire for greater interaction between the current manuscript and the wider literature on CRC models. In its original form, this manuscript did situate itself within this literature. However, the role of a comment is very focused (restricted) both in terms of what it aims to accomplish and what it can accomplish with the page restrictions. Because of this, in editing the larger manuscript down to a comment on \citet{S2011}, the connections to the wider literature were a necessary casualty. A comment on \citet{S2011} needs to focus on \citet{S2011} and the page limit imposed by the editor does not allow us space to engage with this wider literature.
+      \end{quote}
+  \end{itemize}
+  \item It is not clear from the current version of the comment why the authors cannot replicate the results in \citet{S2011}.
+  \begin{quote}
+    We apologize for the lack of clarity on this matter---as you can imagine, this is a question that our team has spent countless hours grappling with. 
+    Unfortunately, without access to the exact dataset from Suri (2011), we cannot answer this conclusively.
+    We speculate that the main reason is due to revisions (data cleaning) to the underlying panel data set between the time that Tegemeo Institute shared the data with the original author and the time that it was released for public access.
+    The main differences between our data and that used in Suri (2011) appears in the 2004 data (in particular, for the fertilizer application rates and labor variables). 
+    Discussions with Tegemeo Institute staff confirm that the original author could have been given a ``pre-release'' version of the 2004 data.\newline
+
+    Our best guess is therefore that the weak identification issue arises from data cleaning that took place after the original author had received the dataset from Tegemeo Institute.
+    We wish we could provide more certainty on this issue! \newline
+
+    All that said, we have revised the paper to build a stronger case for the reasons that we fail to replicate the \citet{S2011} results. 
+    At the end of Section 2 of the revised paper, we include results that assess the sensitivity of the CRC estimates to sample composition. 
+    Specifically, we re-estimate the model when randomly dropping 10 households from the sample across 10,000 simulations. 
+    Figure \ref{fig:phi-stability} (Figure 1 in the paper, reproduced below for ease of reference) presents the resulting distribution of CRC estimates of $\phi$, which highlights significant sensitivity. 
+    This figure indeed demonstrates substantial sensitivity of these estimates, with point-estimates of $\phi$ ranging from $-500$ to $100$ across the different specifications and samples. 
+    These are of course orders of magnitude larger than a ``sensible'' estimate of $\phi$. 
+  \end{quote}
+
+  \begin{itemize}
+      \item[(a)] They use some Stata code (which a subset of the authors on this paper wrote) to estimate the model. In addition, the authors are replicating the base model which is not the preferred model in the paper (see comment above). Can they replicate the preferred model?  Is the lack of replication a result of using the Stata code?
+      \begin{quote}
+          Our difficulty in replicating the original \citet{S2011} results is not due to the use of the Stata code. 
+          \citet{S2011} used Gauss to code up the estimator and we used that code to produce our Stata package. 
+          While we cannot check to see if the Stata code produces the same results as the Gauss code on Suri's original data (because that dataset is unavailable), we verified that the Stata and Gauss codes produce the same results using our own data \citep{michler2019money}.
+       \end{quote}
+
+       \item[(b)]  John Antle also wrote an extensive comment on \citet{S2011} and was able to replicate the results.\footnote{The Antle comment was focused on how there is more heterogeneity in the sample than even \citet{S2011} estimates. He splits the sample into 3 agroecological zones and finds that the main parameter ($\phi$) varies across these sub samples.} I think the paper needs to do more to show the reason behind the replication failure here.
+       \begin{quote}
+          In terms of the reference to Antle, we have struggled to identify this specific paper since no bibliographic information was given. A search of Antle's papers brought up only four that cite \citet{S2011}. We believe that the reviewer was referencing \citet{A2011}, which of the four has the most complete discussion of \citet{S2011}. However, even this paper seems a poor match with the comment as the reviewer describes it. \citet{A2011} does indeed study heterogeneity in adoption using data from Kenyan maize farmers. However, both the method and data differ from \citet{S2011}. \citet{A2011} uses the Tradeoff Analysis Model for Multi-Dimensional Impact Assessment (TOA-MD5.0) and data from a sustainable nutrient management project ``that was not designed to address the impact of high-yielding maize varieties'' (p. 1300). The model, which is designed for \emph{ex ante} impact evaluations, results in ``predicted adoption rates are similar to the observed rate of adoption of hybrid maize varieties in Kenya (Suri 2011), thus demonstrating the ability of the model based on heterogeneous expected returns to predict adoption rates consistent with actual adoption rates'' (p. 1302). \newline
+        
+        While the paper clearly comments on \citet{S2011}, it does not use her data, nor does the word/phrase agroecological zones appear in the paper, so we are uncertain if \citet{A2011} is indeed the paper referenced by the reviewer and are unable to respond in more detail without knowing the exact paper.
+    \end{quote}
+  \end{itemize}
+
+\end{enumerate}
+
+\bibliography{GrRCref.bib}
+
+\newpage 
+
+\input{tables/crc_grc_endo}
+
+\newpage
+\begin{landscape}
+    {\centering
+    \include{tables/sim_coverage_bias}
+    }
+\end{landscape}
+{\centering
+\include{tables/t2_table}}
+
+\begin{landscape}
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_base_no_controls_box.png}
+        \caption{Full sample; no controls}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_base_base_controls_box.png}
+        \caption{Full sample; base controls}
+    \end{subfigure}
+        \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_base_int_controls_box.png}
+        \caption{Full sample; interaction controls}
+    \end{subfigure}
+        \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_restricted_no_controls_box.png}
+        \caption{No HIV districts; no controls}
+    \end{subfigure}
+            \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_restricted_base_controls_box.png}
+        \caption{No HIV districts; base controls}
+    \end{subfigure}
+            \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/coefficient_stability/phi_restricted_int_controls_box.png}
+        \caption{No HIV districts; interaction controls}
+    \end{subfigure}
+    \caption{Sensitivity of CRC Estimates of $\phi$}
+    \label{fig:phi-stability}
+        \caption*{
+                  \footnotesize
+                  \textit{Notes}: The above box plot shows the distribution of the $\phi$ parameter estimated from the random coefficient model as developed in \cite{S2011} when ten households are removed from the sample at random across 10,000 simulation replications. 
+                  We use the \texttt{randcoef} Stata command for estimation \citep{BMMT2018}. 
+                  The dependent variable is ln(yield). Regressions with covariates follow Suri (2011), i.e., include controls for household size, the number of boys (males $<$ age 16), the number of girls (females $<$ age 16), the number of men (aged 17 to 39), the number of women (aged 17 to 39), the number of older men (males $>$ age 40), the number of maize acres, the seed rate (kg per acre), land preparation expenditures (KShs per acre), fertilizer expenditure (KShs per acre), hired labor (KShs per acre), family labor (hours per acre), and main season rainfall. All specifications assume that covariates are exogenous.
+                  }
+\end{figure}
+\end{landscape}
+
+
+\end{document}
