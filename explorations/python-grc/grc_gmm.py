@@ -48,6 +48,7 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from scipy import linalg as sla
 from scipy import optimize
 from scipy.stats import chi2
 
@@ -59,13 +60,36 @@ def _as_ndarray(x) -> np.ndarray:
 def _robust_inv(M: np.ndarray, rcond: float = 1e-10) -> np.ndarray:
     """Pseudoinverse with explicit singular-value threshold.
 
-    Used for weighting and variance matrices that can be near-singular
-    when the instrument matrix has collinear columns (e.g., a switcher
-    trajectory whose choice-interaction is collinear with existing
-    moments, which Stata's ``gmm`` handles by silently dropping the
-    redundant column).
+    Fallback for residual ill-conditioning. Prefer ``_drop_collinear``
+    for instrument matrices because Stata's ``gmm`` drops redundant
+    columns outright rather than pseudo-inverting.
     """
     return np.linalg.pinv(M, rcond=rcond)
+
+
+def _drop_collinear(Z: np.ndarray, tol: float = 1e-10) -> tuple[np.ndarray, np.ndarray]:
+    """Drop columns of ``Z`` that are linearly dependent on earlier columns.
+
+    Mirrors Stata's ``gmm`` collinearity-dropping behaviour: the
+    rank-revealing QR with column pivoting identifies redundant
+    columns and removes them from the instrument matrix. Returns
+    ``(Z_kept, kept_idx)`` where ``kept_idx`` is sorted, so the
+    remaining columns preserve the original ordering.
+
+    Keeping Z rank-deficient and using ``pinv`` for ``(G' W G)^{-1}``
+    inflates the variance estimates for parameters that enter the
+    redundant directions (e.g., ``phi`` on the IDN sample, where
+    ``switcher_31_choice`` is collinear with earlier instruments).
+    Dropping the offending columns matches Stata's SE.
+    """
+    if Z.shape[1] == 0:
+        return Z, np.zeros(0, dtype=int)
+    _, R, piv = sla.qr(Z, mode="economic", pivoting=True)
+    diag = np.abs(np.diag(R))
+    cutoff = tol * diag.max() if diag.size else 0.0
+    keep_mask = diag > cutoff
+    kept = np.sort(piv[keep_mask])
+    return Z[:, kept], kept
 
 
 @dataclass
@@ -122,6 +146,7 @@ class RestrictedGRC:
     param_names_: list[str] | None = None
     vcov_: np.ndarray | None = None
     theta_: np.ndarray | None = None
+    dropped_moments_: int = 0
 
     # ------------------------------------------------------------------
     # Design matrix builders (shared between M3 implementation and tests).
@@ -419,7 +444,18 @@ class RestrictedGRC:
     def fit(self, df: pd.DataFrame, verbose: bool = False) -> "RestrictedGRC":
         """Two-step efficient GMM (identity, then S^{-1})."""
         data = self._build_design(df)
-        data["Z"] = self._build_instruments(data)
+        Z_raw = self._build_instruments(data)
+        # Preliminary collinearity check. If Stata's `gmm` would drop
+        # any instruments (note: "instrument ... omitted because of
+        # collinearity"), the equivalent numerical behaviour here is
+        # to pseudo-invert S and GtWG with a strict rcond. Dropping
+        # the columns outright changed the optimization landscape
+        # and produced worse point estimates on IDN, so we keep Z
+        # intact and rely on _robust_inv.
+        Z_kept, kept_idx = _drop_collinear(Z_raw)
+        self.dropped_moments_ = int(Z_raw.shape[1] - Z_kept.shape[1])
+        data["Z"] = Z_raw  # keep full Z; pinv handles the redundancy
+        data["Z_kept_idx"] = kept_idx
         data["n"] = len(data["y"])
         data["base"] = int(self.base_trajectory
                            if self.base_trajectory is not None

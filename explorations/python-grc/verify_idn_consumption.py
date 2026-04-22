@@ -28,8 +28,10 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -42,7 +44,11 @@ HERE = Path(__file__).parent
 STATA_DO = HERE / "verify_stata.do"
 STATA_OUT = HERE / "stata_out_idn_cons_urb_unb.csv"
 STATA_J_OUT = HERE / "stata_out_idn_cons_urb_unb_jstat.csv"
+STATA_SAMPLE_OUT = HERE / "stata_sample_idn_cons_urb_unb.csv"
+STATA_TRAJ_OUT = HERE / "stata_sample_idn_cons_urb_unb_traj.csv"
 PYTHON_OUT = HERE / "python_out_idn_cons_urb_unb.csv"
+PYTHON_SAMPLE_OUT = HERE / "python_sample_idn_cons_urb_unb.csv"
+PYTHON_TRAJ_OUT = HERE / "python_sample_idn_cons_urb_unb_traj.csv"
 COMPARISON = HERE / "verification_idn_consumption.csv"
 
 
@@ -86,8 +92,63 @@ def run_stata() -> None:
     print("  stata_j_out:", STATA_J_OUT)
 
 
+def dump_python_sample(df: pd.DataFrame) -> None:
+    """Write per-variable summary and per-trajectory counts for the
+    Python side, mirroring the Stata sample dump in ``verify_stata.do``.
+    Enables a direct observational-alignment check against Stata
+    before interpreting any coef/SE differences as estimator issues."""
+    keep_vars = [c for c in ["lndepvar", "choice", "unbalanced", "period",
+                              "consumption", "hhsize_cube"] if c in df.columns]
+    summary = df[keep_vars].describe().T.reset_index()
+    summary = summary.rename(columns={"index": "variable", "count": "n",
+                                       "std": "sd"})
+    summary[["variable", "n", "mean", "sd", "min", "max"]].to_csv(
+        PYTHON_SAMPLE_OUT, index=False
+    )
+    traj = (df.groupby(df["trajectory"].fillna(-1), dropna=False)
+              .size().rename("n").reset_index())
+    traj["trajectory"] = traj["trajectory"].apply(
+        lambda v: "NA" if v == -1 else f"{int(v)}"
+    )
+    traj.to_csv(PYTHON_TRAJ_OUT, index=False)
+
+
+def compare_samples() -> bool:
+    """Compare Stata and Python sample dumps. Returns True if aligned."""
+    if not (STATA_SAMPLE_OUT.exists() and PYTHON_SAMPLE_OUT.exists()):
+        print("  (sample dumps missing on one side; skipping sample diff)")
+        return True
+    s = pd.read_csv(STATA_SAMPLE_OUT)
+    p = pd.read_csv(PYTHON_SAMPLE_OUT)
+    m = s.merge(p, on="variable", how="outer", suffixes=("_stata", "_py"))
+    m["delta_n"] = m["n_stata"] - m["n_py"]
+    m["delta_mean"] = m["mean_stata"] - m["mean_py"]
+    print("\nSample diff (per-variable):")
+    cols = ["variable", "n_stata", "n_py", "delta_n",
+            "mean_stata", "mean_py", "delta_mean"]
+    print(m[cols].to_string(index=False))
+    ok = bool((m["delta_n"].abs().fillna(0) == 0).all() and
+              (m["delta_mean"].abs().fillna(0) < 1e-6).all())
+    if STATA_TRAJ_OUT.exists() and PYTHON_TRAJ_OUT.exists():
+        st = pd.read_csv(STATA_TRAJ_OUT, dtype={"trajectory": str})
+        pt = pd.read_csv(PYTHON_TRAJ_OUT, dtype={"trajectory": str})
+        tm = st.merge(pt, on="trajectory", how="outer",
+                      suffixes=("_stata", "_py"))
+        tm["delta"] = tm["n_stata"].fillna(0) - tm["n_py"].fillna(0)
+        mismatch = tm[tm["delta"].abs() > 0]
+        if len(mismatch) > 0:
+            print("\nTrajectory-count mismatches:")
+            print(mismatch.to_string(index=False))
+            ok = False
+        else:
+            print("\nTrajectory counts: aligned across all labels.")
+    return ok
+
+
 def run_python() -> dict:
     df = load_consumption_unb("IDN")
+    dump_python_sample(df)
+    t0 = time.time()
     fit = RestrictedGRC(
         outcome="lndepvar",
         choice="choice",
@@ -96,6 +157,7 @@ def run_python() -> dict:
         covariates=[],
         unbalanced_col="unbalanced",
     ).fit(df)
+    fit_seconds = time.time() - t0
     rows = []
     for name in fit.param_names_:
         rows.append({
@@ -112,6 +174,7 @@ def run_python() -> dict:
         "N": fit.n_obs_,
         "N_clust": fit.n_clusters_,
         "base": fit._data_["base"],
+        "fit_seconds": fit_seconds,
     }
 
 
@@ -133,11 +196,28 @@ def compare(python_summary: dict) -> None:
     print(merged[cols].to_string(index=False))
 
     stata_j = pd.read_csv(STATA_J_OUT).set_index("stat")["value"].to_dict()
+
+    def _safe_float(v, default=float("nan")):
+        """Stata writes `.` for missing scalars (e.g. a p-value too small
+        to represent). Fall back to NaN for display."""
+        try:
+            s = str(v).strip()
+            if s == "" or s == ".":
+                return default
+            return float(s)
+        except (TypeError, ValueError):
+            return default
+
+    stata_J = _safe_float(stata_j["J"])
+    stata_Jdf = int(_safe_float(stata_j["J_df"], 0))
+    stata_Jp = _safe_float(stata_j["J_p"])
+    stata_N = int(_safe_float(stata_j["N"], 0))
+    stata_Nclust = int(_safe_float(stata_j["N_clust"], 0))
+    stata_base = int(_safe_float(stata_j["base"], 0))
     print()
     print(
-        f"Stata J = {float(stata_j['J']):.4f}, df = {int(float(stata_j['J_df']))}, "
-        f"p = {float(stata_j['J_p']):.4f}, N = {int(float(stata_j['N']))}, "
-        f"N_clust = {int(float(stata_j['N_clust']))}, base = {int(float(stata_j['base']))}"
+        f"Stata J = {stata_J:.4f}, df = {stata_Jdf}, p = {stata_Jp:.4f}, "
+        f"N = {stata_N}, N_clust = {stata_Nclust}, base = {stata_base}"
     )
     print(
         f"Python J = {python_summary['J']:.4f}, df = {python_summary['J_df']}, "
@@ -145,9 +225,19 @@ def compare(python_summary: dict) -> None:
         f"N_clust = {python_summary['N_clust']}, base = {python_summary['base']}"
     )
 
+    stata_seconds = _safe_float(stata_j.get("gmm_seconds", "."))
+    py_seconds = python_summary.get("fit_seconds", float("nan"))
+    print()
+    print(
+        f"Stata run_grc wall time : {stata_seconds:>8.1f} s"
+        if not np.isnan(stata_seconds)
+        else "Stata run_grc wall time : (not recorded -- rerun verify_stata.do)"
+    )
+    print(f"Python .fit() wall time : {py_seconds:>8.1f} s")
+
     max_coef_diff = merged["delta_coef"].abs().max()
     max_se_diff = merged["delta_se"].abs().max()
-    J_diff = abs(float(stata_j["J"]) - python_summary["J"])
+    J_diff = abs(stata_J - python_summary["J"])
     print()
     print(f"max |coef diff| = {max_coef_diff:.6e}  (target 1e-4)")
     print(f"max |se diff|   = {max_se_diff:.6e}  (target 1e-3)")
@@ -160,6 +250,12 @@ def main() -> None:
     if not os.environ.get("SKIP_STATA"):
         run_stata()
     python_summary = run_python()
+    sample_ok = compare_samples()
+    if not sample_ok:
+        print(
+            "\n*** Sample diff: Stata and Python are NOT using the same "
+            "observations. Interpret coef/SE comparison with caution. ***"
+        )
     compare(python_summary)
     print()
     print(python_summary["fit"].summary())
