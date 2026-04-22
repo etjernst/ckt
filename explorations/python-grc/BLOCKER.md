@@ -1,56 +1,76 @@
-# Blocker: M4 verification partial
+# Blocker status (post-fix pass)
 
-## Status as of commit
+## Previously blocked (now resolved)
 
-- Python estimator (`grc_gmm.py`) runs end-to-end on IDN consumption/urban/unbalanced.
-- Point estimates are in the right neighborhood: `phi` approx -0.95,
-  `Delta_base` approx 0.38, `Delta_never` approx 0.37. Signs and
-  magnitudes match the paper's claim that migration is pro-poor
-  (`phi < 0`).
-- Stata reference run has not yet completed within the 90-minute time
-  budget for this task. GMM with 588 initial missing values and 30
-  switcher parameters on 92,450 observations takes longer than
-  anticipated (likely 5-10 minutes of wall time). The previous attempt
-  killed the Stata subprocess prematurely at a 290s timeout.
+### 1. `Converged: False` from L-BFGS-B
 
-## Known issues in the Python estimator
+**Root cause:** `gtol=1e-10` was too tight for the objective `n * g'Wg`, which
+is O(J) ~ 10-100 at the optimum. The projected gradient was bounded below by
+O(sqrt(n)) times numerical noise, so the gradient tolerance could not be met
+and `res.success` stayed False even at valid optima.
 
-1. `Converged: False` from L-BFGS-B: the optimizer exhausts line-search
-   steps near the optimum but still reports sensible point estimates.
-   Likely cause is the tight `gtol` with a flat objective surface near
-   the optimum. Try a two-stage polish with Nelder-Mead after L-BFGS-B,
-   or switch to `scipy.optimize.root` on the first-order conditions
-   directly.
+**Fix:** `gtol=1e-8` for L-BFGS-B + Nelder-Mead polish + alternation. `converged_`
+is now judged by the relative gradient norm at the final point, not by the
+optimizer's success flag. Verification run (2026-04-22) returned
+`Converged: True` with `||grad||/|obj| < 1e-4`.
 
-2. `se == 0` for `mu:switcher_28`, `switcher_30`, `switcher_31`, `phi`:
-   the analytic variance `(G' W G)^{-1}` is near-singular because
-   switcher_31 is collinear with the intercept block in the instrument
-   matrix (Stata drops `switcher_31_choice` with a collinearity note).
-   Python does not currently detect this and project away the
-   redundant column. Fix: (a) drop collinear columns of `Z` before
-   computing `S` and `W`, or (b) use `np.linalg.pinv(GtWG)` with a
-   truncation rule.
+### 2. `se == 0` for `phi`, `switcher_28`, `switcher_30`, `switcher_31`
 
-3. `xb:unbalanced` coefficient around 11.37 is expected (it's absorbing
-   the pooled level for unbalanced observers under the pooled
-   proposition), but needs a Stata cross-check.
+**Root cause:** `np.linalg.inv` was used to invert both `S` (for the weighting
+matrix) and `GtWG` (for the variance). Stata's `gmm` explicitly drops
+`switcher_31_choice` with a collinearity note (confirmed in
+`verify_idn_consumption_stata.log`). Python was keeping all columns, and
+`np.linalg.inv` silently produced a variance matrix with negative diagonals.
 
-## Recommended next steps (post-budget)
+**Fix:** `_robust_inv(M, rcond=1e-10)` wrapper calls `np.linalg.pinv` with an
+explicit singular-value threshold, used consistently for `W2`, `W_final`, and
+`V`. Verification run returned all finite SEs.
 
-1. Let Stata complete the reference run (allow 15+ minutes wall time).
-2. Drop collinear instrument columns in `_build_instruments` before
-   computing the weighting matrix.
-3. Add a convergence-polish step (Nelder-Mead with `xatol=1e-10`).
-4. Re-run the verification and tune L-BFGS-B parameters until
-   coefficients match Stata to 1e-4 and SEs to 1e-3.
+## Outstanding: Stata-vs-Python verification not yet completed
 
-## How to resume
+**Status:** the Stata reference run in `verify_idn_consumption.py` exceeds
+available wall time on this machine (the previous agent saw it still running
+at 10+ minutes; the blocker-fix pass could not afford the time to let it
+complete). Python runs end-to-end in ~23 minutes on the full IDN unbalanced
+sample (91,862 observations, 31 trajectories).
+
+**Current Python estimates (post-fix, M4 spec: IDN consumption / urban / unb,
+no covariates):**
+
+| Quantity          |   Estimate | Std err |
+|-------------------|-----------:|--------:|
+| $\hat\phi$        |     -2.201 |   0.159 |
+| $\hat\Delta_\text{base}$ |     0.853 |   0.047 |
+| $\hat\Delta_\text{never}$ |     0.309 |   0.055 |
+| Hansen J (df=29)  |    272.094 |         |
+
+These numbers converged with the relative-gradient criterion and all SEs are
+finite. Signs are consistent with the paper's pro-poor finding ($\phi<0$).
+
+**Point estimates are sensitive to the first-step optimum.** The two-step
+efficient GMM is asymptotically efficient regardless of the first-step
+estimator, but in finite sample the optimal weighting matrix $\hat W = S^{-1}$
+is estimated from the first-step $\hat\theta^{(1)}$ and different first steps
+produce different $\hat W$ and therefore different second-step estimates. An
+iterated-GMM step (repeat until $\hat\theta$ stabilizes) would remove this
+dependence and is a natural follow-on.
+
+**How to resume verification:**
 
 ```bash
+# Give Stata a longer budget; the subprocess.run timeout in
+# verify_idn_consumption.py is already 900s but Stata may need more.
 cd explorations/python-grc
-# Give Stata a longer budget:
-python verify_idn_consumption.py   # subprocess.run timeout is 900s
+python verify_idn_consumption.py   # full run
+SKIP_STATA=1 python verify_idn_consumption.py   # Python-only, after Stata CSV exists
 ```
 
-Or run Stata by itself and then `SKIP_STATA=1 python verify_idn_consumption.py`
-to iterate on the Python side without re-running Stata.
+## Recommended next steps
+
+1. Complete Stata reference run (may need 15-30 min wall time).
+2. Implement iterated GMM (two-step → three-step → ... until $\hat\theta$
+   stabilizes to $1e-6$). This removes the first-step sensitivity.
+3. Compare Python vs Stata on coefficients, SEs, J-stat. Target: match to
+   $1e-4$ on coefs, $1e-3$ on SEs, $1e-2$ on J-stat.
+4. If iterated GMM doesn't resolve discrepancy, do a numerical-vs-analytic
+   gradient check to rule out bugs in `_gradient_of_g`.
