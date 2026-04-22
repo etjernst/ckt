@@ -1,7 +1,7 @@
 # Source of truth
 
 - `paper/main.tex` is the canonical manuscript. All text edits go there.
-- `scripts/` (symlinked to Dropbox) contains the authoritative do-files. The correct versions are in ReplicationPackage4/scripts/ (22 do-files). Do NOT use Do-files/ or earlier ReplicationPackage versions.
+- `scripts/` (junctioned to Dropbox) contains the authoritative do-files. The correct versions are in the current ReplicationPackage{N}/scripts/ (currently RP6 as of 2026-04-22). Do NOT use Do-files/ or earlier ReplicationPackage versions. Co-authors don't use git and re-version the folder each revision, so verify the current number before trusting this path.
 - `data/countries/` holds the raw .dta files (CHN, IDN, TZA). These are immutable.
 - `data/processed/` holds derived datasets created by `1_processData.do`.
 - `output/tables/` and `output/figures/` hold generated LaTeX tables and PDF/PNG figures. Never hand-edit these; modify the generating script and regenerate.

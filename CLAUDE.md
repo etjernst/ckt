@@ -44,15 +44,15 @@ python scripts/python/analysis.py
 
 ```
 paper/              # main.tex lives here (added manually, not symlinked)
-scripts/ -> Dropbox/.../ReplicationPackage4/scripts/   # 22 do-files + 0_programs.do
-data/    -> Dropbox/.../ReplicationPackage4/data/       # countries/ (raw .dta) + processed/
-output/  -> Dropbox/.../ReplicationPackage4/output/     # .ster files, tables/, figures/
+scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # do-files + 0_programs.do
+data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/
+output/  -> Dropbox/.../ReplicationPackage6/output/     # .ster files, tables/, figures/
 docs/               # specs, plans, session_logs, reviews
 quality_reports/    # quality scores
 explorations/       # experimental analysis
 ```
 
-Symlinks are Windows directory junctions into `C:\Users\maand\Dropbox (Personal)\Returns to migration\ReplicationPackage4\`.
+Symlinks are Windows directory junctions into `C:\Users\maand\Dropbox (Personal)\Returns to migration\ReplicationPackage6\`.
 
 ## Stata code structure
 
