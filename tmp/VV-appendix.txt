@@ -1,0 +1,4122 @@
+
+--- Page 1 ---
+Average Treatment Eﬀects for Stayers with Correlated
+Random Coeﬃcient Models of Panel Data
+Online Appendix
+Valentin Verdier∗
+May 26, 2020
+∗Department of Economics, University of North Carolina - Chapel Hill.
+1
+--- Page 2 ---
+Contents
+A Identiﬁcation with a General Number of Time Periods 5
+B Notation and Comparison with the Methods of Suri 2011 and Lemieux
+1998 6
+B.1 Lemieux 1998 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+B.2 Suri 2011 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+C Comparison of the Extrapolation Identifying Assumption with Generalized
+Roy Models 15
+D CRC Model with Time-Varying Treatment Eﬀects 16
+E Estimation and Inference with the Simple Extrapolation Identifying As-
+sumption 21
+E.1 Step 1: High-dimensional regression . . . . . . . . . . . . . . . . . . . . . . . 23
+E.2 Step 2: Instrumental Variable Regression and Extrapolation . . . . . . . . . 25
+E.3 Testing the Validity of the Extrapolation . . . . . . . . . . . . . . . . . . . . 33
+E.3.1 Lack of testable implications with two time periods . . . . . . . . . . 33
+E.3.2 Testing with three or more time periods . . . . . . . . . . . . . . . . 33
+F Estimation and Inference with the Generalized Extrapolation Identifying
+Assumption 35
+G Estimation and Inference with Unbalanced Panels 44
+H Proofs 46
+H.1 Proof of Proposition 1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46
+H.2 Proof of Proposition 2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 47
+H.3 Deﬁnitions and Lemma for the Proof of Proposition 3 . . . . . . . . . . . . . 53
+2
+--- Page 3 ---
+H.4 Proof of Proposition 3 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 54
+H.5 Proof of Proposition 4 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 58
+H.6 Proof of Proposition 5 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 60
+H.7 Proof of Proposition 6 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 65
+H.8 Proof of Proposition 7 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 65
+H.9 Proof of Proposition 8 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 65
+I Learning and the Extrapolation Identifying Assumption 65
+3
+--- Page 4 ---
+In this appendix we provide the technical details corresponding to our discussion in the
+main text. Section A brieﬂy discusses identiﬁcation of time eﬀects and average treatment
+eﬀects (ATE) with a correlated random coeﬃcient (CRC) model and a general number of
+time periods, while the main text focused on the case where two time periods are observed
+for simplicity. Section B discusses the estimation methods of Lemieux (1998) and Suri
+(2011). Section C compares the suﬃcient set of conditions for the extrapolation identifying
+assumption to hold discussed in the main text with generalized Roy models. Section D
+discusses CRC models with time-varying treatment eﬀects. Section E discusses the two-step
+estimation method deﬁned in the main text and the test of validity of the extrapolation
+identifying assumption for the simple extrapolation. Section F discusses the extension of
+these methods to using the generalized extrapolation identifying assumption discussed in
+the main text. Section G discusses the implications of using unbalanced panels due to data
+missing at random. Section H contains proofs for the results of Sections E and F. Propositions
+1-3 in the main text are obtained as special cases of the propositions stated in Sections E
+and F, but with more cumbersome notation. Therefore we also write in Section H proofs
+for Propositions 1-3 in the main text. In Section I we brieﬂy discuss the consequences of
+learning about treatment eﬀects (returns in our empirical application) upon being treated
+on the validity of the CRC model and extrapolation identiﬁcation assumptions discussed in
+the main text.
+Throughout the appendix, c will denote an arbitrary positive constant c > 0 and C
+will denote an arbitrary constant C < ∞. We use |A| to denote the cardinality of any set
+A. We use the notation Op to denote that a sequence is bounded in probability and op
+to denote that a sequence converges in probability. Throughout the appendix, referenced
+equations corresponding to numbered sections are found in the main text, while equations
+corresponding to sections indexed by letters are found in this appendix.
+4
+--- Page 5 ---
+A Identiﬁcation with a General Number of Time Pe-
+riods
+In this section we discuss the information contained in the CRC model (2.4) for a general
+number of time periods T , while the main text only considered T = 2 for simplicity.
+Under cross-sectional independence, we can stack observations across time and rewrite
+the CRC model (2.4) as:
+Yi = Wi
+
+
+ai
+bi
+
+ + f + Ui, E (Ui|Xi) = 0 (A.1)
+where Yi = [ yit]t=1,...,T , Wi =
+[
+jT Xi
+]
+, jT = [1]t=1,...,T , Xi = [ xit]t=1,...,T , f = [ ft]t=1,...,T ,
+Ui = [uit]t=1,...,T .
+As in Chamberlain (1992), since the relationship between baseline heterogeneity ( ai),
+treatment eﬀect (bi), and treatment status history ( Xi) is left unrestricted, the information
+for estimating f contained in (A.1) is equivalent to the information contained in:
+E(MWi(Yi− f)|Xi) = 0 (A.2)
+where MWi = IT− Wi(W
+′
+i Wi)−W
+′
+i and (.)− is a generalized inverse operator.
+As in the main text, we will apply the normalization f1 = 0, so that time eﬀects ft
+are identiﬁed if MWi has rank greater than T− 1 for some values of Xi corresponding to a
+positive probability. For values of Xi corresponding to stayers, MWi is the projection matrix
+of a regression on an constant using T observations, so that it has rank T− 1, leading to
+identiﬁcation of time eﬀects from observations on stayers.
+With two time periods, MWi = 0 for cross-sectional observations i that correspond to
+movers. However with three or more time periods, rank(MWi)≥ T−2 > 0, and observations
+on movers participate in the identiﬁcation of time eﬀects ft. Depending on the proﬁles of
+5
+--- Page 6 ---
+treatment status history observed in the data, it is possible for all time eﬀects ft, t = 2, ..., T
+to be identiﬁed by observations on movers only when T≥ 3.
+The CRC model (A.1) is equivalent to (A.2) and:
+E(
+
+
+ai
+bi
+
+|Xi) = E(Bi(Yi− f)|Xi) + (I− BiWi)ζi (A.3)
+where Bi = (W
+′
+i Wi)−W
+′
+i and ζi is an unknown, unrestricted term of heterogeneity.
+This shows that conditional average treatment eﬀect E(bi|Xi) is only identiﬁed for cross-
+sectional observations such that W
+′
+i Wi is non-singular. With xit being binary, W
+′
+i Wi is
+non-singular for movers and singular for stayers, so that average treatment eﬀects are only
+identiﬁed for movers.
+B Notation and Comparison with the Methods of Suri
+2011 and Lemieux 1998
+In this section we describe the estimation procedures used by Lemieux (1998) and Suri (2011)
+and show that they can be represented by the linear extrapolation discussed in the main text
+when there are no additional covariates in the model, i.e. when treatment status xit is the
+only covariate.
+First we map the notation used by Lemieux (1998) and Suri (2011) to the notation used
+in the main text. In the simple setting without additional covariates, our notation for the
+correlated random coeﬃcient model with the extrapolation identifying assumption and two
+time periods is given by:
+yit = ai + bixit + ft + uit E(uit|xi1, xi2) = 0 (B.1)
+ai = α0 + α1bi + ϵi E(ϵi|xi1, xi2) = 0 (B.2)
+6
+--- Page 7 ---
+In the simple setting without additional covariates, the notation used by Lemieux (1998)
+writes potential outcomes without (N) or with (U) treatment as:
+yN
+it = δN
+t + θN
+i + ϵ
+′
+it
+yU
+it = δN
+t + ¯δ + θU
+i + ϵ
+′
+it
+where θU
+i and θN
+i have mean zero, so that the average treatment eﬀect is given by ¯δ and ϵ
+′
+it
+are unobserved wage shocks.
+Therefore our notation writes ft = δN
+t , ai = θN
+i , bi = ¯δ + θU
+i − θN
+i , uit = ϵ
+′
+it.
+The notation for the extrapolation identifying assumption in Lemieux (1998) is given by
+the linear projections:
+θN
+i = bN(θN
+i − θU
+i ) + ξi
+θU
+i = bU(θN
+i − θU
+i ) + ξi
+where bN = Cov(θN
+1 ,θN
+i −θU
+i )
+Var (θN
+i −θU
+i ) and bU = Cov(θU
+1,θN
+i −θU
+i )
+Var (θN
+i −θU
+i ) .
+Lemieux (1998) then deﬁnes ϵit = ξi + ϵ
+′
+it and assumes:
+E(ϵit|xi1, xi2) = 0 (B.3)
+In our notation we have α1 = bN, ϵi = ξi, α1 + 1 = bU.
+Lemieux (1998) deﬁnes θi = bN(θN
+i − θU
+i ) and ψ = bU
+bN
+so that:
+θN
+i = θi + ξi
+θU
+i = ψθi + ξi
+In our notation we have α1+1
+α1
+= ψ, α1bi = θi.
+7
+--- Page 8 ---
+The model for observed outcomes estimated by Lemieux (1998) is then given by:
+yit = δN
+t + ¯δxit + θi(1 + (ψ− 1)xit) + ϵit E(ϵit|xi1, xi2) = 0 (B.4)
+In the next two subsections we show that under the CRC model assumption (B.1) only,
+estimation of all the parameters in the model (B.4) that combines the CRC model with the
+extrapolation identifying assumption (B.2) by generalized method of moments estimation
+(Lemieux (1998)) or minimum distance estimation (Suri (2011)) leads to the linear extrap-
+olation from ATE among movers to ATE among stayers depicted in Figure 1 of the main
+text.
+B.1 Lemieux 1998
+The estimation procedure proposed by Lemieux (1998) is GMM estimation from the moment
+conditions:
+E(
+
+
+xi1xi2
+(1− xi1)(1− xi2)
+xi1(1− xi2)
+(1− xi1)xi2
+
+
+ei(δN
+2 , ¯δ, ψ, δN
+1 ) = 0
+E(θi) = 0
+where the moment function ei(.) is deﬁned to be:
+ei(δN
+2 , ¯δ, ψ, δN
+1 ) = yi2− δN
+2 − ¯δxi2− 1 + (ψ− 1)xi2
+1 + (ψ− 1)xi1
+(yi1− δN
+1 − ¯δxi1)
+8
+--- Page 9 ---
+These moment conditions can be rewritten as:
+E(∆yi2− ∆δN
+2|0, 0) = 0
+E(∆yi2− ∆δN
+2|1, 1) = 0
+E(yi2− δN
+2 − ¯δ− ψ(yi1− δN
+1 )|0, 1) = 0
+E(yi2− δN
+2 − 1
+ψ (yi1− δN
+1 − ¯δ)|1, 0) = 0
+2∑
+t=1
+E( yit− δN
+t − ¯δxit
+1 + (ψ− 1)xit
+) = 0
+Under the CRC model (B.1), with the normalization f1 = 0, we can further re-write
+these moment conditions:
+∆f2− ∆δN
+2 = 0 (B.5)
+∆f2− ∆δN
+2 = 0 (B.6)
+E(ai + bi− δN
+1 − ¯δ− ψ(ai− δN
+1 )|0, 1) = 0 (B.7)
+E(ai− δN
+1 − 1
+ψ (ai + bi− δN
+1 − ¯δ)|1, 0) = 0 (B.8)
+2∑
+t=1
+E( ai + bixit + ft− δN
+t − ¯δxit
+1 + (ψ− 1)xit
+) = 0 (B.9)
+We see that the ﬁrst two moment conditions (B.5) and (B.6) contain the same information
+under the CRC model (B.1), setting ∆ δN
+2 equal to ∆ f2. Therefore the remaining three
+moment conditions (B.7)-(B.9) are exactly identifying for ψ, δN
+1 , ¯δ.
+Equations (B.7) and (B.8) imply:
+ψ = E(ai + bi|0, 1)− E(ai + bi|1, 0)
+E(ai|0, 1)− E(ai|1, 0) (B.10)
+Deﬁning α⋆
+1 = E(ai|0,1)−E(ai|1,0)
+E(bi|0,1)−E(bi|1,0) , we can therefore use ψ = α⋆
+1+1
+α⋆
+1
+below to shorten notation.1
+1Here we use α⋆
+1 to denote a pseudo-true value of a parameter since the extrapolation identifying as-
+sumption is not assumed to hold here, only the CRC model is assumed to hold throughout this section.
+9
+--- Page 10 ---
+We can re-write equation (B.8) as:
+δN
+1 = E(ai|1, 0)− α⋆
+1(E(bi|1, 0)− ¯δ) (B.11)
+Therefore deﬁning α⋆
+0 = E(ai|1, 0)− α⋆
+1E(bi|1, 0) we can write that δN
+1 = α⋆
+0 + α⋆
+1¯δ.
+Equation (B.9) can then be written:
+π00(E(ai|0, 0)− α⋆
+0− α⋆
+1¯δ) + π11
+α⋆
+1
+α⋆
+1 + 1(E(ai + bi|1, 1)− α⋆
+0− (α⋆
+1 + 1)¯δ)
++π01α⋆
+1(E(bi|0, 1)− ¯δ) + π10α⋆
+1(E(bi|1, 0)− ¯δ) = 0
+where we deﬁne πx1x2 = P (xi1 = x1, xi2 = x2) to shorten notation.
+This yields:
+¯δ = π00
+E(ai|0, 0)− α⋆
+0
+α⋆
+1
++ π11
+E(ai + bi|1, 1)− α⋆
+0
+1 + α⋆
+1
++ π01E(bi|0, 1) + π10E(bi|1, 0)
+so that the ATE for the entire population is indeed obtained by the linear extrapolation
+represented in Figure 1 of the main text. 2
+B.2 Suri 2011
+The notation used in Suri (2011) is almost identical to the notation used in Lemieux (1998)
+but Suri (2011) uses minimum distance estimation instead of GMM estimation. The only
+diﬀerences between the notation in Suri (2011) and the notation in Lemieux (1998) are that
+the parameter φ is used, which is mapped to the notation of Lemieux (1998) by φ = ψ− 1,
+so that this new parameter is mapped to our notation by φ = 1
+α1
+. The expected value of
+returns is also deﬁned to be β in Suri (2011) rather than ¯δ in Lemieux (1998), so that this
+2Similarly ATE for untreated stayers would be taken to be ATE⋆
+00 = E(ai|0,0)−α⋆
+0
+α⋆
+1
+and ATE for treated
+stayers would be taken to be E(ai+bi|1,1)−α⋆
+0
+1+α⋆
+1
+.
+10
+--- Page 11 ---
+new parameter is mapped to our notation by β = E(bi).
+The reduced form parameters used in Suri (2011) are obtained from the conditional
+expectations:
+E(yi1|xi1, xi2) = γ01 + γ1xi1 + γ2xi2 + γ3xi1xi2
+E(yi2|xi1, xi2) = γ02 + γ4xi1 + γ5xi2 + γ6xi1xi2
+which are obtained in this form without loss of generality since xit is a binary random
+variable.
+In addition to the parameter φ and ATE β, the structural parameters to be identiﬁed in
+Suri (2011) also comprise the parameters in the conditional expected value of θi conditional
+on treatment history:
+E(θi|xi1, xi2) = λ0 + λ1xi1 + λ2xi2 + λ3xi1xi2 (B.12)
+The structural parameters to be identiﬁed in Suri (2011) are the parameters in the con-
+ditional expectation E(θi|xi1, xi2), φ, and the ATE β (a total of six structural parameters).
+These structural parameters are estimated by minimum distance estimation from the link:
+γ1 = (1 + φ)λ1 + β + φλ0 (B.13)
+γ2 = λ2 (B.14)
+γ3 = (1 + φ)λ3 + φλ2 (B.15)
+γ4 = λ1 (B.16)
+γ5 = (1 + φ)λ2 + β + φλ0 (B.17)
+γ6 = (1 + φ)λ3 + φλ1 (B.18)
+λ0 =−λ1π1− λ2π2− λ3π11 (B.19)
+11
+--- Page 12 ---
+where as before πx1x2 = P (xi1 = x1, xi2 = x2) and where π1 = P (xi1 = 1) and π2 = P (xi2 =
+1).
+The ﬁrst six equalities (B.13)-(B.18) follow from:
+E(yit|xi1, xi2)
+= ft + (1 + φxit)E(θi|xi1, xi2) + βxit
+= ft + (1 + φxit)(λ0 + λ1xi1 + λ2xi2 + λ3xi1xi2) + βxit
+=
+
+
+
+f1 + λ0 + ((1 + φ)λ1 + β + φλ0)xi1 + λ2xi2 + ((1 + φ)λ3 + φλ2)xi1xi2 if t = 1
+f2 + λ0 + λ1xi1 + ((1 + φ)λ2 + β + φλ0)xi2 + ((1 + φ)λ3 + φλ1)xi1xi2 if t = 2
+where the ﬁrst equality follows from the model given by (B.4) with the notation used in Suri
+(2011).
+The last equality (B.19) follows from E(θi) = 0.
+Under the CRC model we can rewrite the reduced form parameters as:
+γ1 = E(bi|1, 0) + E(ai|1, 0)− E(ai|0, 0)
+γ2 = E(ai|0, 1)− E(ai|0, 0)
+γ3 = E(bi|1, 1)− E(bi|1, 0) + E(ai|1, 1)− E(ai|1, 0) + E(ai|0, 0)− E(ai|0, 1)
+γ4 = E(ai|1, 0)− E(ai|0, 0)
+γ5 = E(bi|0, 1) + E(ai|0, 1)− E(ai|0, 0)
+γ6 = E(bi|1, 1)− E(bi|0, 1) + E(ai|1, 1)− E(ai|1, 0) + E(ai|0, 0)− E(ai|0, 1)
+Therefore under the CRC model, equations (B.14), (B.15), (B.16), and (B.18) or equa-
+tions (B.13), (B.14), (B.16), and (B.17) both lead to γ6−γ3
+γ4−γ2
+= γ1−γ5
+γ4−γ2
+− 1 = E(bi|1,0)−E(bi|0,1)
+E(ai|1,0)−E(ai|0,1).
+Therefore under the CRC model the system of seven equations (B.13)-(B.19) is at most
+exactly identifying for the six structural parameters.
+12
+--- Page 13 ---
+From (B.13), (B.14), (B.16), and (B.17) we ﬁnd:
+φ = γ1− γ5
+γ4− γ2
+− 1
+= E(bi|1, 0)− E(bi|0, 1)
+E(ai|1, 0)− E(ai|0, 1)
+We also have:
+λ2 = γ2 = E(ai|0, 1)− E(ai|0, 0) (B.20)
+and:
+λ1 = γ4 = E(ai|1, 0)− E(ai|0, 0) (B.21)
+When φ =−1, the system linking reduced form parameters to structural parameters
+does not identify λ3, so that β, λ0, λ3 are not identiﬁed, so that the probability limits of the
+estimators for average returns for stayers do not exist. In Figure 1 in the main text, this
+corresponds to the case where the line a + b = E(bi|1, 1) + E(ai|1, 1) and the extrapolation
+line going through (E(ai|1, 0), E(bi|1, 0)) and (E(ai|0, 1), E(bi|0, 1)) have the same slope,−1,
+so that they do not intersect at a unique point.
+When φ̸=−1, then:
+λ3 = γ6− φλ1
+1 + φ (B.22)
+β is then given by:
+β = γ1− (1 + φ)λ1− φλ0
+= γ1− γ4− φ(λ1 + λ0)
+= E(bi|1, 0)− φ(λ1 + λ0)
+13
+--- Page 14 ---
+We can show from the above equalities that:
+λ1 + λ0 = (E(ai|1, 0)− E(ai|0, 0))(1− π1− π2 + π11)
++ π2(E(ai|1, 0)− E(ai|0, 1))
++ π11
+1
+1 + φ(E(ai + bi|0, 1)− E(ai + bi|1, 1))
+The above implies:
+β = π10E(bi|1, 0) + π01E(bi|0, 1)
++ π00(E(ai|0, 0) E(bi|1, 0)− E(bi|0, 1)
+E(ai|1, 0)− E(ai|0, 1) + E(bi|0, 1)E(ai|1, 0)− E(bi|1, 0)E(ai|0, 1)
+E(ai|1, 0)− E(ai|0, 1)
++ π11(E(ai + bi|1, 1) E(bi|1, 0)− E(bi|0, 1)
+E(ai + bi|1, 0)− E(ai + bi|0, 1)
++ E(bi|0, 1)E(ai + bi|1, 0)− E(bi|1, 0)E(ai + bi|0, 1)
+E(ai + bi|1, 0)− E(ai + bi|0, 1) )
+Using α⋆
+1 = E(ai|1,0)−E(ai|0,1)
+E(bi|1,0)−E(bi|0,1) and α⋆
+0 = E(ai|0, 1)− α⋆
+1E(bi|0, 1) we can rewrite:
+β = π10E(bi|1, 0) + π01E(bi|0, 1)
++ π00
+E(ai|0, 0)− α⋆
+0
+α⋆
+1
++ π11
+E(ai + bi|1, 1)− α⋆
+0
+α⋆
+1 + 1
+Similarly for expected returns for the population of stayers, which in Suri (2011) are
+given by:
+AT E⋆
+00 = β + φE(θi|0, 0) = β + φλ0
+AT E⋆
+11 = β + φE(θi|1, 1) = β + φ(λ0 + λ1 + λ2 + λ3)
+14
+--- Page 15 ---
+Under the CRC model, we have:
+AT E⋆
+00 = γ1− (1 + φ)λ0
+= E(bi|1, 0) E(ai|0, 0)− E(ai|0, 1)
+E(ai|1, 0)− E(ai|0, 1) + E(bi|0, 1) E(ai|1, 0)− E(ai|0, 0)
+E(ai|1, 0)− E(ai|0, 1)
+and:
+AT E⋆
+11 = γ1− (1 + φ)(λ0 + λ1 + λ2 + λ3)
+= E(bi|1, 0) E(ai + bi|1, 1)− E(ai + bi|0, 1)
+E(ai + bi|1, 0)− E(ai + bi|0, 1)
++ E(bi|0, 1) E(ai + bi|1, 0)− E(ai + bi|1, 1)
+E(ai + bi|1, 0)− E(ai + bi|0, 1)
+Using α⋆
+1 = E(ai|1,0)−E(ai|0,1)
+E(bi|1,0)−E(bi|0,1) and α⋆
+0 = E(ai|0, 1)− α1E(bi|0, 1) we can rewrite:
+AT E⋆
+00 = E(ai|0, 0)− α⋆
+0
+α⋆
+1
+AT E⋆
+11 = E(ai + bi|1, 1)− α⋆
+0
+α⋆
+1 + 1
+Therefore we see that the method used in Suri (2011) corresponds to the extrapolation
+represented in Figure 1 of the main text.
+C Comparison of the Extrapolation Identifying Assump-
+tion with Generalized Roy Models
+In this section we brieﬂy compare generalized Roy models with the set of conditions (2.12)
+and (2.13) considered in the main text as suﬃcient for the extrapolation identifying assump-
+tion (2.11) to hold. We take as an example the model outlined in p. 365-366 of Carneiro
+et al. (2003), abstracting from observed covariates or instrumental variables, which can be
+15
+--- Page 16 ---
+written as:
+y(0) = β0,0 + β1,0θ +ϵ0, y(1) = β0,1 + β1,1θ +ϵ1,
+x = 1[β0,s + β1,sθ +ϵs≥ 0], {ϵ0,ϵ1,ϵs}⊥ θ
+where variables in bold denote random variables, y(1) and y(0) are potential outcomes
+with and without treatment, x is treatment status, θ is an unobserved common factor, and
+ϵ0,ϵ1,ϵs are unobserved shocks to outcomes and selection into treatment.
+We can deﬁnea = β0,0+β1,0θ+ϵ0, b = β0,1−β0,0+(β1,1−β1,0)θ, so that if β1,1−β1,0̸= 0 we
+havea = β0,0− β1,0
+β1,1−β1,0
+(β0,1− β0,0) + β1,0
+β1,1−β1,0
+b +ϵ0 and (2.12) holds. With these deﬁnitions,
+(2.13) also holds by deﬁning c =ϵs and from the assumption that ϵs is independent of θ.
+With generalized Roy models, observing instrumental variables that satisfy exogeneity and
+relevance conditions, observing proxies for the unobserved common factor θ, or observing
+several independent measurements of θ, would yield identiﬁcation of ATE (see also Cunha
+et al. (2005), Abbring and Heckman (2007)), while here the restrictions imposed by the CRC
+model (2.4) yield identiﬁcation, as discussed in the main text.
+D CRC Model with Time-Varying Treatment Eﬀects
+In this section we discuss CRC models with time varying treatment eﬀects. For simplicity
+we consider the case where there are no additional control covariates here, so that the model
+is given by:
+yit = ai + bitxit + ft + uit, E (uit|X) = 0 (D.1)
+Without additional restrictions on treatment eﬀects, bit, identiﬁcation of diﬀerences in
+time eﬀects relies on average changes in outcomes for a cross-sectional observation across
+pairs of time periods when she was untreated only (whereas with the CRC model with time-
+16
+--- Page 17 ---
+constant treatment eﬀects considered in the main text, pairs of time periods with the same
+treatment status - both treated and untreated - can be used to identify changes in time
+eﬀects):
+ft− fs = E(yit− yis|xit = 0, xis = 0) (D.2)
+ATE for movers who are currently treated can then be identiﬁed by diﬀerence-in-diﬀerences
+comparisons:
+E(bit|xit = 1, xis = 0) = E(yit− yis− (ft− fs)|xit = 1, xis = 0) (D.3)
+As in the main text, we can apply the normalization f1 = 0 to shorten notation. Then
+average baseline heterogeneity is identiﬁed for movers and untreated stayers, and average
+total heterogeneity at each time period is identiﬁed for treated movers and stayers:
+E(ai|xit = 1, xis = 0) = E(yis− fs|xit = 1, xis = 0)
+E(ai + bit|xit = 1, xis = 0) = E(yit− ft|xit = 1, xis = 0)
+E(ai|maxs=1,...,T xis = 0) = E(yit− ft|maxs=1,...,T xis = 0)
+E(ai + bit|mins=1,...,T xis = 1) = E(yit− ft|mins=1,...,T xis = 1)
+Under the CRC model with time varying random coeﬃcients (D.1), ATE for movers
+who are currently untreated or for stayers are not identiﬁed. In order to extrapolate from
+the quantities identiﬁed by the CRC model (D.1) to ATE for stayers or for movers who are
+currently untreated, we can assume that a single term of unobserved heterogeneity determines
+baseline heterogeneity, treatment eﬀects at each time period, and treatment status:
+ai = β0,a + β1,aei + νa,i, E (νa,i|ei) = 0 (D.4)
+bit = β0,t + β1,tei + νt,i, E (νt,i|ei) = 0∀ t (D.5)
+xit = g(ei, cit)∀ t, {ci1, ..., ciT}⊥{ ei, νa,i, νt,i∀ t} (D.6)
+17
+--- Page 18 ---
+Conditions (D.4) and (D.5) impose that a particular characteristic ei determines both
+baseline heterogeneity ai and treatment eﬀects bit, but the eﬀect of ei on treatment eﬀect may
+vary over time. Condition (D.6) imposes that treatment eﬀects bit themselves do not enter
+the determination of treatment status, rather that this determination is based on ei only.
+Intuitively this last restriction most likely implies that the shocks νt,i to treatment eﬀect bit
+are unknown and unpredictable at the time of determination of treatment status, so that
+the main advantage of this extrapolation with time-varying treatment eﬀects compared to
+the extrapolation discussed in the main text with time-constant treatment eﬀects is that
+the eﬀect of the one-dimensional term of unobserved heterogeneity ei on treatment eﬀect bit,
+β1,t, is allowed to vary over time.
+Under (D.4)-(D.6), we obtain:
+ai = α0,t + α1,tbit + ϵit, E (ϵit|xi1, ..., xiT ) = 0 (D.7)
+where we deﬁne α0,t = β0,a− β0,t
+β1,t
+and α1,t = β1,a
+β1,t
+, which are well-deﬁned if β1,t̸= 0.
+Under the CRC model with time-varying random coeﬃcients (D.1) and the new extrap-
+olation identifying assumption (D.7), the second step of our estimation procedure can still
+take the form of an instrumental variable regression of ˆai on ˆbit using treatment status his-
+tory{xi1, ..., xiT} as instrumental variables, but the estimation sample is now restricted to
+include only movers who are treated at time t. Because of this restriction in the sample that
+can be used for the second-step estimation, one must observe at least three time periods to
+observe several groups of movers who are treated at time t and be able to implement this
+estimation procedure. For instance with T = 2, the only group of movers treated at time
+t = 1 has treatment status history proﬁle x = (1, 0). With T = 3, movers treated at time
+t = 1 correspond to treatment status history proﬁles x∈{ (1, 0, 0), (1, 1, 0), (1, 0, 1)}.
+18
+--- Page 19 ---
+ATE for untreated movers and stayers can then be identiﬁed from:
+E(bit|x) = E(ai|x)− α0,t
+α1,t
+= E(ai + bit|x)− α0,t
+1 + α1,t
+(D.8)
+if α1,t /∈{− 1, 0}.
+In practice, since identiﬁcation relies on smaller groups of movers, the implementation
+of this approach may lead to estimation results that are signiﬁcantly more imprecise than
+the results obtained when treatment eﬀects are assumed to be time constant. In addition,
+the conditions (D.4)-(D.6) that lead to the extrapolation identifying assumption (D.7) are
+restrictive, even though we can note that they encompass the case when treatment eﬀects
+are constant over time since we could then deﬁne ei = bi and νt,i = 0.
+In some applications, accounting for dynamic treatment eﬀects, i.e. allowing for past
+treatment status to aﬀect current treatment eﬀect, is an important feature of the models
+used. This could be accommodated here by explicitly using an extrapolation identifying
+assumption that allows, for instance, the most recent treatment status to aﬀect current
+treatment eﬀect:
+bit = β0,t + β1,tei + β2xit−1 + β3xit−1ei + νt,i, E (νt,i|ei) = 0∀ t (D.9)
+so that the diﬀerence in treatment eﬀect at the time of the ﬁrst exposure to treatment and
+one time period later is given by β2 + β3ei.
+Under (D.4), (D.6), and (D.9) we obtain the extrapolation identifying assumption:
+ai = α0,t + α1,t(xit−1)bi,t + α2,t(xit−1) (D.10)
+where α1,t(xit−1) = β1,a
+β1,t+β3xit−1
+and α2,t(xit−1) =− β1,aβ2
+β1,t+β3xit−1
+.
+The parameters in this extrapolation identifying assumption can be estimated by an
+instrumental variable regression by conditioning on both possible values of xit−1∈{ 0, 1},
+19
+--- Page 20 ---
+which will generally require than one additional time period be observed. For instance,
+suppose one is interested in estimating ATE at time t = 2. With T = 3, the treatment
+history proﬁles corresponding to movers that are treated at time t = 2 are given by:
+(x1, x2, x3) = (0, 1, 1),(0, 1, 0), (1, 1, 0)
+from which we see that the extrapolation identifying assumption (D.10) would not be iden-
+tiﬁed for cross-sectional observations who were treated at time t = 1 (i.e. with xi1 = 1).
+With T = 4, the treatment history proﬁles corresponding to movers that are treated at time
+t = 2 and were also treated at time t = 1 are given by:
+(x1, x2,x3, x4) = (1, 1, 0, 0), (1, 1, 0, 1), (1, 1, 1, 0) (D.11)
+so that the extrapolation identifying assumption (D.10) would be identiﬁed as long as these
+three groups of movers have diﬀerent average treatment eﬀects.
+Given identiﬁcation of the parameters entering (D.10), extrapolation to movers who are
+currently untreated or to stayers can be performed as before. For instance the ATE for
+untreated stayers at time tat the ﬁrst exposure to treatment is given by:
+AT Et,0 = E(a1|maxs=1,...,T xis = 0)− α0,t− α2,t(0)
+α1,t(0) (D.12)
+while the ATE for untreated stayers at time t after the ﬁrst exposure to treatment is given
+by:
+AT Et,1 = E(a1|maxs=1,...,T xis = 0)− α0,t− α2,t(1)
+α1,t(1) (D.13)
+There are alternative approaches that could be used for extrapolation with the CRC
+model with time-varying treatment eﬀects that could be used in particular applications, but
+we leave this question for later work.
+From the discussion above, we see that the data requirements are signiﬁcantly greater
+20
+--- Page 21 ---
+with the models discussed in this section than with the models discussed in the main text.
+Not only more time periods need to be observed for identiﬁcation, but identiﬁcation of time
+eﬀects in the CRC model and of the parameters in the extrapolation identifying assumption
+is obtained from much narrower subgroups of cross-sectional observations than in the main
+text. In practice this will imply that estimation results will be signiﬁcantly more noisy than
+using the methods developed in the main text, and will require researchers to have access to
+larger datasets than what is used in the empirical application of the main text. It would be
+interesting to consider the extensions sketched in this section in more details in future work
+in applications that are more amenable to these methods.
+E Estimation and Inference with the Simple Extrapo-
+lation Identifying Assumption
+In this section we discuss the details of estimation for models of the form:
+yit = ai + bixit + zitγ + uit, E (uit|Xi, Zi) = 0 (E.1)
+ai = α0 + α1bi + ϵi, E (ϵi|Xi) = 0 (E.2)
+where Xi =
+
+
+xi1
+...
+xiT
+
+
+, Zi =
+
+
+zi1
+...
+ziT
+
+
+, and zit is a vector of control covariates.
+Setting zit to be a set of indicator variables for each time period other than the ﬁrst time
+period, i.e. zit = [1[t = s]]s=2,...,T , yields the special case:
+yit = ai + bixit + ft + uit, E (uit|Xi) = 0
+which is the CRC model considered in the main text, where only time eﬀects are included
+as control covariates and where the normalization f1 = 0 has been applied.
+21
+--- Page 22 ---
+In general zit is a vector of controls that can include random variables. For notational
+simplicity we consider the case where zit is a scalar variable below, as all results extend in a
+straightforward way to multiple control covariates.
+We observe cross-sectional observationsi = 1, ..., n over time periods t = 1, ..., T. Through-
+out this appendix, we use an asymptotic framework where n is large and T is small. We also
+assume that observations are cross-sectionally independent for simplicity, all results extend
+in a straightforward way to many independent clusters as in the empirical application.
+Assumption 7. Observations are cross-sectionally independent.
+Note that Assumption 7 is implied by Assumption 1 in the main text.
+Stacking observations over time, we obtain:
+Yi = Wi
+
+
+ai
+bi
+
+ + Ziγ + Ui, E (Ui|Wi, Zi) = 0 (E.3)
+where Yi =
+
+
+yi1
+...
+yiT
+
+
+, Wi =
+
+
+wi1
+...
+wiT
+
+
+, Ui =
+
+
+ui1
+...
+uiT
+
+
+, and wit = [1, xit].
+The estimation method we discuss in this section is decomposed into two steps. The
+ﬁrst step yields consistent estimates of the homogenous coeﬃcients γ and noisy estimates
+of treatment eﬀect bi and baseline heterogeneity ai for cross-sectional units that are movers,
+noisy estimates of baseline heterogeneity ai for untreated stayers, noisy estimates of total
+heterogeneity ai + bi for treated stayers. The second step yields consistent estimates of α0,
+α1, and noisy estimates of the values of {ai, bi}i=1,...,n that were missing from the ﬁrst step,
+i.e. corresponding to untreated and treated stayers. We show that averaging the resulting
+noisy estimates of treatment eﬀect bi across the entire population or large groups of stayers
+or movers yields consistent estimators of ATE.
+22
+--- Page 23 ---
+E.1 Step 1: High-dimensional regression
+The ﬁrst step of our estimation procedure regresses yit on zit, indicator variables for each
+cross-sectional observation, and indicator variables for each cross-sectional observation in-
+teracted with xit. By the Frisch-Waugh theorem, the resulting estimates are given by:
+ˆγ = γ + (
+n∑
+i=1
+Z
+′
+iMWiZi)−1
+n∑
+i=1
+Z
+′
+iMWiUi
+
+
+ˆai
+ˆbi
+
+ =
+
+
+ai
+bi
+
+ + (W
+′
+i Wi)−W
+′
+i (Ui− Zi(ˆγ− γ))
+where MWi = IT− Wi(W
+′
+i Wi)−W
+′
+i and ( W
+′
+i Wi)− is the generalized inverse obtained by
+omitting the interaction of the indicator variable corresponding to a particular cross-sectional
+observation with treatment status xit when this cross-sectional observation is a stayer, i.e.
+when there is no variation in xit over time across observations corresponding to this cross-
+sectional observation.
+The next assumption imposes restrictions on moments of the data.
+Assumption 8.
+a) The support of ai, bi, zit, uit is compact.
+For constants C and c > 0:
+b) 1
+n
+∑n
+i=1 P (xit = xis∀ t, s)≥ c∀ n≥ C.
+c) 1
+n
+∑n
+i=1 E(Z
+′
+iMWiZi)≥ c∀ n≥ C.
+d) 1
+n V ar(∑
+i=1,...,n:xit=xis∀t,s Z
+′
+iMWiUi)≥ c∀ n≥ C.
+Assumption 8.a is standard and imposed in this form for simplicity. It could easily be
+relaxed to higher moments of the random variables ai, bi, zit, uit being uniformly bounded.
+Assumption 8.b imposes that we observe a non-vanishing share of stayers in the data. As-
+sumptions 8.c and 8.d impose that there is variation in covariates zit and transitory shocks
+uit over time. For instance zit and uit may not be time constant.
+23
+--- Page 24 ---
+Assumption 8.d requires that there be variation in covariates zit and transitory shocks uit
+over time among observations that are stayers instead of among all cross-sectional observa-
+tions. This additional regularity condition is imposed for simplicity as it guarantees that the
+ﬁrst-step estimator discussed in this section is not approximately linearly dependent of the
+part of the inﬂuence function of the second-step estimator which does not depend on the ﬁrst-
+step estimator, which guarantees that the second-step estimator is at most √n-consistent,
+i.e. is not super consistent.
+Note that Assumption 8 is implied by Assumptions 1 and 2 in the main text for the
+special case where T = 2 and zit = 1[t = 2].
+Under the CRC model and Assumptions 7 and 8, the ﬁrst step of our estimation procedure
+yields consistent estimates of the homogenous coeﬃcients γ and noisy estimates of the two
+terms of unobserved heterogeneity ai and bi with estimation noise that can be decomposed
+into a part which vanishes as sample size increases and a part which is unrelated to sample
+size.
+Proposition 4. Under (E.1) and Assumptions 7 and 8, as n→∞ while T remains ﬁxed:
+V
+− 1
+2
+n,γ,0An,γ,0
+√n(ˆγ− γ)
+d
+→ N(0, IK) (E.4)
+where An,γ,0 = 1
+n
+∑n
+i=1 E(Z
+′
+iMWiZi), Vn,γ,0 = 1
+n
+∑n
+i=1 V ar(Z
+′
+iMWiUi).
+For i = 1, ..., n such that∃ t, s s.t. xit̸= xis, we have:
+
+
+ˆai
+ˆbi
+
+−
+
+
+ai
+bi
+
+ = (W
+′
+i Wi)−1W
+′
+i Ui− (W
+′
+i Wi)−1W
+′
+i ZiA−1
+n,γ,0
+1√n ζab,n + ei,n
+where ζab,n = 1√n
+∑n
+i=1 Z
+′
+iMWiUi = Op(1) and maxi=1,...,n|ei,n| = op( 1√n).
+For i = 1, ..., n such that xit = 0∀ t, we have:
+ˆai− ai = 1
+T
+T∑
+t=1
+uit− 1
+T
+T∑
+t=1
+zitA−1
+n,γ,0
+1√n ζab,n + ei,n (E.5)
+24
+--- Page 25 ---
+For i = 1, ..., n such that xit = 1∀ t, we have:
+ˆai + ˆbi− ai− bi = 1
+T
+T∑
+t=1
+uit− 1
+T
+T∑
+t=1
+zitA−1
+n,γ,0
+1√n ζab,n + ei,n (E.6)
+Proposition 4 shows that the estimator for γ is√n-consistent and asymptotically normal.
+It also shows that the estimation noise of the heterogeneity terms ai and bi is decomposed
+into idiosyncratic noise that would arise even ifγ were known and vanishing noise originating
+from the estimation of γ which is dominated by a term of order 1√n.
+Note that Proposition 1 in the main text is obtained as a special case of Proposition 4.
+E.2 Step 2: Instrumental Variable Regression and Extrapolation
+In a second step, we consider estimation of the parameters α0 and α1 in the linear extrap-
+olation to ATE for stayers by generalized method of moments (GMM) estimation of the
+coeﬃcients in an instrumental variable regression using noisy estimates of ai (ˆai) as the de-
+pendent variable, noisy estimates of bi (ˆbi) as the explanatory variable, and treatment history
+Xi as instrumental variables.
+Let Mn be the subset of cross-sectional observations that are movers, i.e.
+Mn ={i = 1, ..., n : ∃ t, s s.t. x it̸= xis} (E.7)
+DeﬁneS ⊆ {1, ..., T} to be one of the largest subsets of time periods such that the
+variables{xit}t∈S are linearly independent among observations corresponding to movers in
+the data. When only two time periods are observed, i.e. T = 2, we have S ={1} or
+S = {2} since xi1 = 1 − xi2 among movers. In general when T > 2 and if there are
+treated and untreated observations in all time periods, the entire vector of treatment status
+history Xi will be included in the list of instrumental variables, i.e. S ={1, ..., T}. Deﬁne
+25
+--- Page 26 ---
+˜Xi =
+
+
+1
+[xit]t∈S
+
+ to be the elements of the vector of treatment status history that are linearly
+independent among movers augmented with a constant.
+The estimator for α0 and α1 in the extrapolation identifying assumption (E.2) that we
+consider in this section is:
+
+
+ˆα0
+ˆα1
+
+ = (B
+′
+nΣ−1
+n Bn)−1B
+′
+nΣ−1
+n
+1
+n
+∑
+i∈Mn
+˜Xiˆai
+Bn = 1
+n
+∑
+i∈Mn
+˜Xi[1,ˆbi]
+Σn = 1
+n
+∑
+i∈Mn
+˜ϵ2
+i ˜Xi ˜X
+′
+i
+where ˜ϵi are ﬁrst-stage residuals obtained by a two-stage least squares regression of ˆai on ˆbi
+using ˜Xi as instrumental variables.3
+As in the main text, given estimates of the parameters α0 and α1, we obtain estimates
+of ATE for stayers, AT ES,0 =
+∑
+i=1,...,nE(1[xit=0∀t]bi)∑
+i=1,...,nP (xit=0∀t) and AT ES,1 =
+∑
+i=1,...,nE(1[xit=1∀t]bi)∑
+i=1,...,nP (xit=1∀t) , by a
+3Note that in this section we could have considered a two-stage least squares regression only instead of
+GMM estimation, i.e. we could have chosen Σ n = 1
+n
+∑n
+i=1 ˜Xi ˜X
+′
+i. This would also lead to a consistent and
+asymptotically normal estimator. We consider GMM estimation for a potential eﬃciency gain because of
+the heteroscedasticity in ˆai−α0−α1ˆbi conditional on Xi that is likely to exist because of measurement
+error. Indeed heteroscedasticity is likely to appear in the non-vanishing part of the estimation noise in the
+estimates ˆai and ˆbi: Even if Var (ϵi|Xi) =σ2
+ϵ , Var (Ui|Xi) =σ2
+uIT , and Cov(ϵi,Ui|Xi) = 0, we have:
+Var (ϵi + [1,−α1](W
+′
+iWi)−1W
+′
+iUi|Xi) =σ2
+ϵ +σ2
+u[1,−α1](W
+′
+iWi)−1
+[
+1
+−α1
+]
+̸=Var (ϵi + [1,−α1](W
+′
+iWi)−1W
+′
+iUi|i∈Mn)
+in general.
+In addition GMM estimation extends easily to estimating and performing statistical inference on additional
+parameters such as ATE among diﬀerent subpopulations, to accounting for cross-sectional dependence when
+computing the weighting matrix, and to accommodating unbalanced panel data originating from missing
+data. We encounter these three issues in our empirical application.
+Note also that one could use interactions between elements of Xi to obtain additional valid moment
+functions. We only consider moment functions obtained by using linear terms for simplicity here and to
+avoid the proliferation of moment conditions. See for instance Newey and Windmeijer (2009) for a discussion
+of issues that arise with GMM estimation and many moment conditions.
+26
+--- Page 27 ---
+simple plug-in using the derivations in the main text:
+ˆAT ES,0 = ¯aS,0− ˆα0
+ˆα1
+, ˆAT ES,1 = ¯aS,1− ˆα0
+1 + ˆα1
+¯aS,0 =
+∑
+i:xit=0∀t ˆai
+|{i : xit = 0∀ t}| ¯aS,1 =
+∑
+i:xit=1∀t ˆai
+|{i : xit = 1∀ t}|
+Deﬁne
+Bn,0 = 1
+n
+∑
+i∈Mn
+E( ˜Xi[1, bi])
+ri = ϵi + [1,−α1](W
+′
+i Wi)−1W
+′
+i Ui
+Σn,0 = 1
+n
+∑
+i∈Mn
+E(r2
+i ˜Xi ˜X
+′
+i)
+Deﬁne ˜α0 and ˜α1 to be the two-stage least squares regression estimators of α0 and α1
+obtained by regressing ˆai on a constant and ˆbi using ˜Xi as instrumental variables.
+Deﬁne λmin to be the minimum eigenvalue of a matrix.
+Assumption 9. For constants C and c > 0:
+a) λmin(Σn,0)≥ c,∀ n≥ C.
+b) λmin(B
+′
+n,0Σ−1
+n,0Bn,0)≥ c,∀ n≥ C.
+c) ˜α0
+p
+→ α0 and ˜α1
+p
+→ α1 as n→∞ while T remains ﬁxed.
+d) 1
+n V ar(∑
+i=1,...,n:xit=0∀t(ai+ 1
+T
+∑T
+t=1 uit)|∑n
+i=1 Z
+′
+iMWiUi)≥ c and 1
+n V ar(∑
+i=1,...,n:xit=1∀t(ai+
+bi + 1
+T
+∑T
+t=1 uit)|∑n
+i=1 Z
+′
+iMWiUi)≥ c a.s.,∀ n≥ C.
+Assumption 9.a requires that there be variation inXi among observations that correspond
+to movers. For instance with two time periods, i.e. T = 2, Assumption 9.a would be obtained
+by imposing i) V ar(vi|Xi)≥ c > 0∀ i = 1, ..., n,∀ n and ii) 0 < c≤ P (xi1 = 0, xi2 = 1)≤
+1− c and 0 < c ≤ P (xi1 = 1 , xi2 = 0) ≤ 1− c∀ i = 1 , ..., n,∀ n. The ﬁrst condition is
+standard and requires that the error terms of the CRC model uit and of the extrapolation
+identifying assumption have positive variance, so that the resulting model is not degenerate.
+27
+--- Page 28 ---
+The second condition guarantees that two diﬀerent proﬁles of movers are represented by
+non-vanishing fractions of the data (in large samples), so that there is variation in xi1 (or
+xi2) among observations that are movers.
+Assumption 9.b requires that the variation in Xi among observations that correspond to
+movers be predictive of treatment eﬀect bi. For instance with two time periods Assumption
+9.b would be obtained by |
+∑
+i=1,...,nE(1[(xi1,xi2)=(0,1)]bi)∑
+i=1,...,nP ((xi1,xi2)=(0,1)) −
+∑
+i=1,...,nE(1[(xi1,xi2)=(1,0)]bi)∑
+i=1,...,nP ((xi1,xi2)=(1,0)) |≥ c > 0
+∀ n≥ C.
+Assumption 9.c requires that the two-stage least squares estimators of α0 and α1 be
+consistent. This is imposed for convenience only since convergence in probability of the
+two-stage least squares estimators of α0 and α1 can be derived from primitive conditions as
+in the proof of Proposition 5 below.
+Assumption 9.d is a regularity condition which guarantees that the estimator for ATE is
+at most√n-consistent, i.e. is not super consistent. It requires that there be no approximately
+exact dependence between the terms of unobserved heterogeneity ai and ai + bi and the error
+term of the CRC model uit. This condition for the case xit = 0 ∀ t would be obtained
+if we assume that i) ai is independent of {uit}t=1,...,T conditional on Zi and Wi and that
+ii) V ar( 1
+T
+∑T
+t=1 uit|{uis− 1
+T
+∑T
+t=1 uit}s=1,...,T , Zi, xit = 0∀ t)≥ c. These are both natural
+conditions requiring that the idiosyncratic shocks to outcomes uit be independent of baseline
+heterogeneity ai and that the error term in the CRC model uit not be degenerate. Similarly
+this condition for the case xit = 1 ∀ t would be obtained if we assume that i) ai + bi is
+independent of {uit}t=1,...,T conditional on Zi and Wi and that ii) V ar( 1
+T
+∑T
+t=1 uit|{uis−
+1
+T
+∑T
+t=1 uit}s=1,...,T , Zi, xit = 1∀ t)≥ c.
+Note that Assumption 9.a, 9.b, and 9.d are implied by Assumptions 1-3 in the main
+text and Assumption 9.c is irrelevant with two time periods since the moment conditions
+E( ˜Xi(ˆai− α0− α1ˆbi))≃ 0 are exactly identifying for the parameters α0 and α1 in this case.
+To state Proposition , we deﬁne deterministic matrices which will determine the asymp-
+28
+--- Page 29 ---
+totic distribution of our second-step estimators
+
+
+ˆα0
+ˆα1
+
+:
+Vn,αγ,0 = 1
+n
+∑
+i∈Mn
+E(ri ˜XiU
+′
+i MWiZi) Cn,0 = 1
+n
+∑
+i∈Mn
+E( ˜Xi[1,−α1](W
+′
+i Wi)−1W
+′
+i Zi)
+An,1,0 = (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0 An,2,0 = (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0
+Ωn,0 =
+
+
+Σn,0 Vn,αγ,0
+V
+′
+n,αγ,0 Vn,γ,0
+
+ Vn,0 = [An,1,0, An,2,0]Ωn,0
+
+
+A
+′
+n,1,0
+A
+′
+n,2,0
+
+
+We deﬁne deterministic matrices which will determine the asymptotic distribution of our
+second-step estimators ˆAT ES,0:
+˜ai = ai + 1
+T
+T∑
+t=1
+uit− E(ai),
+An,ATE S,0,γ,0 =− 1
+α1
+1
+n
+∑
+i=1,...,n E(1[xit = 0∀ t] 1
+T
+∑T
+t=1 zit)
+1
+n
+∑
+i=1,...,n P (xit = 0∀ t) A−1
+n,γ,0,
+An,ATE S,0,α,γ,0 = [ 1
+α1
+, AT ES,0
+α1
+](B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0
+An,ATE S,0,α,r,0 =−[ 1
+α1
+, AT ES,0
+α1
+](B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0
+An,ATE S,0,0 = [ 1
+α1
+, An,ATE S,0,γ,0 + An,ATE S,0,α,γ,0, An,ATE S,0,α,r,0]
+ΩATE S,0,0 = V ar(√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=0∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+)
+Vn,ATE s,0,0 = An,ATE S,0,0ΩATE S,0,0A
+′
+n,ATE S,0,0
+We deﬁne deterministic matrices which will determine the asymptotic distribution of our
+29
+--- Page 30 ---
+second-step estimators ˆAT ES,1:
+˜a + bi = ai + bi + 1
+T
+T∑
+t=1
+uit− E(ai + bi)
+An,ATE S,1,γ,0 =− 1
+1 + α1
+1
+n
+∑
+i=1,...,n E(1[xit = 1∀ t] 1
+T
+∑T
+t=1 zit)
+1
+n
+∑
+i=1,...,n P (xit = 1∀ t) A−1
+n,γ,0,
+An,ATE S,1,α,γ,0 = [ 1
+1 + α1
+, AT ES,1
+1 + α1
+](B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0
+An,ATE S,1,α,r,0 =−[ 1
+1 + α1
+, AT ES,1
+1 + α1
+](B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0
+An,ATE S,1,0 = [ 1
+1 + α1
+, An,ATE S,1,γ,0 + An,ATE S,1,α,γ,0, An,ATE S,1,α,r,0]
+ΩATE S,1,0 = V ar(√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=1∀t] ˜a+bi
+1
+n
+∑
+i=1,...,nP (xit=1∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+)
+Vn,ATE s,1,0 = An,ATE S,1,0ΩATE S,1,0A
+′
+n,ATE S,1,0
+Proposition 5. Under (E.1), (E.2), and Assumptions 7-9, as n→∞ while T remains
+ﬁxed:
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+) = (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0
+1√n
+∑
+i∈Mn
+˜Xiri
+− (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0
+1√n
+n∑
+i=1
+Z
+′
+iMWiUi + op(1)
+and:
+V
+− 1
+2
+n,0
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+)
+d
+→ N(0, I2) (E.8)
+30
+--- Page 31 ---
+If in addition α1 /∈{ 0,−1}, then we have:
+√n( ˆAT ES,0− AT ES,0) = An,ATE s,0,0
+√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=0∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+√n( ˆAT ES,1− AT ES,1) = An,ATE s,1,0
+√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=1∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=1∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+and:
+V
+− 1
+2
+n,ATE s,0,0
+√n( ˆAT ES,0− AT ES,0)
+d
+→ N(0, 1)
+V
+− 1
+2
+n,ATE s,1,0
+√n( ˆAT ES,1− AT ES,1)
+d
+→ N(0, 1)
+Note that Proposition 2 in the main text is obtained as a special case of Proposition 5.
+Proposition 5 shows that the estimators
+
+
+ˆα0
+ˆα1
+
+, ˆAT ES,1, and ˆAT ES,0 adopt a linear
+inﬂuence function asymptotic representation, so that inference by cluster bootstrap, with
+clusters given by cross-sectional units, would be asymptotically valid (see e.g. Mammen
+(1992)). Alternatively, one can use the analytical formula for asymptotic variance to obtain
+consistent estimated variance-covariance matrix using cluster robust standard errors for two-
+step estimation, with clusters given by cross-sectional units.
+For simplicity the next proposition shows that these standard errors are consistent and
+lead to asymptotically valid inference for the estimator
+
+
+ˆα0
+ˆα1
+
+ only, since the same result can
+be obtained for the estimators ˆAT ES,1 and ˆAT ES,0.
+Proposition 6. Deﬁne Cn = 1
+n
+∑
+i∈Mn
+˜Xi[1,−ˆα1](W
+′
+i Wi)−1W
+′
+i Zi, ˆri = ˆai− ˆα0− ˆα1ˆbi, and
+ˆUi = Yi− Ziˆγ. Deﬁne Σn = 1
+n
+∑
+i∈Mn ˆr2
+i ˜Xi ˜X
+′
+i, Σn,γ = 1
+n
+∑
+i=1,...,n Z
+′
+iMWi
+ˆUi ˆU
+′
+i MWiZi, Σn,αγ =
+31
+--- Page 32 ---
+1
+n
+∑
+i∈Mn ˆri ˜Xi ˆU
+′
+i MWiZi. Deﬁne An,1 = (B
+′
+nΣ−1
+n Bn)−1B
+′
+nΣ−1
+n , An,2 = (B
+′
+nΣ−1
+n Bn)−1B
+′
+nΣ−1
+n CnA−1
+n ,
+Ωn =
+
+
+Σn Σn,αγ
+Σ
+′
+n,αγ Σn,γ
+
+, Vn = [An,1, An,2]Ωn
+
+
+A
+′
+n,1
+A
+′
+n,2
+
+.
+Under (E.1), (E.2), and Assumptions 7-9, as n→∞ while T remains ﬁxed:
+V
+− 1
+2
+n
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+)
+d
+→ N(0, I2) (E.9)
+Since the matrices used in Proposition 6 are stored by standard statistical software,
+variance-covariance matrices using the formula given by Proposition 6 are straightforward
+to compute.
+Additionally, note that all estimators above can be computed as the solution to exactly
+identifying moment conditions:
+n∑
+i=1
+Z
+′
+iMWi(Yi− Ziˆγ) = 0
+B
+′
+nΣ−1
+n
+∑
+i∈Mn
+˜Xi([1,−ˆα1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziˆγ)− ˆα0) = 0
+∑
+i:xit=0∀t
+(
+1
+T
+∑T
+t=1(yit− zitˆγ)− ˆα0
+ˆα1
+− ˆAT ES,0) = 0
+∑
+i:xit=1∀t
+(
+1
+T
+∑T
+t=1(yit− zitˆγ)− ˆα0
+1 + ˆα1
+− ˆAT ES,1) = 0
+so that, instead of using the formulae from Proposition 6 to compute standard errors, analyt-
+ical standard errors can also be obtained directly using any command capable of numerical
+diﬀerentiation in standard statistical software.
+32
+--- Page 33 ---
+E.3 Testing the Validity of the Extrapolation
+E.3.1 Lack of testable implications with two time periods
+As discussed in the main text, under the CRC model ( ??) and with two time periods, the
+extrapolation identifying assumption (??) is equivalent to introducing identities for four pa-
+rameters that were left unrestricted by the CRC model, so that the extrapolation identifying
+assumption does not contain testable implications under the CRC model.
+We can see this directly by considering the CRC model:
+yit = ai + bixit + ft + uit, E (uit|xi1, xi2) = 0
+and deﬁning α⋆
+1 = E(ai|0,1)−E(ai|1,0)
+E(bi|0,1)−E(bi|1,0) and α⋆
+0 = E(ai|0, 1)−α⋆
+1E(bi|0, 1) if E(bi|0, 1)̸= E(bi|1, 0).
+For i such that xi1̸= xi2, deﬁne ˜ai = ai and ˜bi = bi. For i such that xi1 = 0 and xi2 = 0,
+deﬁne ˜bi = ai−α⋆
+0
+α⋆
+1
+if α⋆
+1̸= 0. For i such that xi1 = 1 and xi2 = 1, deﬁne ˜bi = ai+bi−α⋆
+0
+1+α⋆
+1
+and
+˜ai = α⋆
+0 + α⋆
+1˜bi if α⋆
+1̸=−1.
+Then we can write:
+yit = ˜ai + ˜bixit + uit, E (uit|xi1, xi2) = 0
+and
+˜αi = α⋆
+0 + α⋆
+1˜bi + ˜ξi, E (˜ξi|xi1, xi2) = 0
+since ˜ξi = 0 when xi1 = xi2 and E(˜ξi|xi1, xi2) = 0 when xi1̸= xi2.
+E.3.2 Testing with three or more time periods
+The extrapolation identifying assumption (E.2) implies that
+E(ai− α0− α1bi|Xi) = 0 (E.10)
+33
+--- Page 34 ---
+Here we propose testing an implication of this assumption, namelyLP (ai−α0−α1bi|Xi, i∈
+Mn) = 0, where LP is the linear projection operator, and recall that Mn is the subset of
+cross-sectional observations that are movers. This condition is equivalently written:
+E(ai− α0− α1bi|i∈ Mn) = 0 (E.11)
+E(xit(ai− α0− α1bi)|i∈ Mn) = 0∀ t∈S (E.12)
+where recall that S is one of the largest subsets of time periods such that the variables
+{xit}t∈S are linearly independent among observations corresponding to movers in the data.
+When only two time periods are observed, i.e. T = 2, we haveS ={1} orS ={2}, while in
+generalS ={1, ..., T} when T≥ 3.
+With a very large number of cross-sectional observations, testing (E.10) directly would
+generally yield a test with larger power, similarly as in the previous section where using
+interactions of the elements of Xi would lead to more moment conditions and to a more
+eﬃcient estimator in general when a large number of cross-sectional observations is available.
+However with more modest sample sizes, it is possible that some values of Xi correspond
+to relatively few cross-sectional observations, leading to a “small cell” problem, i.e. it is
+possible that E(ai− α0− α1bi|Xi) can only be estimated imprecisely for some values of Xi.
+This could lead to size distortions in small samples. We propose a more parsimonious test
+based on (E.11) and (E.12) instead.
+This test is straightforward given the discussion in the previous section as long as three or
+more time periods are observed. We simply add|S| +1 exactly identiﬁed moment conditions:
+E(1[i∈ Mn]([1,−α1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziγ)− α0)− η0) = 0
+E(1[i∈ Mn]xit([1,−α1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziγ)− α0)− ηt) = 0∀ t∈S
+and test the null hypothesis H0 : η0 = 0, ηt = 0∀ t∈S using a Wald test with critical values
+from a chi-squared distribution with |S|− 1 degrees of freedom. Note that when T = 2,
+34
+--- Page 35 ---
+|S| = 1 so that this test cannot be performed, as discussed in the main text and above.
+Estimated variances for this Wald test can be obtained by cluster bootstrap, or using an-
+alytical formulae as in Proposition 6, or by solving for exactly identifying moment conditions
+using any command capable of numerical diﬀerentiation in standard statistical software.
+This is an over-identiﬁcation test similar to the Sargan-Hansen J-test discussed in Hansen
+(1982) except that it accounts for the ﬁrst-step estimation of the coeﬃcients γ.
+F Estimation and Inference with the Generalized Ex-
+trapolation Identifying Assumption
+In this section we discuss how to extend the estimation and testing methods discussed in the
+previous section to the use of a generalized extrapolation where cost shifters shared by all
+observations with the same value of indexing variable vi can be correlated with productivity
+(ai, bi). The model considered in this section is given by:
+yit = ai + bixit + zitγ + uit, E (uit|{Xj, Zj}j:vj=vi) = 0 (F.1)
+ai = evi + α1bi + ϵi, E (ϵi|{Xj}j:vj=vi) = 0 (F.2)
+where all variables are deﬁned as in the previous section, and vi is a deterministic discrete
+indexing variable.4 In our empirical example vi indexes farmer i’s village.
+The same ﬁrst-step estimator of γ is used as in the previous section. As before, it also
+leads to noisy estimates of baseline heterogeneity and treatment eﬀects, ˆai and ˆbi, for movers,
+noisy estimates of baseline heterogeneity for untreated stayers, and noisy estimates of total
+heterogeneity for treated stayers.
+4Note that here the exogeneity of covariates Xi and Zi in the CRC model (F.1) has been strengthened
+to be strict across all observations with the same value of the indexing variable vi. This is because the
+assumption of independence is relaxed below so that observations are only assumed to be independent
+across diﬀerent values of the indexing variable vi instead of being independent cross-sectionally. If the
+assumption of cross-sectional independence held, the assumptions of exogeneity in (F.1) could be relaxed to
+E(uit|Xi,Zi) = 0 as before.
+35
+--- Page 36 ---
+The coeﬃcient α1 is then estimated by GMM estimation after demeaning the noisy
+estimates of ai and bi obtained for movers in the ﬁrst stage within the groups deﬁned by
+each value of the indexing variable vi:
+¨ai = ˆai− ¯ai, ¯ai = 1
+nvi
+∑
+j∈Mn,vj=vi
+ˆaj
+¨bi = ˆbi− ¯bi, ¯bi = 1
+nvi
+∑
+j∈Mn,vj=vi
+ˆbj
+where nv =|{i∈ Mn : vi = v}|. In our empirical example, this amounts to demeaning
+among movers within each village.
+As before, deﬁneS to be one of the largest sets of time periods such that [ xit]t∈S is a set
+of linearly independent variables in the data among observations that correspond to movers,
+in order to accommodate the case where T = 2. Redeﬁne ˜Xi = [ xit]t∈S to be as in the
+previous section but without the constant. Then the estimator of α1 in this section is given
+by:
+ˆα1 = ( ¨B
+′
+n ¨Σ−1
+n ¨Bn)−1 ¨B
+′
+n ¨Σ−1
+n
+1
+n
+∑
+i∈Mn
+˜Xi¨ai
+¨Bn = 1
+n
+∑
+i∈Mn
+˜Xi¨bi
+¨Σn = 1
+n
+∑
+i∈Mn,j∈Mn:vj=vi
+¨ϵi¨ϵj ˜Xi ˜X
+′
+j
+¨ϵi = ¨ai− ˜α1¨bi
+and ˜α1 is the ﬁrst-step estimator of α1 obtained by a ﬁxed eﬀects two-stage least squares
+regression of ˆai on ˆbi using ˜Xi as instrumental variable and with ﬁxed eﬀects indexed by vi.
+Given this estimator of α1, we obtain a noisy estimator of the “ﬁxed eﬀect” term ev in
+36
+--- Page 37 ---
+the generalized extrapolation assumption (F.2):
+ˆev = 1
+nv
+∑
+i∈Mn:vi=v
+(ˆai− ˆα1ˆbi) (F.3)
+Estimators of ATE for stayers are then deﬁned in this section by:
+ˆAT ES,0 = 1
+ˆα1
+∑
+i:xit=0∀t(ˆai− ˆevi)
+|{i : xit = 0∀ t}| , ˆAT ES,1 = 1
+1 + ˆα1
+∑
+i:xit=1∀t(ˆai + ˆbi− ˆevi)
+|{i : xit = 1∀ t}|
+Here we consider the case where there are few cross-sectional observations per value of the
+indexing variable vi, so that the indexing variable vi takes many values. As discussed in the
+main text, this corresponds to the data structure of our application where few farmers live in
+each village. Considering the case where vi takes few values and where there are many cross-
+sectional observations per value of vi is straightforward with cross-sectional independence or
+limited forms of cross-sectional dependence.
+With vi taking many values, Assumption 1 of cross-sectional independence can be relaxed
+to independence across values of vi. Deﬁne Nv =|{i = 1, ..., n : vi = v}| to be the number
+of cross-sectional observations with value v of the indexing variable vi.
+Assumption 10. Observations are independent if they do not share the same value of the
+indexing variable vi and the number of observations per group is uniformly bounded, i.e.
+maxi=1,...,nNvi≤ C∀ n for a constant C.
+Note that Assumption 10 is implied by Assumption 4 in the main text.
+Similarly as before, the new estimator of α1 deﬁned above and the estimators of ATE for
+stayers will be consistent and asymptotically normal if conditions hold on second moments
+37
+--- Page 38 ---
+of the data. Deﬁne:
+˙bi = bi− 1
+nvi
+∑
+j∈Mn,vj=vi
+bj
+¨Bn,0 = 1
+n
+∑
+i∈Mn
+E( ˜Xi˙bi)
+˙ϵi = ϵi− 1
+nvi
+∑
+j∈Mn,vj=vi
+ϵj
+˙ri = ˙ϵi + [−1, α1]((W
+′
+i Wi)−W
+′
+i Ui− 1
+nvi
+∑
+j∈Mn,vj=vi
+(W
+′
+j Wj)−W
+′
+j Uj)
+¨Σn,0 = 1
+n
+∑
+i∈Mn,j∈Mn:vj=vi
+E( ˙ri ˙rj ˜Xi ˜X
+′
+j)
+˜evi = 1
+nvi
+∑
+j∈Mn:vj=vi
+(aj− α1bj)
+˜ui = 1
+T
+T∑
+t=1
+uit− 1
+nvi
+∑
+j∈Mn:vj=vi
+[1,−α1](W
+′
+j Wj)−W
+′
+j Uj
+Assumption 11. For constants C and c > 0:
+a) λmin(¨Σn,0)≥ c∀ n≥ C.
+b) ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0≥ c∀ n≥ C.
+c) ˜α1
+p
+→ α1 as n→∞ while T remains ﬁxed.
+d) λmin( 1
+n V ar(
+
+
+∑n
+i=1 Z
+′
+iMWiUi
+∑
+i∈Mn ˙ri
+∑
+i=1,...,n:xit=0∀t(ai− ˜evi + ˜ui)
+∑
+i=1,...,n:xit=1∀t(ai + bi− ˜evi + ˜ui)
+
+
+))≥ c∀ n≥ C.
+Assumption 11.a requires that there be within-group variation in Xi among movers since
+we can rewrite ¨Σn,0 = 1
+n
+∑
+i∈Mn,j∈Mn:vj=vi E(rirj ˙Xi ˙X
+′
+j) where ˙Xi = ˜Xi− 1
+nvi
+∑
+j∈Mn,vj=vi
+˜Xj.
+Deﬁne N to be the number of values taken by vi. Under Assumption 10, note that N
+is of the same order as n. With two time periods, Assumption 11.a is implied by i)
+V ar(ri|{Xj}j:vj=vi)≥ c > 0∀ i = 1, ..., n,∀ n, ii) Cov(ri, rj|{Xi′}i′:vi′ =vi) = 0∀ i = 1, ..., n,
+38
+--- Page 39 ---
+j̸= i s.t. vi = vj,∀ n and iii)
+1
+N
+N∑
+v=1
+P (∃ i, j s.t. vi = vj = v, xi1 = 0, xi2 = 1, xj1 = 1, xj2 = 0)≥ c > 0∀ N (F.4)
+As in the previous section, the ﬁrst condition is fairly innocuous and simply requires that
+the model composed of the CRC model (F.1) and the generalized extrapolation identifying
+assumption (F.2) is not degenerate.
+The second condition would be obtained by conditional cross-sectional independence of
+the error terms of the CRC model (F.1) and of the generalized extrapolation identifying
+assumption (F.2). This condition is imposed for simplicity but could be relaxed as long as
+the within-group dependence is not strong enough to lead to linear dependence across several
+observations belonging to the same group.
+The third condition requires that a non-vanishing fraction of groups have both possible
+proﬁles of movers (adopters and disadopters), so that 1
+n
+∑n
+i=1 E( ˙X2
+i )≥ c > 0∀ i = 1, ..., n,
+∀ n≥ C.
+Assumption 11.b requires that the within-group variation inXi be predictive of treatment
+eﬀect bi.
+As before, Assumption 11.c is imposed for convenience since the preliminary estimator
+of α1, ˜α1, can be shown to be consistent under a similar argument as in the proof of the
+following proposition.
+As before, Assumption 11.d is a regularity condition which guarantees that the estimators
+for α1 and ATE are√n-consistent rather than being super consistent and requires that there
+be no approximately exact dependence between cross-sectional observations belonging to the
+same group and between the terms of unobserved heterogeneityai and ai+bi and the average
+error term of the CRC model uit.
+Note that Assumptions 11.a, 11.b and 11.d are implied by Assumptions 4 and 6 in the
+main text and that Assumptions 11.c is irrelevant when T = 2 since the moment condition
+39
+--- Page 40 ---
+used to estimate α1 in this case is exactly identifying.
+Note also that Assumption 8 is implied by Assumptions 4 and 5 in the main text.
+To state the next proposition, deﬁne the deterministic matrices that determine the asymp-
+totic distribution of our second-step estimator ˆα1:
+¨Cn,0 = 1
+n
+∑
+i∈Mn
+E( ˜Xi[1,−α1]((W
+′
+i Wi)−1W
+′
+i Zi− 1
+nvi
+∑
+j∈Mn:vj=vi
+(W
+′
+j Wj)−1W
+′
+j Zj)) (F.5)
+and
+¨Vn,αγ,0 = 1
+n
+∑
+i∈Mn,j:vj=vi
+E( ˙riXiU
+′
+jMWj Zj) ¨Vn,γ,0 = 1
+n
+∑
+i=1,...,n,j:vj=vi
+E(Z
+′
+iMWiUiU
+′
+jMWj Zj)
+¨An,1,0 = ( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨An,2,0 = ( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Cn,0A−1
+n,γ,0
+¨Ωn,0 =
+
+
+¨Σn,0 ¨Vn,αγ,0
+¨V
+′
+n,αγ,0 ¨Vn,γ,0
+
+ ¨Vn,0 = [ ¨An,1,0, ¨An,2,0]¨Ωn,0
+
+
+¨A
+′
+n,1,0
+¨A
+′
+n,2,0
+
+
+Deﬁne the deterministic matrices which will determine the asymptotic distribution of our
+40
+--- Page 41 ---
+second-step estimators ˆAT ES,0:
+˜ai = ai + 1
+T
+T∑
+t=1
+uit− 1
+nvi
+∑
+j∈Mn:vj=vi
+[1,−α1](W
+′
+j Wj)−1W
+′
+j(Yj− Zjγ)
+− (E(ai)− 1
+nvi
+∑
+j∈Mn:vj=vi
+E(aj− α1bj)),
+¨An,ATE S,0,γ,0 =− 1
+α1
+1
+1
+n
+∑
+i=1,...,n P (xit = 0∀ t)
+1
+n
+∑
+i=1,...,n
+E(1[xit = 0∀ t]( 1
+T
+T∑
+t=1
+zit−
+1
+nvi
+∑
+j∈Mn:vj=vi
+[1,−α1](W
+′
+j Wj)−1W
+′
+j Zj))A−1
+n,γ,0,
+¨An,ATE S,0,α,γ,0 = AT ES,0
+α1
+( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Cn,0A−1
+n,γ,0
+¨An,ATE S,0,α,r,0 =− AT ES,0
+α1
+( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0
+¨An,ATE S,0,0 = [ 1
+α1
+, ¨An,ATE S,0,γ,0 + ¨An,ATE S,0,α,γ,0, ¨An,ATE S,0,α,r,0]
+¨ΩATE S,0,0 = V ar(√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=0∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+)
+¨Vn,ATE s,0,0 = ¨An,ATE S,0,0 ¨ΩATE S,0,0 ¨A
+′
+n,ATE S,0,0
+Deﬁne the deterministic matrices which will determine the asymptotic distribution of our
+41
+--- Page 42 ---
+second-step estimators ˆAT ES,1:
+˜a + bi = ai + bi + 1
+T
+T∑
+t=1
+uit− 1
+nvi
+∑
+j∈Mn:vj=vi
+[1,−α1](W
+′
+j Wj)−1W
+′
+j(Yj− Zjγ)
+− (E(ai + bi)− 1
+nvi
+∑
+j∈Mn:vj=vi
+E(aj− α1bj)),
+¨An,ATE S,1,γ,0 =− 1
+1 + α1
+1
+1
+n
+∑
+i=1,...,n P (xit = 1∀ t)
+1
+n
+∑
+i=1,...,n
+E(1[xit = 1∀ t]( 1
+T
+T∑
+t=1
+zit−
+1
+nvi
+∑
+j∈Mn:vj=vi
+[1,−α1](W
+′
+j Wj)−1W
+′
+j Zj))A−1
+n,γ,0,
+¨An,ATE S,1,α,γ,0 = AT ES,1
+1 + α1
+( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Cn,0A−1
+n,γ,0
+¨An,ATE S,1,α,r,0 =− AT ES,1
+1 + α1
+( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0
+¨An,ATE S,1,0 = [ 1
+1 + α1
+, ¨An,ATE S,1,γ,0 + ¨An,ATE S,1,α,γ,0, ¨An,ATE S,1,α,r,0]
+¨ΩATE S,1,0 = V ar(√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=1∀t] ˜a+bi
+1
+n
+∑
+i=1,...,nP (xit=1∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+)
+¨Vn,ATE s,1,0 = ¨An,ATE S,1,0 ¨ΩATE S,1,0 ¨A
+′
+n,ATE S,1,0
+Proposition 7. Under (F.1), (F.2) and Assumptions 8, 10, and 11, as n→∞ while T
+remains ﬁxed:
+√n(ˆα1− α1) = ( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0
+1√n
+∑
+i∈Mn
+Xi ˙ri
+− ( ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0)−1 ¨B
+′
+n,0 ¨Σ−1
+n,0 ¨Bn,0 ¨Cn,0A−1
+n,γ,0
+1√n
+n∑
+i=1
+Z
+′
+iMWiUi + op(1)
+and:
+¨V
+− 1
+2
+n,0
+√n(ˆα1− α1)
+d
+→ N(0, 1) (F.6)
+42
+--- Page 43 ---
+If in addition α1 /∈{ 0,−1}, then we have:
+√n( ˆAT ES,0− AT ES,0) = ¨An,ATE s,0,0
+√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=0∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+√n( ˆAT ES,1− AT ES,1) = ¨An,ATE s,1,0
+√n
+
+
+1
+n
+∑
+i=1,...,n 1[xit=1∀t]˜ai
+1
+n
+∑
+i=1,...,nP (xit=1∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+and:
+¨V
+− 1
+2
+n,ATE s,0,0
+√n( ˆAT ES,0− AT ES,0)
+d
+→ N(0, 1)
+¨V
+− 1
+2
+n,ATE s,1,0
+√n( ˆAT ES,1− AT ES,1)
+d
+→ N(0, 1)
+Note that Proposition 3 in the main text is obtained as a special case of Proposition 7.
+Proposition 7 shows that the second stage estimators of α1 and of ATE for stayers have
+a linear inﬂuence function asymptotic representation, so that as before consistent variance
+estimation could be obtained by bootstrap resampling, although here resampling should be
+clustered at the level of the indexing variable vi. Alternatively, one can also use analytical
+standard errors for inference, although these standard errors should now be clustered at
+the level of the indexing variable vi. As before, we only show consistency of the analytical
+standard errors for ˆα1 here, as the same result for ATE of stayers is obtained in a similar
+way.
+Proposition 8. Deﬁne ¨Cn = 1
+n
+∑
+i∈Mn
+˜Xi[1,−α1]((W
+′
+i Wi)−1W
+′
+i Zi− 1
+nvi
+∑
+j∈Mn:vj=vi(W
+′
+j Wj)−1W
+′
+j Zj),
+ˆri = ˆai− ˆα1ˆbi, ¨ri = ˆri− 1
+nvi
+∑
+j∈Mn,vj=vi ˆrj, and ˆUi = Yi− Ziˆγ.
+Deﬁne ¨Σn,γ = 1
+n
+∑
+i,j=1,...,n:vj=vi Z
+′
+iMWi
+ˆUi ˆU
+′
+jMWj Zj, ¨Σn,αγ = 1
+n
+∑
+i∈Mn,j∈Mn:vj=vi ¨ri ˜Xi ˆU
+′
+jMWj Zj.
+Deﬁne An,1 = ( ¨B
+′
+n ¨Σ−1
+n ¨Bn)−1 ¨B
+′
+n ¨Σ−1
+n , An,2 = ( ¨B
+′
+n ¨Σ−1
+n ¨Bn)−1 ¨B
+′
+n ¨Σ−1
+n ¨CnA−1
+n , ¨Ωn =
+
+
+¨Σn ¨Σn,αγ
+¨Σ
+′
+n,αγ ¨Σn,γ
+
+,
+43
+--- Page 44 ---
+¨Vn = [ ¨An,1, ¨An,2]¨Ωn
+
+
+¨A
+′
+n,1
+¨A
+′
+n,2
+
+.
+Under (F.1), (F.2) and Assumptions 8, 10, and 11, as n→∞ while T remains ﬁxed:
+¨V
+− 1
+2
+n
+√n(ˆα1− α1)
+d
+→ N(0, 1) (F.7)
+As in the previous section, this proposition shows that asymptotically valid inference for
+α1 can be based on Wald tests with analytical standard errors clustered at the level of the
+indexing variable vi which account for both steps of estimation.
+As in the previous section, the estimators deﬁned above and consistent standard errors
+can also be obtained by solving for exactly identifying moment conditions using any command
+capable of numerical diﬀerentiation in standard statistical software.
+As in the previous section, we can test the extrapolation identifying assumption (F.2) by
+including additional exactly identifying moment conditions:
+E(1[i∈ Mn]xit([1,−α1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziγ)
+− 1
+nvi
+∑
+j∈Mn,vj=vi
+[1,−α1](W
+′
+j Wj)−1W
+′
+j(Yj− Zjγ))− ηt) = 0∀ t∈S
+and testing the null hypothesis H0 : ηt = 0∀ t∈S using a Wald test with critical values
+from a chi-squared distribution with |S|− 1 degrees of freedom.
+G Estimation and Inference with Unbalanced Panels
+Many panel datasets available in empirical work are unbalanced, i.e. some cross-sectional
+observations are only observed for a subset of the time periods t = 1, ..., T. In this section we
+brieﬂy discuss the consequences of missing data if one assumes that observations are missing
+at random, i.e. that whether an observation ( i, t) is observed are not is independent of all
+of the variables included in our model.
+44
+--- Page 45 ---
+Let oit = 1[ observation (i, t) is observed]. Redeﬁne Yi = [ yit]t:oit=1, Wi = [1 , xit]t:oit=1,
+Zi = [ zit]t:oit=1, Xi = [ xit]t:oit=1. Redeﬁne Mn to be the set of cross-sectional observations
+that have a change in treatment status across the time periods for which observations are
+observed, i.e. Mn ={i = 1, ..., n :∃ t, s with xit̸= xis, oit = 1, ois = 1}. With data missing
+at random, under the model used in Section B given by (E.1) and (E.2), we have:
+E(MWi(Yi− Ziγ)) = 0
+so that γ can be estimated by a linear regression of yit on indicator variables for each cross-
+sectional observation, these indicator variables interacted with treatment status, and zit,
+pooling over all observations that are observed.
+We also have:
+E(1[i∈ Mn]([1,−α1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziγ)− α0)) = 0
+E(1[i∈ Mn]oitxit([1,−α1](W
+′
+i Wi)−1W
+′
+i (Yi− Ziγ)− α0)) = 0∀ t
+so that the parameters α1 and α0 can be estimated by GMM as in Section B, pooling over
+observations that are observed for each moment condition separately for each time period t.
+Similarly testing the validity of the extrapolation identifying assumption and performing
+asymptotically valid inference for objects of interest such as ATE for untreated stayers can
+be obtained by relying on GMM estimation and pooling across all observations that are
+observed separately for each moment condition.
+The same results apply to the use of the generalized extrapolation identifying assumption
+discussed in Section C.
+45
+--- Page 46 ---
+H Proofs
+H.1 Proof of Proposition 1
+Recall the normalization ˆf1 = 0 and the deﬁnition in the main text:
+ˆf2 =
+∑
+i̸∈Mn ∆yi2
+n−| Mn| = f2 +
+∑
+i̸∈Mn ∆ui2
+n−| Mn|
+where the second equality follows from the normalization f1 = 0 and the CRC model ( ??).
+By convergence in mean-square error and Assumption 1 we have:
+1
+n(n−| Mn|) = 1
+n
+n∑
+i=1
+1[xi1 = xi2]
+p
+→ πS
+where πS was deﬁned in the main text to be πS = P (xi1 = xi2).
+Note that by the law of total variance and the CRC model ( ??) we have:
+V ar(1[xi1 = xi2]∆ui2) = σ2
+∆u,SπS
+where the main text deﬁned σ2
+∆u,S = V ar(∆ui2|xi1 = xi2). Therefore we have V ar(1[xi1 =
+xi2]∆ui2) > 0 under Assumption 2.b and 2.c.
+Assumption 2.a of bounded support implies that 1[ xi1 = xi2]∆ui2 has bounded support.
+Therefore by the Lindeberg-Levy central limit theorem for i.i.d. observations, we have:
+1√n
+n∑
+i=1
+1[xi1 = xi2]∆ui2
+d
+→ N(0, σ2
+∆u,SπS) (H.1)
+Therefore by Slutsky’s theorem, since πS > 0 by Assumption 2.b, we have:
+√n( ˆf2− f2)
+d
+→ N(0, σ2
+∆u,S
+πS
+) (H.2)
+This establishes the ﬁrst result of Proposition 1.
+46
+--- Page 47 ---
+By deﬁnition, we have:
+ˆai =
+∑
+i=1,2(1− xit)(yit− ˆft)∑
+i=1,2(1− xit) , ˆai + ˆbi =
+∑
+i=1,2 xit(yit− ˆft)∑
+i=1,2 xit
+where as discussed above these estimators are both well-deﬁned only for cross-sectional
+observations that are movers.
+For all cross-sectional observations such that ˆ ai is well-deﬁned (movers and untreated
+stayers), we can write:
+ˆai =
+∑
+i=1,2(1− xit)(yit− ft)∑
+i=1,2(1− xit) − (1− xi2) ( ˆf2− f2)∑
+i=1,2(1− xit)
+= ai +
+∑
+i=1,2(1− xit)uit
+∑
+i=1,2(1− xit) − (1− xi2) ( ˆf2− f2)∑
+i=1,2(1− xit)
+where the ﬁrst equality follows from the normalizations f1 = ˆf1 = 0 and the second equality
+follows from the CRC model ( ??).
+The ﬁrst result of this proposition shows that ˆf2− f2 = Op( 1√n), and we have (1− xi2)∈
+{0, 1} and∑
+i=1,2(1− xit)∈{ 1, 2} for movers and untreated stayers.
+Therefore deﬁning ζa,i,n = (1− xi2) ( ˆf2−f2)∑
+i=1,2(1−xit) we obtain maxi=1,...,n:xi1=0 orxi2=0|ζa,i,n| =
+Op( 1√n).
+Similarly we have for movers and treated stayers:
+ˆai + ˆbi = ai + bi +
+∑
+i=1,2 xituit
+∑
+i=1,2 xit
+− xi2
+( ˆf2− f2)∑
+i=1,2 xit
+and deﬁning ζa+b,i,n = xi2
+( ˆf2−f2)∑
+i=1,2xit
+we obtain maxi=1,...,n:xi1=1 orxi2=1|ζa+b,i,n| = Op( 1√n), which
+completes the proof of this proposition.
+H.2 Proof of Proposition 2
+Linear inﬂuence function representation for ˆα0 and ˆα1.
+47
+--- Page 48 ---
+Deﬁne An =
+
+
+|Mn|
+n
+1
+n
+∑
+i∈Mn
+ˆbi
+n01
+n
+1
+n
+∑
+i∈Mn:xi1=0
+ˆbi
+
+ and wn =
+
+
+1
+n
+∑
+i∈Mn ˆai
+1
+n
+∑
+i∈Mn:xi1=0 ˆai
+
+ so that
+
+
+ˆα0
+ˆα1
+
+ = A−1
+n wn (H.3)
+The extrapolation identifying assumption ( ??) and Proposition 1 imply:
+ˆai = α0 + α1ˆbi + ri + ζi,n (H.4)
+where ζi,n = ζa,i,n− α1ζb,i,n and ζb,i,n = ζa+b,i,n− ζa,i,n and ri is deﬁned in the main text as
+ri = ϵi +∑
+t=1,2 uit((1 + α1)(1− xit)− α1xit).
+Therefore we have: 
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+ = A−1
+n en (H.5)
+where en =
+
+
+1
+n
+∑
+i∈Mn(ri + ζi,n)
+1
+n
+∑
+i∈Mn:xi1=0(ri + ζi,n)
+
+.
+From Proposition 1, for cross-sectional observations that are movers:
+ζi,n = (1 + α1)ζa,i,n− α1ζab,i,n
+= (1 + α1)(1− xi2)( ˆf2− f2)− α1xi2( ˆf2− f2)
+By convergence in mean-squared error:
+
+
+1
+n
+∑
+i∈Mn((1 + α1)(1− xi2)− α1xi2)
+1
+n
+∑
+i∈Mn:xi1=0((1 + α1)(1− xi2)− α1xi2)
+
+
+p
+→ c0
+48
+--- Page 49 ---
+where c0 =
+
+
+E((1 + α1)(1− xi2)− α1xi2|xi1̸= xi2)πM
+E((1 + α1)(1− xi2)− α1xi2|0, 1)π01
+
+.
+From the proof of Proposition 1, we also have:
+√n( ˆf2− f2) = 1
+πS
+1√n
+∑
+i:xi1=xi2
+∆ui2 + op(1) (H.6)
+From proposition 1, we also have ˆbi = bi +
+∑
+txituit∑
+txit
+−
+∑
+t(1−xit)uit∑
+t(1−xit) + ζb,i,n where maxiζb,i,n =
+op(1) and E(
+∑
+txituit∑
+txit
+−
+∑
+t(1−xit)uit∑
+t(1−xit) |xi1, xi2) = 0 for xi1̸= xi2.
+Therefore under Assumption 2.a of bounded support and Assumption 1, convergence in
+mean squared error implies:
+An
+p
+→ A0 (H.7)
+where A0 =
+
+
+πM E(bi|xi1̸= xi2)πM
+π01 E(bi|0, 1)π01
+
+ where πM = π01 + π10.
+In addition Assumptions 3.a and 3.b imply λmin(A0) > 0. Therefore by the continuous
+mapping theorem:
+A−1
+n − A−1
+0 = op(1) (H.8)
+Under Assumption 2.a of bounded support and Assumption 1 of cross-sectional indepen-
+dence, we have 1√n
+∑
+i∈Mn ri = Op(1), 1√n
+∑
+i∈Mn:xi1=0 ri = Op(1), and 1√n
+∑
+i:xi1=xi2 ∆ui2 =
+Op(1).
+Therefore we have:
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+) = A−1
+0 [I2, c0]
+
+
+1√n
+∑
+i∈Mn ri
+1√n
+∑
+i∈Mn:xi1=0 ri
+1√n
+∑
+i:xi1=xi2 ∆ui2
+
+
++ op(1) (H.9)
+where I2 is the 2× 2 identity matrix.
+49
+--- Page 50 ---
+Deﬁning ξα,i = A−1
+0 [I2, c0]
+
+
+1[xi1̸= xi2]ri
+1[xi1 = 0, xi2 = 1]ri
+1[xi1 = xi2]∆ui2
+
+
+completes the proof of the ﬁrst result
+of Proposition 2, showing that the estimator
+
+
+ˆα0
+ˆα1
+
+ has an asymptotic inﬂuence function
+representation.
+Asymptotic normality of ˆα0 and ˆα1.
+Deﬁne
+wi =
+
+
+1[xi1̸= xi2]ri
+1[xi1 = 0, xi2 = 1]ri
+1[xi1 = xi2]∆ui2
+
+
+(H.10)
+From Assumption 2.a of bounded support, wi has bounded support.
+As in the proof of Proposition 1, Assumptions 2.b and 2.c guarantee that V ar(1[xi1 =
+xi2]∆ui2) > 0. Assumptions 3.a and 3.c guarantee that V ar(1[xi1 ̸= xi2]ri) > 0 and
+V ar(1[xi1 = 0, xi2 = 1]ri) > 0.
+Assumption 1 of cross-sectional independence guarantees that 1[ xi1 = xi2]∆ui2 is uncor-
+related with 1[ xi1̸= xi2]ri and 1[xi1 = 0, xi2 = 1]ri.
+Finally
+Cov(1[xi1̸= xi2]ri, 1[xi1 = 0, xi2 = 1]ri) = E(1[xi1 = 0, xi2 = 1]r2
+i )
+= V ar(1[xi1 = 0, xi2 = 1]ri)
+and
+V ar(1[xi1̸= xi2]ri) = V ar(1[xi1 = 0, xi2 = 1]ri) + V ar(1[xi1 = 1, xi2 = 0]ri)
+> V ar(1[xi1 = 0, xi2 = 1]ri)
+where the strict inequality follows from V ar(ri|1, 0) > 0 (Assumption 3.c) and π10 > 0
+50
+--- Page 51 ---
+(Assumption 3.a).
+Therefore|Corr(1[xi1̸= xi2]ri, 1[xi1 = 0, xi2 = 1]ri)| < 1, so that:
+λminV ar(wi) > 0 (H.11)
+where λmin denotes the smallest eigenvalue of a matrix.
+Therefore all conditions (bounded support, positive variance, i.i.d.) are met for the
+Lindeberg-Levy central limit theorem to apply:
+1√n
+n∑
+i=1
+wi
+d
+→ N(0, V ar(wi)) (H.12)
+so that we obtain by Slutsky’s theorem:
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+)
+d
+→ N(0, Vα) (H.13)
+where Vα = A−1
+0 [I2, c0]V ar(wi)
+
+
+I2
+c
+′
+0
+
+ A−1′
+0 .
+Linear inﬂuence function representation and asymptotic normality of ˆAT ES,0
+and ˆAT ES,1
+By deﬁnition:
+ˆAT ES,0 = ¯a00− ˆα0
+ˆα1
+=
+1
+n00
+∑
+i:xi1=xi2=0(ai + 1
+2
+∑
+t=1,2 uit− 1
+2( ˆf2− f2))− ˆα0
+ˆα1
+51
+--- Page 52 ---
+Deﬁne ˜ai = ai + 1
+2
+∑
+t=1,2 uit and deﬁne:
+wATE,i =
+
+
+1[xi1 = xi2 = 0](˜ai− E(ai|0, 0))
+wi
+
+ (H.14)
+where wi was deﬁned above as wi =
+
+
+1[xi1̸= xi2]ri
+1[xi1 = 0, xi2 = 1]ri
+1[xi1 = xi2]∆ui2
+
+
+.
+As before, the variance of wi is positive deﬁnite. In addition Assumption 1 implies that
+1[xi1 = xi2 = 0](˜ai− E(ai|0, 0)) is uncorrelated with 1[ xi1̸= xi2]ri and 1[xi1 = 0, xi2 = 1]ri.
+Assumption 3.c implies that V ar(˜ai|∆ui2, 0, 0) > 0, so that |Corr(1[xi1 = xi2 = 0](˜ai−
+E(ai|0, 0)), 1[xi1 = xi2]∆ui2)| < 1.
+Therefore λminV ar(wATE,i ) > 0. In addition Assumption 2.a guarantees that wATE,i has
+bounded support.
+Therefore by the Lindeberg-Levy central limit theorem we have:
+1√n
+n∑
+i=1
+wATE,i
+d
+→ N(0, V ar(wATE,i )) (H.15)
+Therefore since AT ES,0 = E(ai|0,0)−α0
+α1
+, by the δ-method we obtain:
+√n( ˆAT ES,0− AT ES,0) = AATE, 0
+1√n
+n∑
+i=1
+wATE,i + op(1)
+d
+→ N(0, AATE, 0V ar(wATE,i )A
+′
+ATE, 0)
+(H.16)
+where AATE, 0 = [ 1
+α1
+,− 1
+α1
+,−ATE S,0
+α1
+]BATE, 0 and BATE, 0 =
+
+
+1
+π00
+0
+′
+2 − 1
+π00
+1
+2
+1
+πS
+02 A−1
+0 A−1
+0 c0
+
+ where 02 is
+a 2× 1 vector of zeros and A0, c0 are deﬁned above.
+The same steps can be used for ˆAT ES,1, which completes the proof of Proposition 2.
+52
+--- Page 53 ---
+H.3 Deﬁnitions and Lemma for the Proof of Proposition 3
+The ﬁrst step of our estimation procedure is unchanged when estimating ATE under the
+generalized extrapolation identifying assumption (3.7). We ﬁrst establish the same result for
+these ﬁrst step estimators as Proposition 1 but under Assumptions 4 and 5.
+Recall the redeﬁnition in the main text of σ2
+∆u,S to σ2
+∆u,S = V ar(∑
+i:vi=v,xi1=xi2 ∆ui2).
+Also redeﬁne πS = E(∑
+i:vi=v 1[xi1 = xi2]).
+Lemma 1. Under the CRC model ( ??) and Assumptions 4 and 5, as N→∞ :
+√
+N( ˆf2− f2)
+d
+→ N(0, σ2
+∆u,S
+π2
+S
+) (H.17)
+and wherever ˆai and ˆai + ˆbi are well-deﬁned we can write:
+ˆai = ai +
+∑
+t=1,2(1− xit)uit
+∑
+t=1,2(1− xit) + ζa,i,N , ˆai + ˆbi = ai + bi +
+∑
+t=1,2 xituit
+∑
+t=1,2 xit
++ ζa+b,i,N (H.18)
+where maxi=1,...,n:xi1=0 orxi2=0|ζa,i,N| = Op( 1√
+N ) and maxi=1,...,n:xi1=1 orxi2=1|ζa+b,i,N| = Op( 1√
+N ).
+Proof. As in the proof of Proposition 1, we have:
+√
+N( ˆf2− f2) =
+∑
+v=1,...,N
+∑
+i:vi=v,xi1=xi2 ∆ui2
+∑
+v=1,...,N
+∑
+i:vi=v 1[xi1 = xi2] (H.19)
+Under Assumption 4, convergence in mean-squared error implies:
+1
+N
+∑
+v=1,...,N
+∑
+i:vi=v
+1[xi1 = xi2]
+p
+→ πS (H.20)
+and Assumption 2.b implies πS > 0.
+Assumption 4 and Assumption 2.a imply that ∑
+i:vi=v,xi1=xi2 ∆ui2 is i.i.d. across v with
+bounded support. Assumption 5 implies V ar(∑
+i:vi=v,xi1=xi2 ∆ui2) = σ2
+∆u,S > 0. Therefore by
+the continuous mapping theorem, Slutsky’s theorem, and the Lindeberg-Levy central limit
+53
+--- Page 54 ---
+theorem, we have:
+√
+N( ˆf2− f2) = 1
+πS
+1√
+N
+∑
+v=1,...,N
+∑
+i:vi=v,xi1=xi2
+∆ui2 + op(1)
+d
+→ N(0, σ2
+∆u,S
+π2
+S
+)
+Given this result, the rest of the proof of Lemma 1 is as in the proof of Proposition 1.
+Here we also deﬁne explicitly the second-step estimator for α1 used with the generalized
+extrapolation identifying assumption (3.7). A ﬁxed eﬀects instrumental variable regression
+of ˆai on ˆbi using xi2 as an instrumental variable, with ﬁxed eﬀects indexed by vi, yields the
+estimator:
+ˆα1 =
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v xi2¨ai
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v xi2¨bi
+(H.21)
+where
+¨ai = ˆai− ¯ai, ¯ai = 1
+nvi
+∑
+j∈Mn,vj=vi
+ˆaj
+¨bi = ˆbi− ¯bi, ¯bi = 1
+nvi
+∑
+j∈Mn,vj=vi
+ˆbj
+The estimated ﬁxed eﬀects are given by:
+ˆev = 1
+nv
+∑
+i∈Mn,vi=v
+(ˆai− ˆα1ˆbi) (H.22)
+H.4 Proof of Proposition 3
+From the CRC model ( ??), the generalized extrapolation identifying assumption (3.7), and
+Lemma 1:
+ˆai = evi + α1ˆbi + ri + ζi,n (H.23)
+54
+--- Page 55 ---
+where as before ri = ϵi +∑
+t=1,2 uit((1 +α1)(1− xit)− α1xit) and ζi,n = (1 +α1)(1− xi2)( ˆf2−
+f2)− α1xi2( ˆf2− f2).
+Therefore we have:
+ˆα1− α1 =
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v xi2( ˙ri + ˙ζi,n)
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v xi2¨bi
+(H.24)
+where ˙ri = ri− 1
+nvi
+∑
+j∈Mn:vj=vi rj and ˙ζi,n = ζi,n− 1
+nvi
+∑
+j∈Mn:vj=vi ζj,n.
+Considering the denominator, we have:
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v
+xi2¨bi =
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v
+xi2ˆbi−
+∑
+v=1,...,N
+nv,01
+nv
+∑
+i∈Mn:vi=v
+ˆbi
+=
+∑
+v=1,...,N
+nv,01nv,10
+nv
+( 1
+nv,01
+∑
+i∈Mn:vi=v
+xi2ˆbi− 1
+nv,10
+∑
+i∈Mn:vi=v
+(1− xi2)ˆbi)
+where nv,x1x2 =|{i = 1, ..., n : vi = v, xi1 = x1, xi2 = x2}|.
+Under Assumption 4 we have nv,01nv,10
+nv
+≤ C. From Lemma 1 we therefore have:
+1
+N
+∑
+v=1,...,N
+nv,01nv,10
+nv
+( 1
+nv,01
+∑
+i∈Mn:vi=v
+xi2ˆbi− 1
+nv,10
+∑
+i∈Mn:vi=v
+(1− xi2)ˆbi)
+= 1
+N
+∑
+v=1,...,N
+nv,01nv,10
+nv
+( 1
+nv,01
+∑
+i∈Mn:vi=v
+xi2(bi + ∆ui2)− 1
+nv,10
+∑
+i∈Mn:vi=v
+(1− xi2)(bi− ∆ui2)) + op(1)
+and convergence in mean-squared error implies:
+1
+N
+∑
+v=1,...,N
+nv,01nv,10
+nv
+( 1
+nv,01
+∑
+i∈Mn:vi=v
+xi2(bi + ∆ui2)− 1
+nv,10
+∑
+i∈Mn:vi=v
+(1− xi2)(bi− ∆ui2))
+p
+→ E( nv,01nv,10
+nv
+(b01,v− b10,v))
+Deﬁne ∆b = E(nv,01nv,10
+nv
+(b01,v− b10,v)). We have ∆b̸= 0 since nv,01nv,10
+nv
+≥ 0, nv,01nv,10
+nv
+≥ c
+with positive probability under Assumptions 6.a and 4, nv,01nv,10
+nv
+has discrete support under
+Assumption 4, and b01,v− b10,v > 0 whenever nv,01nv,10
+nv
+> 0 or b01,v− b10,v < 0 whenever
+55
+--- Page 56 ---
+nv,01nv,10
+nv
+> 0 under Assumption 6.c.
+Convergence in mean-squared error and Lemma 1 imply:
+1√
+N
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v
+xi2( ˙ri + ˙ζi,n)
+= 1√
+N
+∑
+v=1,...,N
+∑
+i∈Mn:vi=v
+xi2 ˙ri + c0
+1
+πS
+1√
+N
+∑
+v=1,...,N
+∑
+i:vi=v,xi1=xi2
+∆ui2 + op(1)
+where c0 = E(∑
+i∈Mn:vi=v xi2((1 + α1)(1− ˙xi2)− α1 ˙xi2)), ˙xi2 = xi2− 1
+nvi
+∑
+j∈Mn:vj=vi xj2.
+Deﬁne wv =
+
+
+∑
+i∈Mn:vi=v xi2 ˙ri
+∑
+i:vi=v,xi1=xi2 ∆ui2
+
+. E(wv) = 0 under the CRC model and the generalized
+extrapolation identifying assumption. Assumption 6.d imposes that λmin(V ar(wv)) > 0. wv
+has bounded support under Assumption 2.a.
+Therefore under Assumption 4, the continuous mapping theorem, Slutsky’s theorem, and
+the Lindeberg-Levy central limit theorem imply:
+√
+N(ˆα1− α1) = Aα,0
+1√
+N
+∑
+v=1,...,N
+wv
+d
+→ N(0, Vα) (H.25)
+where Vα = Aα,0V ar(wv)A
+′
+α,0 and Aα,0 = 1
+∆b
+[1, c0
+1
+πS
+].
+By deﬁnition:
+ˆAT ES,0 =
+1
+n00
+∑
+i:xi1=xi2=0(ˆai− 1
+nvi
+∑
+j∈Mn:vj=vi(ˆaj− ˆα1ˆbj))
+ˆα1
+Redeﬁne π00 = E(∑
+i:vi=v 1[xi1 = xi2 = 0]), note that Assumption 6.d implies π00 > 0.
+By convergence in mean-squared error we obtain:
+n00
+N
+p
+→ π00 (H.26)
+56
+--- Page 57 ---
+By convergence in mean-squared error and the previous results, we can also write:
+1√
+N
+N∑
+v=1
+∑
+i:vi=v,xi1=xi2=0
+(ˆai− 1
+nv
+∑
+j∈Mn:vj=vi
+(ˆaj− ˆα1ˆbj))
+= 1√
+N
+N∑
+v=1
+∑
+i:vi=v,xi1=xi2=0
+(ai + 1
+2
+∑
+t=1,2
+uit− ev− 1
+nv
+∑
+j∈Mn:vj=vi
+rj)
++d0
+√n( ˆf2− f2) + e0
+√n(ˆα1− α1) + op(1)
+= 1√
+N
+N∑
+v=1
+∑
+i:vi=v,xi1=xi2=0
+(ai + 1
+2
+∑
+t=1,2
+uit− ev− 1
+nv
+∑
+j∈Mn:vj=vi
+rj)
++d0
+1
+πS
+1√
+N
+∑
+v=1,...,N
+∑
+i:vi=v,xi1=xi2
+∆ui2
++e0
+1
+∆b
+[1, c0
+1
+πS
+] 1√
+N
+∑
+v=1,...,N
+wv + op(1)
+where
+d0 = 1
+N
+N∑
+v=1
+E(
+∑
+i:vi=v
+(−1[xi1 = xi2]
+2 − 1
+nv
+∑
+j∈Mn:vj=vi
+(−(1 + α1)(1− xj2) + α1xj2)))
+e0 = E(
+∑
+i:vi=v,xi1=xi2=0
+1
+nv
+∑
+j∈Mn:vj=v
+bj)
+Therefore by the δ-method we have:
+√n( ˆAT ES,0− AT ES,0) = 1√
+N
+∑
+v=1,...,N
+AATE, 0wATE 0,v + op(1) (H.27)
+where AATE, 0 = [ 1
+α1
+,−ATE S,0
+α1
+]BATE, 0, BATE, 0 =
+
+
+1
+π00
+e0
+1
+∆b
+(d0 + e0
+1
+∆b
+c0) 1
+πS
+0 1
+∆b
+1
+∆b
+c0
+1
+πS
+
+ , and:
+wATE 0,v =
+
+
+∑
+i:vi=v,xi1=xi2=0(ai− evi− E(ai− evi|xi1 = xi2 = 0) + ˜ui))
+wv
+
+ (H.28)
+57
+--- Page 58 ---
+where ˜ui was deﬁned in the main text to be ˜ ui = 1
+2
+∑T
+t=1 uit− 1
+nvi
+∑
+j∈Mn:vj=vi rj and wv is
+deﬁned above.
+Bounded support, Assumption 6.d, and Assumption 4 lead to the applicability of the
+Lindeberg-Levy central limit theorem, so that:
+√n( ˆAT ES,0− AT ES,0)
+d
+→ N(0, VATE ) (H.29)
+where VATE = AATE, 0V ar(wATE 0,v)A
+′
+ATE, 0.
+This completes the proof of this proposition since the same steps can be used to derive
+the asymptotic normality of the estimator of ATE for treated stayers, ˆAT ES,1.
+H.5 Proof of Proposition 4
+The choice of generalized inverse used here (excluding the interaction between the cross-
+sectional indicator variables and treatment status for stayers) implies:
+(W
+′
+i Wi)−W
+′
+i Zi =
+
+
+
+[¯z0
+it, ¯z1
+it− ¯z0
+it]
+′
+if i is a mover
+[¯z0
+it, 0]
+′
+if xit = 0∀ t
+[¯z1
+it, 0]
+′
+if xit = 1∀ t
+(H.30)
+where ¯z0
+it =
+∑
+t(1−xit)zit∑
+t(1−xit) and ¯z1
+it =
+∑
+txitzit∑
+txit
+, and ( W
+′
+i Wi)−W
+′
+i Ui has a similar representation.
+Therefore under Assumption 8.a: Z
+′
+iMWiZi, Z
+′
+iMWiUi, (W
+′
+i Wi)−W
+′
+i Zi and (W
+′
+i Wi)−W
+′
+i Ui
+have bounded support.
+The deﬁnition of the estimator and (E.3) implies:
+√n(ˆγ− γ) = ( 1
+n
+n∑
+i=1
+Z
+′
+iMWiZi)−1 1√n
+n∑
+i=1
+Z
+′
+iMWiUi
+Under Assumption 7, Z
+′
+iMWiZi and Z
+′
+iMWiUi are cross-sectionally independent.
+58
+--- Page 59 ---
+Therefore convergence in mean squared error implies:
+1
+n
+n∑
+i=1
+Z
+′
+iMWiZi− An,γ,0
+p
+→ 0
+Assumption 8.d implies that Vn,γ,0 = V ar( 1√n
+∑n
+i=1 Z
+′
+iMWiUi)≥ c,∀ n≥ C, for constants
+c > 0 and C, and as discussed above Z
+′
+iMWiUi has bounded support.
+Therefore a central limit theorem for independent observations such as Theorem 5.11 in
+White (2001) implies:
+V
+− 1
+2
+n,γ,0
+1√n
+n∑
+i=1
+Z
+′
+iMWiUi
+d
+→ N(0, IK) (H.31)
+These two results complete the proof of V
+− 1
+2
+n,γ,0An,γ,0
+√n(ˆγ− γ)
+d
+→ N(0, IK).
+From the deﬁnition of the estimators ˆai and ˆbi we also have:
+
+
+ˆai
+ˆbi
+
+ = (W
+′
+i Wi)−W
+′
+i (Yi− Ziˆγ)
+=
+
+
+ai
+bi
+
+ + (W
+′
+i Wi)−W
+′
+i (Ui− Zi(ˆγ− γ))
+From the above, we have:
+(W
+′
+i Wi)−W
+′
+i Zi(ˆγ− γ) = (W
+′
+i Wi)−W
+′
+i ZiA−1
+n,γ,0
+1√n ζn
++ (W
+′
+i Wi)−W
+′
+i Zi(( 1
+n
+n∑
+i=1
+Z
+′
+iMWiZi)−1− A−1
+n,γ,0) 1√n ζn
+By the continuous mapping theorem and Assumption 8.c:
+( 1
+n
+n∑
+i=1
+Z
+′
+iMWiZi)−1− A−1
+n,γ,0 = op(1) (H.32)
+The ﬁrst result in this proof shows that (W
+′
+i Wi)−W
+′
+i Zi has bounded support and we have
+59
+--- Page 60 ---
+shown that 1√n ζn
+d
+→ N(0, 1), so that 1√n ζn is bounded in probability.
+Therefore:
+maxi=1,...,n((W
+′
+i Wi)−W
+′
+i Zi)(( 1
+n
+n∑
+i=1
+Z
+′
+iMWiZi)−1− A−1
+n,γ,0) 1√n ζn
+= Op(1)× op(1)× Op(1)
+= op(1)
+which completes the proof.
+H.6 Proof of Proposition 5
+From the deﬁnition of the estimator
+
+
+ˆα0
+ˆα1
+
+ we can rewrite:
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+ = (B
+′
+nΣ−1
+n Bn)−1B
+′
+nΣ−1
+n
+1
+n
+∑
+i∈Mn
+˜Xi(ϵi + [1,−α1](W
+′
+i Wi)−1W
+′
+i (Ui + Zi(γ− ˆγ)))
+(H.33)
+Deﬁne C⋆
+n = 1
+n
+∑
+i∈Mn
+˜Xi[1,−α1](W
+′
+i Wi)−1W
+′
+i Zi. From Assumption 7 and Assumption
+8.a, by convergence in mean squared error:
+C⋆
+n− Cn,0 = op(1) (H.34)
+By deﬁnition:
+Bn = 1
+n
+∑
+i∈Mn
+˜Xi[1,ˆbi]
+= 1
+n
+∑
+i∈Mn
+˜Xi[1, bi + [0, 1](W
+′
+i Wi)−1W
+′
+i (Ui + Zi(ˆγ− γ))]
+= 1
+n
+∑
+i∈Mn
+˜Xi[1, bi + [0, 1](W
+′
+i Wi)−1W
+′
+i Ui] + op(1)
+60
+--- Page 61 ---
+where the last equality follows from Proposition 4.
+As in the proof of Proposition 4, ˜Xi[1, bi + [0, 1](W
+′
+i Wi)−1W
+′
+i Ui] has bounded support
+under Assumption 8.a, so that by convergence in mean-squared error:
+Bn− Bn,0 = op(1) (H.35)
+By deﬁnition of Σn:
+Σn = 1
+n
+∑
+i∈Mn
+˜ϵ2
+i ˜Xi ˜X
+′
+i
+= 1
+n
+∑
+i∈Mn
+(ˆai− ˜α0− ˜α1ˆbi)2 ˜Xi ˜X
+′
+i
+= 1
+n
+∑
+i∈Mn
+(ˆai− α0− α1ˆbi− [1,ˆbi]
+
+
+˜α0− α0
+˜α1− α1
+
+)2 ˜Xi ˜X
+′
+i
+= 1
+n
+∑
+i∈Mn
+(ri− [1,−α1](W
+′
+i Wi)−1W
+′
+i Zi(ˆγ− γ)− [1,ˆbi]
+
+
+˜α0− α0
+˜α1− α1
+
+)2 ˜Xi ˜X
+′
+i
+From Assumption 9.c, Proposition 4, and Assumption 8.a:
+maxi=1,...,n[1,ˆbi]
+
+
+˜α0− α0
+˜α1− α1
+
+ = op(1)
+maxi=1,...,n[1,−α1](W
+′
+i Wi)−1W
+′
+i Zi(ˆγ− γ) = op(1)
+maxi=1,...,nri = Op(1)
+Therefore:
+Σn = 1
+n
+∑
+i∈Mn
+r2
+i ˜Xi ˜X
+′
+i + op(1) (H.36)
+61
+--- Page 62 ---
+As previously, under Assumptions 7 and 8.a, convergence in mean squared error implies:
+Σn− Σn,0 = op(1) (H.37)
+Therefore under Assumptions 9.a and 9.b, by the continuous mapping theorem and
+Proposition 4, we have:
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+) = (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0
+1√n
+∑
+i∈Mn
+˜Xiri
+− (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0
+1√n
+n∑
+i=1
+Z
+′
+iMWiUi + op(1)
+which completes the proof of the ﬁrst result of Proposition 5.
+With the ﬁrst result of Proposition 5 established, the second result can be obtained
+by using a central limit theorem for independent observations. To apply this central limit
+theorem, we show that higher moments of the linear inﬂuence function for
+
+
+ˆα0
+ˆα1
+
+ are bounded
+and that the variance of the linear inﬂuence function is uniformly positive-deﬁnite.
+From Assumptions 8.a, 9.a, and 9.b, we have that the support of (B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0 ˜Xiri
+is bounded.
+From Assumptions 8.a, 9.a, 9.b, and 8.c, we have that the support of
+(B
+′
+n,0Σ−1
+n,0Bn,0)−1B
+′
+n,0Σ−1
+n,0Cn,0A−1
+n,γ,0Z
+′
+iMWiUi (H.38)
+is bounded.
+Assumption 7 of cross-sectional independence, Assumption 8.b that a non-vanishing share
+of the population be stayers, and Assumptions 8.d and 9.a imply that λmin(Ωn,0)≥ c.
+62
+--- Page 63 ---
+Therefore λmin(Vn,0)≥ c as long as:
+λmin([An,1,0, An,2,0]
+
+
+A
+′
+n,1,0
+A
+′
+n,2,0
+
+)≥ c (H.39)
+which follows fromλmin(B
+′
+n,0Σ−1
+n,0Bn,0)−1≥ c, which itself follows fromλmin(B
+′
+n,0Σ−1
+n,0Bn,0)−1 =
+1
+λmax(B′
+n,0Σ−1
+n,0Bn,0), and λmaxΣ−1
+n,0 = 1
+λminΣn,0
+≤ C by Assumption 9.a, and λmax(B
+′
+n,0Bn,0)≤ C
+by Assumption 8.a.
+Therefore all conditions are met to use a central limit theorem for independent observa-
+tions such as Theorem 5.11 in White (2001), and we have:
+V
+− 1
+2
+n,0
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+)
+d
+→ N(0, I2) (H.40)
+which completes the proof of the second result of Proposition 5.
+We can show that the estimators of ATE for stayers, ˆAT ES,0 and ˆAT ES,1, have a linear
+inﬂuence function representation using similar steps as above. Under the assumptions of this
+proposition we have:
+√n( ˆAT ES,0− AT ES,0) = An,ATE s,0,0
+√n
+
+
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+√n( ˆAT ES,1− AT ES,1) = An,ATE s,1,0
+√n
+
+
+∑
+i:xit=1∀t ˜a+bi
+∑
+i=1,...,nP (xit=1∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
++ op(1)
+For concision we concentrate on ˆAT ES,0 in the remainder of this proof since the asymp-
+totic normality of ˆAT ES,1 is derived in the same way.
+63
+--- Page 64 ---
+As above, An,ATE s,0,0
+
+
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+has bounded support under the assumptions of
+this proposition, so that we can apply a central limit theorem for independent observations
+if V ar(√n
+
+
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+) is uniformly positive-deﬁnite since An,ATE s,0,0A
+′
+n,ATE s,0,0≥ c
+∀ n≥ C.
+Assumptions 8.d, 9.a, and 9.d impose that the variance of each term in√n
+
+
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+is uniformly positive deﬁnite.
+As above, Assumptions 7, 8.b, and 8.d guarantee that 1
+n
+∑n
+i=1 Z
+′
+iMWiUi and 1
+n
+∑
+i∈Mn
+˜Xiri
+are not approximately linearly dependent.
+Assumption 7 of cross-sectional independence guarantees that
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t) and 1
+n
+∑
+i∈Mn
+˜Xiri
+are independent.
+Assumption 9.d guarantees that
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t) and 1
+n
+∑n
+i=1 Z
+′
+iMWiUi are not approxi-
+mately linearly dependent.
+Therefore we have λminV ar(√n
+
+
+∑
+i:xit=0∀t ˜ai
+∑
+i=1,...,nP (xit=0∀t)
+1
+n
+∑n
+i=1 Z
+′
+iMWiUi
+1
+n
+∑
+i∈Mn
+˜Xiri
+
+
+)≥ c > 0∀ n≥ C and applying a
+central limit theorem for independent observations such as Theorem 5.11 in White (2001)
+we obtain:
+V
+− 1
+2
+n,ATE s,0,0
+√n( ˆAT ES,0− AT ES,0)
+d
+→ N(0, 1) (H.41)
+64
+--- Page 65 ---
+H.7 Proof of Proposition 6
+As in the proofs of Propositions 4 and 5, convergence in mean-squared error and the contin-
+uous mapping theorem imply:
+Cn− Cn,0 = op(1), Σn− Σn,0 = op(1) Σ n,γ− Vn,γ,0 = op(1) Σ n,αγ− Vn,αγ,0 = op(1)
+An,1− An,1,0 = op(1) An,2− An,2,0 = op(1) Ω n− Ωn,0 = op(1) Vn− Vn,α,0 = op(1)
+so that Slutsky’s theorem implies:
+V
+− 1
+2
+n
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+)
+d
+→ N(0, I2) (H.42)
+H.8 Proof of Proposition 7
+The proof of this proposition follows the same steps as the proof of Proposition 5 albeit with
+diﬀerent deﬁnitions and dependence being indexed by vi rather than i.
+H.9 Proof of Proposition 8
+The proof of this proposition follows the same steps as the proof of Proposition 6 albeit with
+diﬀerent deﬁnitions and dependence being indexed by vi rather than i.
+I Learning and the Extrapolation Identifying Assump-
+tion
+In this section we brieﬂy discuss the possibility that farmers in our empirical application do
+not know exactly what their returns are prior to adopting hybrid seeds for the ﬁrst time, and
+learn about their returns as they use the technology. Learning could create a feedback from
+past shocks to productivity, uis∀ s < t , to current technology use, xit, if positive (negative)
+65
+--- Page 66 ---
+shocks to productivity while using hybrid seeds are misinterpreted as high (low) returns to
+using hybrid seeds, invalidating the CRC model (2.4) used in the ﬁrst step of our estimation
+approach.
+If farmers learn directly about their returns, without confounding their adoption of the
+new technology with past productivity shocks, learning may not invalidate the extrapolation
+assumption (2.11). Suppose for simplicity that immediate learning takes place, where before
+her ﬁrst adoption, a farmer bases her decision on whether to use hybrid seeds on the rule
+xit = 1[˜bi≥ cit] where ˜bi = bi + ςi, where ςi is measurement error, and cit is the cost of using
+hybrid seeds, while after having used hybrid seeds at least once she bases her decision on
+the rule xit = 1[bi≥ cit]. If ςi and cit are independent of ai and bi, this model of selection
+satisﬁes the condition (2.15) discussed in section 2.4 in the main text.
+More generally, a farmer may base her selection decision on an information set, Iit,
+and the selection rule xit = 1[E(bi|Iit)≥ cit], as in D’Haultfœuille and Maurel (2013) and
+references therein. IfIit and cit are independent of ai conditional on bi, then the extrapolation
+identifying assumption (2.11) holds (if the assumption of linearity (2.14) also holds). In
+section 4.3 in the main text, we allow for part of a farmer’s information set to be correlated
+with her baseline productivity ai or returns bi as long as it corresponds to information that
+is shared by all farmers in a village.
+References
+Abbring, J. H. and J. J. Heckman (2007): “Chapter 72 Econometric Evaluation of
+Social Programs, Part III: Distributional Treatment Eﬀects, Dynamic Treatment Eﬀects,
+Dynamic Discrete Choice, and General Equilibrium Policy Evaluation,” in Handbook of
+Econometrics, ed. by J. J. Heckman and E. E. Leamer, Elsevier, vol. 6, 5145–5303.
+Carneiro, P., K. T. Hansen, and J. J. Heckman (2003): “2001 Lawrence R. Klein
+Lecture Estimating Distributions of Treatment Eﬀects with an Application to the Re-
+66
+--- Page 67 ---
+turns to Schooling and Measurement of the Eﬀects of Uncertainty on College Choice*,”
+International Economic Review, 44, 361–422.
+Chamberlain, G. (1992): “Eﬃciency Bounds for Semiparametric Regression,” Economet-
+rica, 60, 567–596.
+Cunha, F., J. Heckman, and S. Navarro(2005): “The 2004 Hicks Lecture: Separating
+Uncertainty from Heterogeneity in Life Cycle Earnings,” Oxford Economic Papers , 57,
+191–261.
+D’Haultfœuille, X. and A. Maurel (2013): “Inference on an extended Roy model,
+with an application to schooling decisions in France,” Journal of Econometrics , 174, 95 –
+106.
+Hansen, L. P. (1982): “Large Sample Properties of Generalized Method of Moments Es-
+timators,” Econometrica, 50, 1029–1054.
+Lemieux, T. (1998): “Estimating the Eﬀects of Unions on Wage Inequality in a Panel
+Data Model with Comparative Advantage and Nonrandom Selection,” Journal of Labor
+Economics, 16, 261–291.
+Mammen, E. (1992): When Does Bootstrap Work?: Asymptotic Results and Simulations ,
+Lecture Notes in Statistics, New York: Springer-Verlag.
+Newey, W. K. and F. Windmeijer (2009): “Generalized Method of Moments With
+Many Weak Moment Conditions,” Econometrica, 77, 687–719.
+Suri, T. (2011): “Selection and Comparative Advantage in Technology Adoption,” Econo-
+metrica, 79, 159–209.
+White, H. (2001): Asymptotic theory for econometricians , San Diego: Academic Press.
+67

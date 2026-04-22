@@ -1,0 +1,1267 @@
+
+--- Page 1 ---
+Average Treatment Effects for Stayers with Correlated Random
+Coefﬁcient Models of Panel Data
+Valentin Verdier∗
+May 25, 2020
+Abstract
+Correlated random coefﬁcient (CRC) models provide a useful framework for estimating average treat-
+ment effects (ATE) with panel data by accommodating heterogeneous treatment effects and ﬂexible pat-
+terns of selection. In their simplest form, they lead to the well-known difference-in-differences estimator.
+CRC models yield estimates of ATE for “movers”, i.e., cross-sectional units whose treatment status
+changed over time, while ATE for “stayers”, i.e., cross-sectional units who retained the same treatment
+status over time, are not identiﬁed. We study additional restrictions on selection into treatment that lead
+to the identiﬁcation of ATE for stayers by an extrapolation from quantities identiﬁed by the CRC model.
+We discuss estimation and testing the extrapolation’s validity, then use our results to estimate the returns
+to agricultural technology adoption among maize farmers in Kenya.
+Keywords: Panel data, Correlated Random Coefﬁcient Models, Difference-in-differences, Agricultural tech-
+nology adoption. JEL codes: C23
+Online appendix: https://bit.ly/3fGURJe
+Acknowledgments: I thank Jane Cooley Fruehwirth, David Guilkey, Matt Masten, Arnaud Maurel, and
+Robert Myers for many helpful comments and suggestions. Andrew Castro provided excellent research
+assistance to process the data. The data come from the Tegemeo Agricultural Monitoring and Policy Analysis
+(TAMPA) Project, which is between Tegemeo Institute at Egerton University, Kenya and Michigan State
+University, and is funded by USAID. Milu Muyanga and John Olwande provided very helpful information
+for processing the data.
+∗Department of Economics, University of North Carolina - Chapel Hill.
+1
+--- Page 2 ---
+1 Introduction
+When outcomes and treatment status are observed repeatedly over time, many empircal methods rely on
+comparisons both across time and across cross-sectional units to obtain estimates of treatment effects that
+are robust to patterns of selection into treatment that could lead to biases with more naive estimators. With
+selection on cross-sectional unobserved heterogeneity, ﬁxed effects estimation yields valid estimates when
+this heterogeneity is constant over time and treatment effect is homogenous. If selection into treatment varies
+across time, for instance, with more treated observations in later time periods, estimated treatment effects
+could be biased by the presence of aggregate shocks to outcomes, but estimators that include time ﬁxed
+effects are valid when these aggregate shocks are common to all cross-sectional units.1
+In many empirical applications, the treatment effect is likely to be heterogenous across cross-sectional
+units.2 This heterogeneity leads to biases in the estimators discussed above if they are perceived as estimating
+average treatment effects (ATE).3 In addition, estimating features of the heterogeneity in treatment effects
+might be of ﬁrst-order interest in many empirical studies. Correlated random coefﬁcient (CRC) models ac-
+count for heterogeneous treatment effects and ﬂexible patterns of selection on unobservables. These models
+lead to a separation of cross-sectional units into “movers”, cross-sectional units whose treatment status has
+changed over time, and “stayers”, cross-sectional units whose treatment status has remained constant over
+time. With CRC models, a difference-in-differences estimation approach can be used to estimate ATE for
+movers, while the ATE of stayers are not identiﬁed.4
+In some applications, information on the ATE of stayers may be important for policy design. Here, we
+study existing and new methods for extrapolation from quantities that can be estimated with CRC models
+to ATE for stayers. We begin by showing that methods introduced by Lemieux (1998) and Suri (2011) can
+be represented as a linear extrapolation from difference-in-differences estimates. This linear extrapolation
+1Estimators with both cross-sectional and time ﬁxed effects are commonly referred to as two-way ﬁxed effects estimators. Ex-
+amples are found in Freeman (1984), Jakubson (1991), Card (1996), and Lemieux (1998) on the effect of union membership on
+wages, Ashenfelter and Card (1985) and Card and Sullivan (1988) on the effect of job training programs on earnings and employ-
+ment probabilities, Arcidiacono et al. (2008) on returns to completing a MBA, Kowaleski-Jones and Duncan (2002), Behrman and
+Hoddinott (2005), and Alderman (2007) on the effect of different social aid programs on nutrition, Rouse (1998), Hanushek et al.
+(1998), and Clotfelter et al. (2010) on the effect of different programs on student achievement, Suri (2011) and Michler et al. (2019)
+on the effect of technology adoption on agricultural yields. In a recent survey, de Chaisemartin and D’Haultfoeuille (2018b) report
+that 20% of all studies published in the American Economic Review between 2010 and 2012 rely on the use of two-way ﬁxed effects
+estimators.
+2See Browning and Carro (2007) for empirical evidence on panel data models with more than additive unobserved heterogeneity.
+3See Chamberlain (1982), Wooldridge (2005), Wooldridge (2010), and de Chaisemartin and D’Haultfoeuille (2018b).
+4See, for instance, de Chaisemartin and D’Haultfoeuille (2018a) for a review of difference-in-differences and Chamberlain
+(1982) and Chernozhukov et al. (2013) for the non-identiﬁcation of ATE for stayers with CRC models.
+2
+--- Page 3 ---
+takes a simple form: (i) estimate the average baseline outcome and average treatment effect using difference-
+in-differences for different groups of movers;5 (ii) ﬁt an extrapolation line through the points thus obtained;
+(iii) estimate average treatment effects for untreated stayers by interpolating their estimated average baseline
+outcome with this extrapolation line.6 We show that the validity of this extrapolation relies on an assumption
+that is likely to be violated if factors of selection into treatment other than treatment effect are statistically
+correlated with baseline outcomes or treatment effect, which may be a likely scenario in many applications.
+We show that a more robust extrapolation can be used that accounts for correlated factors of selection into
+treatment that originate from observable sources. We also discuss extensions of these results to models where
+additional control covariates are included in the model and to CRC models with time-varying treatment
+effects.7 Finally we apply our results to revisit the empirical study of Suri (2011) on estimating the returns
+to using an agricultural technology, hybrid seeds, among maize farmers in Kenya.
+2 Correlated Random Coefﬁcient Model and Extrapolation to Stayers
+We consider a setting where an outcome yit and treatment status xit∈{ 0,1} are observed for cross-
+sectional observations i = 1, ...,n across time periods t = 1, ...,T .8 Using potential outcome notation (see
+e.g. Imbens and Rubin (2015)), we assume that the observed outcome yit is determined by:
+yit = xityit(1) + (1− xit)yit(0), (2.1)
+where yit(1) and yit(0) are the potential outcomes corresponding to treatment or baseline, but a researcher
+only observes the potential outcome corresponding to the current treatment status of an observation, xit.
+We further assume models for potential outcomes that impose additive separability of unobservables and
+strict exogeneity of treatment status will hold:
+yit(0) = ai + ft + u0,it, E(u0,it|X) = 0, (2.2)
+yit(1)− yit(0) = bi + u1,it, E(u1,it|X) = 0, (2.3)
+5Different groups of movers can be obtained, for instance, when some cross-sectional observations are observed switching from
+non-treatment to treatment (adopters) and from treatment to non-treatment (disadopters), or when cross-sectional observations that
+switch from non-treatment to treatment do so at different points in time, as is frequently the case in event studies.
+6For treated stayers, a -45 ◦ line determined by the sum of their average baseline outcome and average treatment effect is
+interpolated with the extrapolation line.
+7We show that CRC models with time-varying treatment effects are equivalent to the semi-parametric difference-in-differences
+models considered in Abadie (2005) and subsequent papers.
+8The covariate of interest, xit, is taken to be binary here, but all results extend directly to the case where xit is discrete. If xit
+were continuous without perfect persistence, stayers would form a subpopulation of mass zero, which is the case considered in
+Chamberlain (1992). For simplicity, we abstract from including control covariates at this point but address this point in section 2.6
+below.
+3
+--- Page 4 ---
+where ai denotes unobserved time-constant heterogeneity that affects both baseline and treated outcomes,
+ft denotes unobserved aggregate shocks that affect both baseline and treated outcomes, bi denotes the time-
+constant effect of treatment,u0,it and u1,it are additional unobserved shocks to baseline and treated outcomes,
+and X collects all observations on treatment status: X ={xit : i = 1, ...,n, t = 1, ...,T}.
+Combining conditions (2.1)-(2.3), and deﬁninguit = u0,it + xitu1,it, we obtain:
+yit = ai + bixit + ft + uit, E(uit|X) = 0, (2.4)
+which constitutes the CRC model that we study throughout this paper.9
+Conditions (2.2) and (2.3) do not impose restrictions on the relationship between treatment status,xit, and
+baseline heterogeneity, ai, treatment effect, bi, or aggregate shocks, ft. Therefore, the CRC model accounts
+for fairly ﬂexible forms of selection on unobservables and for treatment roll-outs that might coincide with
+external aggregate shocks to outcomes.
+On the other hand, conditions (2.2) and (2.3) impose three main restrictions. Firstly, the unobserved
+factors determining baseline outcome, yit(0), that are potentially correlated with treatment status, xit, are
+assumed to be additively separable across cross-sectional observations (ai) and time periods (ft).10 Secondly,
+the treatment effect is assumed to be constant over time (up to conditional mean zero shocks), which, for
+instance, rules out so-called dynamic treatment effects where an individual’s treatment effect might vary
+with how long she has been treated. 11 Finally, conditions (2.2) and (2.3) impose an assumption of strict
+exogeneity, ruling out feedback mechanisms whereby past outcomes affect current treatment status.
+In section 2.2 below, we review what quantities are identiﬁed under the CRC model (2.4). In particular
+we ﬁnd that the CRC model identiﬁes ATE for movers (cross-sectional observations i = 1, ...,n such that
+mint=1,...,T xit = 0 and maxt=1,...,T xit = 1) but does not impose any restriction on the ATE of stayers (untreated
+stayers are cross-sectional observations i = 1, ...,n such that xit = 0∀t, treated stayers are cross sectional
+observations such that xit = 1∀t). In the remainder of the paper, we study existing and new approaches
+to identifying average treatment effects for stayers with CRC models. Before doing so, we motivate the
+9CRC models were introduced by Chamberlain (1982) and Chamberlain (1992). With continuous covariates, Graham and
+Powell (2012) considered irregular identiﬁcation of the model with one fewer time period than required in Chamberlain (1992).
+Arellano and Bonhomme (2012) considered imposing additional restrictions on the conditional distribution of the transitory shocks
+uit to recover more information on the distribution of unobserved heterogeneity. Fern ´andez-Val and Lee (2013) study CRC models
+in a long panel setting (i.e., with many time periods). In a recent contribution, Laage (2019) considers the estimation of CRC
+models where additional control covariates enter the model in an additively separable term that is not speciﬁed parametrically. We
+concentrate on the CRC model throughout this paper; reviews of alternative non-linear models of panel data can be found in Arellano
+and Bonhomme (2011) and Ghanem (2017).
+10This is referred to as a parallel trends assumption in the literature on difference-in-differences methods, see e.g. Abadie (2005).
+11We discuss time-varying treatment effect in section 2.7 below.
+4
+--- Page 5 ---
+importance of identifying the average treatment effects of stayers for policy design.
+2.1 Average Treatment Effects of Stayers as Objects of Interest
+In this section, we consider the effect on outcomes yit of policies that can affect the distribution of
+treatment status xit in the population. We will use potential outcome notation to represent the dependence of
+treatment status xit on the implementation of a policy, and write xit(1) as the treatment status of individual
+i at time t if the policy is implemented, and xit(0) to be this individual’s treatment status if the policy is not
+implemented.
+The average effect of a policy is then given by:12
+∆policy = E(xit(1)yit(1) + (1− xit(1))yit(0)− (xit(0)yit(1) + (1− xit(0))yit(0)))
+= E((xit(1)− xit(0))(yit(1)− yit(0))).
+One may also be interested in the effect of the policy on those affected by the policy:
+∆policy|affected = E((xit(1)− xit(0))(yit(1)− yit(0))|xit(1)− xit(0)̸= 0). (2.5)
+One particular policy we can consider is to make treatment mandatory for everyone, so that xit(1) = 1
+for any individual i. Then we have:
+∆policy = E(yit(1)− yit(0)|xit(0) = 0)P(xit(0) = 0), (2.6)
+so that the average effect of the policy at timet is equal to the average treatment effect for untreated individ-
+uals. If untreated stayers represent a large share of all untreated individuals, being able to estimate average
+treatment effects for stayers would be crucial to predict the effect of the policy.
+For other policies, a policy-maker may be able to assume that individuals with higher treatment ef-
+fects are more likely to switch into treatment than individuals with lower treatment effects, leading to
+E(yit(1)− yit(0)|xit(1)− xit(0) = 1)≥ E(yit(1)− yit(0)|xit(1) = xit(0) = 0), and that the policy does not
+lead to switching out of treatment (i.e., P(xit(1)− xit(0) =−1) = 0).13 In this case, the average treatment
+effect for untreated individuals forms a lower bound for the effect of the policy on those affected by the
+12Note that the only effect of the policy on outcome yit is through the effect of the policy on treatment status xit.
+13Policies that reduce the cost of treatment to a ﬁxed level for all individuals, such as policies that guarantee that treatment can
+be accessed at no cost, fall into this category of interventions if an individual’s treatment status is determined by a comparison of
+treatment effect with treatment cost.
+5
+--- Page 6 ---
+policy:
+∆policy|affected≥ E(yit(1)− yit(0)|xit(1)− xit(0) = 1)P(xit(1) = 1|xit(0) = 0)
++ E(yit(1)− yit(0)|xit(1) = xit(0) = 0)P(xit(1) = 0|xit(0) = 0)
+= E(yit(1)− yit(0)|xit(0) = 0).
+More generally, estimating high average treatment effects among untreated individuals in particular sub-
+populations is evidence that there are reassignments of untreated individuals from these subpopulations to
+treatment that would lead to large average effects on outcomes, even though it might not be possible to
+identify which particular interventions could achieve that result without additional information.14
+2.2 Identiﬁcation with the Correlated Random Coefﬁcient Model
+In this section, we review what quantities are identiﬁed with the CRC model (2.4). For simplicity, we
+consider the case where only two time periods are observed, i.e., T = 2. The online appendix considers the
+case where a general number of time periods is observed. For concision, we will write E(wi|x1,x2) to stand
+for E(wi|xi1 = x1,xi2 = x2) for any random variable wi and any values x1,x2∈{ 0,1}.
+The CRC model (2.4) yields identiﬁcation of the difference in time effects ft over time from changes in
+the outcomes of stayers:
+∆ f2 = E(∆yi2|0,0) = E(∆yi2|1,1), (2.7)
+where ∆ is the ﬁrst-differencing operator.
+ATE for movers are then identiﬁed by a difference-in-differences comparison:
+E(bi|0,1) = E(∆yi2|0,1)− ∆ f2, E(bi|1,0) =−(E(∆yi2|1,0)− ∆ f2). (2.8)
+For notational concision, we can apply the normalizationf1 = 0 on the time effects, or, in other words, we
+write ft instead of ft− f1 and ai instead of ai + f1. With this normalization, average baseline heterogeneity is
+identiﬁed by average outcomes for untreated stayers and movers, and average total heterogeneity is identiﬁed
+by average outcomes for treated stayers:
+E(ai|0,0) = E(yit|0,0)− ft, E(ai + bi|1,1) = E(yit|1,1)− ft (2.9)
+E(ai|0,1) = E(yi1|0,1), E(ai|1,0) = E(yi2|1,0)− f2. (2.10)
+14Being able to predict the effect of any policy on average outcomes would generally require stronger assumptions on selection
+into treatment than the restrictions imposed in this paper (see e.g. Heckman and Vytlacil (2007) for a review). Our results could also
+be combined with a partial identiﬁcation approach as in Mogstad et al. (2018) to obtain tighter bounds on policy relevant treatment
+effects, but this is not pursued in this paper.
+6
+--- Page 7 ---
+When T = 2 and under cross-sectional independence, the CRC model (2.4) is equivalent to equations
+(2.7)-(2.10), from which we see that the CRC model imposes no restriction on ATE for stayers, i.e., ATE
+for stayers are not identiﬁed with the CRC model.15 The online appendix discusses the general case where
+T≥ 2. When T > 2, time effects ft are identiﬁed by observations on both stayers and movers, but ATE
+remain non-identiﬁed for stayers.
+2.3 Extrapolation to Stayers
+Lemieux (1998) and Suri (2011) study a closely related model where, in the absence of additional control
+covariates in the CRC model (2.4), the additional assumption:
+ai = α0 + α1bi + εi, E(εi|X) = 0, (2.11)
+is imposed, which we call an extrapolation identifying assumption.
+With two time periods ( T = 2) and under cross-sectional independence, the extrapolation identifying
+assumption (2.11) can be rewritten as:
+α1 = E(ai|0,1)− E(ai|1,0)
+E(bi|0,1)− E(bi|1,0), α0 = E(ai|0,1)− α1E(bi|0,1) (2.12)
+E(bi|0,0) = E(ai|0,0)− α0
+α1
+, E(bi|1,1) = E(ai + bi|1,1)− α0
+1 + α1
+, (2.13)
+if all quantities above are well-deﬁned, i.e., ifE(bi|0,1)̸= E(bi|1,0) and α1 /∈{ 0,−1}.
+As seen in the previous section, all of the right-hand side quantities in equations (2.12) and (2.13) are
+identiﬁed under the CRC model (2.4). Therefore assumption (2.11) yields identiﬁcation of ATE for stayers
+by an extrapolation from ATE and average baseline heterogeneity for movers to ATE for stayers. This
+extrapolation takes a simple form: an extrapolation line is drawn through points (E(ai|1,0),E(bi|1,0)) and
+(E(ai|0,1),E(bi|0,1)). Average treatment effects for untreated stayers are identiﬁed by interpolating the
+vertical line given by a = E(ai|0,0) and the extrapolation line. Average treatment effects for treated stayers
+are identiﬁed by interpolating the -45◦ line given bya+b = E(ai|1,1) +E(bi|1,1) and the extrapolation line.
+This is represented graphically in Figure 1. If the condition E(bi|1,0)̸= E(bi|0,1) fails, the extrapolation
+line is not identiﬁed. If the conditions α1̸= 0 and α1̸=−1 fail, ATE are not identiﬁed for untreated and
+treated stayers, respectively.16
+15See also Chernozhukov et al. (2013), where partial identiﬁcation with similar models when the outcome variable has bounded
+support is discussed.
+16In cross-sectional data settings, there are results on extrapolating from subpopulations for which ATE are robustly identiﬁed
+to wider subpopulations that have a similar ﬂavor to the extrapolation discussed here. Angrist and Fern ´andez-Val (2013), Brinch
+et al. (2017), Kline and Walters (2018), Mogstad et al. (2018), and Mogstad and Torgovitsky (2018) discuss extrapolation from local
+7
+--- Page 8 ---
+The appendix shows that the methods implemented by Lemieux (1998) and Suri (2011) can indeed
+be represented as the linear extrapolation depicted by Figure 1. This result provides a simple mechanical
+representation of these methods in terms of quantities estimated by difference-in-differences that was, to our
+knowledge, previously unknown.
+Both Lemieux (1998) and Suri (2011) highlight the restrictions imposed by the CRC model (2.4) when
+discussing their empirical model, without emphasizing the restrictions imposed by (2.11). 17 In the next
+section, we discuss the restrictions imposed by the extrapolation identifying assumption (2.11) in more
+detail.
+2.4 Interpretation of the Extrapolation Identifying Assumption
+In order to interpret the extrapolation identifying assumption (2.11), we consider a set of conditions that
+is sufﬁcient for assumption (2.11) to hold. Using the law of iterated expectations, we can show that the
+extrapolation identifying assumption (2.11) holds if:
+ai = α0 + α1bi + εi, E(εi|bi) = 0 (2.14)
+xit = g(bi,cit)∀t, {cit}t=1,...,T⊥{ ai,bi}, (2.15)
+where g is a deterministic function and{cit}∀t are random variables.
+Condition (2.14) captures the statistical dependence between baseline heterogeneity ai and treatment
+effect bi, but imposes linearity in the conditional mean of baseline heterogeneity ai conditional on treatment
+effect bi. Condition (2.15) captures the possible dependence of treatment status xit on treatment effect bi
+(endogenous selection), but imposes that factors of selection into treatment other than treatment effect bi,
+denoted as cit, be independent of baseline heterogeneity and treatment effect. For illustration purposes, the
+function g can be taken to be a threshold crossing function, so thatxit = 1[bi≥ cit], where 1[.] is the indicator
+function. In this case, observation i receives treatment in time period t if treatment effect bi exceeds the cost
+of treatment given by cit. With this representation, condition (2.15) assumes that the cost of treatment cit is
+independent of both baseline heterogeneity ai and treatment effect bi.18
+ATE obtained by instrumental variable regression. Angrist and Rokkanen (2015), Bertanha (2017), Bertanha and Imbens (2014),
+Cattaneo et al. (2016), Dong and Lewbel (2015), Rokkanen (2015) discuss extrapolation from local ATE obtained by regression
+discontinuity design. W ¨uthrich (2018) establishes a relationship between instrumental variable quantile regression estimation and
+local quantile treatment effect estimation.
+17For instance, Suri (2011) states that assumption (2.11) is not restrictive (p. 181).
+18Conditions (2.14) and (2.15) are similar to the conditions imposed in generalized Roy models with common factors, see e.g.
+Abbring and Heckman (2007) for a review. With these models, identiﬁcation is obtained when valid and relevant instrumental
+variables are observed, or when proxies can be used, or when independent measurements are available, while here the restrictions
+imposed by the CRC model yields identiﬁcation, as discussed above. We provide a more detailed comparison in the appendix.
+8
+--- Page 9 ---
+While conditions (2.14) and (2.15) only form a set of conditions that is sufﬁcient for the extrapolation
+identifying assumption (2.11) to hold, they capture the two restrictions embedded in the extrapolation iden-
+tifying assumption (2.11), namely: (i) linearity and (ii) no partial correlation between baseline heterogeneity
+and the factors of selection into treatment other than treatment effect. 19 In this paper, we do not consider
+methods that could relax the restriction of linearity embedded in the extrapolation identifying assumption
+(2.11). Recall from section 2.2 that the CRC model can be equivalently written as a set of restrictions on
+the conditional ﬁrst moments of baseline heterogeneity and treatment effects. Therefore it is likely that one
+cannot learn about non-linearities in the relationship between baseline heterogeneity and treatment effects
+without imposing stronger restrictions than the assumption of mean independence of the CRC model (2.4).
+This was explored in Arellano and Bonhomme (2012) to learn about distributional features of unobserved
+heterogeneity for the subpopulation of movers, and it is possible that similar arguments can be extended to
+an extrapolation to stayers, but we leave this to future work and concentrate on identiﬁcation with the CRC
+model (2.4) here.20 However, the next section shows that an extrapolation to stayers can be conducted when
+there are factors of selection into treatment other than treatment effects that may be correlated with treatment
+effects or baseline heterogeneity, as long as these factors of selection into treatment originate from observed
+sources.
+2.5 Extrapolation in the Presence of Correlated Cost Shifters
+In this section, we consider the case where the factors of selection into treatment other than treatment
+effects may be correlated with baseline heterogeneity or treatment effects, but where this correlation is due
+to factors of selection that originate from observed sources. For concision, we refer to factors of selection
+into treatment other than treatment effects as the cost of treatment in this section. We assume that the cost of
+treatment cit can be written as:
+cit = c(wi, νit), νit⊥{ ai,bi,wi}, (2.16)
+where wi is observed while νit is unobserved.21
+19An alternative sufﬁcient condition for the extrapolation identifying assumption (2.11) to hold is ai = α0 + α1bi + εi,
+E(εi|bi,ci1, ...,ciT ) = 0, with xit = g(bi,cit)∀t. Intuitively this captures the same two restrictions of linearity and zero partial
+correlation between ai and{ci1, ...,ciT} after conditioning on bi.
+20In section 3.4, we show that the extrapolation identifying assumption (2.11) can at least be tested if three or more time periods
+are observed.
+21Note that wi may be a vector. For instance, we may havewi = [wi1, ...,wiT ], so that time-variation in the index for confounding
+cost shifters is allowed. Note that νit may also be a vector. In particular, νit may include indicator variables for each time period,
+1[t = s]∀s = 1, ...,T , so that the equation above does not impose homogeneity over time.
+9
+--- Page 10 ---
+We also assume that the conditional mean of baseline heterogeneity ai conditional on treatment effect bi
+and the observed cost shifter indices wi is partially linear:
+E(ai|bi,wi) = µ(wi) +α1bi, (2.17)
+where µ(.) is an unknown function.
+With the selection equation xit = g(bi,cit), with cross-sectional independence and assumptions (2.16)
+and (2.17), we have:
+ai = µ(wi) +α1bi + εi, E(εi|X,W ) = 0, (2.18)
+where W ={wi : i = 1, ...,n}, which we call a generalized extrapolation identifying assumption.
+Finally, we assume that the observed cost shifter indices are orthogonal to the shocks in the outcome
+equation (2.4):
+E(uit|X,W ) = 0. (2.19)
+Note that if wi contains only time-constant characteristics, assumption (2.19) is innocuous since the CRC
+model accounts for the effect of time-constant characteristics on outcomes through baseline heterogeneity
+ai and treatment effect bi. If wi collects time-varying variables, i.e., wi = [wi1, ...,wiT ], assumption (2.19) is
+an exclusion restriction if wit is not included as a control covariate in the CRC model (we discuss control
+covariates in the CRC model in section 2.6 below).
+Under the generalized extrapolation identifying assumption (2.18), if (2.19) also holds, the extrapolation
+to stayers discussed in section 2.3 can be extended to be robust to correlated cost shifters. For simplicity, we
+consider again the case where two time periods are observed here (T = 2). Under (2.19), we have:
+E(yi1|0,1,wi) = E(ai|0,1,wi), E(∆yi2− f2|0,1,wi) = E(bi|0,1,wi)
+E(yi2− f2|1,0,wi) = E(ai|1,0,wi), −E(∆yi2− f2|1,0,wi) = E(bi|1,0,wi),
+and (2.18) implies that
+E(ai|0,1,wi) = µ(wi) +α1E(bi|0,1,wi), E(ai|1,0,wi) = µ(wi) +α1E(bi|1,0,wi).
+If wi is discrete and takes ﬁnitely many values, estimation of the quantities above can be based on
+simple averages of the outcomes yit conditional on the observed variables (xi1,xi2,wi). If wi is continuous,
+estimation of α1 could rely on non-parametric partialling out — i.e., it can be based on ai− E(ai|wi,xi1̸=
+xi2) = α1(bi− E(bi|wi,xi1̸= xi2)) + εi, E(εi|xi1,xi2,wi) = 0, similarly as in Robinson (1988) — which also
+10
+--- Page 11 ---
+leads to an estimator for µ(wi) from µ(wi) = E(ai|wi,xi1̸= xi2)− α1E(bi|wi,xi1̸= xi2). ATE for stayers
+would then be identiﬁed byE(bi|0,0) = E(ai−µ(wi)|0,0)
+α1
+and E(bi|1,1) = E(ai+bi−µ(wi)|1,1)
+1+α1
+, which follows from
+(2.18). The properties of the resulting estimators could be established using standard results, but they are not
+discussed in this paper.22 Instead, in section 3.3 below we discuss in detail the case where wi is discrete but
+takes a number of values that is proportional to sample size, which is the case encountered in our empirical
+application and leads to a ﬁxed effects estimation approach.
+2.6 Model with Additional Control Covariates
+The CRC model can be generalized to accommodate additional control covariates:
+yit = ai + bixit + zitγ0 + uit, E(uit|X,Z) = 0, (2.20)
+where Z ={zit}i=1,...,n,t=1,...,T collects all values of a vector of control covariates zit that may be random.
+When zit only include a set of indicator variables for each time period, i.e., zit = [1[t = s]]s=1,...,T , the model
+given by (2.20) reduces to the CRC model without additional control covariates given by (2.4).
+When (2.20) includes a general set of control covariates, the results above are extended in a straightfor-
+ward way. Considering the case where two time periods are observed for simplicity (T = 2), the CRC model
+with control covariates (2.20) implies:
+E(∆yi2|xi1 = xi2,zi) = ∆zi2γ0, (2.21)
+from which we see thatγ0 is identiﬁed as long as there is variation over time in the covariateszit. Given γ0, av-
+erage baseline heterogeneity and average total heterogeneity are identiﬁed as before. For instance, for cross-
+sectional observations that switch into treatment we have E(ai|0,1) = E(yi1− zi1γ0|0,1) and E(bi|0,1) =
+E(∆yi2− ∆zi2γ0|0,1). Therefore, the extrapolation based on the simple extrapolation identifying assumption
+(2.11) can be deﬁned as above. One can also condition on confounding cost shifters and base extrapolation
+on the generalized extrapolation identifying assumption (2.18).
+On the other hand, Lemieux (1998) and Suri (2011) use a panel data model which can be written as:23
+yit = α0 + (α1 + xit)bi + zitγ0 + ˜uit, E( ˜uit|X,Z) = 0. (2.22)
+We see that this model is obtained by the CRC model with additional control covariates (2.20) and the
+22If one imposes a linearity restriction on µ(wi), i.e., µ(wi) = wiη0, then the parameter vector η0 can be estimated by a simple
+linear instrumental variable regression, similar to the one discussed in section 3.2 below.
+23In a recent publication, Sakaguchi (2020) discusses this model as well, while being unaware of Lemieux (1998) and Suri
+(2011). As a result, he imposes restrictions that are stronger than in Lemieux (1998) and Suri (2011), requiring that an additional
+instrumental variable be available, which is not necessary for identiﬁcation.
+11
+--- Page 12 ---
+extrapolation identifying assumption
+ai = α0 + α1bi + εi, E(εi|X,Z) = 0, (2.23)
+by deﬁning ˜uit = uit + εi.24
+The restriction imposed by (2.23) is stronger than the restriction imposed by the simple extrapolation
+identifying assumption (2.11) since, in addition to imposing that treatment status history xi1, ...,xiT has no
+partial predictive effect on baseline heterogeneity ai, it imposes that the control covariates zi1, ...,ziT also do
+not have a partial predictive effect. For instance, a set of conditions that is sufﬁcient for (2.23) to hold is
+given by the conditions (2.14) and (2.15) listed above and the additional condition:
+zit = gz(bi,cz,it), {cit,cz,it : t = 1, ...,T}⊥{ ai,bi}.
+This additional restriction is not necessary for identifying ATE for stayers, as seen from the discussion above,
+and may be likely to be violated in many applications.
+2.7 CRC Model with Time-Varying Treatment Effects
+In this section, we sketch an extension of the results above to the case where treatment effects might
+vary over time. A growing econometric literature uses semi-parametric difference-in-differences models
+to analyze the properties of new and existing estimators. 25 The assumption of parallel trends is the main
+restriction imposed by semiparametric difference-in-differences models. It imposes that the change over
+time in potential untreated outcome is identical across all treatment history proﬁles:
+E(yit(0)− yi1(0)|xi,zi) = E(yit(0)− yi1(0)|zi)∀t, (2.24)
+where we assume cross-sectional independence and deﬁnexi = [xi1, ...,xiT ], zi = [zi1, ...,ziT ].
+The parallel trend assumption (2.24) can be rewritten equivalently as a correlated random coefﬁcient
+model with time-varying coefﬁcients:
+yit = ai + bitxit + ft(zi) +uit, E(uit|xi,zi) = 0 (2.25)
+by deﬁningai = yi1(0), ft(zi) = E(yit(0)− yi1(0)|zi), bit = yit(1)− yit(0).
+If the time varying part of treatment effect is captured by observable variables — for instance, if we can
+24Additionally, Suri (2011) imposes, for estimation, additional restrictions on the form of E(bi|xi1, ...,xiT ,zi1, ...,ziT ) which are
+not required and are not imposed here or in Lemieux (1998).
+25See, e.g. Heckman et al. (1997), Heckman et al. (1998), Blundell et al. (2004), Abadie (2005), Conley and Taber (2010),
+Imai and Kim (2012), de Chaisemartin and D’Haultfoeuille (2018a), Abraham and Sun (2018), Callaway and Sant’Anna (2018),
+de Chaisemartin and D’Haultfoeuille (2018b), Athey and Imbens (2018), Goodman-Bacon (2018), Hull (2018), and references
+therein.
+12
+--- Page 13 ---
+write:
+bit = bi + qitγ0, E(uit|qi1, ...,qiT ) = 0,
+where qit is observed — then the results discussed above apply.26
+Otherwise, one can deﬁneXit = xit[1[t = s], s = 1, ...,T ] to be a 1× T vector containing treatment status
+interacted with indicator variables for each time period, and Bi = [bit, t = 1, ...,T ]
+′
+to be a T× 1 vector
+containing the treatment effects of cross-sectional observation i at each time period, and write (2.25) as
+yit = ai + XitBi + ft(zi) +uit, E(uit|xi,zi) = 0, (2.26)
+from which we see that the parallel trend assumption (2.24) can be represented as a CRC model with a larger
+number of random coefﬁcients than previously considered. We discuss this model in more details in the
+appendix. In general, estimation based on this model will require a larger number of time periods and cross-
+sectional observations than estimation based on the CRC model with time-constant treatment effects (2.4).
+In the remainder of this paper, we focus on the CRC model with time-constant treatment effects, although
+comparing results across speciﬁcations in applications with large enough samples would be interesting for
+future work.
+3 Estimation and Inference
+In this section we deﬁne an estimation method composed of two simple steps for the quantities discussed
+in the previous section. The ﬁrst step of estimation is an ordinary least-squares (OLS) regression. The second
+step is an instrumental variable regression.
+3.1 First Step CRC Regression
+The ﬁrst step of our estimation procedure, similarly as in Chamberlain (1992), consists of an OLS re-
+gression of the outcome variable yit on indicator variables for each cross-sectional observation,d j
+it = 1[i = j]
+∀ j = 1, ...,n; the interaction of these indicator variables with treatment status,xitd j
+it∀ j = 1, ...,n; and indica-
+tor variables for each time period, 1[t = s]∀s = 2, ...,T , if the CRC model (2.4) without additional covariates
+is estimated, or the control covariates zit if the CRC model (2.20) with control covariates is estimated.
+For simplicity, we will consider the case where the CRC model (2.4) without additional covariates is
+26In the previous section, we considered the case where control covariates entered the CRC model linearly rather than in an
+additively separable term without parametric restrictions ( ft (zi) in equation (2.25) above). The results on estimation discussed in
+the appendix can be extended to accommodate for a non-parametric ﬁrst step of estimation in a straightforward way because xit is
+binary here rather than continuous, the latter being the case considered in Laage (2019).
+13
+--- Page 14 ---
+estimated here, and the appendix shows results for the general case. This ﬁrst estimation step then yields
+estimates of time effects ft, ˆft, for every time period t = 2, ...,T . The procedure also yields noisy estimates
+of baseline heterogeneity ai and treatment effect bi, ˆai and ˆbi, for each cross-sectional observation that is
+a mover. For untreated stayers, only estimates of baseline heterogeneity ai, ˆai, are obtained, while only
+estimates of total heterogeneity ai + bi, ˆai + ˆbi, are obtained for treated stayers.
+For the remainder of this section, we also consider for simplicity the special case where two time periods
+are observed, i.e., T = 2. The case with a general number of time periods is considered in the online
+appendix. With only two time periods, this ﬁrst step estimation procedure takes a particularly simple form.
+The estimator of the time effect for the second time period, f2, is given by :
+ˆf2 = ∑i /∈Mn ∆yi2
+n−| Mn| ,
+where Mn is the set of all cross-sectional observations that are movers, i.e.,Mn ={i = 1, ...,n : xi1̸= xi2} and
+|.| denotes the cardinality of a set.
+We also have:
+ˆai = ∑t=1,2(1− xit)(yit− ˆft)
+∑t=1,2(1− xit) , ˆai + ˆbi = ∑t=1,2 xit(yit− ˆft)
+∑t=1,2 xit
+, ˆbi = ˆai + ˆbi− ˆai,
+where, as discussed above, all three of these quantities are well-deﬁned for movers only. For untreated
+stayers, only ˆai is well-deﬁned, while only ˆai + ˆbi is well-deﬁned for treated stayers.
+The ﬁrst result in this section shows conditions under which time effects are estimated precisely and
+that the noise in the estimates of heterogeneity can be decomposed into two parts, one of which vanishes
+asymptotically and the other of which does not depend on sample size. For simplicity, we assume that
+observations are identically and independently distributed (i.i.d.) at the level of cross-sectional units. This
+assumption is relaxed to independence across cross-sectional observations in the appendix and can easily
+be relaxed to accommodate limited forms of cross-sectional dependence such as cluster dependence, as in
+Section 3.3 below.
+Assumption 1. Observations{xi1,yi1,xi2,yi2,ai,bi}i=1,...,n are i.i.d. across i.
+In addition, we assume that all variables in the model have ﬁnitely bounded higher moments, that there
+is a positive probability of being a stayer, and that the error term uit is not degenerate.
+Assumption 2. Deﬁne πS = P(xi1 = xi2) and σ 2
+∆u,S = Var(∆ui2|xi1 = xi2).
+a) The support of ai, bi, uit is compact.
+14
+--- Page 15 ---
+b) πS > 0.
+c) σ 2
+∆u,S > 0.
+Assumption 2.a is imposed in this form for simplicity and could easily be relaxed to impose bounded
+higher moments only. Assumption 2.b is natural here since we are interested in cases where stayers are
+observed in the data. Assumption 2.c is a regularity condition that imposes that the error term in the CRC
+model (2.4) has variability, so that the model would not ﬁt the data perfectly without this error term. Under
+these assumptions, Proposition 1 establishes the asymptotic properties of our ﬁrst-step estimates.
+Proposition 1. Under the CRC model (2.4) and Assumptions 1 and 2, as n→ ∞:
+√n( ˆf2− f2) d→ N(0,
+σ 2
+∆u,S
+πS
+) (3.1)
+and wherever ˆai and ˆai + ˆbi are well-deﬁned, we can write:
+ˆai = ai + ∑t=1,2(1− xit)uit
+∑t=1,2(1− xit) + ζa,i,n, ˆai + ˆbi = ai + bi + ∑t=1,2 xituit
+∑t=1,2 xit
++ ζa+b,i,n, (3.2)
+where maxi=1,...,n:xi1=0orx i2=0|ζa,i,n| = Op( 1√n ) and maxi=1,...,n:xi1=1orx i2=1|ζa+b,i,n| = Op( 1√n ).
+Proposition 1 shows that the noise in the estimates of ai and a + bi obtained from the ﬁrst step of our
+estimation procedure is approximated by a noise term of mean zero conditional on treatment status history,
+since under the CRC model (2.4) we have:
+E( ∑t=1,2(1− xit)uit
+∑t=1,2(1− xit) |xi1,xi2) = 0, E( ∑t=1,2 xituit
+∑t=1,2 xit
+|xi1,xi2) = 0, (3.3)
+for any combination of values of xi1 and xi2 such that these quantities are well-deﬁned.
+Therefore, consistent estimators of ATE for movers, AT E01 = E(bi|0,1) and AT E10 = E(bi|1,0), are
+obtained by simply averaging these noisy estimates across all observations corresponding to movers. To
+shorten notation, deﬁnenx1x2 =|{i = 1, ...,n : xi1 = x1,xi2 = x2}|, then the estimators for ATE of movers are
+given by:
+ˆAT E01 = ¯b01 = 1
+n01
+∑
+i=1,...,n:xi1=0,xi2=1
+ˆbi, ˆAT E10 = ¯b10 = 1
+n10
+∑
+i=1,...,n:xi1=1,xi2=0
+ˆbi.
+3.2 Non-Robust Extrapolation
+The extrapolation identifying assumption (2.11), together with the result of Proposition 1, implies that
+for cross-sectional observations that are movers:
+ˆai = α0 + α1 ˆbi + ri + ζi,n, E(ri|xi1,xi2) = 0, maxi=1,...,nζi,n = Op( 1√n ), (3.4)
+15
+--- Page 16 ---
+where ri = εi + ∑t=1,2 uit((1 + α1)(1− xit)− α1xit) is a composite error term composed of the error term εi
+in the extrapolation identifying assumption (2.11) and the non-vanishing part of the estimation noise in the
+estimates of unobserved heterogeneity shown in Proposition 1, andζi,n is a vanishing error term composed of
+the vanishing part of the estimation noise in the estimates of unobserved heterogeneity shown in Proposition
+1.
+Up to a vanishing error term, α0 and α1 are therefore parameters in an instrumental variable regression
+model where the observed variable ˆai is the dependent variable, the observed variable ˆbi is the endogenous
+covariate, and instrumental variables are given by treatment status history{xi1,xi2}.
+The second step of our estimation procedure estimates α0 and α1 by an instrumental variable regression
+of ˆai on ˆbi using{xi1, ...,xiT} as instrumental variables. Because the dependent variable ˆai and the endoge-
+nous covariate ˆbi in this instrumental variable regression are only observed simultaneously for movers, this
+regression is performed using observations on movers only.27
+With only two time periods, this second step estimator takes the simple form of a Wald estimator:
+ˆα1 = ¯a01− ¯a10
+¯b01− ¯b10
+, ˆα0 = ¯a01− ˆα1 ¯b01
+¯a01 = 1
+n01
+∑
+i=1,...,n:xi1=0,xi2=1
+ˆai, ¯a10 = 1
+n10
+∑
+i=1,...,n:xi1=1,xi2=0
+ˆai.
+Given estimates of baseline heterogeneityai for untreated stayers, of total heterogeneityai +bi for treated
+stayers, and of the parametersα0 and α1 in the extrapolation identifying assumption, estimates of ATE among
+untreated and treated stayers are obtained by a simple plug-in estimator using the results from the previous
+section:
+ˆAT E00 = ¯a00− ˆα0
+ˆα1
+, ˆAT E11 = ¯a11 + ¯b11− ˆα0
+1 + ˆα1
+¯a00 = 1
+n00
+∑
+i=1,...,n:xi1=0,xi2=0
+ˆai ¯a11 + ¯b11 = 1
+n11
+∑
+i=1,...,n:xi1=1,xi2=1
+( ˆai + ˆbi).
+In the rest of this section, we show regularity conditions under which this second step yields asymptoti-
+cally normal estimators for α0 and α1 and for ATE among stayers.28
+27As discussed in section 2.5 above, one may wish to control for correlated cost shifters when extrapolating to stayers. When
+these cost shifters are indexed by observed variables wi that are low-dimensional, under a linearity restriction discussed in footnote
+22, we can write ai = wiη0 + α1bi + εi, E(εi|wi,xi1, ...,xiT ). The parameter vector η0 and coefﬁcient α1 can be estimated by
+simply regressing ˆai on ˆbi and wi, using{wi,xi1, ...,xiT} as instrumental variables. Objects of interest such as ATE for untreated
+stayers can then be estimated by plug-in estimators. For the ATE of untreated stayers for instance, we would estimate E(bi|0,0) =
+E(ai|0,0)−E(wi|0,0)η0
+α1
+with ˆAT E00 = ¯a00− ¯w00 ˆη
+ˆα1
+, where ˆη and ˆα1 are the estimates obtained from the instrumental variable regression
+discussed here and ¯w00 is the average value ofwi among untreated stayers. All results presented in this section extend to this case in a
+straightforward way so that we do not provide details here for concision. We discuss in detail the case wherewi is high-dimensional
+but discrete, leading to a ﬁxed-effects instrumental variable regression, in section 3.3 below.
+28Only the ﬁrst step of our estimation procedure is needed to compute estimates of ATE for movers, which are given by ˆAT E01
+16
+--- Page 17 ---
+Assumption 3. Deﬁne π01 = P(xi1 = 0,xi2 = 1) and π10 = P(xi1 = 1,xi2 = 0).
+a) π01 > 0 and π10 > 0.
+b) E(bi|0,1)̸= E(bi|1,0).
+c) Var (ri|xi1,xi2) > 0 if x i1̸= xi2. Var (ai + 1
+2 ∑t=1,2 uit|∆ui2,xi1 = 0,xi2 = 0)≥ c and Var (ai + bi +
+1
+2 ∑t=1,2 uit|∆ui2,xi1 = 1,xi2 = 1)≥ c a.s. for a constant c > 0.
+Assumption 3.a requires that there be two types of movers with positive probability. Assumption 3.b is
+an assumption of relevance of the instrumental variables that requires that the two groups of movers have
+different ATE. Assumption 3.c is a regularity condition that guarantees that the second step estimators deﬁned
+above have non-degenerate asymptotic distributions. It imposes that there be variability in the composite
+error term of the approximate instrumental variable regression model (3.4) and that there be variability in
+baseline heterogeneity ai and total heterogeneity ai + bi conditional on the error term uit of the CRC model,
+or that there be variability in the error term uit of the CRC model over time.
+The following proposition shows that under the CRC model, the extrapolation identifying assumption,
+and the assumptions above, the second step estimators of α0, α1, and of ATE for stayers discussed above
+have a linear inﬂuence function representation and are asymptotically normal.
+Proposition 2. Under the CRC model (2.4), the extrapolation identifying assumption (2.11), and Assump-
+tions 1-3, as n→ ∞ we have:
+√n(
+
+
+ˆα0
+ˆα1
+
+−
+
+
+α0
+α1
+
+) = 1√n
+n
+∑
+i=1
+ξα,i + ζα,n
+d→ N(0,Vα ), (3.5)
+where ξα,i is an i.i.d. sequence of random variables with E (ξα,i) = 0 and Vα = Var(ξα,i), and where ζα,n =
+op(1).
+If in addition α1 /∈{ 0,−1}, π00 > 0, and π11 > 0, then:
+√n(
+
+
+ˆAT E00
+ˆAT E11
+
+−
+
+
+AT E00
+AT E11
+
+) = 1√n
+n
+∑
+i=1
+ξAT E,i + ζAT E,n
+d→ N(0,VAT E), (3.6)
+where ξAT E,i is an i.i.d. sequence of random variables with E(ξAT E,i) = 0 and VAT E = Var(ξAT E,i), and where
+ζAT E,n = op(1).
+and ˆAT E10 above. Although this is not shown here for concision, one can use the results of Proposition 1 to show that these
+estimators have linear inﬂuence function representations and are asymptotically normal, so that one can estimate unconditional ATE
+for the entire population by weighing each conditional ATE by the observed frequency of the corresponding subpopulation, and the
+resulting estimator will be asymptotically normal and have a linear inﬂuence function representation under the same assumptions as
+Proposition 2 below.
+17
+--- Page 18 ---
+Since these second-step estimators have a linear inﬂuence function representation, asymptotically valid
+inference can be based on Wald tests with variances estimated by bootstrap resampling, as shown in Mammen
+(1992), e.g. Note that this resampling should be clustered at the level of cross-sectional observations and
+that both steps of the estimation procedure outlined above need to be applied to each bootstrap sample for
+the estimated variance to be valid. The online appendix also provides analytical formulae for the asymptotic
+variance of the second step estimators, so that their variance can also be estimated as sample analogues of
+their asymptotic variance. The resulting variance estimator uses quantities that are computed by default in
+commonly used statistical software, so that implementation is straightforward.
+3.3 Robust Extrapolation
+In this section, we consider extrapolation with the generalized extrapolation assumption:
+ai = evi + α1bi + εi, E(εi|X) = 0, (3.7)
+where vi∈{ 1, ...,N} is an observed deterministic indexing variable that indexes the factors of selection into
+treatment other than treatment effects that may be correlated with baseline heterogeneity ai or treatment
+effect bi.
+Similarly as before, we can show that under the CRC model (2.4), the generalized extrapolation assump-
+tion (3.7), and new regularity conditions listed below, an approximate ﬁxed-effects instrumental variable
+regression model links our noisy estimates ˆai and ˆbi among cross-sectional observations that are movers:
+ˆai = evi + α1 ˆbi + ri + ζi,n, E(ri|X) = 0, maxi=1,...,nζi,n = Op( 1√n ), (3.8)
+where as before ri = εi + ∑t=1,2 uit((1 + α1)(1−xit)− α1xit) when T = 2, but with εi denoting the error term
+in the generalized extrapolation identifying assumption (3.7).
+The second step of our estimation procedure under the generalized extrapolation identifying assumption
+is therefore given by a ﬁxed-effects instrumental variable regression of ˆai on ˆbi using{xi1, ...,xiT} as instru-
+mental variables, with ﬁxed effects indexed by the variable vi. As before, only observations on movers are
+used for this regression.
+This new estimation procedure will yield an estimate of α1, which we redeﬁne to be ˆα1, and will also
+yield estimated ﬁxed effects, which we denote by ˆev for value v of the indexing variable vi.
+Given these estimates, estimated ATE for stayers are redeﬁned to be:
+ˆAT E00 = 1
+n00
+∑i:xi1=xi2=0( ˆai− ˆevi)
+ˆα1
+, ˆAT E11 = 1
+n11
+∑i:xi1=xi2=1( ˆai + ˆbi− ˆevi)
+1 + ˆα1
+.
+18
+--- Page 19 ---
+In the rest of this section, we list conditions that guarantee that these estimators are consistent and
+asymptotically normal. As before, we only consider the case where two time periods are observed here,
+while the appendix considers the case where a general number of time periods is observed.
+For simplicity, we assume that observations are obtained by a random sample of clusters, with clusters
+indexed by the indexing variable vi. In the online appendix, we show that results can be obtained by im-
+posing only independence across observations with different values of the indexing variable vi. In addition,
+we assume for simplicity that cross-sectional observations belonging to the same cluster are exchangeable.
+Finally, we assume that there are few cross-sectional observations per value of the indexing variablevi since
+this corresponds to our empirical application.29
+To state the next assumption, deﬁne nv =|{i = 1, ...,n : vi = v}| to be the number of cross-sectional
+observations with value v of the indexing variable vi, N =|{v :∃i = 1, ...,n s.t. vi = v}| to be the number of
+values of the indexing variable vi, and index cross-sectional observations with the same value v of vi by iv,
+so that{iv : i = 1, ...,nv} ={i = 1, ...,n : vi = v}.
+Assumption 4. Observations{{xiv1,yiv1,xiv2,yiv2,aiv,biv}i=1,...,nv}v=1,...,N are i.i.d. across v. The number of
+observations sharing the same value of the indexing variable v i is bounded, i.e., nv≤ C almost surely for a
+constant C. Cross-sectional observations with the same value of vi are exchangeable.
+With cluster dependence rather than cross-sectional independence as in section 3.2, the assumption that
+the error term uit in the CRC model (2.4) is not degenerate needs to be slightly reformulated compared to
+Assumption 2 above.
+Assumption 5. Assumptions 2.a and 2.b hold. Redeﬁne σ 2
+∆u,S = Var(∑i:vi=v,xi1=xi2 ∆ui2), then σ 2
+∆u,S > 0.
+The generalized extrapolation (3.7) discussed in this section accounts for more ﬂexible patterns of de-
+pendence between the factors that determine selection into treatment (cit) and the unobserved heterogeneity
+that determines outcome (ai and bi), but consistent estimation will require overlap conditions that were not
+needed with the simple extrapolation discussed in Section 3.2. The overlap conditions stated in the next
+assumption guarantee that instrumental variables in the second step of our procedure are relevant even af-
+ter partialling out variation across observations sharing the same value of the indexing variable vi, and that
+stayers can be compared to movers with the same value of the indexing variable vi.
+29In our empirical application, cross-sectional observations are farmers andvi indexes villages. We observe an average of twelve
+farmers per village and a total of 1,130 farmers in our empirical application.
+19
+--- Page 20 ---
+Assumption 6. Deﬁne the events Mv ={∃is .t.vi = v and xi1̸= xi2} and Tv ={∃i, j s.t.vi = v j = v, and (xi1,xi2) =
+(0,1), (x j1,x j2) = (1,0)}. Deﬁne πM = P(Mv), πT = P(Tv).
+a) πT > 0.
+b) πM = 1.
+Deﬁne bx1x2,v = E(bi|vi = v, (xi1,xi2) = (x1,x2),{x j1,x j2} j̸=i:v j=v) for x1,x2∈{ 0,1}.
+c) b01,v > b10,v∀v s.t. 1[Tv] = 1, or b01,v < b10,v∀v s.t. 1[Tv] = 1.
+Deﬁne Nv =|{i∈ Mn : vi = v}|, ˙ri = ri− 1
+Nvi
+∑ j∈Mn:v j=vi r j and ˜ui = 1
+2 ∑t=1,2 uit− 1
+Nvi
+∑ j∈Mn:v j=vi r j.
+d) Var(
+
+
+∑i:vi=v,xi1=xi2 ∆ui2
+∑i:vi=v,xi1=0,xi2=1 ˙ri
+∑i:vi=v,xi1=xi2=0(ai− evi + ˜ui)
+∑i:vi=v,xi1=xi2=1(ai + bi− evi + ˜ui)
+
+
+) is positive deﬁnite.
+Assumption 6.a requires that many values of the indexing variable vi correspond to movers of two pro-
+ﬁles, i.e., adopters and disadopters. Assumption 6.a is imposed since otherwise there would be no variation in
+the instrumental variables{xi1,xi2} across movers with the same value of the indexing variable vi. Assump-
+tion 6.b requires that all values of the indexing variablevi correspond to at least one mover. This condition is
+required for the estimated ﬁxed effect ˆevi to be deﬁned for all cross-sectional observations, i.e., for a compar-
+ison to be possible between every stayer and at least one mover with the same value of the indexing variable
+vi.30 Similarly as for Assumption 3.c, Assumption 6.c requires that movers with different treatment history
+proﬁles have different ATE. Similarly as for Assumption 3.c, Assumption 6.d is a regularity condition that
+guarantees that the second step estimators discussed here have a non-degenerate asymptotic distribution. It
+imposes that there be no perfect linear dependence between cross-sectional observations belonging to the
+same group, that there be within-group variation in the composite error term of the new approximate instru-
+mental variable regression model (3.8), and that there be variation in the terms of heterogeneityai and bi that
+is not perfectly linearly dependent of the error term uit of the CRC model or variation in the error term uit
+over time.
+Under these assumptions, our new estimators ofα1 and of ATE among stayers are asymptotically normal
+and have a linear inﬂuence function representation. Note that under Assumption 4, N and n are of the same
+30In practice, if some values of the indexing variable vi do not correspond to any mover, we can report results for the subpop-
+ulation of stayers that shares the same value of the indexing variable vi with at least one mover. This is the case in the empirical
+application below, which leads to reporting results for a subpopulation of stayers that represents 91% of the entire population of
+stayers.
+20
+--- Page 21 ---
+order.
+Proposition 3. Under the CRC model (2.4), the generalized extrapolation identifying assumption (3.7), and
+Assumptions 4-6, as N→ ∞, we have:
+√
+N( ˆα1− α1) = 1√
+N
+N
+∑
+v=1
+ξα,v + ζα,N
+d→ N(0,Vα ), (3.9)
+where ξα,v is an i.i.d. sequence of random variables with E (ξα,v) = 0 and Vα = Var(ξα,v), and where
+ζα,N = op(1).
+If in addition α1 /∈{ 0,−1}, then:
+√
+N(
+
+
+ˆAT E00
+ˆAT E11
+
+−
+
+
+AT E00
+AT E11
+
+) = 1√
+N
+N
+∑
+v=1
+ξAT E,v + ζAT E,N
+d→ N(0,VAT E), (3.10)
+where ξAT E,v is an i.i.d. sequence of random variables with E (ξAT E,v) = 0 and VAT E = Var(ξAT E,v), and
+where ζAT E,N = op(1).
+As before, Proposition 3 shows that asymptotically valid inference can be obtained by using Wald tests
+with variance estimated by cluster bootstrap, with clusters now being indexed by the indexing variable vi.
+The appendix also provides formulae for analytical standard errors that are sample analogues of the asymp-
+totic variance of these new second step estimators. In addition, the generalized extrapolation assumption
+(3.7) can be tested when more than two time periods are observed by testing whether a linear relationship
+exists between the baseline heterogeneity and treatment effect of movers of different treatment status history
+proﬁles after partialling out variation at the level of the indexing variablevi. Details of the test are provided
+in the appendix.
+3.4 Testing the Validity of the Extrapolation to Stayers
+In this section, we discuss how to test the validity of the extrapolations discussed in sections 3.2 and 3.3
+above. When only two time periods are observed (T = 2), equations (2.12) and (2.13) above show that the ex-
+trapolation identifying assumption (2.11) is equivalent to an identity that deﬁnes four previously unrestricted
+parameters in terms of quantities identiﬁed by the CRC model (2.4), so that the extrapolation identifying as-
+sumption does not contain any testable implications under the CRC model. The online appendix articulates
+this result in a more direct way.
+When three or more time periods are available, the extrapolation identifying assumption (2.11) can be
+tested because there are more than two groups of movers for which average baseline heterogeneity and
+21
+--- Page 22 ---
+ATE are identiﬁed by the CRC model. One can test the extrapolation identifying assumption (2.11) by
+testing whether a linear relationship exists between the points (E(ai|x1, ...,xT ),E(bi|x1, ...,xT )) identiﬁed by
+the CRC model for all combinations of values {x1, ...,xT} corresponding to movers. In practice, one can
+implement such a test as a simple overidentiﬁcation test following the instrumental variable regression of ˆai
+on ˆbi using xi1, ...,xiT as instrumental variables. The appendix provides the details of the test.
+Similarly, the generalized extrapolation identifying assumption (2.18) can be tested when more than two
+time periods are observed by testing whether a linear relationship exists between the baseline heterogeneity
+and treatment effect of movers of different treatment status history proﬁles after partialling out variation at
+the level of the indexing variablevi. The test takes the form of an overidentiﬁcation test as well, but following
+a ﬁxed effects instrumental variable regression. Details of the test are provided in the appendix.
+4 Empirical Application: Returns to Hybrid Seeds
+In this section, we apply the results discussed above to a longitudinal dataset of Kenyan maize farmers.
+The dataset was collected as part of the Tegemeo Agricultural Monitoring and Policy Analysis Project by
+the Tegemeo Institute at Egerton University and Michigan State University. This same dataset was also used
+in Suri (2011), and hence we refer the reader to Suri (2011) for a detailed discussion of the data and of the
+related empirical literature. The only notable difference here is that we use data on years 1997, 2004, 2007,
+and 2010 while Suri (2011) only used waves 1997 and 2004 for her study as these were the only two waves
+available at the time.
+We observe a total of 1,130 farmers in our estimation sample but in an unbalanced panel with a total
+of 3,770 observations, so that farmers are observed for around 3.5 time periods on average. The sample
+is decomposed into 354 farmers observed both using and not using hybrid seeds over time (movers), 123
+farmers never observed using hybrid seeds (untreated stayers), and 653 farmers always observed using hybrid
+seeds (treated stayers).
+The adoption rate of hybrid seeds increased between the years 1997 and 2010: 72% of farmers in our
+sample used hybrid seeds in 1997, 71% in 2004, 77% in 2007, and 88% in 2010. This reﬂects an increase in
+the ease of access to hybrid seeds, which is also evidenced by the decrease in average distance to the nearest
+seed seller over time, from 6.1 kilometers on average in 1997, to 2.6km in 2004, 2.9km in 2007, and 3.3km in
+2010. On the other hand, a signiﬁcant number of farmers in our sample are still never observed using hybrid
+seeds. The methods developed above can be used to estimate whether these farmers would experience high
+22
+--- Page 23 ---
+returns from adopting hybrid seeds.
+Reﬂecting the discussion above, our empirical approach starts with estimating the ATE for movers and
+follows with an extrapolation to obtain the ATE of stayers. We consider two extrapolations. In section 4.2, we
+discuss the extrapolation based on the extrapolation identifying assumption (2.11), which we call non-robust,
+and discuss evidence against the validity of this extrapolation. In section 4.3 we implement an extrapolation
+based on the generalized extrapolation identifying assumption (3.7) that accounts for village-level correlated
+cost shifters, which we call robust.
+4.1 Effect of Using Hybrid Seeds for Movers
+In this section, we estimate the average effect of using hybrid seeds on yields for farmers who are
+observed in our data both using and not using hybrid seeds (movers). To do so, we use the CRC model for
+farmer i in year t:
+yit = ai + bixit + zitγt + uit, E(uit|X,Z) = 0, (4.1)
+where yit is maize yields (logarithm of kilograms harvested per acre),xit hybrid seed use,X = [xi1, ...,xiT ]i=1,...,n,
+Z = [zi1, ...,ziT ]i=1,...,n, and zit is the same vector of control covariates as in Suri (2011), namely: main season
+rainfall, variables measuring other inputs to production than hybrid seed use, acres planted, and demograph-
+ics of the household such as size, gender distribution, and age. We also include province-by-year ﬁxed effects
+in the controls to account for regional time varying shocks that might have occurred during the fairly long
+period of observation. The unobserved term ai captures a farmer’s baseline productivity, while bi captures a
+farmer’s returns to using hybrid seeds.
+4.1.1 Discussion of the CRC Assumptions
+In the context of hybrid seed adoption, the CRC model given by (4.1) presents the advantage of al-
+lowing for fairly ﬂexible patterns of selection into technology use. For instance, both a farmer’s baseline
+productivity, ai, and her return to using hybrid seeds, bi, may be correlated with her decision to use hybrid
+seeds.
+On the other hand, as discussed in section 2 above, the CRC model (4.1) imposes three restrictions: (i)
+strict exogeneity of the covariates xit and zit with respect with transitory shocks uit, (ii) the parallel trends
+assumption, and (iii) time-constant (in conditional mean) treatment effects. The ﬁrst restriction rules out
+feedback mechanisms from past shocks to productivity to current technology use. The second and third re-
+23
+--- Page 24 ---
+strictions may be particularly appropriate in this context if we think of baseline productivity,ai, and treatment
+effect, bi, as being determined by intrinsic qualities of a farmer’s land that do not evolve over time.31
+4.1.2 Estimation Results
+As discussed above, estimates of the coefﬁcients γt and noisy estimates of baseline heterogeneity ai,
+treatment effect bi, and total heterogeneity ai + bi (depending on a cross-sectional observation’s treatment
+status history) are obtained by an OLS regression of yit on indicator variables for each cross-sectional obser-
+vation, the interaction of these indicator variables with hybrid seed use, and the covariateszit interacted with
+indicator variables for each time period.32
+Given these estimates, estimates of average returns (ATE in the general discussion of Section 2) are
+obtained for different groups of movers, which we present in Table 1. Returns for movers are estimated to
+be 23% on average, but with substantial variation across subgroups of movers. Movers who used hybrid
+seeds early in the period of observation, i.e. those who abandoned the use of hybrid seeds in later years,
+are estimated to have relatively low average returns (movers who used hybrid seeds in 1997 and 2004 are
+estimated to have average returns to using hybrid seeds of 8% and 11%, respectively). Movers who used
+hybrid seeds later, i.e., those who adopted the use of hybrid seeds in later years, are estimated to have higher
+average returns (movers who used hybrid seeds in 2007 and 2010 are estimated to have average returns to
+using hybrid seeds of 23% and 28% respectively). Similarly, movers who were not using hybrid seeds in
+early years are estimated to have higher average returns than movers who were not using hybrid seeds in
+later years (for instance, average returns are estimated to be 37% for movers not using hybrid seeds in 1997
+and around 0% for movers not using hybrid seeds in 2010).
+Low average returns among early adopters who disadopted in later time periods are consistent with these
+farmers being marginal hybrid seed users. High average returns among late adopters are consistent with a
+technology diffusion process such that some farmers who would have beneﬁted from high returns to adoption
+31We can also test these restrictions with an overidentiﬁcation test. Deﬁning the partial residual eit = yit− zitγt, we can test
+whether E(∆eit|xi1, ...,xiT ) = 0 across all time periods t = 2, ...,T and treatment status history proﬁles such thatxit = xit−1∈{ 0,1}.
+In this application, in order to guarantee that groups of relatively large sizes are used, we test whether E(∆eit|xit = xit−1 = x,mi =
+m) = 0 for all time periods t = 2, ...,T , x∈{ 0,1}, m∈{ 0,1}, where mi = 1[mint=1,...,T xit̸= maxt=1,...,T xit] indexes whether a
+cross-sectional observation is a mover. The p-value corresponding to this over-identiﬁcation test is 32%, so that the test does not
+yield strong evidence against the CRC model. This test is similar to a parallel trends test in event study analysis except that here we
+also test the restriction that treatment effects are constant over time.
+32Here we observe four time periods but an unbalanced panel. We treat data as missing at random. Every cross-sectional
+observation with three or more observed time periods participates in the estimation of the coefﬁcientsγt, regardless of whether they
+are stayers or movers. Among cross-sectional observations with only two observed time periods, only stayers participate in the
+estimation of the coefﬁcientsγt.
+24
+--- Page 25 ---
+did not use hybrid seeds in early years - perhaps because of high costs of adoption - but did gain access to
+hybrid seeds in later years, providing further evidence that access to hybrid seeds has improved over time.
+On the other hand, a signiﬁcant number of farmers in our sample are still never observed using hybrid
+seeds. The methods discussed in the previous sections can be used to estimate whether these farmers would
+experience high returns from adopting hybrid seeds.
+4.2 Simple Extrapolation to Stayers
+The ﬁrst extrapolation that we consider relies on the extrapolation identifying assumption (2.11). Before
+presenting our results, we discuss this assumption in the context of our empirical application.
+4.2.1 Discussion of the Simple Extrapolation Identifying Assumption
+Assumption (2.11) requires that the history of a farmer’s use of hybrid seed have no partial predictive
+effect on baseline heterogeneity. As discussed in section 2.4, this assumption can be interpreted as imposing
+two restrictions. The ﬁrst restriction is a functional form restriction of linearity. The second restriction is that
+factors other than a farmer’s return to using hybrid seed that determine her use of hybrid seeds be statistically
+uncorrelated with a farmer’s baseline heterogeneity and returns to using hybrid seeds. In section 4.2.3 below,
+we discuss this second restriction in more detail and discuss evidence that the cost of using hybrid seeds may
+be statistically correlated with baseline heterogeneity and treatment effects, leading to a likely violation of
+the simple extrapolation used in this section.33
+In addition, for identiﬁcation, it is required that variation in average returns be observed across different
+groups of movers. As discussed above, this is the case here since we estimate that there exists substantial
+variation in returns when comparing movers who were or were not using hybrid seeds in earlier or later years.
+This is also seen in ﬁgure 2, which plots the estimated average returns for the different groups of movers
+discussed above, as well as their estimated average baseline heterogeneity.
+4.2.2 Estimation Results
+We can estimate the parametersα0 and α1 of the extrapolation identifying assumption given by (2.11) by
+an instrumental variable regression among movers of estimated baseline productivity on estimated returns to
+using hybrid seeds, with instrumental variables taken to be hybrid seed use in all observed time periods. The
+33An additional potential concern is that farmers may not know what their returns to using hybrid seeds are prior to adopting
+the technology for the ﬁrst time, and may learn about their returns as they use the technology. Depending on the speciﬁc form of
+learning, this might not invalidate the extrapolation identifying assumption. This is discussed brieﬂy in the appendix.
+25
+--- Page 26 ---
+appendix details our estimation procedure, which is an extension of the procedure deﬁned above to the case
+where an unbalanced panel with more than two time periods is observed. Table 1 reports these estimates, with
+α1 in particular estimated to be−0.49, so that a negative statistical relationship is estimated to exist between
+baseline productivity and returns (i.e., on average low productivity farmers are estimated to beneﬁt from
+higher returns from using hybrid seeds than high productivity farmers). This sign is expected since hybrid
+seeds are designed to compensate for the deﬁciencies of particular growing conditions, so that one would
+expect higher returns from using hybrid seeds on low-productivity plots. 34 Given estimated values for α0
+and α1, and estimates of average baseline heterogeneity for untreated stayers obtained from the ﬁrst step of
+our estimation procedure, we can estimate the average returns from using hybrid seeds for untreated stayers
+with a simple plug-in estimator, similar to what was discussed in section 3.2. The non-robust extrapolation
+estimates the average returns for non-hybrid stayers to be 66%, i.e., much larger than the average returns for
+movers.35 Figure 2 represents this extrapolation graphically.36
+4.2.3 Evidence against the Validity of the Simple Extrapolation
+Suri (2011) also ﬁnds that non-hybrid stayers are farmers with low average baseline productivity that
+would beneﬁt from high average returns from using hybrid seeds. Her estimates forα1 (although based on a
+dataset with only two time periods and under the additional assumption that control covariates are exogenous
+in the extrapolation identifying assumption, as discussed in section 2.6) are similar to our estimate in this
+section (her main speciﬁcations ﬁnd α1 to be in a range of approximately −0.5 to−0.66). She ﬁnds that
+untreated stayers would beneﬁt from an even larger average returns from using hybrid seeds than the results
+reported above (she estimates average returns of 100% among untreated stayers in her main speciﬁcation).
+34In addition to α1, it could be interesting to learn about the correlation between baseline heterogeneity,ai, and treatment effect,
+bi. Given knowledge of α1 = Corr(ai,bi)
+Var(bi) , only Var(bi) would need to be estimated. However, as discussed above and in Arellano
+and Bonhomme (2012), identiﬁcation of Var(bi) would generally require stronger assumptions than those imposed by the CRC
+model (2.4). Section 4.2.3 below discusses evidence against the validity of the extrapolation identifying assumption (2.11). Note
+that if|Corr(ai,bi)| = 1, this assumption would necessarily hold with ai = α0 + α1bi. Therefore we can at least note that the results
+discussed in the next section point to the absolute value of the correlation between baseline heterogeneity, ai, and treatment effect,
+bi, being strictly less than one.
+35We report results for non-hybrid stayers only. In the next subsection we implement a robust extrapolation that yields an
+estimate of α1 that is close to−1, so that average returns for hybrid stayers may not be identiﬁed with the robust extrapolation. In
+addition, as discussed in the next subsection, our robust extrapolation can only be applied to stayers who live in a village with a least
+one mover (which represents 91% of non-hybrid stayers), so that for consistency we report results for this subsample of non-hybrid
+stayers only in this section as well.
+36The extrapolation line can be estimated by two-stage least squares (2SLS) or optimally weighted generalized method of
+moments (GMM). Throughout this section, we report results using GMM as we can expect an efﬁciency gain over 2SLS, which is
+discussed in more details in the appendix. Figure 2 plots both estimated extrapolation lines. We see that neither extrapolation line
+seems to provide a good ﬁt for the sample moments obtained from the data. There is also a signiﬁcant difference between these two
+extrapolation lines, which corresponds to the known ﬁrst-order impact of the choice of weight matrix when estimating models that
+are misspeciﬁed, see Hall and Inoue (2003).
+26
+--- Page 27 ---
+Suri (2011) reconciles high estimated average returns among farmers who are not observed using hybrid
+seeds with a selection model in which farmers use hybrid seeds if their returns exceed their cost by showing
+evidence that non-hybrid stayers are also exposed to higher costs of adopting hybrid seeds. Since the price
+of hybrid seeds was regulated during her period of observation, the main determinant of the cost of using
+hybrid seeds was a farmer’s distance to the nearest seed seller. Suri (2011) shows that farmers with a low
+baseline productivity, ai, who also tend to have higher returns to using hybrid seeds, bi, tend to live further
+away from seed sellers, which explains their non-adoption of the technology.
+However, as discussed in section 2.4, this statistical correlation between the cost of adoption of hybrid
+seeds and baseline returns would generally lead to the simple extrapolation identifying assumption (2.11)
+being invalid. Intuitively, this is because the extrapolation identifying assumption (2.11) requires that a
+farmer’s history of hybrid seed use be predictive for this farmer’s baseline heterogeneity only because it is
+predictive of her returns to hybrid seeds. If this condition holds, and if returns are correlated with baseline
+heterogeneity (α1̸= 0), one can learn about untreated stayers’ average returns from their average baseline
+heterogeneity. If one of the main determinants of the cost of using hybrid seeds (distance to the nearest seed
+seller) has a partial predictive effect on baseline heterogeneity, then a farmer’s history of hybrid seed use will
+be predictive of her baseline heterogeneity both by being predictive for her returns from using hybrid seeds
+and by being predictive for her cost of using hybrid seeds. The predictive effect through the cost of using
+hybrid seeds will confound the relationship between baseline heterogeneity and returns and will invalidate
+the extrapolation to stayers used in Suri (2011) or in this section.
+We can provide two forms of empirical evidence of the invalidity of the non-robust linear extrapolation.
+Firstly, we can estimate the linear extrapolation with distance to the nearest seed seller as an additional
+exogenous covariate:
+ai = α0 + α1bi + α2 ¯di + εi, E(εi|X,D) = 0,
+where ¯di is the average distance, in kilometers, of a farmer to the nearest seed seller during the years in
+which this farmer is observed in our data. For the 354 movers in our data, the average of ¯di is 4.08 km, with
+a standard deviation of 3 .67 km. The null hypothesis that the factors of selection into treatment other than
+treatment effect have no partial predictive effect on baseline heterogeneity is simply expressed asα2 = 0. We
+can estimate this model by an instrumental variable regression of our estimates of baseline heterogeneity, ˆai,
+on our estimates of returns,ˆbi, using treatment status history,xi1, ...,xiT , as instrumental variables and average
+27
+--- Page 28 ---
+distance to the nearest seed seller, ¯di, as an exogenous covariate, using observations on movers only. With
+this speciﬁcation, we estimateα1 to be−.34 and α2 to be−.04, and testing the statistical signiﬁcance ofα2
+leads to a p-value of 2.8%, which supports the concern with the validity of the extrapolation.
+In addition, we can test the simple extrapolation discussed in this section directly by using an overidenti-
+ﬁcation test as discussed in section 3.4. Testing the null hypothesis that the non-robust extrapolation is valid
+in this way also leads to a p-value lower than 1% (reported in Table 1). We also see from ﬁgure 2 that the
+sample moments obtained from the data do not seem to be well approximated by a single extrapolation line.
+4.3 Robust Extrapolation to Stayers
+To address the concerns with the validity of the simple extrapolation discussed above, we can use a
+robust extrapolation based on the generalized extrapolation identifying assumption (3.7), where we take the
+indexing variable vi to be a farmer’s village.
+4.3.1 Discussion of the Robust Extrapolation Identifying Assumption
+The robust extrapolation discussed in this section allows for dependence between the cost of using hybrid
+seeds and productivity, provided that this dependence originates from village speciﬁc cost shifters only. This
+accounts, for instance, for a farmer’s distance to the nearest seed seller being correlated with a farmer’s
+productivity since there is little variation in distance to the nearest seed seller across farmers who live in the
+same village, so that this cost shifter can be taken as common to all farmers who live in the same village.
+It will also account for the dependence between productivity and any other village-level cost shifter such as
+transportation amenities, information on hybrid seeds shared across farmers within villages, or the price of
+hybrid seeds if it varies geographically. On the other hand, any correlated cost shifter that is not common
+across all farmers in a village could lead to a violation of the generalized extrapolation assumption (3.7).37
+4.3.2 Estimation Results
+As discussed in section 3.3, we can estimate the slope coefﬁcient α1 of the generalized extrapolation
+identifying assumption (3.7) by a ﬁxed-effects instrumental variable regression among movers of the esti-
+mated baseline productivity on the estimated returns to using hybrid seeds, where ﬁxed effects are indexed
+37While there is little variation in distance to the nearest seed seller across farmers who live in the same village, there is sufﬁcient
+variation that one can in principle include distance to the nearest seed seller in addition to village-level ﬁxed effects as controls for
+correlated cost shifters in the extrapolation to stayers. Results with that extrapolation are almost identical to the results discussed
+below and are not reported here for concision. We see that since the results discussed here are different than the results obtained
+including distance to the nearest seed seller as the only control for correlated cost shifters, reported in section 4.2.3, there must be
+other village-level correlated cost shifters than distance to the nearest seed seller that confound a simple extrapolation to stayers.
+28
+--- Page 29 ---
+by a farmer’s village and instrumental variables are taken to be hybrid seed use in all observed time periods.
+The appendix details our estimation procedure. With this generalized extrapolation, we estimate α1 to be
+−0.95, so that the predictive effect of returns on baseline productivity is still estimated to be negative when
+accounting for the predictive effect of village-level cost shifters, but the magnitude of this predictive effect is
+estimated to be larger after controlling for village-level cost shifters. Note that since this last estimate of α1
+is close to−1, we concentrate on non-hybrid (untreated) stayers throughout this section and do not obtain
+results for hybrid (treated) stayers.38 As discussed in section 3.3, the generalized extrapolation requires that
+a stayer live in a village with at least one observed mover. In our data, 91% of farmers who never used hybrid
+seeds live in a village with at least one mover, so the results below are reported for these farmers only.
+With this robust extrapolation, we estimate average returns for non-hybrid stayers to be 37%, i.e., larger
+than returns for movers but only marginally so. 39 We can test the validity of the generalized extrapolation
+identifying assumption (3.7) by using an overidentiﬁcation test as in the previous section, the details of which
+are outlined in the appendix. We ﬁnd signiﬁcantly weaker evidence against the robust extrapolation, with a p-
+value of 0.26. Figure 2 also represents the robust extrapolation graphically, by plotting the estimated average
+returns for different groups of movers against their estimated average baseline heterogeneity deviated from
+village-level factors, ai− evi. These averages can be consistently estimated by simply averaging the noisy
+estimates ˆai− ˆevi across large groups of movers or untreated stayers. We ﬁnd that, visually, the robust
+extrapolation assumption (3.7) seems to ﬁt the data quite well, with these pairs of averages approximately
+lying on a single extrapolation line.
+5 Conclusion
+In this paper, we explored how to combine models of selection with correlated random coefﬁcient models
+of panel data to identify ATE for stayers instead of restricting one’s attention to movers. We propose simple
+estimation and testing procedures, and we ﬁnd that when applied to estimating the returns to technology
+adoption, being able to test the extrapolation of ATE to non-hybrid stayers and being able to estimate a gen-
+eralized extrapolation has ﬁrst-order implications for empirical results. We hope that these results contribute
+to widening the applicability of correlated random coefﬁcient models when estimating treatment or partial
+38Intuitively, identiﬁcation for treated stayers fails whenα1 =−1 because this implies that average returns,bi, are not predictive
+for average total heterogeneity, ai + bi, which in turn implies that this relationship cannot be inverted to obtain the average returns
+of treated stayers from their average total heterogeneity. More precisely, consider, for example, the simple extrapolation assumption
+(2.11) and T = 2; we have E(ai + bi|1,1) = α0 + (1 + α1)E(bi|1,1) = α0 if α1 =−1.
+39For comparison, Carter et al. (2017) ﬁnd an average increase in productivity of 41% from using hybrid seeds in a randomized
+control trial.
+29
+--- Page 30 ---
+effects with panel data.
+References
+Abadie, A. (2005). Semiparametric Difference-in-Differences Estimators. The Review of Economic Studies,
+72(1):1–19.
+Abbring, J. H. and Heckman, J. J. (2007). Chapter 72 Econometric Evaluation of Social Programs, Part
+III: Distributional Treatment Effects, Dynamic Treatment Effects, Dynamic Discrete Choice, and General
+Equilibrium Policy Evaluation. In Heckman, J. J. and Leamer, E. E., editors, Handbook of Econometrics,
+volume 6, pages 5145–5303. Elsevier.
+Abraham, S. and Sun, L. (2018). Estimating Dynamic Treatment Effects in Event Studies With Hetero-
+geneous Treatment Effects. SSRN Scholarly Paper ID 3158747, Social Science Research Network,
+Rochester, NY .
+Alderman, H. (2007). Improving Nutrition through Community Growth Promotion: Longitudinal Study of
+the Nutrition and Early Child Development Program in Uganda. World Development, 35(8):1376–1389.
+Angrist, J. D. and Fern ´andez-Val, I. (2013). ExtrapoLATE-ing: External Validity and Overidentiﬁcation in
+the LATE Framework. Advances in Economics and Econometrics: Tenth World Congress.
+Angrist, J. D. and Rokkanen, M. (2015). Wanna Get Away? Regression Discontinuity Estimation of Exam
+School Effects Away From the Cutoff. Journal of the American Statistical Association , 110(512):1331–
+1344.
+Arcidiacono, P., Cooley, J., and Hussey, A. (2008). The Economic Returns to an MBA. International
+Economic Review, 49(3):873–899.
+Arellano, M. and Bonhomme, S. (2011). Nonlinear Panel Data Analysis. Annual Review of Economics ,
+3(1):395–424.
+Arellano, M. and Bonhomme, S. (2012). Identifying Distributional Characteristics in Random Coefﬁcients
+Panel Data Models. The Review of Economic Studies, 79(3):987–1020.
+Ashenfelter, O. and Card, D. (1985). Using the Longitudinal Structure of Earnings to Estimate the Effect of
+Training Programs. The Review of Economics and Statistics, 67(4):648–660.
+Athey, S. and Imbens, G. (2018). Design-based Analysis in Difference-In-Differences Settings with Stag-
+gered Adoption.
+Behrman, J. R. and Hoddinott, J. (2005). Programme Evaluation with Unobserved Heterogeneity and Selec-
+tive Implementation: The Mexican PROGRESA Impact on Child Nutrition.Oxford Bulletin of Economics
+and Statistics, 67(4):547–569.
+Bertanha, M. (2017). Regression Discontinuity Design with Many Thresholds. SSRN Scholarly Paper ID
+2712957, Social Science Research Network, Rochester, NY .
+Bertanha, M. and Imbens, G. W. (2014). External Validity in Fuzzy Regression Discontinuity Designs.
+Working Paper 20773, National Bureau of Economic Research.
+Blundell, R., Dias, M. C., Meghir, C., and Reenen, J. v. (2004). Evaluating the Employment Impact of a
+Mandatory Job Search Program. Journal of the European Economic Association, 2(4):569–606.
+30
+--- Page 31 ---
+Brinch, C. N., Mogstad, M., and Wiswall, M. (2017). Beyond LATE with a Discrete Instrument. Journal of
+Political Economy, 125(4):985–1039.
+Browning, M. and Carro, J. (2007). Heterogeneity and Microeconometrics Modeling. Advances in Eco-
+nomics and Econometrics: Theory and Applications, Ninth World Congress.
+Callaway, B. and Sant’Anna, P. H. C. (2018). Difference-in-Differences with Multiple Time Periods and an
+Application on the Minimum Wage and Employment.
+Card, D. (1996). The Effect of Unions on the Structure of Wages: A Longitudinal Analysis. Econometrica,
+64(4):957–979.
+Card, D. and Sullivan, D. (1988). Measuring the Effect of Subsidized Training Programs on Movements In
+and Out of Employment. Econometrica, 56(3):497–530.
+Carter, M., Mathenge, M., Bird, S., Lybbert, T., Njagi, T., and Tjernstr ¨om, E. (2017). Policy Brief: Local
+Seed Company Fills a Niche to Increase Maize Productivity in Kenya. Innovation Lab for Assets and
+Market Access Policy Brief, (2017-01).
+Cattaneo, M. D., Keele, L., Titiunik, R., and Vazquez-Bare, G. (2016). Interpreting Regression Discontinuity
+Designs with Multiple Cutoffs. The Journal of Politics, 78(4):1229–1248.
+Chamberlain, G. (1982). Multivariate Regression Models for Panel Data. Journal of Econometrics, 18(1):5–
+46.
+Chamberlain, G. (1992). Efﬁciency Bounds for Semiparametric Regression. Econometrica, 60(3):567–596.
+Chernozhukov, V ., Fern´andez-Val, I., Hahn, J., and Newey, W. (2013). Average and Quantile Effects in
+Nonseparable Panel Models. Econometrica, 81(2):535–580.
+Clotfelter, C. T., Ladd, H. F., and Vigdor, J. L. (2010). Teacher Credentials and Student Achievement in High
+School A Cross-Subject Analysis with Student Fixed Effects. Journal of Human Resources, 45(3):655–
+681.
+Conley, T. G. and Taber, C. R. (2010). Inference with “Difference in Differences” with a Small Number of
+Policy Changes. The Review of Economics and Statistics, 93(1):113–125.
+de Chaisemartin, C. and D’Haultfoeuille, X. (2018a). Fuzzy Differences-in-Differences. The Review of
+Economic Studies, 85(2):999–1028.
+de Chaisemartin, C. and D’Haultfoeuille, X. (2018b). Two-way ﬁxed effects estimators with heterogeneous
+treatment effects. Working Paper.
+Dong, Y . and Lewbel, A. (2015). Identifying the Effect of Changing the Policy Threshold in Regression
+Discontinuity Models. The Review of Economics and Statistics, 97(5):1081–1092.
+Fern´andez-Val, I. and Lee, J. (2013). Panel data models with nonadditive unobserved heterogeneity: Esti-
+mation and inference. Quantitative Economics, 4(3):453–481.
+Freeman, R. B. (1984). Longitudinal Analyses of the Effects of Trade Unions. Journal of Labor Economics,
+2(1):1–26.
+Ghanem, D. (2017). Testing identifying assumptions in nonseparable panel data models. Journal of Econo-
+metrics, 197(2):202–217.
+31
+--- Page 32 ---
+Goodman-Bacon, A. (2018). Difference-in-Differences with Variation in Treatment Timing. Working Paper
+25018, National Bureau of Economic Research.
+Graham, B. S. and Powell, J. L. (2012). Identiﬁcation and Estimation of Average Partial Effects in “Irregular”
+Correlated Random Coefﬁcient Panel Data Models.Econometrica, 80(5):2105–2152.
+Hall, A. R. and Inoue, A. (2003). The large sample behaviour of the generalized method of moments
+estimator in misspeciﬁed models. Journal of Econometrics, 114(2):361 – 394.
+Hanushek, E. A., Kain, J. F., and Rivkin, S. G. (1998). Does Special Education Raise Academic Achievement
+for Students with Disabilities? Working Paper 6690, National Bureau of Economic Research.
+Heckman, J., Ichimura, H., Smith, J., and Todd, P. (1998). Characterizing Selection Bias Using Experimental
+Data. Econometrica, 66(5):1017–1098.
+Heckman, J. J., Ichimura, H., and Todd, P. E. (1997). Matching as an Econometric Evaluation Estimator:
+Evidence from Evaluating a Job Training Programme. The Review of Economic Studies, 64(4):605–654.
+Heckman, J. J. and Vytlacil, E. J. (2007). Chapter 70 Econometric Evaluation of Social Programs, Part I:
+Causal Models, Structural Models and Econometric Policy Evaluation. In Heckman, J. J. and Leamer,
+E. E., editors, Handbook of Econometrics, volume 6, pages 4779–4874. Elsevier.
+Hull, P. (2018). Estimating Treatment Effects in Mover Designs.
+Imai, K. and Kim, I. S. (2012). On the Use of Linear Fixed Effects Regression Models for Causal Inference.
+Imbens, G. W. and Rubin, D. B. (2015). Causal Inference for Statistics, Social, and Biomedical Sciences:
+An Introduction. Cambridge University Press, New York, 1 edition edition.
+Jakubson, G. (1991). Estimation and Testing of the Union Wage Effect Using Panel Data. The Review of
+Economic Studies, 58(5):971–991.
+Kline, P. and Walters, C. R. (2018). On Heckits, LATE, and Numerical Equivalence | The Econometric
+Society. Econometrica, Forthcoming.
+Kowaleski-Jones, L. and Duncan, G. J. (2002). Effects of Participation in the WIC Program on Birth-
+weight: Evidence From the National Longitudinal Survey of Youth. American Journal of Public Health,
+92(5):799–804.
+Laage, L. (2019). A Correlated Random Coefﬁcient Panel Model with Time-Varying Endogeneity.Working
+Paper.
+Lemieux, T. (1998). Estimating the Effects of Unions on Wage Inequality in a Panel Data Model with
+Comparative Advantage and Nonrandom Selection. Journal of Labor Economics, 16(2):261–291.
+Mammen, E. (1992). When Does Bootstrap Work?: Asymptotic Results and Simulations . Lecture Notes in
+Statistics. Springer-Verlag, New York.
+Michler, J. D., Tjernstr¨om, E., Verkaart, S., and Mausch, K. (2019). Money Matters: The Role of Yields and
+Proﬁts in Agricultural Technology Adoption. American Journal of Agricultural Economics, 101(3):710–
+731.
+Mogstad, M., Santos, A., and Torgovitsky, A. (2018). Using Instrumental Variables for Inference About
+Policy Relevant Treatment Parameters. Econometrica, 86(5):1589–1619.
+32
+--- Page 33 ---
+Mogstad, M. and Torgovitsky, A. (2018). Identiﬁcation and Extrapolation of Causal Effects with Instrumen-
+tal Variables. Annual Review of Economics, 10(1):577–613.
+Robinson, P. M. (1988). Root-N-Consistent Semiparametric Regression. Econometrica, 56(4):931–954.
+Rokkanen, M. A. T. (2015). Exam Schools, Ability, and the Effects of Afﬁrmative Action: Latent Factor
+Extrapolation in the Regression Discontinuity Design.
+Rouse, C. E. (1998). Private School V ouchers and Student Achievement: An Evaluation of the Milwaukee
+Parental Choice Program. The Quarterly Journal of Economics, 113(2):553–602.
+Sakaguchi, S. (2020). Estimation of average treatment effects using panel data when treatment effect hetero-
+geneity depends on unobserved ﬁxed effects.Journal of Applied Econometrics, n/a(n/a).
+Suri, T. (2011). Selection and Comparative Advantage in Technology Adoption. Econometrica, 79(1):159–
+209.
+Wooldridge, J. M. (2005). Fixed-Effects and Related Estimators for Correlated Random-Coefﬁcient and
+Treatment-Effect Panel Data Models. The Review of Economics and Statistics, 87(2):385–390.
+Wooldridge, J. M. (2010). Econometric Analysis of Cross Section and Panel Data. The MIT Press, second
+edition.
+W¨uthrich, K. (2018). A comparison of two quantile models with endogeneity. Journal of Business &
+Economic Statistics, 0(ja):1–36.
+a + b = E(bi|1,1) +E(ai|1,1)
+E(ai|0,1)
+E(bi|1,0)
+a
+b
+extrapolation line
+E(bi|1,1)
+E(ai|1,1)
+E(bi|0,0)
+E(ai|0,0)
+E(bi|0,1)
+E(ai|1,0)
+Figure 1: Extrapolation from difference-in-differences estimates to stayers
+33
+--- Page 34 ---
+-.20.2.4.6.81return4.64.74.84.95baseline heterogeneity1997 non-hybrid1997 hybrid2004 non-hybrid2004 hybrid2007 non-hybrid2007 hybrid2010 non-hybrid2010 hybridextrapolation line (GMM)extrapolation line (2SLS)1997 untreated stayers2004 untreated stayers2007 untreated stayers2010 untreated stayers
+(a) Non-robust extrapolation.
+-.20.2.4.6.81return-.45-.35-.25-.15-.05baseline heterogeneity deviated from village-level factors1997 non-hybrid1997 hybrid2004 non-hybrid2004 hybrid2007 non-hybrid2007 hybrid2010 non-hybrid2010 hybridextrapolation line (GMM)extrapolation line (2SLS)1997 untreated stayers2004 untreated stayers2007 untreated stayers2010 untreated stayers
+(b) Robust extrapolation.
+Figure 2: Visualization of the extrapolation from movers to stayers for the non-robust and robust extrapola-
+tions.
+34
+--- Page 35 ---
+Table 1: Average baseline productivity and returns to using hybrid seeds for different subpopulations and
+estimation methods.
+Mover currently using hybrid
+observations baseline return
+1997 137 4.896 (0.355) 0.080 (0.088)
+2004 115 4.937 (0.390) 0.112 (0.066)
+2007 165 4.928 (0.358) 0.232 (0.077)
+2010 251 4.882 (0.331) 0.283 (0.069)
+Mover currently not using hybrid
+observations baseline return
+1997 173 4.804 (0.338) 0.373 (0.072)
+2004 198 4.878 (0.322) 0.230 (0.087)
+2007 125 4.697 (0.323) 0.295 (0.102)
+2010 38 4.908 (0.330) -0.001 (0.170)
+non-hybrid stayer
+observations baseline return (NR) return (R)
+1997 95 4.692 (0.351) 0.717 (0.374) 0.352 (0.121)
+2004 84 4.748 (0.354) 0.603 (0.320) 0.326 (0.103)
+2007 71 4.638 (0.344) 0.826 (0.444) 0.447 (0.112)
+2010 59 4.738 (0.327) 0.623 (0.299) 0.370 (0.148)
+α0 5.044 (0.407)
+α1 -0.491 (0.348) -0.949 (0.329)
+p-value 0.004 0.257
+Standard errors, which are between parenthesis, account for the estimation noise originat-
+ing from both steps of estimation and are robust to cluster dependence at the village level.
+There are 95 clusters (villages) in the ﬁrst step of our estimation procedure, and 78 clusters
+in the second step. For non-hybrid stayers, NR denotes that the non-robust extrapolation
+was used, while R denotes that the robust extrapolation was used. p-value refers to the
+p-value obtained from testing the validity of the non-robust and robust extrapolations.
+35
