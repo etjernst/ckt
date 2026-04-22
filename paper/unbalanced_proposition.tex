@@ -1,0 +1,153 @@
+%==============================================================================
+%  Proposition: pooling balanced and unbalanced observers
+%  Included from main.tex under \section{Consistency of the pooled estimator}.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{assumption}{Assumption}
+%    \newtheorem{remark}{Remark}
+%==============================================================================
+
+The estimation sample is unbalanced: in country $c$ with wave count
+$T_c \in\{3,4,5\}$, between $88.6\%$ and $95.7\%$ of individuals are
+observed in strictly fewer than $T_c$ waves. Following
+Section~\ref{subsec:empirical-model}, a trajectory label
+$\underline d_i\in\mathcal{D}$ is defined only for individuals observed
+in all $T_c$ waves. Unbalanced observers are not assigned a trajectory.
+Rather than discarding them, we pool them into the estimating equation
+through a single indicator $U_i\equiv\mathbf{1}\{|\mathcal{T}_i|<T_c\}$,
+interacted with the urban dummy:
+\begin{equation}
+\label{eq:restricted-grc-unbalanced}
+\begin{aligned}
+y_{it} = \; &
+\sum_{\underline d \in \mathcal{D}} \mu_{\underline d}\,
+\mathbbm{1}\{\underline d_i=\underline d\}
++
+\sum_{\underline d \in \mathcal{D}_S} \Delta_{\underline d}\,
+\mathbbm{1}\{\underline d_i=\underline d\}\, D_{it} \\
+& +\, \alpha\, U_i
++ \pi\, U_i\, D_{it}
++ x_{it}'\gamma
++ \varepsilon_{it},
+\end{aligned}
+\end{equation}
+with the linear comparative advantage restriction
+$\Delta_{\underline d}=\beta+\phi\,E[\theta_i\mid\underline d_i=\underline d]$
+imposed on the switcher coefficients as in the restricted GRC of
+Section~\ref{subsec:empirical-model}. Because $\underline d_i$ is
+undefined when $U_i=1$, the indicators
+$\{\mathbbm{1}\{\underline d_i=\underline d\}\}_{\underline d\in\mathcal{D}}$
+are identically zero on the unbalanced subsample. The pair
+$(\alpha, \pi)$ absorbs the level and the average urban return of the
+unbalanced stratum through a single pooled cell.
+
+\begin{assumption}[Missing at random, conditional on covariates]
+\label{ass:mar}
+$U_i \perp (\theta_i, \tau_i, \{\nu_{it}^l\}_{t,l})\mid x_{i1},\dots,x_{iT_c}$.
+\end{assumption}
+
+Assumption~\ref{ass:mar} requires that non-response depends at most on
+observed covariates. We view this as defensible in the CFPS, IFLS, and
+TZNPS samples given the rich demographic controls, and probe it
+directly through the balanced-panel comparison in
+Section~\ref{sec:robustness}.
+
+\begin{proposition}[Pooling balanced and unbalanced observers]
+\label{prop:pooling}
+Under the identifying assumptions of Section~\ref{subsec:empirical-model}
+and Assumption~\ref{ass:mar}, the two-step GMM estimator of
+\eqref{eq:restricted-grc-unbalanced} is consistent and asymptotically
+normal for $(\beta,\phi,\gamma)$ and for the collection of
+balanced-panel trajectory parameters
+$\{(\mu_{\underline d},\Delta_{\underline d})\}_{\underline d\in\mathcal{D}}$.
+Its asymptotic variance is weakly smaller than that of the
+corresponding estimator restricted to balanced observers only.
+\end{proposition}
+
+\begin{proof}
+The argument has two steps: an orthogonality step that isolates the
+contribution of balanced observers to
+$\{(\mu_{\underline d},\Delta_{\underline d})\}$, and a consistency
+step for the covariate and nuisance parameters.
+
+\emph{Step 1 (orthogonality).}
+By construction, $\mathbbm{1}\{\underline d_i=\underline d\}=0$ for
+every $\underline d\in\mathcal{D}$ whenever $U_i=1$, because the
+trajectory label is only defined on the balanced subsample. Hence for
+every $\underline d\in\mathcal{D}$ and every wave $t$,
+\begin{equation*}
+\mathbbm{1}\{\underline d_i=\underline d\}\cdot U_i = 0,
+\qquad
+\mathbbm{1}\{\underline d_i=\underline d\}\cdot U_i D_{it} = 0.
+\end{equation*}
+The design matrix therefore block-separates: the balanced regressors
+$W_1 \equiv \bigl(\mathbbm{1}\{\underline d_i=\underline d\},\,
+\mathbbm{1}\{\underline d_i=\underline d\}\, D_{it}\bigr)_{\underline
+d\in\mathcal{D}}$ are orthogonal in the sample to the unbalanced
+controls $W_2\equiv(U_i,\, U_i D_{it})$. By the
+Frisch--Waugh--Lovell theorem, the GMM estimator of $(\mu,\Delta)$ is
+numerically equal to the estimator obtained by first partialling out
+$W_2$ and $x_{it}$, then fitting the residuals to the residualised
+$W_1$ using only the balanced subsample.
+
+\emph{Step 2 (consistency of the partialling-out).}
+Step~1 requires consistent estimation of $(\gamma,\alpha,\pi)$ from
+the pooled sample. Under the time-invariant comparative advantage and
+i.i.d. shock assumptions, the conditional mean of $y_{it}$ given
+$(\underline d_i, D_{it}, U_i, x_{it})$ separates additively as in
+\eqref{eq:restricted-grc-unbalanced}. Under
+Assumption~\ref{ass:mar}, $U_i$ carries no information about
+$(\theta_i,\tau_i,\nu)$ beyond what $x_{it}$ already contains, so
+$E[\varepsilon_{it}\mid\underline d_i, D_{it}, U_i, x_{it}]=0$ on both
+strata. Standard GMM arguments \citep{hansen1982gmm} deliver
+$\sqrt{n}$-consistency and asymptotic normality of the full parameter
+vector in \eqref{eq:restricted-grc-unbalanced}, including the balanced
+$(\mu_{\underline d},\Delta_{\underline d})$.
+
+\emph{Step 3 (efficiency).}
+Let $\hat\gamma^{\mathrm{pool}}$ denote the covariate coefficient
+estimated on the full sample and $\hat\gamma^{\mathrm{bal}}$ the
+analogous estimator on balanced observers only. Under
+Assumption~\ref{ass:mar}, both are consistent for $\gamma$, and
+$\hat\gamma^{\mathrm{pool}}$ has weakly smaller asymptotic variance
+because it uses strictly more observations. The partialling-out
+residual $M_{W_2,x}y$ that enters Step~1 therefore has weakly smaller
+variance under pooling, which carries over to
+$(\mu_{\underline d},\Delta_{\underline d})$ via the sandwich variance
+formula.
+\end{proof}
+
+\begin{remark}
+The orthogonality of Step~1 is the substantive content of the
+proposition. Because the trajectory indicators are identically zero
+for unbalanced observers, the unbalanced subsample does not contribute
+directly to the identification of any $\Delta_{\underline d}$ of
+economic interest; it enters
+\eqref{eq:restricted-grc-unbalanced} only through the estimation of
+$\gamma$, period shifters, and the pooled pair $(\alpha,\pi)$. As a
+result, the balanced-panel estimates are robust to substantially
+stronger forms of mis-specification for the unbalanced stratum than
+Assumption~\ref{ass:mar} requires: even if attrition were
+non-ignorable on the unbalanced subsample, the bias would operate only
+through $\hat\gamma$, and the block structure of the score implies
+that the induced bias in $\hat\Delta_{\underline d}$ is of smaller
+order whenever $\hat\gamma^{\mathrm{pool}}\overset{p}{\to}\gamma$.
+The pooled specification is therefore conservative: it never loses
+information relative to the balanced-only estimator and is weakly more
+efficient whenever $\gamma$ is correctly specified in both strata.
+\end{remark}
+
+\begin{remark}
+An immediate corollary is that the empirical gap between the
+balanced-only and pooled estimates of $\Delta_{\underline d}$,
+reported in Tables~\ref{tab:GRC_IDN_consumption_urban_bal},
+\ref{tab:GRC_CHN_consumption_urban_bal}, and
+\ref{tab:GRC_TZA_consumption_urban_bal}, provides a direct empirical
+check on Assumption~\ref{ass:mar}: systematic divergence would signal
+either mis-specified covariate effects across strata or a violation of
+MAR that contaminates $\hat\gamma^{\mathrm{pool}}$. The close
+correspondence we observe is consistent with both conditions holding
+in the CFPS, IFLS, and TZNPS panels.
+\end{remark}
