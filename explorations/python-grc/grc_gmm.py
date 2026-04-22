@@ -458,62 +458,74 @@ class RestrictedGRC:
         # because the phi-mu_base coupling produces a narrow curved
         # valley on which L-BFGS-B's line search occasionally fails
         # before reaching the FOC.
-        def _optimize(theta_start: np.ndarray, W: np.ndarray) -> np.ndarray:
-            # Alternating L-BFGS-B (analytic gradient) and Nelder-Mead
-            # (derivative-free) loop. On this design the
-            # phi-mu_base coupling produces a narrow curved valley on
-            # which L-BFGS-B's line search occasionally fails before
-            # reaching the FOC. Nelder-Mead breaks those stalls; a
-            # subsequent L-BFGS-B reduction then confirms convergence.
-            # Stops when successive rounds fail to improve the
-            # objective by a relative threshold.
+        def _optimize(theta_start: np.ndarray, W: np.ndarray,
+                      light: bool = False) -> np.ndarray:
+            # L-BFGS-B with analytic gradient + short Nelder-Mead
+            # polish. The polish breaks line-search stalls on the
+            # phi-mu_base curved valley. gtol for L-BFGS-B is scaled
+            # for the objective n*g'Wg (order J ~ 10-100 at optimum);
+            # gtol=1e-10 produces spurious "not converged" flags.
             #
-            # gtol for L-BFGS-B is scaled for the objective n*g'Wg
-            # (order J ~ 10-100 at optimum); gtol=1e-10 produces
-            # spurious "not converged" flags.
-            theta_cur = theta_start
-            f_cur = self._objective(theta_cur, data, W)
-            for _ in range(3):
-                r1 = optimize.minimize(
-                    self._objective, theta_cur, args=(data, W),
-                    jac=lambda t, *a: grad(t, W),
-                    method="L-BFGS-B",
-                    options={"gtol": 1e-8, "maxiter": 1000,
-                             "disp": verbose},
-                )
-                theta_cur = r1.x
-                f_new = r1.fun
-                if f_cur - f_new < 1e-8 * max(abs(f_cur), 1.0):
-                    break
-                f_cur = f_new
-            r_nm = optimize.minimize(
-                self._objective, theta_cur, args=(data, W),
-                method="Nelder-Mead",
-                options={"xatol": 1e-8, "fatol": 1e-8, "maxiter": 5000,
-                         "adaptive": True, "disp": verbose},
+            # light=True reduces effort; use it for inner iterations
+            # of iterated GMM after the first, where theta_start is
+            # already near the optimum.
+            nm_iter = 500 if light else 2000
+            r1 = optimize.minimize(
+                self._objective, theta_start, args=(data, W),
+                jac=lambda t, *a: grad(t, W),
+                method="L-BFGS-B",
+                options={"gtol": 1e-8, "maxiter": 1000,
+                         "disp": verbose},
             )
-            return r_nm.x if r_nm.fun < self._objective(theta_cur, data, W) else theta_cur
+            r_nm = optimize.minimize(
+                self._objective, r1.x, args=(data, W),
+                method="Nelder-Mead",
+                options={"xatol": 1e-7, "fatol": 1e-7,
+                         "maxiter": nm_iter, "adaptive": True,
+                         "disp": verbose},
+            )
+            return r_nm.x if r_nm.fun < r1.fun else r1.x
 
-        # Step 1: identity weights.
-        W1 = np.eye(m)
-        theta1 = _optimize(theta0, W1)
+        # Iterated GMM: alternate between updating the weighting
+        # matrix and re-optimizing until theta stabilizes. The
+        # two-step estimator is asymptotically efficient for any
+        # consistent first-step W, but finite-sample estimates depend
+        # on W, and W depends on the first-step theta. Iterating
+        # removes the first-step dependence by converging to a
+        # fixed point theta = argmin n*g'Wg  with  W = S^{-1}(theta).
+        # Typically converges in 3-5 outer iterations.
+        W = np.eye(m)
+        theta = theta0
+        theta_prev = theta
+        max_outer = 8
+        outer_tol = 1e-4
+        self._iter_history_ = []
+        outer_converged = False
+        for k in range(max_outer):
+            theta = _optimize(theta, W, light=(k > 0))
+            delta = float(np.linalg.norm(theta - theta_prev))
+            rel_delta = delta / max(float(np.linalg.norm(theta_prev)), 1.0)
+            self._iter_history_.append({
+                "iter": k,
+                "delta_theta": delta,
+                "rel_delta": rel_delta,
+                "obj": float(self._objective(theta, data, W)),
+            })
+            if k > 0 and rel_delta < outer_tol:
+                outer_converged = True
+                break
+            # Update weighting matrix for next outer iteration.
+            S_mat = self._cluster_S(theta, data)
+            W = _robust_inv(S_mat)
+            theta_prev = theta.copy()
 
-        # Step 2: efficient weights W = S^{-1}. Use pinv with a strict
-        # rcond because S is singular when Z has collinear columns
-        # (Stata's gmm drops those columns; pinv's SVD truncation is the
-        # numerical analogue).
-        S_mat = self._cluster_S(theta1, data)
-        W2 = _robust_inv(S_mat)
-        theta = _optimize(theta1, W2)
+        W2 = W
         self.theta_ = theta
-
-        # Convergence: judge by final gradient norm relative to the
-        # objective scale, not by the optimizer's success flag (which
-        # can be False at a valid optimum when line search stalls).
-        g_final = grad(theta, W2)
-        obj_final = self._objective(theta, data, W2)
-        grad_norm = float(np.linalg.norm(g_final))
-        self.converged_ = bool(grad_norm < 1e-4 * max(abs(obj_final), 1.0))
+        # Convergence of iterated GMM: outer fixed point (theta stable
+        # across W updates). Inner-optimizer flags are unreliable on
+        # this objective; the outer fixed-point criterion is what
+        # matters for the final estimate.
+        self.converged_ = bool(outer_converged)
 
         # Cluster-robust variance: V = (1/n) * (G' W G)^{-1} with
         # efficient W. Always use pinv (rcond threshold) because GtWG

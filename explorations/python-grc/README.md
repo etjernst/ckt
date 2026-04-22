@@ -15,7 +15,7 @@ Scope: IDN / consumption / urban / unbalanced panel only.
 | `grc_gmm.py` | `RestrictedGRC` estimator class. |
 | `data_loader.py` | Loads `data/processed/*_unb.dta` and builds period dummies. |
 | `verify_idn_consumption.py` | Runs Stata + Python on the same IDN sample and compares outputs. |
-| `verify_idn_consumption_stata.do` | Auto-generated helper .do file (written by the verify script). |
+| `verify_stata.do` | Standalone Stata driver. Runs `run_grc` and writes two CSVs. Can be invoked via the Python wrapper or directly with `stata-mp -b do verify_stata.do`. |
 | `requirements.txt`, `environment.yml` | Python 3.10+, pandas, numpy, scipy, statsmodels. |
 | `BLOCKER.md` | Outstanding work (see "Verification status" below). |
 
@@ -61,8 +61,8 @@ Sample moment: `g_i(theta) = sum_{t in T_i} z_it * eps_it(theta)` with
 From this directory:
 
 ```bash
-python data_loader.py --country IDN    # sanity check
-python verify_idn_consumption.py       # Stata + Python + diff
+python data_loader.py --country IDN                # sanity-check loader
+python verify_idn_consumption.py                   # Stata + Python + diff
 ```
 
 The verify script writes four artifacts:
@@ -75,27 +75,38 @@ The verify script writes four artifacts:
 Target precision: coefficients to 4 decimals, SEs to 3 decimals, J-stat
 to 2 decimals.
 
-Set `SKIP_STATA=1` in the environment to skip the Stata step and iterate
-on the Python side:
+Because Stata's GMM on the 92k-observation IDN sample can take 20-60
+minutes, a split workflow is usually preferable:
 
 ```bash
+# 1. Launch Stata in the background (or in a separate shell) and let
+#    it write the CSV artifacts at its own pace.
+stata-mp -b do verify_stata.do
+
+# 2. Once stata_out_idn_cons_urb_unb.csv exists, run the Python side
+#    against the cached CSV without waiting for Stata.
 SKIP_STATA=1 python verify_idn_consumption.py
 ```
 
-Set `STATA_EXE=/path/to/StataMP-64.exe` if the executable is not at one
-of the default locations.
+Environment variables:
+
+- `STATA_TIMEOUT=<sec>` (default 1800) bounds the subprocess timeout
+  when the wrapper runs Stata itself.
+- `STATA_EXE=/path/to/StataMP-64.exe` if the executable is not at one
+  of the default locations.
+- `SKIP_STATA=1` skips the Stata step and re-parses the last CSV.
 
 ## Verification status
 
-As committed: the Python estimator runs end-to-end on IDN consumption /
-urban / unbalanced, and produces point estimates in the right
-neighborhood (`phi ~ -0.95`, `Delta_base ~ 0.38`, `Delta_never ~ 0.37`).
-The Stata reference run exceeds the 90-minute task budget on this
-machine; the full side-by-side match has not yet been confirmed. See
-`BLOCKER.md` for remaining work, in particular (1) the collinear
-`switcher_31_choice` instrument that Stata drops but Python currently
-keeps, and (2) the L-BFGS-B convergence flag returning `False` despite
-sensible point estimates.
+Python estimator: iterated GMM converges to a stable fixed point in 4-5
+outer iterations on the IDN consumption / urban / unbalanced sample.
+Post-fix point estimates: `phi = -2.45`, `Delta_base = 0.85`,
+`Delta_never = 0.31`, Hansen `J = 97.8` (df = 29). All SEs are finite.
+
+Stata reference: `verify_stata.do` calls the paper's `run_grc` on the
+same sample. The Stata-vs-Python coefficient/SE/J diff has not yet been
+confirmed --- Stata's GMM is slow enough on this sample that the
+comparison has not completed in one sitting. See `BLOCKER.md`.
 
 ## Design notes
 

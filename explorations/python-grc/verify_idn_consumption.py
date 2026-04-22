@@ -4,9 +4,20 @@ Runs the IDN / consumption / urban / unbalanced / no-covariate
 specification in both Stata and Python, then compares coefficients,
 standard errors, and the Hansen J-statistic.
 
-The Stata side is a small helper .do file that mimics the first block of
-``5_GrRC.do`` but writes results to a CSV instead of storing estimation
-files. The Python side calls ``RestrictedGRC`` from ``grc_gmm.py``.
+The Stata side is the standalone file ``verify_stata.do``, which uses
+``run_grc`` from ``scripts/0_programs.do``. The Python side calls
+``RestrictedGRC`` from ``grc_gmm.py``.
+
+Usage::
+
+    python verify_idn_consumption.py               # run both sides, compare
+    STATA_TIMEOUT=3600 python verify_idn_consumption.py   # let Stata run longer
+    SKIP_STATA=1 python verify_idn_consumption.py  # use cached Stata CSVs
+
+Manual Stata (when the wrapper's timeout is inconvenient)::
+
+    cd explorations/python-grc && stata-mp -b do verify_stata.do
+    SKIP_STATA=1 python verify_idn_consumption.py
 
 Target precision (per the task brief): coefficients to 4 decimals,
 standard errors to 3 decimals, J-stat to 2 decimals.
@@ -28,84 +39,11 @@ from grc_gmm import RestrictedGRC  # noqa: E402
 
 
 HERE = Path(__file__).parent
-STATA_HELPER = HERE / "verify_idn_consumption_stata.do"
+STATA_DO = HERE / "verify_stata.do"
 STATA_OUT = HERE / "stata_out_idn_cons_urb_unb.csv"
 STATA_J_OUT = HERE / "stata_out_idn_cons_urb_unb_jstat.csv"
 PYTHON_OUT = HERE / "python_out_idn_cons_urb_unb.csv"
 COMPARISON = HERE / "verification_idn_consumption.csv"
-
-
-STATA_DO = r"""
-/* Helper .do file for verification against the Python port.
-   Mirrors the no-covariate IDN consumption/urban/unb spec from
-   5_GrRC.do and writes results to CSV. */
-
-clear all
-set more off
-
-if "$dir" == "" {
-    global dir  "C:/Users/maand/Dropbox (Personal)/Returns to migration/ReplicationPackage6"
-    global dirdata "$dir/data"
-    global scripts "$dir/scripts"
-    global output  "$dir/output"
-}
-
-do "$scripts/0_programs.do"
-
-local country IDN
-local balance unb
-
-use "$dirdata/processed/`country'_`balance'.dta", clear
-replace lndepvar = log(consumption/hhsize_cube)
-
-setup_grc_estimation
-tab period, gen(period_)
-local periodFE "period_2 - period_`r(r)'"
-
-initial_values lndepvar, switchers($switchers) balance(`balance') ///
-    estname(initial_`country')
-local base `r(base)'
-local initial "`r(initial)'"
-
-local iterations 500
-
-run_grc, estname(grc_verify_covs_0) switchers($switchers) base(`base') ///
-    initial(`initial') balance(`balance') iterate(`iterations')
-
-estimates restore grc_verify_covs_0
-matrix b = e(b)
-matrix V = e(V)
-local names : colfullnames b
-local J = e(J)
-local Jdf = e(J_df)
-local Jp  = e(J_p)
-local N   = e(N)
-local Nclust = e(N_clust)
-local base_used = `base'
-
-tempname fh
-file open `fh' using "XXOUTXX", write replace
-file write `fh' "name,coef,se" _n
-local p = colsof(b)
-forvalues i = 1/`p' {
-    local nm : word `i' of `names'
-    local c  = b[1,`i']
-    local v  = V[`i',`i']
-    local s  = sqrt(`v')
-    file write `fh' "`nm'," ("`c'") "," ("`s'") _n
-}
-file close `fh'
-
-file open `fh' using "XXJOUTXX", write replace
-file write `fh' "stat,value" _n
-file write `fh' "J,`J'" _n
-file write `fh' "J_df,`Jdf'" _n
-file write `fh' "J_p,`Jp'" _n
-file write `fh' "N,`N'" _n
-file write `fh' "N_clust,`Nclust'" _n
-file write `fh' "base,`base_used'" _n
-file close `fh'
-"""
 
 
 def _stata_exe() -> str:
@@ -132,16 +70,17 @@ def _stata_exe() -> str:
 
 
 def run_stata() -> None:
-    do_text = STATA_DO.replace("XXOUTXX", str(STATA_OUT).replace("\\", "/"))
-    do_text = do_text.replace("XXJOUTXX", str(STATA_J_OUT).replace("\\", "/"))
-    STATA_HELPER.write_text(do_text, encoding="utf-8")
-    print("Running Stata...", flush=True)
+    """Invoke ``verify_stata.do`` via ``stata-mp -b``.
+
+    The .do file is standalone; callers can also run it manually outside
+    Python (useful when Stata's wall time exceeds this wrapper's budget).
+    """
+    print(f"Running Stata from {STATA_DO.name}...", flush=True)
     stata = _stata_exe()
-    # 5-minute ceiling, matches the task's kill-switch on stuck subprocesses.
-    # GMM on 90k observations can take several minutes; allow up to 15.
+    timeout = int(os.environ.get("STATA_TIMEOUT", "1800"))  # default 30 min
     subprocess.run(
-        [stata, "-b", "do", STATA_HELPER.name],
-        cwd=str(HERE), check=True, timeout=900,
+        [stata, "-b", "do", STATA_DO.name],
+        cwd=str(HERE), check=True, timeout=timeout,
     )
     print("  stata_out:", STATA_OUT)
     print("  stata_j_out:", STATA_J_OUT)
