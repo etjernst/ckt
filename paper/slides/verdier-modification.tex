@@ -1,12 +1,12 @@
 \documentclass[10pt,aspectratio=169]{beamer}
 
 % ---------------------------------------------------------------
-% Theme and typography
+% Theme and typography (XeLaTeX + metropolis defaults: Fira Sans)
 % ---------------------------------------------------------------
 \usetheme{metropolis}
 \metroset{progressbar=frametitle,numbering=fraction,block=fill,sectionpage=progressbar}
 
-\usepackage[T1]{fontenc}
+\usepackage{fontspec}
 \usepackage{amsmath,amssymb,amsthm,mathtools,bbm}
 \usepackage{booktabs}
 \usepackage{tikz}
@@ -39,7 +39,7 @@
 
 \title{Implementing Verdier's robust extrapolation \\ in the CKT model}
 \subtitle{Relaxing the i.i.d.~migration-cost assumption}
-\author{Cenci, Kleemans, Tjernström}
+\author{Cenci, Kleemans, Tjernstr\"om}
 \date{\today}
 
 \begin{document}
@@ -52,19 +52,15 @@
 % ---------------------------------------------------------------
 \begin{frame}{Our current estimator is Verdier's ``simple'' extrapolation}
 
-  \textbf{What we currently do.} Following Suri (2011) and Tjernström (2023):
+  We currently follow Suri (2011) and Tjernstr\"om (2023):
   \begin{itemize}
-    \item impose the LCA restriction $\Deltai = \beta + \phicoef\, \thetai$;
-    \item identify $\phicoef$ from switcher trajectories;
-    \item extrapolate to non-migrants ($\dN$, $\dT$) via the LCA line.
+    \item impose the LCA restriction $\Deltai = \beta + \phicoef\, \thetai$
+    \item identify $\phicoef$ from switcher trajectories
+    \item extrapolate to non-migrants ($\dN$, $\dT$) along the LCA line
   \end{itemize}
 
-  \vspace{0.6em}
-  \textbf{What Verdier (2020) shows.} This procedure is one specific instance of a broader family.
-  He calls our version the \alert{simple extrapolation} and proposes a \alert{robust} alternative that weakens one specific assumption.
-
-  \vspace{0.6em}
-  \textbf{What we propose.} Adopt Verdier's robust version.
+  \vspace{0.8em}
+  Verdier calls our approach the \emph{simple extrapolation} \& proposes a \emph{robust} alternative.
 
 \end{frame}
 
@@ -77,14 +73,14 @@
   \]
 
   \vspace{0.4em}
-  \textbf{What this implies.} The residual migration-cost shifter is \emph{independent} of baseline skill and comparative advantage $(\tau_i, \thetai)$ \alert{everywhere in the sample}.
+  The migration-cost shifter is independent of baseline skill and comparative advantage \alert{everywhere in the sample}.
 
   \vspace{0.4em}
-  \textbf{What this rules out.} Any systematic difference in the \emph{distribution} of migration-cost shocks across regions, institutions, or subpopulations.
+  This rules out any systematic difference in migration-cost distributions across regions, institutions, or subpopulations.
 
   \vspace{0.6em}
   \begin{alertblock}{Practical reading}
-    Under A2, two workers in completely different parts of the country face the same distribution of migration cost, conditional only on their own comparative advantage.
+    Two workers in different parts of the country face the same cost distribution, conditional only on their own comparative advantage.
   \end{alertblock}
 
 \end{frame}
@@ -96,60 +92,62 @@
 
   \vspace{0.6em}
   \begin{itemize}
-    \item \textbf{Bryan and Morten (2019):} internal migration costs in Indonesia large enough to move Indonesia toward the world aggregate misallocation frontier.
-    \item \textbf{Lagakos \textit{et al.}\ (2020):} migration costs vary substantially within and across developing countries.
-    \item \textbf{Pulido and Swiecki (2021):} sector-side labor-market frictions correlate with regional productivity.
-    \item \textbf{China specifically:} hukou institutions generate large, regionally-varying barriers to rural-to-urban migration.
+    \item \textbf{Bryan \& Morten (2019):} Indonesian migration costs near the world misallocation frontier.
+    \item \textbf{Lagakos et al.\ (2020):} migration costs vary substantially within and across developing countries.
+    \item \textbf{Pulido \& Swiecki (2021):} sector frictions correlate with regional productivity.
+    \item \textbf{China specifically:} hukou generates large, regionally-varying barriers.
   \end{itemize}
 
   \vspace{0.6em}
-  \textbf{Our current model rules this out by assumption.}
+  \begin{alertblock}{}
+    Our current model rules this out by assumption.
+  \end{alertblock}
 
 \end{frame}
 
 % ---------------------------------------------------------------
 \begin{frame}{Verdier's robust extrapolation weakens A2 to a conditional version}
 
-  \textbf{Proposal.} Decompose the migration-cost shock into a region-specific component and a residual:
+  Decompose the migration-cost shock:
   \[
     \nuil \;=\; m_{l}(\vii) \;+\; \tildenu,
   \]
   where $\vii$ is an observed, time-invariant individual-level index.
 
   \vspace{0.6em}
-  \textbf{New assumption (A2$'$).} Only the residual $\tildenu$ is i.i.d.\ \emph{conditional on} $\vii$.
-  The region-level component $m_{l}(\vii)$ can be arbitrarily correlated with baseline skill and comparative advantage.
+  Only the residual $\tildenu$ is i.i.d.\ \emph{conditional on} $\vii$. The region-level component $m_{l}(\vii)$ can correlate arbitrarily with comparative advantage.
 
   \vspace{0.6em}
-  \textbf{What we pick for $\vii$.} First-wave province (same across all three countries, to start).
+  We use first-wave province (all three countries).
 
   \vspace{0.6em}
   \begin{alertblock}{Why this is weaker}
-    A2 required independence of $\nuil$ from $(\tau_i,\thetai)$ unconditionally.
-    A2$'$ requires only that the \emph{within-province} variation be independent.
+    A2 required \emph{unconditional} independence. A2$'$ requires only \emph{within-province} independence.
   \end{alertblock}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The LCA gets a province-specific intercept; slope stays common}
+\begin{frame}{The LCA gets a province-specific intercept}
 
-  \textbf{Old LCA (simple extrapolation):}
+  Slope stays common; intercept varies.
+
+  \vspace{0.4em}
+  Simple:
   \[
     \Deltai \;=\; \beta \;+\; \phicoef\, \thetai.
   \]
 
-  \vspace{0.3em}
-  \textbf{New LCA (robust extrapolation):}
+  Robust:
   \[
     \Deltai \;=\; \beta(\vii) \;+\; \phicoef\, \thetai.
   \]
 
   \vspace{0.6em}
   \begin{itemize}
-    \item Slope $\phicoef$ is \alert{common across provinces} --- this remains the LCA restriction.
-    \item Intercept $\beta(\vii)$ absorbs province-level migration-cost heterogeneity.
-    \item Identification of $\phicoef$ comes from switcher variation \emph{within} a province.
+    \item Slope $\phicoef$ remains common---this is still the LCA restriction.
+    \item Intercept $\beta(\vii)$ absorbs province-level cost heterogeneity.
+    \item $\phicoef$ identifies off within-province switcher variation.
     \item Extrapolation to non-migrants happens province-by-province, then averaged.
   \end{itemize}
 
@@ -162,25 +160,25 @@
 
   \vspace{0.4em}
   \begin{itemize}
-    \item \textbf{Low-cost province} (coastal, good infrastructure). Migration cost low. Many types migrate. Switcher sample covers a wide range of $\thetai$.
-    \item \textbf{High-cost province} (remote, poor infrastructure). Migration cost high. Only unusually high-return types migrate. Switcher sample is skewed.
+    \item \textbf{Low-cost province} (coastal). Many types migrate; switcher sample covers a wide range of $\thetai$.
+    \item \textbf{High-cost province} (remote). Only high-return types migrate; switcher sample is skewed.
   \end{itemize}
 
   \vspace{0.6em}
-  \textbf{Pooled regression} of $\Deltai$ on $\thetai$: biased by the across-province difference in selection.
+  Pooled regression: biased by across-province difference in selection.
 
   \vspace{0.4em}
-  \textbf{Within-province regression}: restricts identification to comparisons where migration cost is held constant. Clean slope.
+  Within-province: clean slope, holds migration cost constant.
 
   \vspace{0.6em}
-  \begin{alertblock}{This is what partialling out $\vii$ achieves}
-    It purges the selection bias induced by region-level migration-cost heterogeneity.
+  \begin{alertblock}{}
+    Partialling out $\vii$ purges this selection bias.
   \end{alertblock}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{Within-province slopes agree; the pooled slope is pulled off}
+\begin{frame}{Within-province slopes agree---the pooled slope is pulled off}
 
   \centering
   \begin{tikzpicture}[x=1cm,y=1cm,>={Stealth[length=2mm]}]
@@ -219,14 +217,14 @@
   \end{tikzpicture}
 
   \vspace{0.6em}
-  Each province's switcher cloud has the true LCA slope $\phicoef$. The pooled line is tilted by the province-level intercept difference, not by a real change in $\phicoef$.
+  Each province's switcher cloud has true slope $\phicoef$. The pooled line tilts because of intercept differences, not because $\phicoef$ varies.
 
 \end{frame}
 
 % ---------------------------------------------------------------
 \begin{frame}{Implementation adds $\vii$-interacted means to the GRC regression}
 
-  \textbf{The restricted GRC, currently:}
+  Currently:
   \begin{align*}
     y_{it} = \sum_{\underline{d}} \mud \mathbbm{1}\{\underline{d}_i = \underline{d}\}
             + \Delta_{\underline{d}_0} \D_{it}
@@ -235,7 +233,7 @@
   \end{align*}
 
   \vspace{0.3em}
-  \textbf{Under the robust version:} trajectory means become trajectory $\times$ province means.
+  Under robust: trajectory means $\to$ trajectory $\times$ province means.
   \begin{align*}
     y_{it} = \sum_{\underline{d},v} \mu_{\underline{d},v}\, \mathbbm{1}\{\underline{d}_i=\underline{d}, \vii=v\}
             + \Delta_{\underline{d}_0}\D_{it}
@@ -245,9 +243,9 @@
 
   \vspace{0.4em}
   \begin{itemize}
-    \item Slope $\phicoef$ unchanged --- still a single scalar.
+    \item Slope $\phicoef$ unchanged---still a single scalar.
     \item Standard errors cluster at $\vii$.
-    \item Stayer return $\Delta_{\dN}$ computed within each $\vii$-cluster, then averaged over clusters with switcher support.
+    \item Stayer return $\Delta_{\dN}$ averaged over clusters with switcher support.
   \end{itemize}
 
 \end{frame}
@@ -255,7 +253,7 @@
 % ---------------------------------------------------------------
 \begin{frame}{The cost-shifter diagnostic is a falsification test, not a substitute}
 
-  Verdier also proposes a \alert{separate} diagnostic, using an observed continuous cost shifter $w_i$:
+  Verdier proposes a diagnostic via observed continuous cost shifter $w_i$:
 
   \vspace{0.3em}
   \[
@@ -267,34 +265,33 @@
 
   \vspace{0.6em}
   \begin{itemize}
-    \item \textbf{Requires} an observed measured exogenous cost shifter.
-    \item \textbf{Purpose:} falsify the simple extrapolation. If $\alpha_2 \neq 0$, the simple assumption is wrong.
-    \item \textbf{Does not deliver} an alternative estimate on its own.
-    \item \textbf{Not required} to implement the robust extrapolation; the robust version uses $\vii$ instead.
+    \item Requires an observed exogenous cost shifter.
+    \item Falsifies the simple extrapolation if $\alpha_2 \neq 0$.
+    \item Does not deliver an alternative estimate.
+    \item Not required for the robust extrapolation, which uses $\vii$.
   \end{itemize}
 
   \vspace{0.6em}
-  \begin{alertblock}{For now}
-    We focus on the robust extrapolation via $\vii = $ province.
-    The cost-shifter test is a natural robustness addition if we can identify a defensible $w_i$ per country.
+  \begin{alertblock}{}
+    We focus on $\vii = $ province; cost-shifter test is future robustness.
   \end{alertblock}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The move buys a weaker assumption; the costs are tractable}
+\begin{frame}{The move buys a weaker assumption at tractable cost}
 
-  \textbf{What we gain.}
+  We gain:
   \begin{itemize}
-    \item A2$'$ is substantially weaker than A2 --- it matches what the migration literature documents.
-    \item The CHN hukou split is now a principled special case (with $\vii = $ hukou) rather than an ad hoc fix.
-    \item Stayer ATE estimates are defensible against the concern Verdier raised in Suri's own data.
+    \item A2$'$ matches what the migration literature documents.
+    \item The CHN hukou split becomes a principled special case ($\vii = $ hukou) rather than an ad hoc fix.
+    \item Stayer ATE estimates defensible against Verdier's concern in Suri's data.
   \end{itemize}
 
   \vspace{0.4em}
-  \textbf{What we give up.}
+  We give up:
   \begin{itemize}
-    \item $\Delta_{\dN}$ is now an average over provinces with switcher support, not the full population average. (Feasibility survey will report support fractions.)
+    \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population.
     \item Thinner identification of $\phicoef$: only within-province switcher variation contributes.
     \item Cluster-robust standard errors at the $\vii$ level.
   \end{itemize}
@@ -304,21 +301,12 @@
 % ---------------------------------------------------------------
 \begin{frame}{Feasibility survey first, then implementation}
 
-  \textbf{In progress.} Read-only survey of \texttt{data/processed/} for each country:
   \begin{itemize}
-    \item Which geographic variables are available at baseline.
-    \item Number of unique values at each granularity (province, district, community).
-    \item Switchers per cluster; always-rural support fraction per cluster.
+    \item Survey \texttt{data/processed/} for each country: available baseline geographic variables, unique values per granularity, switchers per cluster, always-rural support fraction.
+    \item Implement $\vii = $ first-wave province across all three countries in \texttt{run\_grc}.
+    \item Report simple and robust estimates side by side; run Verdier's overidentification test of the LCA line.
+    \item Check whether raw CFPS/IFLS/TZNPS files record province of origin or birth; if so, use as a robustness specification.
   \end{itemize}
-
-  \vspace{0.5em}
-  \textbf{Next.} Implement $\vii = $ first-wave province across all three countries in \texttt{run\_grc}.
-
-  \vspace{0.3em}
-  \textbf{Then.} Report simple-extrapolation and robust-extrapolation estimates side by side; run Verdier's overidentification test of the LCA line to diagnose any remaining misfit.
-
-  \vspace{0.5em}
-  \textbf{Punt for later.} Check whether the raw CFPS/IFLS/TZNPS files record province of origin or province of birth; if so, substitute for first-wave province in a robustness specification.
 
 \end{frame}
 
