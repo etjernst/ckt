@@ -38,7 +38,7 @@
 \newcommand{\tildenu}{\tilde{\nu}_{it}^{l}}
 
 \title{Implementing Verdier's robust extrapolation \\ in the CKT model}
-\subtitle{Relaxing the i.i.d.~migration-cost assumption}
+\subtitle{Relaxing the i.i.d.\ assumption on $\nuil$}
 \author{Cenci, Kleemans, Tjernstr\"om}
 \date{\today}
 
@@ -65,64 +65,65 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The simple extrapolation assumes i.i.d.\ migration-cost shocks}
+\begin{frame}{The simple extrapolation assumes i.i.d.\ non-pecuniary shocks}
 
   Our current Assumption A2 states that the non-pecuniary utility shock
   \[
-    \nuil \quad \text{is i.i.d.\ across individuals } i, \text{ time } t, \text{ and locations } l.
+    \nuil \quad \text{is i.i.d.\ across individuals } i, \text{ time } t, \text{ \& locations } l
   \]
 
   \vspace{0.4em}
-  The migration-cost shifter is independent of baseline skill and comparative advantage \alert{everywhere in the sample}.
+  $\nuil$ is independent of baseline skill \& comparative advantage \alert{everywhere in the sample}
 
   \vspace{0.4em}
-  This rules out any systematic difference in migration-cost distributions across regions, institutions, or subpopulations.
+  Rules out systematic differences in $\nuil$ across regions/institutions
 
   \vspace{0.6em}
-  \begin{alertblock}{Practical reading}
-    Two workers in different parts of the country face the same cost distribution, conditional only on their own comparative advantage.
-  \end{alertblock}
+  Workers in different locations have the same shock distribution, conditional on comparative advantage
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The migration literature documents exactly what A2 rules out}
+\begin{frame}{The migration literature documents what A2 rules out}
 
-  Regional variation in migration cost is the central fact of this literature:
+  Regional heterogeneity is a central fact of this literature:
 
   \vspace{0.6em}
   \begin{itemize}
-    \item \textbf{Bryan \& Morten (2019):} Indonesian migration costs near the world misallocation frontier.
-    \item \textbf{Lagakos et al.\ (2020):} migration costs vary substantially within and across developing countries.
-    \item \textbf{Pulido \& Swiecki (2021):} sector frictions correlate with regional productivity.
-    \item \textbf{China specifically:} hukou generates large, regionally-varying barriers.
+    \item \textbf{Bryan \& Morten (2019):} Indonesian migration costs put productivity near misallocation frontier
+    \item \textbf{Lagakos et al.\ (2020):} migration costs vary substantially across developing countries
+    \item \textbf{Pulido \& Swiecki (2021):} sector frictions correlate with regional productivity
+    \item \textbf{China:} hukou generates regionally-varying migration barriers
   \end{itemize}
 
   \vspace{0.6em}
-  \begin{alertblock}{}
-    Our current model rules this out by assumption.
-  \end{alertblock}
+  Our current model rules this out by assumption.
 
 \end{frame}
 
 % ---------------------------------------------------------------
 \begin{frame}{Verdier's robust extrapolation weakens A2 to a conditional version}
 
-  Decompose the migration-cost shock:
+  Decompose the non-pecuniary shock:
   \[
-    \nuil \;=\; m_{l}(\vii) \;+\; \tildenu,
+    \nuil \;=\; m_{l}(\vii) \;+\; \tildenu
   \]
   where $\vii$ is an observed, time-invariant individual-level index.
 
   \vspace{0.6em}
-  Only the residual $\tildenu$ is i.i.d.\ \emph{conditional on} $\vii$. The region-level component $m_{l}(\vii)$ can correlate arbitrarily with comparative advantage.
+  \textbf{New assumption (A2$'$):}
+  \begin{itemize}
+    \item $\tildenu$ is i.i.d.\ \emph{conditional on} $\vii$
+    \item $m_{l}(\vii)$ can correlate arbitrarily with comparative advantage
+  \end{itemize}
 
   \vspace{0.6em}
-  We use first-wave province (all three countries).
+  We use first-wave province as $\vii$ to index region-level shocks (all three countries).
 
   \vspace{0.6em}
   \begin{alertblock}{Why this is weaker}
-    A2 required \emph{unconditional} independence. A2$'$ requires only \emph{within-province} independence.
+    A2 required \emph{unconditional} independence \\
+    A2$'$ requires only \emph{within-province} independence
   \end{alertblock}
 
 \end{frame}
@@ -135,20 +136,20 @@
   \vspace{0.4em}
   Simple:
   \[
-    \Deltai \;=\; \beta \;+\; \phicoef\, \thetai.
+    \Deltai \;=\; \beta \;+\; \phicoef\, \thetai
   \]
 
   Robust:
   \[
-    \Deltai \;=\; \beta(\vii) \;+\; \phicoef\, \thetai.
+    \Deltai \;=\; \beta(\vii) \;+\; \phicoef\, \thetai
   \]
 
   \vspace{0.6em}
   \begin{itemize}
-    \item Slope $\phicoef$ remains common---this is still the LCA restriction.
-    \item Intercept $\beta(\vii)$ absorbs province-level cost heterogeneity.
-    \item $\phicoef$ identifies off within-province switcher variation.
-    \item Extrapolation to non-migrants happens province-by-province, then averaged.
+    \item slope $\phicoef$ remains common---this is still the LCA restriction
+    \item intercept $\beta(\vii)$ absorbs province-level $m_l(\vii)$ heterogeneity
+    \item $\phicoef$ identifies off within-province switcher variation
+    \item extrapolation to non-migrants happens province-by-province, then averaged
   \end{itemize}
 
 \end{frame}
@@ -160,20 +161,15 @@
 
   \vspace{0.4em}
   \begin{itemize}
-    \item \textbf{Low-cost province} (coastal). Many types migrate; switcher sample covers a wide range of $\thetai$.
-    \item \textbf{High-cost province} (remote). Only high-return types migrate; switcher sample is skewed.
+    \item \textbf{Province A} (many movers): wide switcher sample, broad range of $\thetai$
+    \item \textbf{Province B} (few movers): skewed sample, only high-return types migrate
   \end{itemize}
 
   \vspace{0.6em}
-  Pooled regression: biased by across-province difference in selection.
+  Pooled regression: biased by across-province difference in selection
 
   \vspace{0.4em}
-  Within-province: clean slope, holds migration cost constant.
-
-  \vspace{0.6em}
-  \begin{alertblock}{}
-    Partialling out $\vii$ purges this selection bias.
-  \end{alertblock}
+  Within-province: clean slope, holds region-level shocks constant
 
 \end{frame}
 
@@ -187,26 +183,24 @@
     \draw[->,thick] (-0.2,0) -- (7.3,0) node[right] {\small $\thetai$};
     \draw[->,thick] (0,-0.2) -- (0,4.6) node[above] {\small $\Deltai$};
 
-    % Province A: low-cost, wide switcher range
+    % Province A: wide switcher range
     \foreach \x/\y in {0.8/1.05, 1.4/1.4, 2.0/1.75, 2.6/2.10, 3.2/2.45, 3.8/2.80} {
       \filldraw[cktblue,opacity=0.85] (\x,\y) circle (2pt);
     }
-    % within-province A regression line (slope = 0.58)
     \draw[cktblue,thick] (0.3,0.75) -- (4.3,3.07);
 
-    % Province B: high-cost, narrower range + vertical offset
+    % Province B: narrower range + vertical offset
     \foreach \x/\y in {3.0/2.85, 3.6/3.20, 4.2/3.55, 4.8/3.90, 5.4/4.25} {
       \filldraw[cktgreen,opacity=0.85] (\x,\y) circle (2pt);
     }
-    % within-province B regression line (same slope 0.58)
     \draw[cktgreen,thick] (2.5,2.56) -- (6.0,4.59);
 
-    % Pooled regression line: fits through a compromise; steeper slope
+    % Pooled regression line: tilted by intercept difference
     \draw[cktaccent,thick,dashed] (0.2,0.55) -- (6.2,4.55);
 
     % Legend
-    \node[anchor=west, cktblue]   at (7.6,3.7) {\small Province $A$ (low cost)};
-    \node[anchor=west, cktgreen]  at (7.6,3.1) {\small Province $B$ (high cost)};
+    \node[anchor=west, cktblue]   at (7.6,3.7) {\small Province $A$ (many movers)};
+    \node[anchor=west, cktgreen]  at (7.6,3.1) {\small Province $B$ (few movers)};
     \node[anchor=west, cktaccent] at (7.6,2.5) {\small Pooled fit};
 
     % Annotation of slopes
@@ -217,7 +211,10 @@
   \end{tikzpicture}
 
   \vspace{0.6em}
-  Each province's switcher cloud has true slope $\phicoef$. The pooled line tilts because of intercept differences, not because $\phicoef$ varies.
+  \begin{flushleft}
+  Each province's switcher cloud has true slope $\phicoef$. \\
+  The pooled line tilts because of intercept differences, not because $\phicoef$ varies.
+  \end{flushleft}
 
 \end{frame}
 
@@ -229,11 +226,11 @@
     y_{it} = \sum_{\underline{d}} \mud \mathbbm{1}\{\underline{d}_i = \underline{d}\}
             + \Delta_{\underline{d}_0} \D_{it}
             + \sum_{\underline{d}\in\DS\setminus\underline{d}_0} \phicoef(\mud - \mu_{\underline{d}_0}) \D_{it}\mathbbm{1}\{\underline{d}_i=\underline{d}\}
-            + \cdots + \varepsilon_{it}.
+            + \cdots + \varepsilon_{it}
   \end{align*}
 
   \vspace{0.3em}
-  Under robust: trajectory means $\to$ trajectory $\times$ province means.
+  Under robust: trajectory means $\to$ trajectory $\times$ province means
   \begin{align*}
     y_{it} = \sum_{\underline{d},v} \mu_{\underline{d},v}\, \mathbbm{1}\{\underline{d}_i=\underline{d}, \vii=v\}
             + \Delta_{\underline{d}_0}\D_{it}
@@ -243,38 +240,33 @@
 
   \vspace{0.4em}
   \begin{itemize}
-    \item Slope $\phicoef$ unchanged---still a single scalar.
-    \item Standard errors cluster at $\vii$.
-    \item Stayer return $\Delta_{\dN}$ averaged over clusters with switcher support.
+    \item slope $\phicoef$ unchanged---still a single scalar
+    \item standard errors cluster at $\vii$
+    \item stayer return $\Delta_{\dN}$ averaged over clusters with switcher support
   \end{itemize}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The cost-shifter diagnostic is a falsification test, not a substitute}
+\begin{frame}{The cost-shifter diagnostic is a falsification test}
 
   Verdier proposes a diagnostic via observed continuous cost shifter $w_i$:
 
   \vspace{0.3em}
   \[
     \thetai^{*} = \alpha_0 + \alpha_1 \Deltai + \alpha_2 w_i + e_i,
-    \qquad H_0: \alpha_2 = 0.
+    \qquad H_0: \alpha_2 = 0
   \]
 
   In Kenya he uses $w_i = $ average distance to nearest seed seller.
 
   \vspace{0.6em}
   \begin{itemize}
-    \item Requires an observed exogenous cost shifter.
-    \item Falsifies the simple extrapolation if $\alpha_2 \neq 0$.
-    \item Does not deliver an alternative estimate.
-    \item Not required for the robust extrapolation, which uses $\vii$.
+    \item requires an observed exogenous $w_i$
+    \item falsifies the simple extrapolation if $\alpha_2 \neq 0$
+    \item does not deliver an alternative estimate
+    \item not required for the robust extrapolation, which uses $\vii$
   \end{itemize}
-
-  \vspace{0.6em}
-  \begin{alertblock}{}
-    We focus on $\vii = $ province; cost-shifter test is future robustness.
-  \end{alertblock}
 
 \end{frame}
 
@@ -283,29 +275,17 @@
 
   We gain:
   \begin{itemize}
-    \item A2$'$ matches what the migration literature documents.
-    \item The CHN hukou split becomes a principled special case ($\vii = $ hukou) rather than an ad hoc fix.
-    \item Stayer ATE estimates defensible against Verdier's concern in Suri's data.
+    \item A2$'$ matches what the migration literature documents
+    \item the CHN hukou split becomes a principled special case ($\vii = $ hukou) rather than an ad hoc fix
+    \item stayer ATE estimates defensible against Verdier's concern in Suri's data
   \end{itemize}
 
   \vspace{0.4em}
   We give up:
   \begin{itemize}
-    \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population.
-    \item Thinner identification of $\phicoef$: only within-province switcher variation contributes.
-    \item Cluster-robust standard errors at the $\vii$ level.
-  \end{itemize}
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{Feasibility survey first, then implementation}
-
-  \begin{itemize}
-    \item Survey \texttt{data/processed/} for each country: available baseline geographic variables, unique values per granularity, switchers per cluster, always-rural support fraction.
-    \item Implement $\vii = $ first-wave province across all three countries in \texttt{run\_grc}.
-    \item Report simple and robust estimates side by side; run Verdier's overidentification test of the LCA line.
-    \item Check whether raw CFPS/IFLS/TZNPS files record province of origin or birth; if so, use as a robustness specification.
+    \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population
+    \item thinner identification of $\phicoef$: only within-province switcher variation contributes
+    \item cluster-robust standard errors at the $\vii$ level
   \end{itemize}
 
 \end{frame}
