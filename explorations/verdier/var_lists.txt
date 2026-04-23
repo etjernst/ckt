@@ -1,0 +1,2231 @@
+                                                       ___  ____  ____  ____  ____(R)
+                                                      /__    /   ____/   /   ____/   
+                                                     ___/   /   /___/   /   /___/    
+                                                       Statistics/Data analysis      
+      
+      -------------------------------------------------------------------------------
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/var_lists.smcl
+        log type:  smcl
+       opened on:  22 Apr 2026, 15:51:27
+      
+     1 . 
+     2 . foreach country in CHN IDN TZA {
+        2.     display _newline(2) "{hline 60}"
+        3.     display "Country: `country'"
+        4.     display "{hline 60}"
+        5. 
+     3 .     use "$dir/data/processed/`country'_unb.dta", clear
+        6.     describe, simple
+        7. 
+     4 .     display _newline "{hline 40}"
+        8.     display "Candidate geographic variables (name/label):"
+        9.     display "{hline 40}"
+       10.     foreach pat in province prov region district dist village vil ///
+      >                    psu ea community kab kec desa rt rw hukou ///
+      >                    birth origin baseline_prov baseline_region  {
+       11.         capture confirm variable `pat'
+       12.         if _rc == 0 {
+       13.             display as text "FOUND: `pat'"
+       14.             tabulate `pat', missing
+       15.         }
+       16.     }
+       17. 
+     5 .     * Also show any variable with 'prov', 'reg', 'dist', 'vil' in the name
+     6 .     display _newline "{hline 40}"
+       18.     display "All variable names (searching for geography hints):"
+       19.     display "{hline 40}"
+       20.     quietly ds
+       21.     local allvars = r(varlist)
+       22.     foreach v of local allvars {
+       23.         if (strpos("`v'", "prov") > 0 | strpos("`v'", "reg") > 0 | ///
+      >             strpos("`v'", "dist") > 0 | strpos("`v'", "vil") > 0 | ///
+      >             strpos("`v'", "kab") > 0 | strpos("`v'", "kec") > 0 | ///
+      >             strpos("`v'", "psu") > 0 | strpos("`v'", "ea") > 0 | ///
+      >             strpos("`v'", "community") > 0 | strpos("`v'", "hukou") > 0 | ///
+      >             strpos("`v'", "birth") > 0 | strpos("`v'", "origin") > 0 | ///
+      >             strpos("`v'", "location") > 0) {
+       24.             display as text "  potential: `v'"
+       25.             capture tab `v' if period == 1, missing
+       26.         }
+       27.     }
+       28. }
+      
+      
+      ------------------------------------------------------------
+      Country: CHN
+      ------------------------------------------------------------
+      pid           cid           consfood      hhsize_comp   switcher
+      period        migrant       consnonfood   hhsize_pse    non_switcher
+      hukou         year          education_~x  hhsize_cube   obs_per_in~l
+      urban         married       age2010       choice        pid_first_~s
+      switcherru    hhsize        empl          depvar        loghhsize
+      age           hhadults      exp           lndepvar      rural
+      female        hhchildren    exp_share     ln_income     baseline_age
+      education     locationbi~h  exp_max       ln_consump~n  baseline_a~2
+      location      birth_prov~e  exp_max_sh~e  nr_periods~s  age2
+      location_d~l  birth_county  hhsize_oxf~d  unbalanced    education_~2
+      provcd        consumption   hhsize_oecd   unbalanced~e  trend
+      countyid      income        hhsize_root   trajectory
+      
+      ----------------------------------------
+      Candidate geographic variables (name/label):
+      ----------------------------------------
+      FOUND: prov
+      
+                           Province ID |      Freq.     Percent        Cum.
+      ---------------------------------+-----------------------------------
+                               Beijing |        769        0.70        0.70
+                               Tianjin |        749        0.68        1.39
+                                 Hebei |      6,358        5.80        7.19
+                                Shanxi |      5,093        4.65       11.84
+                        Inner mongolia |         22        0.02       11.86
+                              Liaoning |     10,232        9.34       21.20
+                                 Jilin |      2,053        1.87       23.08
+                          Heilongjiang |      3,651        3.33       26.41
+                              Shanghai |      7,389        6.75       33.15
+                               Jiangsu |      2,226        2.03       35.19
+                              Zhejiang |      1,924        1.76       36.94
+                                 Anhui |      2,277        2.08       39.02
+                                Fujian |      1,204        1.10       40.12
+                               Jiangxi |      2,118        1.93       42.06
+                              Shandong |      5,358        4.89       46.95
+                                 Henan |     12,957       11.83       58.78
+                                 Hubei |      1,690        1.54       60.32
+                                 Hunan |      3,005        2.74       63.06
+                             Guangdong |      9,147        8.35       71.41
+      Guangxi Zhuang Autonomous Region |      2,113        1.93       73.34
+                                Hainan |          8        0.01       73.35
+                             Chongqing |      1,031        0.94       74.29
+                               Sichuan |      5,416        4.94       79.23
+                               Guizhou |      3,266        2.98       82.22
+                                Yunnan |      3,363        3.07       85.29
+                                 Tibet |          4        0.00       85.29
+                               Shaanxi |      2,454        2.24       87.53
+                                 Gansu |     13,615       12.43       99.96
+                               Qinghai |          2        0.00       99.96
+                Ningxia Hui Autonomous |         11        0.01       99.97
+      Xinjiang Uygur Autonomous Region |         30        0.03      100.00
+      ---------------------------------+-----------------------------------
+                                 Total |    109,535      100.00
+      FOUND: hukou
+      
+           Agricultural Hukou |      Freq.     Percent        Cum.
+      ------------------------+-----------------------------------
+                            0 |     29,840       27.24       27.24
+                 Agricultural |     78,765       71.91       99.15
+                            . |        930        0.85      100.00
+      ------------------------+-----------------------------------
+                        Total |    109,535      100.00
+      
+      ----------------------------------------
+      All variable names (searching for geography hints):
+      ----------------------------------------
+        potential: hukou
+        potential: location
+        potential: location_detail
+        potential: provcd
+        potential: year
+        potential: locationbirth
+        potential: birth_province
+        potential: birth_county
+      
+      
+      ------------------------------------------------------------
+      Country: IDN
+      ------------------------------------------------------------
+      (SAS creation date 15MAR00:15:03)
+      pid           migr          consfood      exp_max_sh~e  unbalanced~e
+      year          educlv        consnonfood   location      trajectory
+      period        education     cons_tot_r~l  latitude      switcher
+      hhsize        ravens        cons_food_~l  longitude     non_switcher
+      hhadults      nonag         cons_nfood~l  prov          obs_per_in~l
+      hhsize_oxf~d  urban         forempl       kabu          pid_first_~s
+      hhsize_oecd   nonagonly     inforempl     keca          loghhsize
+      hhsize_root   nonagany      hour1         education_~x  rural
+      hhsize_comp   income        hour2         choice        baseline_age
+      hhsize_pse    inc_h         sect1         depvar        ag
+      hhsize_cube   inc_real      sect2         lndepvar      baseline_a~2
+      age           inc_h_real    age1993       ln_income     age2
+      male          empl          exp           ln_consump~n  education_~2
+      female        hours         exp_max       nr_periods~s  trend
+      urbanbirth    consumption   exp_share     unbalanced
+      
+      ----------------------------------------
+      Candidate geographic variables (name/label):
+      ----------------------------------------
+      FOUND: prov
+      
+         Province name in |
+                     1999 |      Freq.     Percent        Cum.
+      --------------------+-----------------------------------
+                  B A L I |      4,730        5.08        5.08
+                 BENGKULU |          2        0.00        5.09
+           D I YOGYAKARTA |      5,469        5.88       10.96
+                  DI ACEH |          6        0.01       10.97
+              DKI JAKARTA |      7,427        7.98       18.95
+         IRIAN JAYA BARAT |          2        0.00       18.96
+        IRIAN JAYA TENGAH |          2        0.00       18.96
+         IRIAN JAYA TIMUR |          3        0.00       18.96
+                    JAMBI |         29        0.03       18.99
+               JAWA BARAT |     15,710       16.89       35.88
+              JAWA TENGAH |     11,832       12.72       48.60
+               JAWA TIMUR |     13,106       14.09       62.68
+         KALIMANTAN BARAT |          4        0.00       62.69
+       KALIMANTAN SELATAN |      4,323        4.65       67.33
+        KALIMANTAN TENGAH |         62        0.07       67.40
+         KALIMANTAN TIMUR |        114        0.12       67.52
+                  LAMPUNG |      3,907        4.20       71.72
+      NUSA TENGGARA BARAT |      5,728        6.16       77.88
+      NUSA TENGGARA TIMUR |          1        0.00       77.88
+                     RIAU |        436        0.47       78.35
+         SULAWESI SELATAN |      4,781        5.14       83.49
+        SULAWESI TENGGARA |          4        0.00       83.49
+           SUMATERA BARAT |      4,003        4.30       87.79
+         SUMATERA SELATAN |      4,498        4.83       92.63
+           SUMATERA UTARA |      6,328        6.80       99.43
+                        . |        531        0.57      100.00
+      --------------------+-----------------------------------
+                    Total |     93,038      100.00
+      FOUND: kab
+      
+         Kabupaten name in |
+                      1999 |      Freq.     Percent        Cum.
+      ---------------------+-----------------------------------
+              ACEH SINGKIL |          1        0.00        0.00
+               ACEH TENGAH |          2        0.00        0.00
+             ACEH TENGGARA |          2        0.00        0.01
+               ADM. MIMIKA |          1        0.00        0.01
+                      AGAM |        866        0.93        0.94
+                    ASAHAN |         57        0.06        1.00
+                 B A T A M |         97        0.10        1.10
+                    BADUNG |        120        0.13        1.23
+                BALIKPAPAN |         28        0.03        1.26
+                BANDA ACEH |          1        0.00        1.26
+            BANDAR LAMPUNG |        780        0.84        2.10
+                   BANDUNG |      1,405        1.51        3.61
+                    BANGKA |         35        0.04        3.65
+                 BANGKALAN |        472        0.51        4.16
+                    BANGLI |        270        0.29        4.45
+                    BANJAR |        431        0.46        4.91
+               BANJAR BARU |        302        0.32        5.23
+               BANJARMASIN |        558        0.60        5.83
+              BANJARNEGARA |        494        0.53        6.37
+                  BANTAENG |          7        0.01        6.37
+                    BANTUL |      2,533        2.72        9.10
+                  BANYUMAS |         51        0.05        9.15
+                BANYUWANGI |        550        0.59        9.74
+              BARITO KUALA |        388        0.42       10.16
+            BARITO SELATAN |         11        0.01       10.17
+                     BARRU |        256        0.28       10.45
+                    BATANG |          8        0.01       10.45
+               BATANG HARI |          2        0.00       10.46
+                    BEKASI |        844        0.91       11.36
+                  BELITUNG |        164        0.18       11.54
+                 BENGKALIS |         63        0.07       11.61
+            BENGKULU UTARA |          1        0.00       11.61
+                     BERAU |          2        0.00       11.61
+               BIAK NUMFOR |          1        0.00       11.61
+                      BIMA |        780        0.84       12.45
+                    BINJAI |         68        0.07       12.52
+                    BLITAR |        528        0.57       13.09
+                     BLORA |        540        0.58       13.67
+                     BOGOR |      1,822        1.96       15.63
+                BOJONEGORO |          9        0.01       15.64
+                 BONDOWOSO |        284        0.31       15.94
+                      BONE |        377        0.41       16.35
+                   BONTANG |          3        0.00       16.35
+                  BOYOLALI |         16        0.02       16.37
+                    BREBES |        714        0.77       17.14
+               BUKITTINGGI |        266        0.29       17.42
+                  BULELENG |      1,426        1.53       18.96
+                 BULUKUMBA |        543        0.58       19.54
+                     BUNGO |          2        0.00       19.54
+                    CIAMIS |        286        0.31       19.85
+                   CIANJUR |         79        0.08       19.93
+                   CILACAP |        676        0.73       20.66
+                   CILEGON |         26        0.03       20.69
+                   CIREBON |      2,263        2.43       23.12
+                 D U M A I |         38        0.04       23.16
+                     DAIRI |        622        0.67       23.83
+              DELI SERDANG |        543        0.58       24.41
+                     DEMAK |        303        0.33       24.74
+                  DENPASAR |        892        0.96       25.70
+                     DEPOK |        256        0.28       25.97
+                     DOMPU |      1,214        1.30       27.28
+                  ENREKANG |          5        0.01       27.28
+                     GARUT |         20        0.02       27.30
+                   GIANYAR |         54        0.06       27.36
+                      GOWA |        301        0.32       27.69
+                    GRESIK |        611        0.66       28.34
+                  GROBOGAN |         12        0.01       28.36
+              GUNUNG KIDUL |        879        0.94       29.30
+       HULU SUNGAI SELATAN |          3        0.00       29.30
+        HULU SUNGAI TENGAH |        356        0.38       29.69
+         HULU SUNGAI UTARA |        856        0.92       30.61
+           INDRAGIRI HILIR |          7        0.01       30.61
+            INDRAGIRI HULU |         14        0.02       30.63
+                 INDRAMAYU |        349        0.38       31.00
+             JAKARTA BARAT |      1,897        2.04       33.04
+             JAKARTA PUSAT |      1,537        1.65       34.70
+           JAKARTA SELATAN |        831        0.89       35.59
+             JAKARTA TIMUR |      1,654        1.78       37.37
+             JAKARTA UTARA |      1,508        1.62       38.99
+                     JAMBI |         11        0.01       39.00
+                  JAYAPURA |          3        0.00       39.00
+                    JEMBER |        393        0.42       39.42
+                  JEMBRANA |          2        0.00       39.43
+                 JENEPONTO |        285        0.31       39.73
+                    JEPARA |      1,094        1.18       40.91
+                   JOMBANG |        387        0.42       41.33
+                    KAMPAR |         34        0.04       41.36
+                    KAPUAS |          4        0.00       41.37
+               KARANG ASEM |        901        0.97       42.33
+               KARANGANYAR |        364        0.39       42.73
+                  KARAWANG |      1,647        1.77       44.50
+                   KARIMUN |          3        0.00       44.50
+                      KARO |        328        0.35       44.85
+                   KEBUMEN |        401        0.43       45.28
+                    KEDIRI |      1,156        1.24       46.53
+                    KENDAL |          7        0.01       46.53
+                   KENDARI |          1        0.00       46.53
+        KEPULAUAN MENTAWAI |          1        0.00       46.53
+                   KERINCI |          1        0.00       46.54
+                  KETAPANG |          4        0.00       46.54
+                    KLATEN |        238        0.26       46.80
+                 KLUNGKUNG |        622        0.67       47.46
+                    KOLAKA |          3        0.00       47.47
+                 KOTA BARU |        816        0.88       48.34
+        KOTAWARINGIN BARAT |         18        0.02       48.36
+        KOTAWARINGIN TIMUR |         10        0.01       48.37
+          KUANTAN SENGINGI |         14        0.02       48.39
+                     KUDUS |         20        0.02       48.41
+               KULON PROGO |        698        0.75       49.16
+                  KUNINGAN |         66        0.07       49.23
+                     KUTAI |          8        0.01       49.24
+               KUTAI BARAT |          4        0.00       49.25
+               KUTAI TIMUR |         27        0.03       49.27
+              LABUHAN BATU |        230        0.25       49.52
+                     LAHAT |        733        0.79       50.31
+                  LAMONGAN |        617        0.66       50.97
+             LAMPUNG BARAT |          7        0.01       50.98
+           LAMPUNG SELATAN |        480        0.52       51.50
+            LAMPUNG TENGAH |      1,240        1.33       52.83
+             LAMPUNG TIMUR |         64        0.07       52.90
+             LAMPUNG UTARA |         34        0.04       52.93
+                   LANGKAT |         42        0.05       52.98
+                     LEBAK |          8        0.01       52.99
+           LIMA PULUH KOTO |         69        0.07       53.06
+              LOMBOK BARAT |        915        0.98       54.05
+             LOMBOK TENGAH |        344        0.37       54.42
+              LOMBOK TIMUR |      1,540        1.66       56.07
+                  LUMAJANG |        671        0.72       56.79
+                      LUWU |         13        0.01       56.81
+                LUWU UTARA |         17        0.02       56.82
+                    MADIUN |        301        0.32       57.15
+                  MAGELANG |        316        0.34       57.49
+                   MAGETAN |        173        0.19       57.67
+                MAJALENGKA |      1,088        1.17       58.84
+                    MALANG |        895        0.96       59.80
+                    MAMUJU |         19        0.02       59.83
+          MANDAILING NATAL |          4        0.00       59.83
+                     MAROS |         16        0.02       59.85
+                   MATARAM |        503        0.54       60.39
+                     MEDAN |        961        1.03       61.42
+                     METRO |         12        0.01       61.43
+                 MOJOKERTO |        756        0.81       62.25
+                MUARA ENIM |        948        1.02       63.26
+               MUARO JAMBI |          6        0.01       63.27
+           MUSI BANYU ASIN |        220        0.24       63.51
+                MUSI RAWAS |        169        0.18       63.69
+                   NGANJUK |        392        0.42       64.11
+                     NGAWI |        266        0.29       64.40
+                      NIAS |        147        0.16       64.55
+        OGAN KOMERING ILIR |        560        0.60       65.16
+         OGAN KOMERING ULU |        772        0.83       65.99
+                   PACITAN |         11        0.01       66.00
+                    PADANG |      1,229        1.32       67.32
+            PADANG PANJANG |        405        0.44       67.75
+           PADANG PARIAMAN |         28        0.03       67.78
+             PALANGKA RAYA |         19        0.02       67.80
+                 PALEMBANG |        495        0.53       68.34
+                 PAMEKASAN |        356        0.38       68.72
+                PANDEGLANG |        280        0.30       69.02
+            PANGKAL PINANG |        402        0.43       69.45
+                 PARE-PARE |          8        0.01       69.46
+                   PASAMAN |          6        0.01       69.47
+                     PASIR |          5        0.01       69.47
+                  PASURUAN |         28        0.03       69.50
+                      PATI |        418        0.45       69.95
+                PAYAKUMBUH |        468        0.50       70.46
+                PEKALONGAN |        267        0.29       70.74
+                PEKAN BARU |         51        0.05       70.80
+                 PELALAWAN |          8        0.01       70.81
+                  PEMALANG |         18        0.02       70.82
+          PEMATANG SIANTAR |        128        0.14       70.96
+           PESISIR SELATAN |          5        0.01       70.97
+                   PINRANG |        352        0.38       71.35
+           POLEWALI MAMASA |        160        0.17       71.52
+                  PONOROGO |        249        0.27       71.79
+               PROBOLINGGO |        496        0.53       72.32
+               PURBALINGGA |        790        0.85       73.17
+                PURWAKARTA |        587        0.63       73.80
+                 PURWOREJO |        345        0.37       74.17
+             REJANG LEBONG |          1        0.00       74.17
+                   REMBANG |        221        0.24       74.41
+               ROKAN HILIR |         45        0.05       74.46
+                ROKAN HULU |         18        0.02       74.48
+                   S I A K |         44        0.05       74.52
+                  SALATIGA |        759        0.82       75.34
+                 SAMARINDA |         36        0.04       75.38
+                   SAMPANG |          3        0.00       75.38
+                SAROLANGUN |          1        0.00       75.38
+               SAWAH LUNTO |          1        0.00       75.38
+      SAWAHLUNTO/SIJUNJUNG |        327        0.35       75.73
+                   SELAYAR |          1        0.00       75.74
+                  SEMARANG |        625        0.67       76.41
+                    SERANG |      1,001        1.08       77.48
+                   SIBOLGA |        688        0.74       78.22
+         SIDENRENG RAPPANG |        503        0.54       78.76
+                  SIDOARJO |        773        0.83       79.59
+                SIMALUNGUN |        866        0.93       80.53
+                    SINJAI |          6        0.01       80.53
+                 SITUBONDO |        497        0.53       81.07
+                    SLEMAN |        349        0.38       81.44
+                     SOLOK |        297        0.32       81.76
+                   SOPPENG |        247        0.27       82.03
+                    SORONG |          2        0.00       82.03
+                    SRAGEN |         12        0.01       82.04
+                    SUBANG |        260        0.28       82.32
+                  SUKABUMI |        969        1.04       83.36
+                 SUKOHARJO |        110        0.12       83.48
+               SUMBA TIMUR |          1        0.00       83.48
+                   SUMBAWA |        432        0.46       83.95
+                  SUMEDANG |        149        0.16       84.11
+                   SUMENEP |         10        0.01       84.12
+                  SURABAYA |        844        0.91       85.02
+                 SURAKARTA |        554        0.60       85.62
+                  TABALONG |        257        0.28       85.90
+                   TABANAN |        443        0.48       86.37
+                   TAKALAR |          6        0.01       86.38
+               TANA TORAJA |        423        0.45       86.83
+               TANAH DATAR |         35        0.04       86.87
+                TANAH LAUT |        331        0.36       87.23
+                 TANGERANG |      1,435        1.54       88.77
+                 TANGGAMUS |        325        0.35       89.12
+             TANJUNG BALAI |        222        0.24       89.36
+      TANJUNG JABUNG BARAT |          4        0.00       89.36
+      TANJUNG JABUNG TIMUR |          2        0.00       89.36
+          TAPANULI SELATAN |        357        0.38       89.75
+           TAPANULI TENGAH |        146        0.16       89.90
+            TAPANULI UTARA |         18        0.02       89.92
+                     TAPIN |         25        0.03       89.95
+                   TARAKAN |          1        0.00       89.95
+               TASIKMALAYA |        870        0.94       90.89
+             TEBING TINGGI |        586        0.63       91.52
+                     TEGAL |        954        1.03       92.54
+                TEMANGGUNG |        400        0.43       92.97
+              TOBA SAMOSIR |        315        0.34       93.31
+                TRENGGALEK |        426        0.46       93.77
+                     TUBAN |        344        0.37       94.14
+              TULANGBAWANG |        667        0.72       94.85
+               TULUNGAGUNG |        608        0.65       95.51
+             UJUNG PANDANG |        746        0.80       96.31
+                      WAJO |        490        0.53       96.84
+                 WAY KANAN |        298        0.32       97.16
+                  WONOGIRI |         27        0.03       97.19
+                  WONOSOBO |      1,078        1.16       98.34
+                YOGYAKARTA |      1,010        1.09       99.43
+                         . |        531        0.57      100.00
+      ---------------------+-----------------------------------
+                     Total |     93,038      100.00
+      FOUND: kec
+      
+       Kecamatan name in 1999 |      Freq.     Percent        Cum.
+      ------------------------+-----------------------------------
+                        ABANG |        457        0.49        0.49
+                   ABIANSEMAL |          9        0.01        0.50
+                  ABUNG BARAT |          8        0.01        0.51
+                ABUNG SELATAN |         19        0.02        0.53
+                      ADIPALA |         10        0.01        0.54
+                     ADIWERNA |          4        0.00        0.54
+                       AIKMEL |        305        0.33        0.87
+                    AIR JOMAN |          1        0.00        0.87
+                    AIR PUTIH |          9        0.01        0.88
+                     AJANGALE |          1        0.00        0.88
+                    AJIBARANG |          1        0.00        0.89
+                        AJUNG |          7        0.01        0.89
+                       ALALAK |         20        0.02        0.91
+                         ALAS |        340        0.37        1.28
+                        ALIAN |          3        0.00        1.28
+                  ALUH - ALUH |          9        0.01        1.29
+                        AMBAL |        351        0.38        1.67
+                     AMBARAWA |          4        0.00        1.67
+                       AMBULU |          1        0.00        1.68
+                        AMPEL |          3        0.00        1.68
+                  AMPELGADING |          2        0.00        1.68
+                      AMPENAN |        269        0.29        1.97
+              AMUNTAI SELATAN |          2        0.00        1.97
+               AMUNTAI TENGAH |        210        0.23        2.20
+                AMUNTAI UTARA |          6        0.01        2.20
+                        ANDIR |        115        0.12        2.33
+                       ANDONG |          1        0.00        2.33
+                ANTANG KALANG |          2        0.00        2.33
+                        ANYAR |         16        0.02        2.35
+                    ARCAMANIK |          2        0.00        2.35
+                  ARGA MAKMUR |          1        0.00        2.35
+                     ARGAPURA |         10        0.01        2.36
+                    ARGOMULYO |        331        0.36        2.72
+                       ARJASA |          2        0.00        2.72
+                     ARJASARI |          2        0.00        2.72
+                 ARJAWINANGUN |          6        0.01        2.73
+                 ARUT SELATAN |          2        0.00        2.73
+                     ASEMROWO |          3        0.00        2.73
+                     ASTAMBUL |         10        0.01        2.75
+                 ASTANA ANYAR |          2        0.00        2.75
+                 ASTANAJAPURA |          5        0.01        2.75
+        AUR BIRUGO TIGO BALEH |        203        0.22        2.97
+                      BABADAN |        214        0.23        3.20
+                      BABAKAN |         33        0.04        3.24
+               BABAKAN MADANG |          1        0.00        3.24
+                      BABALAN |          2        0.00        3.24
+                        BABAT |        224        0.24        3.48
+                      BABELAN |         20        0.02        3.50
+                  BABUS-SALAM |          1        0.00        3.50
+                     BACUKIKI |          4        0.00        3.51
+                          BAE |          1        0.00        3.51
+               BAGAN SINEMBAH |         10        0.01        3.52
+                        BAGOR |          2        0.00        3.52
+                 BAITURRAHMAN |          1        0.00        3.52
+                       BAJENG |          1        0.00        3.52
+                         BAKI |         12        0.01        3.54
+                   BALAPULANG |          1        0.00        3.54
+                     BALARAJA |          6        0.01        3.54
+                    BALEENDAH |          5        0.01        3.55
+                       BALIGE |          3        0.00        3.55
+                  BALIK BUKIT |          6        0.01        3.56
+             BALIKPAPAN BARAT |          2        0.00        3.56
+           BALIKPAPAN SELATAN |          4        0.00        3.57
+            BALIKPAPAN TENGAH |          7        0.01        3.57
+             BALIKPAPAN TIMUR |         11        0.01        3.58
+             BALIKPAPAN UTARA |          4        0.00        3.59
+                 BALONG BENDO |          8        0.01        3.60
+               BAMBANG LIPURO |         16        0.02        3.61
+                       BANCAR |          5        0.01        3.62
+                       BANDAR |         33        0.04        3.66
+          BANDAR KEDUNG MULYO |          5        0.01        3.66
+         BANDAR PASIR MANDOGE |          6        0.01        3.67
+                 BANDAR PULAU |          4        0.00        3.67
+                BANDING AGUNG |          5        0.01        3.68
+                    BANDONGAN |          4        0.00        3.68
+                      BANDUNG |          5        0.01        3.69
+                BANDUNG KIDUL |        158        0.17        3.86
+                BANDUNG KULON |          9        0.01        3.87
+                       BANGIL |          5        0.01        3.87
+                     BANGKALA |          1        0.00        3.87
+                    BANGKALAN |          1        0.00        3.87
+                   BANGKINANG |          8        0.01        3.88
+             BANGKINANG BARAT |          1        0.00        3.88
+                       BANGKO |          1        0.00        3.88
+                       BANGLI |        269        0.29        4.17
+                     BANGODUA |          1        0.00        4.17
+                    BANGOREJO |          2        0.00        4.18
+                      BANGSAL |         12        0.01        4.19
+                  BANGSALSARI |         16        0.02        4.21
+                      BANGSRI |         18        0.02        4.23
+                 BANGUN PURBA |        168        0.18        4.41
+                  BANGUNTAPAN |        339        0.36        4.77
+                      BANJANG |         16        0.02        4.79
+                       BANJAR |          1        0.00        4.79
+                 BANJAR AGUNG |          4        0.00        4.79
+                 BANJAR BARAT |        218        0.23        5.03
+                  BANJAR BARU |        263        0.28        5.31
+               BANJAR SELATAN |         37        0.04        5.35
+                 BANJAR TIMUR |        164        0.18        5.53
+                 BANJAR UTARA |        139        0.15        5.68
+                     BANJARAN |          9        0.01        5.69
+                 BANJARANGKAN |        300        0.32        6.01
+                    BANJAREJO |          4        0.00        6.01
+                 BANJARNEGARA |          3        0.00        6.02
+                   BANJARSARI |         27        0.03        6.04
+                     BANTAENG |          5        0.01        6.05
+                BANTAR GEBANG |         41        0.04        6.09
+                     BANTARAN |          2        0.00        6.10
+                 BANTARKAWUNG |        363        0.39        6.49
+                   BANTARUJEG |          8        0.01        6.50
+                       BANTUL |         49        0.05        6.55
+                  BANUA LAWAS |          7        0.01        6.56
+                     BANYAKAN |         16        0.02        6.57
+                  BANYU ANYAR |          5        0.01        6.58
+                   BANYU URIP |          2        0.00        6.58
+                  BANYUASIN I |        156        0.17        6.75
+                BANYUASIN III |          9        0.01        6.76
+                    BANYUDONO |          1        0.00        6.76
+                   BANYUMANIK |         15        0.02        6.77
+                     BANYUMAS |          4        0.00        6.78
+                   BANYUWANGI |          7        0.01        6.79
+                      BARABAI |         21        0.02        6.81
+                     BARADATU |         11        0.01        6.82
+                      BARANTI |          5        0.01        6.83
+                        BAROS |         29        0.03        6.86
+                        BARRU |          5        0.01        6.86
+                      BARUMUN |          4        0.00        6.87
+               BARUMUN TENGAH |          1        0.00        6.87
+                        BARUS |          2        0.00        6.87
+                    BARUSJAHE |          2        0.00        6.87
+                     BASARANG |          1        0.00        6.87
+                         BASO |        276        0.30        7.17
+                      BATAHAN |          3        0.00        7.17
+                       BATANG |         20        0.02        7.19
+                  BATANG ANAI |         13        0.01        7.21
+               BATANG ANGKOLA |          4        0.00        7.21
+                  BATANG KUIS |          4        0.00        7.22
+                  BATANG TORU |         14        0.02        7.23
+                     BATANGAN |        390        0.42        7.65
+                  BATI - BATI |          1        0.00        7.65
+                   BATIN XXIV |          2        0.00        7.65
+                      BATIPUH |         10        0.01        7.67
+                         BATU |          2        0.00        7.67
+                   BATU AMPAR |        265        0.28        7.95
+                  BATU BENAWA |        318        0.34        8.29
+                   BATU LICIN |         35        0.04        8.33
+                   BATU MANDI |          1        0.00        8.33
+              BATU RAJA TIMUR |          6        0.01        8.34
+                  BATU SOPANG |          3        0.00        8.34
+                    BATUCEPER |         13        0.01        8.36
+                    BATUJAJAR |          5        0.01        8.36
+                   BATUKLIANG |          4        0.00        8.37
+                  BATUNUNGGAL |          9        0.01        8.38
+                        BATUR |          4        0.00        8.38
+                    BATURADEN |          1        0.00        8.38
+                    BATURETNO |          6        0.01        8.39
+                     BATURITI |        410        0.44        8.83
+                      BAURENO |          6        0.01        8.84
+                       BAWANG |         11        0.01        8.85
+                        BAWEN |         16        0.02        8.86
+                        BAYAN |          4        0.00        8.87
+                       BAYANG |          1        0.00        8.87
+                        BAYAT |          1        0.00        8.87
+                BAYUNG LENCIR |          1        0.00        8.87
+                        BEBER |        265        0.28        9.16
+                         BEJI |         39        0.04        9.20
+                 BEKASI BARAT |         54        0.06        9.26
+               BEKASI SELATAN |         45        0.05        9.30
+                 BEKASI TIMUR |        300        0.32        9.63
+                 BEKASI UTARA |         67        0.07        9.70
+              BELAKANG PADANG |          2        0.00        9.70
+                        BELIK |          2        0.00        9.70
+                     BELITANG |          6        0.01        9.71
+                         BELO |          5        0.01        9.72
+                        BENDA |          8        0.01        9.72
+                    BENDOSARI |         11        0.01        9.74
+                        BENER |          1        0.00        9.74
+                        BENGO |        346        0.37       10.11
+                       BENOWO |        167        0.18       10.29
+                    BERASTAGI |          6        0.01       10.29
+                       BERBAH |         17        0.02       10.31
+                       BERGAS |          1        0.00       10.31
+                     BERINGIN |          3        0.00       10.32
+                        BESUK |          4        0.00       10.32
+                       BESUKI |        264        0.28       10.61
+                       BETUNG |          1        0.00       10.61
+                    BIAK KOTA |          1        0.00       10.61
+                  BILAH BARAT |          3        0.00       10.61
+                   BILAH HULU |        178        0.19       10.80
+                       BINAMU |        271        0.29       11.09
+                     BINANGUN |        394        0.42       11.52
+                       BINJAI |          8        0.01       11.53
+                 BINJAI BARAT |          4        0.00       11.53
+                  BINJAI KOTA |         56        0.06       11.59
+               BINJAI SELATAN |          1        0.00       11.59
+                 BINJAI UTARA |          7        0.01       11.60
+                      BINUANG |         18        0.02       11.62
+                BIRING KANAYA |        393        0.42       12.04
+                    BLAHBATUH |          3        0.00       12.04
+              BLAMBANGAN UMPU |        285        0.31       12.35
+                     BLIMBING |          8        0.01       12.36
+             BLUBUR LIMBANGAN |          2        0.00       12.36
+                       BLULUK |        358        0.38       12.75
+                        BLUTO |          2        0.00       12.75
+                    BOBOTSARI |        251        0.27       13.02
+                     BOGOREJO |          1        0.00       13.02
+                         BOJA |          1        0.00       13.02
+                   BOJONEGORO |          6        0.01       13.03
+                       BOJONG |          8        0.01       13.03
+                  BOJONG GEDE |         52        0.06       13.09
+             BOJONG LOA KALER |          1        0.00       13.09
+             BOJONG LOA KIDUL |          2        0.00       13.09
+                 BOJONGPICUNG |          5        0.01       13.10
+                  BOJONGSOANG |        275        0.30       13.39
+                         BOLO |         23        0.02       13.42
+                    BONDOWOSO |          1        0.00       13.42
+              BONTANG SELATAN |          1        0.00       13.42
+                BONTANG UTARA |          2        0.00       13.42
+                 BONTO BAHARI |          9        0.01       13.43
+                     BONTOALA |          2        0.00       13.44
+                 BONTOMARANNU |          1        0.00       13.44
+                  BONTOSIKUYU |          1        0.00       13.44
+                    BONTOTIRO |          3        0.00       13.44
+                    BOROBUDUR |          1        0.00       13.44
+                BOSAR MALIGAS |         11        0.01       13.45
+                     BOYOLALI |          2        0.00       13.46
+                    BOYOLANGU |          4        0.00       13.46
+                       BREBES |         14        0.02       13.48
+                      BUAHDUA |          7        0.01       13.48
+                       BUARAN |        204        0.22       13.70
+                  BUAY MADANG |        703        0.76       14.46
+                      BUBUTAN |          3        0.00       14.46
+                BUDONG-BUDONG |          6        0.01       14.47
+                      BUDURAN |         20        0.02       14.49
+                   BUGULKIDUL |          5        0.01       14.49
+                     BUKATEJA |         17        0.02       14.51
+                        BUKIT |          1        0.00       14.51
+                  BUKIT INTAN |          5        0.01       14.52
+                  BUKIT KAPUR |          4        0.00       14.52
+               BUKIT KEMUNING |          2        0.00       14.53
+                   BUKIT RAYA |         11        0.01       14.54
+                     BULELENG |        430        0.46       15.00
+                        BULIK |          1        0.00       15.00
+                         BULU |          5        0.01       15.01
+                    BULUKUMBA |          1        0.00       15.01
+                   BULULAWANG |          1        0.00       15.01
+                BULUPESANTREN |          3        0.00       15.01
+                      BUMIAJI |          2        0.00       15.01
+                      BUMIAYU |          6        0.01       15.02
+                     BUMIJAWA |        315        0.34       15.36
+                       BUNGAH |         11        0.01       15.37
+                     BUNGATAN |          5        0.01       15.38
+                   BUNGBULANG |          1        0.00       15.38
+                       BUNGUR |          3        0.00       15.38
+             BUNGUS/TL KABUNG |          1        0.00       15.38
+                        BURAU |          4        0.00       15.39
+                   CADAS SARI |          7        0.01       15.39
+                  CAKRANEGARA |         43        0.05       15.44
+                       CAKUNG |        221        0.24       15.68
+                      CAMPAKA |         17        0.02       15.69
+                 CAMPUR DARAT |          1        0.00       15.70
+                        CANDI |          7        0.01       15.70
+                    CANDIPURO |          1        0.00       15.70
+                    CANDISARI |          3        0.00       15.71
+                  CANGKRINGAN |          2        0.00       15.71
+                     CARENANG |          4        0.00       15.71
+                     CARINGIN |          5        0.01       15.72
+                        CARIU |          3        0.00       15.72
+                        CEMPA |          4        0.00       15.73
+                      CEMPAKA |         12        0.01       15.74
+                CEMPAKA PUTIH |        145        0.16       15.90
+                   CENGKARENG |        308        0.33       16.23
+                         CEPU |          2        0.00       16.23
+                        CERME |          9        0.01       16.24
+                       CIAMIS |          4        0.00       16.24
+                      CIAMPEA |         26        0.03       16.27
+                      CIAMPEL |          5        0.01       16.28
+                      CIANJUR |         13        0.01       16.29
+                       CIASEM |          7        0.01       16.30
+                        CIAWI |          6        0.01       16.30
+                  CIAWIGEBANG |         11        0.01       16.32
+                      CIBADAK |         11        0.01       16.33
+                     CIBALONG |          4        0.00       16.33
+                    CIBARUSAH |          5        0.01       16.34
+                       CIBATU |          6        0.01       16.34
+                      CIBEBER |          5        0.01       16.35
+             CIBEUNYING KALER |          6        0.01       16.36
+             CIBEUNYING KIDUL |         12        0.01       16.37
+                    CIBEUREUM |        374        0.40       16.77
+                     CIBINONG |         27        0.03       16.80
+                       CIBIRU |         10        0.01       16.81
+                     CIBITUNG |         59        0.06       16.87
+                       CIBOGO |          3        0.00       16.88
+                      CIBUAYA |          5        0.01       16.88
+                      CICADAS |          9        0.01       16.89
+                   CICALENGKA |          5        0.01       16.90
+                      CICENDO |         33        0.04       16.93
+                      CICURUG |          9        0.01       16.94
+                      CIDADAP |          2        0.00       16.94
+                     CIGASONG |          5        0.01       16.95
+                      CIGUDEG |        260        0.28       17.23
+                    CIHIDEUNG |        183        0.20       17.43
+                      CIJAMBE |          5        0.01       17.43
+                      CIJERUK |         10        0.01       17.44
+                     CIJULANG |          1        0.00       17.44
+                CIKALONGKULON |          6        0.01       17.45
+                     CIKAMPEK |         31        0.03       17.48
+                    CIKANCUNG |          4        0.00       17.49
+                      CIKANDE |         29        0.03       17.52
+                     CIKARANG |         36        0.04       17.56
+                     CIKEDUNG |        333        0.36       17.92
+                      CIKELET |          1        0.00       17.92
+                      CIKERUH |          7        0.01       17.92
+                     CIKEUSAL |          8        0.01       17.93
+                     CIKIDANG |          8        0.01       17.94
+                       CIKOLE |         83        0.09       18.03
+                     CIKONENG |         11        0.01       18.04
+                       CIKUPA |         21        0.02       18.06
+              CILACAP SELATAN |         17        0.02       18.08
+               CILACAP TENGAH |        213        0.23       18.31
+                CILACAP UTARA |          9        0.01       18.32
+                       CILAKU |          4        0.00       18.33
+                     CILAMAYA |        293        0.31       18.64
+                     CILANDAK |        137        0.15       18.79
+                       CILAWU |          1        0.00       18.79
+                      CILEDUG |        273        0.29       19.08
+                      CILEGON |         14        0.02       19.10
+                 CILEUNGKRANG |          3        0.00       19.10
+                    CILEUNGSI |         39        0.04       19.14
+                     CILEUNYI |          6        0.01       19.15
+                      CILILIN |          7        0.01       19.16
+                      CILIMUS |          9        0.01       19.17
+                    CILINCING |        214        0.23       19.40
+                     CILONGOK |         20        0.02       19.42
+               CIMAHI SELATAN |        111        0.12       19.54
+                CIMAHI TENGAH |          2        0.00       19.54
+                 CIMAHI UTARA |        143        0.15       19.69
+                     CIMALAKA |        127        0.14       19.83
+                    CIMANGGIS |         66        0.07       19.90
+                      CIMANUK |        250        0.27       20.17
+                      CIMAUNG |          1        0.00       20.17
+                     CIMENYAN |          4        0.00       20.17
+                      CIMERAK |        217        0.23       20.41
+                     CINANGKA |          2        0.00       20.41
+                       CINIRU |          1        0.00       20.41
+                       CIOMAS |         42        0.05       20.46
+                       CIPAKU |          4        0.00       20.46
+                      CIPARAY |        297        0.32       20.78
+                     CIPAYUNG |        285        0.31       21.09
+                      CIPEDES |         25        0.03       21.11
+                 CIPOCOK JAYA |          4        0.00       21.12
+                     CIPONDOH |         28        0.03       21.15
+                    CIPONGKOR |          4        0.00       21.15
+                      CIPUTAT |         37        0.04       21.19
+                      CIRACAS |         15        0.02       21.21
+                    CIRANJANG |          2        0.00       21.21
+                CIREBON BARAT |         53        0.06       21.27
+              CIREBON SELATAN |         34        0.04       21.30
+                CIREBON UTARA |        274        0.29       21.60
+                       CIRUAS |          1        0.00       21.60
+                       CISAAT |          8        0.01       21.61
+                      CISALAK |          1        0.00       21.61
+                      CISARUA |          2        0.00       21.61
+                     CISAYONG |          5        0.01       21.62
+                       CISOKA |          6        0.01       21.62
+                    CITAMIANG |          4        0.00       21.63
+                    CITEUREUP |         22        0.02       21.65
+                     CIWANDAN |          9        0.01       21.66
+                       CLUWAK |          2        0.00       21.66
+                      COBLONG |          7        0.01       21.67
+                     COLOMADU |          1        0.00       21.67
+                        CURUG |         53        0.06       21.73
+                     DAGANGAN |        257        0.28       22.00
+                       DAMPIT |          1        0.00       22.00
+               DANAU SEMBULUH |          2        0.00       22.01
+                    DARANGDAN |          1        0.00       22.01
+                 DATUK BANDAR |         12        0.01       22.02
+                          DAU |          3        0.00       22.02
+               DAWAR BLANDONG |          3        0.00       22.03
+                         DAWE |          1        0.00       22.03
+                      DAWUHAN |        270        0.29       22.32
+                  DAYEUHKOLOT |          1        0.00       22.32
+                     DELANGGU |          4        0.00       22.32
+                        DEMAK |          6        0.01       22.33
+                       DEMPET |          8        0.01       22.34
+                DEMPO SELATAN |          1        0.00       22.34
+                  DEMPO UTARA |          8        0.01       22.35
+               DENPASAR BARAT |        461        0.50       22.84
+             DENPASAR SELATAN |        341        0.37       23.21
+               DENPASAR TIMUR |         90        0.10       23.31
+                        DEPOK |        119        0.13       23.44
+                        DIWEK |          3        0.00       23.44
+                      DLANGGU |          4        0.00       23.44
+                       DLINGO |          5        0.01       23.45
+                         DOKO |          5        0.01       23.45
+            DOLOK BATUNANGGAR |         19        0.02       23.47
+                DOLOK MASIHUL |          4        0.00       23.48
+              DOLOK PARDAMEAN |          1        0.00       23.48
+                DOLOK SANGGUL |          2        0.00       23.48
+                  DOLOK SILAU |          1        0.00       23.48
+                       DOLOPO |          6        0.01       23.49
+                        DOMPU |         59        0.06       23.55
+                       DONGGO |        428        0.46       24.01
+                       DONGKO |          4        0.00       24.02
+                      DRAMAGA |          8        0.01       24.03
+                       DRINGU |         11        0.01       24.04
+                    DRIYOREJO |          3        0.00       24.04
+                     DUAPITUE |          1        0.00       24.04
+                  DUKUH PAKIS |          2        0.00       24.04
+                    DUKUHTURI |          5        0.01       24.05
+                    DUKUHWARU |          2        0.00       24.05
+                        DUKUN |          6        0.01       24.06
+                  DUMAI BARAT |          6        0.01       24.06
+                  DUMAI TIMUR |         28        0.03       24.09
+                  DUREN SAWIT |        430        0.46       24.56
+                      DURENAN |          2        0.00       24.56
+                 DUSUN TENGAH |          5        0.01       24.56
+                  DUSUN TIMUR |          5        0.01       24.57
+         EMPAT ANGKAT CANDUNG |        293        0.31       24.88
+                     ENREKANG |          5        0.01       24.89
+                       GADING |          1        0.00       24.89
+                        GAJAH |        275        0.30       25.19
+                GAJAH MUNGKUR |         16        0.02       25.20
+                       GALANG |         10        0.01       25.21
+               GALESONG UTARA |          3        0.00       25.22
+                        GALUR |          6        0.01       25.22
+                       GAMBIR |         14        0.02       25.24
+                     GAMBIRAN |          3        0.00       25.24
+                       GAMBUT |          8        0.01       25.25
+                  GAMPENGREJO |        425        0.46       25.71
+                      GAMPING |         28        0.03       25.74
+                    GANDUSARI |         10        0.01       25.75
+                       GANGGA |          4        0.00       25.75
+            GANTARANG KINDANG |         43        0.05       25.80
+                   GANTIWARNO |          6        0.01       25.81
+                    GARAWANGI |          1        0.00       25.81
+                        GARUM |        192        0.21       26.01
+                       GARUNG |        351        0.38       26.39
+                        GATAK |          5        0.01       26.40
+                    GAYAMSARI |          5        0.01       26.40
+                     GAYUNGAN |          6        0.01       26.41
+                  GEDANG SARI |          5        0.01       26.41
+                     GEDANGAN |        188        0.20       26.61
+                GEDONG TENGEN |          6        0.01       26.62
+                        GEGER |        256        0.28       26.90
+                 GEGER BITUNG |          1        0.00       26.90
+                      GEGESIK |        275        0.30       27.19
+                    GELUMBANG |          9        0.01       27.20
+                       GEMPOL |          3        0.00       27.21
+                      GENDING |        177        0.19       27.40
+                       GENENG |          2        0.00       27.40
+                      GENTENG |         18        0.02       27.42
+                        GENUK |          3        0.00       27.42
+                     GEROKGAK |         21        0.02       27.44
+                       GERUNG |         17        0.02       27.46
+                      GETASAN |         12        0.01       27.47
+                      GIANYAR |         12        0.01       27.49
+                     GICIALIT |         18        0.02       27.51
+                       GODEAN |         11        0.01       27.52
+                       GODONG |          1        0.00       27.52
+                      GOMBONG |         20        0.02       27.54
+                      GONDANG |         11        0.01       27.55
+                  GONDANGREJO |          5        0.01       27.56
+                 GONDOKUSUMAN |        238        0.26       27.81
+                   GONDOMANAN |        113        0.12       27.94
+                       GRABAG |          1        0.00       27.94
+                        GRATI |          1        0.00       27.94
+                       GROGOL |         16        0.02       27.96
+            GROGOL PETAMBURAN |        352        0.38       28.33
+                       GUBENG |         16        0.02       28.35
+                        GUBUG |          2        0.00       28.35
+                         GUDO |          1        0.00       28.35
+                        GUGUK |         13        0.01       28.37
+                GUGUK PANJANG |         32        0.03       28.40
+                  GULUK GULUK |          1        0.00       28.40
+                 GUNUNG ANYAR |          3        0.00       28.41
+                GUNUNG MEGANG |        361        0.39       28.79
+                  GUNUNG PATI |          5        0.01       28.80
+                 GUNUNG PUTRI |         23        0.02       28.82
+                 GUNUNG PUYUH |        436        0.47       29.29
+                  GUNUNG SARI |        864        0.93       30.22
+                GUNUNG SINDUR |         14        0.02       30.24
+                GUNUNG SITOLI |          7        0.01       30.24
+                 GUNUNG SUGIH |          1        0.00       30.25
+                GUNUNG TALANG |          1        0.00       30.25
+                   GUNUNGHALU |          1        0.00       30.25
+                        GURAH |         23        0.02       30.27
+                       HALONG |        258        0.28       30.55
+                      HAMPANG |          3        0.00       30.55
+               HAMPARAN PERAK |         39        0.04       30.60
+                        HARAU |         12        0.01       30.61
+                   HARJAMUKTI |         12        0.01       30.62
+                       HARUAI |          3        0.00       30.62
+                      HARUYAN |          9        0.01       30.63
+                   HAURGEULIS |          2        0.00       30.64
+             HERO LANGE-LANGE |         12        0.01       30.65
+                         HU'U |          8        0.01       30.66
+                         IBUN |          6        0.01       30.66
+                   IDANO GAWO |         43        0.05       30.71
+          II.X.XI.VI.LINGKUNG |          1        0.00       30.71
+                 ILIR BARAT I |         18        0.02       30.73
+                ILIR BARAT II |        130        0.14       30.87
+                 ILIR TIMUR I |         28        0.03       30.90
+                ILIR TIMUR II |        161        0.17       31.07
+                      IMOGIRI |          4        0.00       31.08
+                    INDIHIANG |          9        0.01       31.09
+                    INDRALAYA |         15        0.02       31.10
+                     IV JURAI |          2        0.00       31.11
+                      IV KOTO |        264        0.28       31.39
+                       JABUNG |          1        0.00       31.39
+                    JAGAKARSA |         61        0.07       31.46
+                      JAKENAN |          2        0.00       31.46
+                   JALANJAGAK |          1        0.00       31.46
+                    JAMBANGAN |          7        0.01       31.47
+              JAMBI LUAR KOTA |          2        0.00       31.47
+                JAMBI SELATAN |          5        0.01       31.47
+                  JAMBI TIMUR |          1        0.00       31.48
+                JAMPANG KULON |          1        0.00       31.48
+               JAMPANG TENGAH |          1        0.00       31.48
+                     JANAPRIA |         17        0.02       31.50
+                        JAPAH |          1        0.00       31.50
+                        JATEN |         13        0.01       31.51
+                         JATI |          5        0.01       31.52
+                   JATI AGUNG |         11        0.01       31.53
+                    JATI ASIH |         12        0.01       31.54
+                   JATI UWUNG |         53        0.06       31.60
+                   JATIBARANG |          7        0.01       31.61
+                   JATILAWANG |          1        0.00       31.61
+                    JATILUHUR |         13        0.01       31.62
+                   JATINEGARA |        238        0.26       31.88
+                     JATIPURO |          2        0.00       31.88
+                     JATIROTO |          4        0.00       31.88
+                     JATISARI |         21        0.02       31.91
+                    JATITUJUH |          2        0.00       31.91
+                    JATIWANGI |        231        0.25       32.16
+               JAYAPURA UTARA |          2        0.00       32.16
+                       JEBRES |        387        0.42       32.57
+                        JEBUS |          1        0.00       32.57
+                       JEKULO |          8        0.01       32.58
+                       JELBUK |          4        0.00       32.59
+                      JEMPANG |          2        0.00       32.59
+                     JENANGAN |          5        0.01       32.60
+                       JEPARA |          9        0.01       32.60
+                        JEPON |         45        0.05       32.65
+                      JEREWEH |          5        0.01       32.66
+                        JETIS |        774        0.83       33.49
+                        JIKEN |        300        0.32       33.81
+                        JIWAN |          6        0.01       33.82
+                    JOGO ROTO |          9        0.01       33.83
+                    JOGONALAN |          5        0.01       33.83
+                   JOHAR BARU |         45        0.05       33.88
+                      JOMBANG |          1        0.00       33.88
+                      JONGGAT |          5        0.01       33.89
+                      JONGGOL |          1        0.00       33.89
+                       JORONG |          8        0.01       33.90
+                         JUAI |         28        0.03       33.93
+                        JUHAR |          1        0.00       33.93
+                     JUMAPOLO |          2        0.00       33.93
+                   JUNTINYUAT |          1        0.00       33.93
+                       JUWANA |         18        0.02       33.95
+                     JUWIRING |          7        0.01       33.96
+                  KABANDUNGAN |          1        0.00       33.96
+                    KABANJAHE |         28        0.03       33.99
+                        KABAT |         14        0.02       34.01
+                   KADEMANGAN |          3        0.00       34.01
+                    KADIPATEN |          7        0.01       34.02
+                   KADUDAMPIT |          1        0.00       34.02
+                     KADUGEDE |          2        0.00       34.02
+                    KADUNGORA |          2        0.00       34.02
+                   KADUPANDAK |          6        0.01       34.03
+                    KAETAJATI |        546        0.59       34.62
+           KAHAYAN HULU UTARA |          1        0.00       34.62
+                         KAHU |          5        0.01       34.62
+                      KAJUARA |          7        0.01       34.63
+               KALAPA NUNGGAL |          3        0.00       34.63
+                      KALASAN |         31        0.03       34.67
+                   KALI DERES |        440        0.47       35.14
+                     KALIANDA |        426        0.46       35.60
+                     KALIBARU |          1        0.00       35.60
+                   KALIGESING |          2        0.00       35.60
+                  KALIGONDANG |        306        0.33       35.93
+                    KALIJAMBE |          3        0.00       35.93
+                    KALIMANAH |         13        0.01       35.95
+                      KALIORI |          2        0.00       35.95
+                     KALIPARE |         11        0.01       35.96
+                   KALIPUCANG |          4        0.00       35.96
+                     KALIPURO |          1        0.00       35.97
+                     KALIREJO |         11        0.01       35.98
+                    KALIWATES |          2        0.00       35.98
+                    KALIWUNGU |          5        0.01       35.99
+                      KALORAN |          3        0.00       35.99
+                      KALUKKU |          7        0.01       36.00
+                  KAMANG BARU |         20        0.02       36.02
+                  KAMPAR KIRI |          1        0.00       36.02
+                    KANDANGAN |          4        0.00       36.02
+                       KANDAT |          8        0.01       36.03
+                     KANIGORO |          1        0.00       36.03
+                    KAPETAKAN |          8        0.01       36.04
+                  KARANG ASEM |         11        0.01       36.05
+                 KARANG INTAN |          4        0.00       36.06
+                KARANG PILANG |          5        0.01       36.06
+                  KARANGAMPEL |          2        0.00       36.06
+                   KARANGANOM |          2        0.00       36.07
+                  KARANGANYAR |        198        0.21       36.28
+                 KARANGMALANG |          1        0.00       36.28
+                   KARANGMOJO |        464        0.50       36.78
+                KARANGPAWITAN |          1        0.00       36.78
+                  KARANGPLOSO |          6        0.01       36.79
+                 KARANGPUCUNG |          2        0.00       36.79
+                   KARANGREJA |          1        0.00       36.79
+                   KARANGREJO |         14        0.02       36.81
+                KARANGSEMBUNG |          3        0.00       36.81
+                 KARANGTENGAH |         19        0.02       36.83
+                     KARAWANG |        252        0.27       37.10
+                      KARIMUN |          2        0.00       37.10
+                  KARIMUNJAWA |          1        0.00       37.10
+                    KARTASURA |         57        0.06       37.16
+                   KARTOHARJO |          5        0.01       37.17
+                      KASIHAN |         32        0.03       37.20
+                      KATEMAN |          3        0.00       37.21
+                     KATIBUNG |         10        0.01       37.22
+                       KAWALI |          1        0.00       37.22
+                       KAWALU |         18        0.02       37.24
+                    KAWEDANAN |          1        0.00       37.24
+                  KEBAKKRAMAT |         20        0.02       37.26
+                      KEBASEN |          1        0.00       37.26
+               KEBAYORAN BARU |         29        0.03       37.29
+               KEBAYORAN LAMA |        197        0.21       37.51
+                      KEBOMAS |          8        0.01       37.51
+                  KEBON JERUK |        299        0.32       37.84
+                    KEBONARUM |          2        0.00       37.84
+                    KEBONSARI |          2        0.00       37.84
+                      KEBUMEN |         10        0.01       37.85
+                      KEDATON |         47        0.05       37.90
+                     KEDAWUNG |          1        0.00       37.90
+                       KEDIRI |         16        0.02       37.92
+                    KEDONDONG |          8        0.01       37.93
+                         KEDU |          6        0.01       37.93
+                       KEDUNG |          1        0.00       37.94
+               KEDUNG BANTENG |          1        0.00       37.94
+                  KEDUNGGALAR |          1        0.00       37.94
+                   KEDUNGREJA |          3        0.00       37.94
+               KEDUNGWARINGIN |          9        0.01       37.95
+                   KEDUNGWARU |         12        0.01       37.96
+                   KEDUNGWUNI |          2        0.00       37.97
+                      KEJAJAR |         13        0.01       37.98
+                     KEJAKSAN |        175        0.19       38.17
+                KELAPA GADING |        161        0.17       38.34
+                       KELARA |          1        0.00       38.34
+                       KELING |          5        0.01       38.35
+                        KELUA |        203        0.22       38.56
+               KELUMPANG HULU |        398        0.43       38.99
+            KELUMPANG SELATAN |         16        0.02       39.01
+                     KEMALANG |          1        0.00       39.01
+                       KEMANG |         25        0.03       39.04
+                    KEMANGKON |          2        0.00       39.04
+                    KEMAYORAN |        327        0.35       39.39
+                    KEMBANGAN |         35        0.04       39.43
+                       KEMIRI |          2        0.00       39.43
+                        KEMPO |        384        0.41       39.84
+                       KENDAL |        235        0.25       40.10
+                      KENDARI |          1        0.00       40.10
+                     KENJERAN |         27        0.03       40.13
+                     KEPANJEN |        164        0.18       40.30
+                KEPANJENKIDUL |          9        0.01       40.31
+                        KEPIL |        322        0.35       40.66
+                   KEPOH BARU |          1        0.00       40.66
+                   KERAMBITAN |          6        0.01       40.67
+                     KERITANG |          3        0.00       40.67
+                        KERJO |          1        0.00       40.67
+                      KERSANA |        269        0.29       40.96
+                KERTAK HANYAR |          4        0.00       40.96
+                  KERTASEMAYA |          2        0.00       40.97
+                       KERTEK |          4        0.00       40.97
+                    KERTOSONO |          1        0.00       40.97
+                       KERUAK |         33        0.04       41.01
+                     KESAMBEN |        118        0.13       41.13
+                      KESAMBI |        120        0.13       41.26
+                    KESUGIHAN |          7        0.01       41.27
+                 KETANGGUNGAN |          4        0.00       41.27
+                     KETAPANG |         10        0.01       41.29
+                        KIKIM |         20        0.02       41.31
+                         KILO |        361        0.39       41.69
+                    KINTAMANI |          1        0.00       41.70
+                       KINTAP |          6        0.01       41.70
+                      KLABANG |          1        0.00       41.70
+                       KLAKAH |          1        0.00       41.70
+                    KLANGENAN |          9        0.01       41.71
+                        KLARI |         17        0.02       41.73
+               KLATEN SELATAN |         16        0.02       41.75
+                KLATEN TENGAH |          4        0.00       41.75
+                       KLOJEN |         14        0.02       41.77
+                    KLUNGKUNG |         17        0.02       41.79
+                         KOBA |          3        0.00       41.79
+                         KOJA |         18        0.02       41.81
+                        KOKAP |          1        0.00       41.81
+                        KOKOP |          8        0.01       41.82
+                       KOLANG |          2        0.00       41.82
+                       KONANG |        207        0.22       42.04
+                       KOPANG |         14        0.02       42.06
+                         KOPO |          2        0.00       42.06
+                      KOSAMBI |         61        0.07       42.13
+                   KOTA AGUNG |          4        0.00       42.13
+                   KOTA ANYAR |          1        0.00       42.13
+                    KOTA BARU |          4        0.00       42.14
+                    KOTA BESI |          1        0.00       42.14
+                   KOTA BLORA |        175        0.19       42.33
+             KOTA BOGOR BARAT |         50        0.05       42.38
+           KOTA BOGOR SELATAN |         50        0.05       42.43
+            KOTA BOGOR TENGAH |        286        0.31       42.74
+             KOTA BOGOR TIMUR |        212        0.23       42.97
+             KOTA BOGOR UTARA |        353        0.38       43.35
+              KOTA KAYU AGUNG |          4        0.00       43.35
+                  KOTA KEDIRI |        311        0.33       43.69
+                   KOTA KUDUS |          5        0.01       43.69
+                  KOTA PADANG |          1        0.00       43.69
+                  KOTA PINANG |          9        0.01       43.70
+                 KOTA SUMENEP |          4        0.00       43.71
+                KOTA TAKENGON |          1        0.00       43.71
+                KOTA WAINGAPU |          1        0.00       43.71
+                   KOTABANGUN |          1        0.00       43.71
+                     KOTABUMI |          2        0.00       43.71
+                     KOTAGEDE |        164        0.18       43.89
+                      KOTARIH |          9        0.01       43.90
+            KOTAWARINGIN LAMA |          4        0.00       43.90
+                    KOTO BARU |          2        0.00       43.90
+                  KOTO TANGAH |         16        0.02       43.92
+                     KRAGILAN |        458        0.49       44.41
+                       KRAMAT |         22        0.02       44.44
+                  KRAMAT JATI |         17        0.02       44.46
+                 KRAMAT MULYA |          7        0.01       44.46
+                   KRAMATWATU |          6        0.01       44.47
+                     KRANGGAN |          2        0.00       44.47
+                       KRATON |          7        0.01       44.48
+                   KREMBANGAN |         69        0.07       44.55
+                       KRESEK |          7        0.01       44.56
+                        KRIAN |         13        0.01       44.58
+                    KROMENGAN |          1        0.00       44.58
+                       KRONJO |         18        0.02       44.60
+                        KROYA |          6        0.01       44.60
+                       KRUCIL |          4        0.00       44.61
+                  KUALUH HULU |          1        0.00       44.61
+                KUANTAN HILIR |          6        0.01       44.61
+                KUANTAN MUDIK |          5        0.01       44.62
+               KUANTAN TENGAH |          3        0.00       44.62
+                         KUBU |        420        0.45       45.07
+                       KUBUNG |          1        0.00       45.08
+                 KUBUTAMBAHAN |        330        0.35       45.43
+                        KUMAI |          6        0.01       45.44
+                   KUMPEH ULU |          3        0.00       45.44
+                       KUNDUR |          1        0.00       45.44
+                     KUNINGAN |         13        0.01       45.45
+                        KUNIR |          1        0.00       45.46
+              KUNTODARUSSALAM |          2        0.00       45.46
+                      KURANJI |         19        0.02       45.48
+                  KUSAN HILIR |          2        0.00       45.48
+                         KUTA |         30        0.03       45.51
+                 KUTA SELATAN |         17        0.02       45.53
+                   KUTA UTARA |         40        0.04       45.57
+                   KUTAWALUYA |          3        0.00       45.58
+                     KUTOARJO |          4        0.00       45.58
+                 KUTOWINANGUN |          7        0.01       45.59
+                    KWADUNGAN |          1        0.00       45.59
+                     LABU API |          9        0.01       45.60
+                       LABUAN |          3        0.00       45.60
+          LABUAN AMAS SELATAN |          4        0.00       45.61
+                 LABUHAN DELI |          6        0.01       45.61
+            LABUHAN MARINGGAI |          5        0.01       45.62
+                      LADONGI |          1        0.00       45.62
+                    LAGU BOTI |          2        0.00       45.62
+                        LAHAT |        399        0.43       46.05
+                 LAKAR SANTRI |         13        0.01       46.07
+                       LAKBOK |          4        0.00       46.07
+                     LALABATA |          7        0.01       46.08
+                     LAMONGAN |          3        0.00       46.08
+                LANDASAN ULIN |         37        0.04       46.12
+                      LANGGAM |          7        0.01       46.13
+                   LAPE-LOPOK |          3        0.00       46.13
+                   LAPPARIAJA |         10        0.01       46.14
+                     LARANGAN |          1        0.00       46.14
+                       LAWANG |          5        0.01       46.15
+                 LAWANG KIDUL |        249        0.27       46.42
+             LAWE SIGALA-GALA |          1        0.00       46.42
+                      LAWEYAN |         10        0.01       46.43
+                  LEBAKBARANG |          2        0.00       46.43
+                     LEBAKSIU |          2        0.00       46.43
+                   LEBAKWANGI |          8        0.01       46.44
+                        LECES |          1        0.00       46.44
+                        LEGOK |          5        0.01       46.45
+                      LEKSONO |          3        0.00       46.45
+                        LELES |          3        0.00       46.45
+                   LEMAHABANG |        670        0.72       47.17
+                 LEMAHWUNGKUK |          8        0.01       47.18
+               LEMBAH GUMANTI |          6        0.01       47.19
+                 LEMBAH SEGAR |          1        0.00       47.19
+                     LEMPUING |         57        0.06       47.25
+                       LENDAH |          4        0.00       47.25
+                     LENGKONG |          5        0.01       47.26
+                    LEUWISARI |          1        0.00       47.26
+                   LILI RIAJA |          2        0.00       47.26
+                   LILI RILAU |        238        0.26       47.52
+                    LIMA KAUM |          2        0.00       47.52
+                   LIMA PULUH |          1        0.00       47.52
+                    LIMAPULUH |          1        0.00       47.52
+                         LIMO |         42        0.05       47.57
+               LINTONG NIHUTA |          3        0.00       47.57
+                        LOANO |        305        0.33       47.90
+                     LOHBENER |          1        0.00       47.90
+                    LOKPAIKAT |          2        0.00       47.90
+                   LONG BAGUN |          1        0.00       47.90
+                       LOSARI |          8        0.01       47.91
+                    LOWOKWARU |         28        0.03       47.94
+                  LUBUK ALUNG |          1        0.00       47.94
+                   LUBUK BAJA |         11        0.01       47.96
+                 LUBUK BASUNG |          1        0.00       47.96
+               LUBUK BEGALUNG |        346        0.37       48.33
+               LUBUK KILANGAN |         14        0.02       48.34
+          LUBUK LINGGAU BARAT |          6        0.01       48.35
+          LUBUK LINGGAU TIMUR |        147        0.16       48.51
+                  LUBUK PAKAM |          1        0.00       48.51
+               LUBUK SIKAPING |          5        0.01       48.51
+                     LUMAJANG |          4        0.00       48.52
+                  LUMBAN JULU |          1        0.00       48.52
+                      LUMBANG |          1        0.00       48.52
+                        LUMUT |         23        0.02       48.55
+                       LUNYUK |         12        0.01       48.56
+                      MADURAN |          5        0.01       48.56
+                       MAESAN |        280        0.30       48.86
+             MAGELANG SELATAN |         14        0.02       48.88
+               MAGELANG UTARA |        233        0.25       49.13
+                    MAGERSARI |        285        0.31       49.44
+                         MAJA |          3        0.00       49.44
+                     MAJALAYA |         17        0.02       49.46
+                    MAJAULENG |         13        0.01       49.47
+                       MAKALE |         10        0.01       49.48
+                      MAKASAR |         12        0.01       49.50
+                     MAKASSAR |          2        0.00       49.50
+                     MALANGKE |          7        0.01       49.51
+                       MALILI |          4        0.00       49.51
+                   MALINGPING |          3        0.00       49.51
+                  MALLUSETASI |          1        0.00       49.51
+                     MAMAJANG |          2        0.00       49.52
+                       MAMASA |          3        0.00       49.52
+             MAMPANG PRAPATAN |        211        0.23       49.75
+                       MAMUJU |          4        0.00       49.75
+                       MANDAI |         16        0.02       49.77
+                 MANDALAWANGI |          3        0.00       49.77
+                   MANDASTANA |          6        0.01       49.78
+                       MANDAU |         63        0.07       49.85
+      MANDIANGIN KOTO SELAYAN |         31        0.03       49.88
+                      MANDING |          1        0.00       49.88
+                    MANDIRAJA |          1        0.00       49.88
+                  MANDIRANCAN |         11        0.01       49.89
+                    MANDUAMAS |          3        0.00       49.90
+                     MANGARAN |          3        0.00       49.90
+                      MANGGAR |          2        0.00       49.90
+                      MANGGIS |          6        0.01       49.91
+                  MANGU HARJO |          2        0.00       49.91
+                   MANIS MATA |          1        0.00       49.91
+                  MANISRENGGO |          1        0.00       49.91
+                    MANONJAYA |          3        0.00       49.92
+                    MANTINGAN |          1        0.00       49.92
+                  MANTRIJERON |          5        0.01       49.92
+                       MANYAR |        222        0.24       50.16
+                       MARBAU |          2        0.00       50.16
+                   MARDINDING |          1        0.00       50.16
+                        MARGA |          5        0.01       50.17
+                   MARGA TIGA |          6        0.01       50.18
+                    MARGAASIH |          2        0.00       50.18
+                   MARGACINTA |         20        0.02       50.20
+                    MARGAHAYU |          7        0.01       50.21
+                       MARISO |          8        0.01       50.21
+                 MARITENGNGAE |        467        0.50       50.72
+                        MARON |          2        0.00       50.72
+                    MARTAPURA |         78        0.08       50.80
+                   MARTOYUDAN |         16        0.02       50.82
+                      MASARAN |          5        0.01       50.83
+                     MASBAGIK |        842        0.91       51.73
+                      MATARAM |        191        0.21       51.94
+                     MATRAMAN |        185        0.20       52.13
+                 MATTIRO BULU |        308        0.33       52.47
+                 MATTIROSOMPE |          2        0.00       52.47
+                         MAUK |        430        0.46       52.93
+                     MAYANGAN |        268        0.29       53.22
+                       MAYONG |         15        0.02       53.23
+                 MEDAN AMPLAS |         16        0.02       53.25
+                   MEDAN AREA |          4        0.00       53.26
+                  MEDAN BARAT |          2        0.00       53.26
+                   MEDAN BARU |          9        0.01       53.27
+                   MEDAN DELI |         19        0.02       53.29
+                  MEDAN DENAI |         13        0.01       53.30
+               MEDAN HELVETIA |         33        0.04       53.34
+                  MEDAN JOHOR |         28        0.03       53.37
+                   MEDAN KOTA |          8        0.01       53.38
+                MEDAN LABUHAN |          2        0.00       53.38
+                 MEDAN MAIMUN |          2        0.00       53.38
+                MEDAN MARELAN |        376        0.40       53.78
+             MEDAN PERJUANGAN |        140        0.15       53.93
+                MEDAN PETISAH |         10        0.01       53.95
+                MEDAN POLONIA |        243        0.26       54.21
+               MEDAN SELAYANG |          9        0.01       54.22
+                MEDAN SUNGGAL |         17        0.02       54.23
+                MEDAN TEMBUNG |         19        0.02       54.26
+                  MEDAN TIMUR |          5        0.01       54.26
+              MEDAN TUNTUNGAN |          6        0.01       54.27
+                 MEDANG DERAS |          1        0.00       54.27
+                  MEGAMENDUNG |          6        0.01       54.27
+                 MEGANG SAKTI |          2        0.00       54.28
+                   MEKAR SARI |          2        0.00       54.28
+                        MELAK |          1        0.00       54.28
+                    MEMBALONG |          5        0.01       54.29
+                    MENDAHARA |          1        0.00       54.29
+                     MENDAWAI |          1        0.00       54.29
+                  MENDO BARAT |          4        0.00       54.29
+                        MENES |          1        0.00       54.29
+                     MENGANTI |         14        0.02       54.31
+                     MENGGALA |        333        0.36       54.67
+                   MENGKENDEK |        263        0.28       54.95
+                       MENGWI |         24        0.03       54.97
+                      MENTENG |        465        0.50       55.47
+                       MERAPI |          7        0.01       55.48
+                     MERAWANG |          1        0.00       55.48
+                        MEREK |          5        0.01       55.49
+                   MERGANGSAN |          7        0.01       55.50
+                       MESUJI |         52        0.06       55.55
+                   METRO RAYA |          7        0.01       55.56
+                        MIJEN |          8        0.01       55.57
+                  MIMIKA BARU |          1        0.00       55.57
+                        MINAS |         39        0.04       55.61
+                        MIRIT |          1        0.00       55.61
+                   MLANDINGAN |          2        0.00       55.61
+                       MLARAK |          2        0.00       55.62
+                        MLATI |         22        0.02       55.64
+                      MLONGGO |        405        0.44       56.07
+                         MODO |          1        0.00       56.08
+                       MODUNG |          6        0.01       56.08
+                         MOGA |         10        0.01       56.09
+                         MOJO |          3        0.00       56.10
+                    MOJOAGUNG |         38        0.04       56.14
+                   MOJOGEDANG |         10        0.01       56.15
+                    MOJOLABAN |          2        0.00       56.15
+                     MOJOROTO |        312        0.34       56.49
+                     MOJOSARI |          3        0.00       56.49
+                    MOJOSONGO |          2        0.00       56.49
+                   MOJOTENGAH |         20        0.02       56.51
+                    MOJOWARNO |        322        0.35       56.86
+                        MONTA |          9        0.01       56.87
+                      MONTONG |          1        0.00       56.87
+                    MOYOHILIR |          1        0.00       56.87
+                      MOYUDAN |          4        0.00       56.87
+                       MREBET |         15        0.02       56.89
+                  MUARA BADAK |          2        0.00       56.89
+                 MUARA BELITI |         12        0.01       56.91
+                   MUARA ENIM |         27        0.03       56.93
+                   MUARA JAWA |          4        0.00       56.94
+                MUARA KELINGI |          2        0.00       56.94
+                 MUARA PINANG |          5        0.01       56.95
+                  MUARA WAHAU |          2        0.00       56.95
+                     MUARADUA |          5        0.01       56.95
+                    MULYOREJO |          3        0.00       56.96
+                       MUNCAR |         11        0.01       56.97
+                        MUNDU |          3        0.00       56.97
+                      MUNGKID |          7        0.01       56.98
+                    MUNJUNGAN |          1        0.00       56.98
+                        MUNTE |        276        0.30       57.28
+                 MURUNG PUDAK |          8        0.01       57.29
+                        MUSUK |          2        0.00       57.29
+                    NALUMSARI |          6        0.01       57.29
+                   NAMO RAMBE |          4        0.00       57.30
+                     NANGGALO |          5        0.01       57.30
+                    NANGGULAN |          2        0.00       57.31
+                     NANGGUNG |          4        0.00       57.31
+                      NARMADA |          3        0.00       57.31
+                        NATAR |         20        0.02       57.34
+                       NEGARA |          2        0.00       57.34
+                   NGADILUWIH |          5        0.01       57.34
+                    NGADIROJO |          3        0.00       57.35
+                      NGAGLIK |         30        0.03       57.38
+                     NGALIYAN |         20        0.02       57.40
+                    NGAMPILAN |        158        0.17       57.57
+                     NGAMPRAH |          9        0.01       57.58
+                      NGANJUK |          4        0.00       57.58
+                   NGARGOYOSO |          2        0.00       57.59
+                    NGARINGAN |          1        0.00       57.59
+                       NGAWEN |        281        0.30       57.89
+                        NGAWI |         18        0.02       57.91
+                     NGEMPLAK |         23        0.02       57.93
+                     NGIMBANG |          6        0.01       57.94
+                      NGLEGOK |          1        0.00       57.94
+                      NGLUWAR |          2        0.00       57.94
+                        NGORO |         10        0.01       57.95
+                    NGRONGGOT |          4        0.00       57.96
+                       NGUNUT |        224        0.24       58.20
+                NIPAH PANJANG |          1        0.00       58.20
+                     NOGOSARI |          3        0.00       58.20
+                       NONGSA |         21        0.02       58.23
+                         NUHA |          2        0.00       58.23
+                   NUSAPENIDA |        305        0.33       58.56
+                    NUSAWUNGU |         12        0.01       58.57
+                P. LAUT UTARA |        357        0.38       58.95
+               PABEAN CANTIAN |          2        0.00       58.95
+                     PABUARAN |         17        0.02       58.97
+                         PACE |          1        0.00       58.97
+                        PACET |          7        0.01       58.98
+                      PACIRAN |          1        0.00       58.98
+                      PACITAN |          5        0.01       58.99
+                   PADAHERANG |          6        0.01       58.99
+                   PADALARANG |          3        0.00       59.00
+                       PADANG |         12        0.01       59.01
+                 PADANG BARAT |         26        0.03       59.04
+                 PADANG BOLAK |          3        0.00       59.04
+                PADANG CERMIN |          1        0.00       59.04
+                 PADANG HILIR |        132        0.14       59.18
+                  PADANG HULU |        217        0.23       59.42
+         PADANG PANJANG BARAT |        194        0.21       59.63
+         PADANG PANJANG TIMUR |        211        0.23       59.85
+                  PADANG RATU |        822        0.88       60.74
+               PADANG SELATAN |        728        0.78       61.52
+       PADANG SIDEMPUAN BARAT |        300        0.32       61.84
+       PADANG SIDEMPUAN TIMUR |         13        0.01       61.86
+       PADANG SIDEMPUAN UTARA |          2        0.00       61.86
+                 PADANG TIMUR |         32        0.03       61.89
+               PADANG TUALANG |         12        0.01       61.90
+                 PADANG UTARA |         24        0.03       61.93
+                   PADEMANGAN |        352        0.38       62.31
+                     PADEMAWU |        349        0.38       62.68
+           PAGAR ALAM SELATAN |          1        0.00       62.69
+             PAGAR ALAM UTARA |          8        0.01       62.69
+                 PAGAR MARBAU |          4        0.00       62.70
+                   PAGEDANGAN |          8        0.01       62.71
+                    PAGELARAN |         15        0.02       62.72
+                  PAGERAGEUNG |        233        0.25       62.97
+                   PAGUYANGAN |          9        0.01       62.98
+                     PAHANDUT |         19        0.02       63.00
+                     PAJANGAN |          4        0.00       63.01
+                    PAJARAKAN |          7        0.01       63.02
+                        PAKEM |          2        0.00       63.02
+                     PAKISAJI |          2        0.00       63.02
+                  PAKUAN RATU |          2        0.00       63.02
+                        PAKUE |          2        0.00       63.02
+                     PAKUHAJI |          1        0.00       63.02
+                       PALANG |          3        0.00       63.03
+                   PALEMBAYAN |         12        0.01       63.04
+                    PALIMANAN |         12        0.01       63.05
+                    PALLANGGA |          5        0.01       63.06
+                     PALMERAH |         44        0.05       63.11
+                    PAMARAYAN |          3        0.00       63.11
+                    PAMEKASAN |          5        0.01       63.12
+                  PAMEUNGPEUK |          2        0.00       63.12
+                    PAMIJAHAN |          7        0.01       63.12
+                      PAMMANA |         20        0.02       63.15
+                     PAMULANG |         16        0.02       63.16
+                   PANAI HULU |          3        0.00       63.17
+                 PANAI TENGAH |          2        0.00       63.17
+                  PANAKKUKANG |        276        0.30       63.47
+                    PANARUKAN |         16        0.02       63.48
+                 PANCA RIJANG |          4        0.00       63.49
+                     PANCORAN |         26        0.03       63.51
+                 PANCORAN MAS |         56        0.06       63.58
+                  PANCUR BATU |         11        0.01       63.59
+                      PANDAAN |          1        0.00       63.59
+                       PANDAK |        409        0.44       64.03
+                     PANDAWAN |          4        0.00       64.03
+                   PANDEGLANG |         10        0.01       64.04
+                         PANE |        145        0.16       64.20
+                  PANGALENGAN |          1        0.00       64.20
+                  PANGANDARAN |          1        0.00       64.20
+                     PANGGANG |          3        0.00       64.20
+                 PANGGUNGREJO |          2        0.00       64.21
+                      PANGKAH |          1        0.00       64.21
+                PANGKAL BALAM |        194        0.21       64.42
+                    PANGKALAN |        290        0.31       64.73
+               PANGKALAN BARU |          2        0.00       64.73
+          PANGKALAN KOTO BARU |          1        0.00       64.73
+              PANGKALAN KURAS |          1        0.00       64.73
+                    PANGKATAN |          7        0.01       64.74
+                      PANJANG |          1        0.00       64.74
+                     PANJATAN |          6        0.01       64.75
+                        PANJI |         14        0.02       64.76
+                  PANUMBANGAN |          6        0.01       64.77
+                  PANYABUNGAN |          1        0.00       64.77
+                   PANYIPATAN |         14        0.02       64.78
+                        PAPAR |          5        0.01       64.79
+                PARAKAN SALAK |          4        0.00       64.79
+                 PARANGGUPITO |          4        0.00       64.80
+                    PARANGLOE |          1        0.00       64.80
+                    PARBULUAN |         11        0.01       64.81
+                         PARE |         11        0.01       64.82
+                   PARENGGEAN |          2        0.00       64.83
+                       PARIGI |          2        0.00       64.83
+                     PARINGIN |        335        0.36       65.19
+                        PARON |          1        0.00       65.19
+                   PARONGPONG |         12        0.01       65.20
+                       PARUNG |          4        0.00       65.21
+               PARUNG PANJANG |         23        0.02       65.23
+                      PASAMAN |          1        0.00       65.23
+                   PASANGKAYU |          2        0.00       65.23
+                 PASAR KLIWON |        117        0.13       65.36
+                 PASAR MINGGU |         28        0.03       65.39
+                   PASAR REBO |         32        0.03       65.42
+                   PASARKEMIS |         31        0.03       65.46
+                    PASAWAHAN |        295        0.32       65.77
+                  PASIR PENYU |         11        0.01       65.79
+                   PATAMPANUA |          4        0.00       65.79
+              PATANGKEP TUTUI |          1        0.00       65.79
+                     PATIMUAN |          7        0.01       65.80
+                      PATRANG |        349        0.38       66.17
+                         PAUH |         19        0.02       66.19
+                   PAYAKUMBUH |         43        0.05       66.24
+             PAYAKUMBUH BARAT |         13        0.01       66.25
+             PAYAKUMBUH TIMUR |        212        0.23       66.48
+             PAYAKUMBUH UTARA |        243        0.26       66.74
+                     PAYANGAN |          1        0.00       66.74
+                    PECANGAAN |        266        0.29       67.03
+                    PEDAMARAN |        428        0.46       67.49
+                        PEDAN |          1        0.00       67.49
+                        PEDES |        342        0.37       67.86
+                   PEDURUNGAN |         16        0.02       67.88
+               PEGANGAN HILIR |          1        0.00       67.88
+                    PEJAWARAN |          3        0.00       67.88
+                    PEKALIPAN |          1        0.00       67.88
+                   PEKALONGAN |          5        0.01       67.89
+             PEKALONGAN BARAT |          5        0.01       67.89
+           PEKALONGAN SELATAN |         35        0.04       67.93
+             PEKALONGAN TIMUR |          1        0.00       67.93
+             PEKALONGAN UTARA |          3        0.00       67.93
+                        PEKAT |        377        0.41       68.34
+                     PEKUNCEN |          2        0.00       68.34
+               PELABUHAN RATU |          1        0.00       68.34
+                    PELAIHARI |         53        0.06       68.40
+                      PELEPAT |          2        0.00       68.40
+                     PEMALANG |          4        0.00       68.41
+              PEMATANG BANDAR |          1        0.00       68.41
+                      PENEBEL |          1        0.00       68.41
+                   PENENGAHAN |          2        0.00       68.41
+                     PENGARON |          1        0.00       68.41
+                     PENGASIH |          7        0.01       68.42
+                   PENINJAUAN |         21        0.02       68.44
+                  PENJARINGAN |        501        0.54       68.98
+                        PERAK |          7        0.01       68.99
+                      PERANAP |          2        0.00       68.99
+                   PERBAUNGAN |          2        0.00       68.99
+              PERCUT SEI TUAN |         17        0.02       69.01
+                  PESANGGARAN |          1        0.00       69.01
+                 PESANGGRAHAN |         11        0.01       69.02
+                    PESANTREN |         20        0.02       69.04
+                    PETANAHAN |          6        0.01       69.05
+                        PETIR |          4        0.00       69.06
+                     PETUMBAK |        179        0.19       69.25
+                         PITU |          6        0.01       69.25
+                      PITURUH |          1        0.00       69.26
+                     PIYUNGAN |        306        0.33       69.58
+                       PLERET |         20        0.02       69.61
+                  PLOSOKLATEN |          3        0.00       69.61
+                      PLUMBON |          8        0.01       69.62
+                   POLANHARJO |          6        0.01       69.62
+                     POLEWALI |        154        0.17       69.79
+         POLOBANGKENG SELATAN |          2        0.00       69.79
+           POLOBANGKENG UTARA |          1        0.00       69.79
+                    POLOKARTO |          1        0.00       69.79
+                  PONCOKUSUMO |         12        0.01       69.81
+                       PONCOL |          4        0.00       69.81
+                  PONDOK AREN |         39        0.04       69.85
+                  PONDOK GEDE |         23        0.02       69.88
+                      PONJONG |          1        0.00       69.88
+                     PONOROGO |          2        0.00       69.88
+                      PONTANG |          5        0.01       69.89
+                       PORONG |          1        0.00       69.89
+                       PORSEA |        303        0.33       70.21
+             PRABUMULIH BARAT |         15        0.02       70.23
+             PRABUMULIH TIMUR |          5        0.01       70.23
+                      PRAGAAN |          2        0.00       70.24
+               PRAJURIT KULON |          6        0.01       70.24
+                    PRAMBANAN |        204        0.22       70.46
+                      PRAMBON |        373        0.40       70.86
+                        PRAYA |        274        0.29       71.16
+                  PRAYA BARAT |          5        0.01       71.16
+                  PRAYA TIMUR |          7        0.01       71.17
+                       PRIGEN |          1        0.00       71.17
+                    PRINGAPUS |          1        0.00       71.17
+                    PRINGKUKU |          3        0.00       71.18
+                    PRINGSEWU |          9        0.01       71.19
+                       PROPPO |          2        0.00       71.19
+                        PUCUK |          5        0.01       71.19
+                        PUJER |          2        0.00       71.20
+                        PUJUT |         18        0.02       71.21
+               PULAU PANGGUNG |         11        0.01       71.23
+                 PULAU PINANG |         10        0.01       71.24
+                PULAU PUNJUNG |          1        0.00       71.24
+                  PULO GADUNG |        219        0.24       71.47
+                   PULO MERAK |          1        0.00       71.48
+                        PUNCU |          6        0.01       71.48
+                      PUNDONG |         13        0.01       71.50
+                    PUNGGELAN |        434        0.47       71.96
+                     PUNGGING |        411        0.44       72.40
+                        PURBA |          7        0.01       72.41
+                  PURBALINGGA |          2        0.00       72.41
+                  PURBOLINGGO |          1        0.00       72.41
+                         PURI |          4        0.00       72.42
+                   PURWAKARTA |        245        0.26       72.68
+                  PURWANEGARA |          9        0.01       72.69
+                   PURWANTORO |          2        0.00       72.69
+                    PURWODADI |          4        0.00       72.70
+             PURWOKERTO BARAT |          4        0.00       72.70
+           PURWOKERTO SELATAN |          6        0.01       72.71
+             PURWOKERTO TIMUR |          2        0.00       72.71
+             PURWOKERTO UTARA |          4        0.00       72.72
+                    PURWOREJO |         27        0.03       72.74
+            PURWOREJO KLAMPOK |          1        0.00       72.75
+                    PURWOSARI |          1        0.00       72.75
+                     RAJADESA |          2        0.00       72.75
+                    RAJAPOLAH |          8        0.01       72.76
+                        RAJEG |          5        0.01       72.76
+                        RAKIT |          1        0.00       72.76
+                  RAMAN UTARA |         19        0.02       72.78
+                       RAMBAH |          2        0.00       72.79
+                RAMBANG LUBAI |         10        0.01       72.80
+                     RAMBUTAN |        237        0.25       73.05
+                RANAH PESISIR |          2        0.00       73.05
+                    RANCAEKEK |         14        0.02       73.07
+                    RANCASARI |          9        0.01       73.08
+                   RANDUAGUNG |        332        0.36       73.44
+                RANGKASBITUNG |          1        0.00       73.44
+                      RANGKUI |        168        0.18       73.62
+               RANTAU SELATAN |          4        0.00       73.62
+                     RANTEPAO |        136        0.15       73.77
+                RASANAE BARAT |        242        0.26       74.03
+                RASANAE TIMUR |         22        0.02       74.05
+                    RAWAMERTA |          1        0.00       74.05
+                         RAYA |        270        0.29       74.34
+                        REGOL |          2        0.00       74.34
+                   REJOTANGAN |          2        0.00       74.35
+                      REMBANG |          1        0.00       74.35
+               RENGASDENGKLOK |          3        0.00       74.35
+                 RENGAT BARAT |          1        0.00       74.35
+                       RENGEL |        276        0.30       74.65
+                    RILAU ALE |          1        0.00       74.65
+              RIMBA MELINTANG |         34        0.04       74.69
+                   RINDINGALO |          2        0.00       74.69
+                    ROGOJAMPI |        295        0.32       75.01
+                      RONGKOP |          1        0.00       75.01
+                       RUMBAI |          5        0.01       75.01
+                       RUMBIA |          5        0.01       75.02
+                       RUMPIN |         21        0.02       75.04
+                      RUNGKUT |         11        0.01       75.05
+                      S A K O |          9        0.01       75.06
+              S. TUALANG RASO |          7        0.01       75.07
+          S.TANJUNGMUDA HILIR |         11        0.01       75.08
+                    SADANANYA |          2        0.00       75.08
+            SAIPAR DOLOK HOLE |          2        0.00       75.09
+                   SAJOANGING |        263        0.28       75.37
+                       SAKETI |          5        0.01       75.37
+                        SAKRA |        297        0.32       75.69
+                        SALAM |          2        0.00       75.69
+                        SALEM |          4        0.00       75.70
+                   SALIMPAUNG |          5        0.01       75.70
+                    SALUPUTTI |          1        0.00       75.71
+               SAMARINDA ILIR |          5        0.01       75.71
+           SAMARINDA SEBERANG |          1        0.00       75.71
+                SAMARINDA ULU |          9        0.01       75.72
+              SAMARINDA UTARA |         20        0.02       75.74
+                     SAMBELIA |         13        0.01       75.76
+                      SAMBENG |          2        0.00       75.76
+                    SAMIGALUH |          2        0.00       75.76
+                      SAMPANG |          2        0.00       75.76
+                   SANANKULON |          2        0.00       75.77
+                   SANANWETAN |         15        0.02       75.78
+                       SANDEN |          3        0.00       75.79
+                  SANGGALANGI |          6        0.01       75.79
+                      SANGGAR |         15        0.02       75.81
+                       SANGIR |        288        0.31       76.12
+                 SANGKULIRANG |          3        0.00       76.12
+                         SAPE |         18        0.02       76.14
+                   SAPTO SARI |          1        0.00       76.14
+                      SAPURAN |          8        0.01       76.15
+                       SARANG |        219        0.24       76.38
+                        SATUI |          4        0.00       76.39
+                  SAWAH BESAR |        166        0.18       76.57
+                      SAWAHAN |        202        0.22       76.78
+                        SAWAN |        367        0.39       77.18
+                     SAWANGAN |          5        0.01       77.18
+               SAWIT SEBERANG |         11        0.01       77.20
+                       SAYUNG |          1        0.00       77.20
+               SEBERANG ULU I |         19        0.02       77.22
+              SEBERANG ULU II |        102        0.11       77.33
+                       SECANG |          6        0.01       77.33
+                       SEDATI |         11        0.01       77.35
+                       SEDAYU |          3        0.00       77.35
+                       SEDONG |          1        0.00       77.35
+                    SEI BEDUK |         32        0.03       77.38
+                 SEI KEPAYANG |          3        0.00       77.39
+                    SEI LEPAN |          5        0.01       77.39
+                   SEI RAMPAH |          8        0.01       77.40
+                    SEKAMPUNG |          8        0.01       77.41
+               SEKAMPUNG UDIK |          4        0.00       77.41
+                      SEKARAN |          2        0.00       77.42
+                     SEKERNAN |          1        0.00       77.42
+              SEKOTONG TENGAH |          1        0.00       77.42
+                     SEKUPANG |         13        0.01       77.43
+                        SELAT |          9        0.01       77.44
+                    SELEMADEG |          2        0.00       77.44
+                      SELESAI |          4        0.00       77.45
+                     SELOGIRI |          7        0.01       77.46
+                    SELOMERTO |         17        0.02       77.47
+                       SELONG |         12        0.01       77.49
+                     SEMAMPIR |         15        0.02       77.50
+                    SEMANDING |         10        0.01       77.51
+                       SEMANU |         13        0.01       77.53
+               SEMARANG BARAT |         25        0.03       77.56
+             SEMARANG SELATAN |        168        0.18       77.74
+              SEMARANG TENGAH |          6        0.01       77.74
+               SEMARANG TIMUR |          9        0.01       77.75
+               SEMARANG UTARA |          6        0.01       77.76
+                        SEMEN |          2        0.00       77.76
+                        SEMPU |          5        0.01       77.77
+                    SENAPELAN |          4        0.00       77.77
+                      SENDANG |          2        0.00       77.77
+                      SENDURO |        292        0.31       78.09
+                        SENEN |        183        0.20       78.28
+                     SENGATTA |         22        0.02       78.31
+                SENTANI BARAT |          1        0.00       78.31
+                       SEPAKU |          1        0.00       78.31
+                      SEPATAN |          9        0.01       78.32
+                 SEPULUH KOTO |         18        0.02       78.34
+              SEPUTIH MATARAM |          3        0.00       78.34
+                SEPUTIH RAMAN |        379        0.41       78.75
+             SEPUTIH SURABAYA |          1        0.00       78.75
+                       SERANG |        153        0.16       78.91
+                     SERENGAN |         30        0.03       78.95
+                      SERIRIT |        258        0.28       79.22
+                      SERPONG |         10        0.01       79.23
+                SERUYAN HILIR |          2        0.00       79.24
+                       SESEAN |          5        0.01       79.24
+                      SETELUK |          4        0.00       79.25
+                   SETIA BUDI |          9        0.01       79.26
+                         SETU |         11        0.01       79.27
+                        SEWON |        740        0.80       80.06
+                      SEYEGAN |          7        0.01       80.07
+                        SIAIS |          2        0.00       80.07
+                         SIAK |          5        0.01       80.08
+                    SIAK HULU |          2        0.00       80.08
+            SIANJUR MULA MULA |          1        0.00       80.08
+                      SIANTAR |        363        0.39       80.47
+                SIANTAR BARAT |         15        0.02       80.49
+              SIANTAR MARIHAT |          2        0.00       80.49
+              SIANTAR MARTOBA |          9        0.01       80.50
+              SIANTAR SELATAN |         86        0.09       80.59
+                SIANTAR TIMUR |         14        0.02       80.61
+                SIANTAR UTARA |          2        0.00       80.61
+                      SIBOLGA |        114        0.12       80.73
+                 SIBOLGA KOTA |        256        0.28       81.01
+              SIBOLGA SELATAN |        427        0.46       81.47
+                SIBOLGA UTARA |          5        0.01       81.47
+              SIBORONG-BORONG |          1        0.00       81.47
+                    SIDAMANIK |          1        0.00       81.47
+                    SIDAMULIH |          4        0.00       81.48
+                     SIDAREJA |          1        0.00       81.48
+                       SIDAYU |          3        0.00       81.48
+                   SIDIKALANG |        294        0.32       81.80
+                     SIDOARJO |         24        0.03       81.82
+                    SIDOMUKTI |         13        0.01       81.84
+                     SIDOREJO |        206        0.22       82.06
+                SIEMPAT NEMPU |          2        0.00       82.06
+           SIEMPAT NEMPU HULU |          3        0.00       82.06
+                    SIJUNJUNG |         10        0.01       82.08
+                        SIKUR |         12        0.01       82.09
+                       SILAEN |          5        0.01       82.09
+                 SILANGKITANG |          1        0.00       82.09
+         SILIMA PUNGGA-PUNGGA |          1        0.00       82.10
+                   SILIMAKUTA |          6        0.01       82.10
+                        SIMAN |         21        0.02       82.12
+                    SIMOKERTO |        163        0.18       82.30
+                SIMPANG EMPAT |         20        0.02       82.32
+                 SIMPANG KIRI |          1        0.00       82.32
+             SIMPANG PEMATANG |          4        0.00       82.33
+                   SINGAPARNA |          4        0.00       82.33
+                   SINGOJURUH |          1        0.00       82.33
+                    SINGOSARI |        223        0.24       82.57
+                 SINJAI UTARA |          6        0.01       82.58
+                    SIPOHOLON |         10        0.01       82.59
+                       SIPORA |          1        0.00       82.59
+           SIRAH PULAU PADANG |          1        0.00       82.59
+                    SITUBONDO |        189        0.20       82.79
+                        SLAWI |        328        0.35       83.15
+                       SLEMAN |         11        0.01       83.16
+                         SOKO |         32        0.03       83.19
+                     SOMAGEDE |          3        0.00       83.20
+                    SOMBA OPU |        293        0.31       83.51
+                     SOMOWONO |          2        0.00       83.51
+                      SONGGOM |         23        0.02       83.54
+                        SOOKO |          2        0.00       83.54
+                SOPPENG RIAJA |          1        0.00       83.54
+                      SOREANG |         12        0.01       83.55
+                 SORONG BARAT |          2        0.00       83.56
+                         SOSA |         12        0.01       83.57
+                       SRAGEN |          1        0.00       83.57
+                    SRANDAKAN |          2        0.00       83.57
+                      SRENGAT |          2        0.00       83.57
+                        SRONO |          2        0.00       83.58
+                     SRUMBUNG |          6        0.01       83.58
+                       SUBANG |        233        0.25       83.83
+                        SUBOH |          4        0.00       83.84
+                     SUKABUMI |          4        0.00       83.84
+                     SUKADANA |          2        0.00       83.84
+                     SUKAHAJI |          1        0.00       83.85
+                     SUKAJADI |         14        0.02       83.86
+                   SUKAMAKMUR |          6        0.01       83.87
+                     SUKAMARA |          5        0.01       83.87
+                    SUKAMULIA |         16        0.02       83.89
+                     SUKARAJA |        396        0.43       84.32
+                     SUKARAME |         37        0.04       84.35
+                     SUKARAMI |         28        0.03       84.38
+                     SUKASADA |         14        0.02       84.40
+                     SUKASARI |          6        0.01       84.41
+                     SUKATANI |          4        0.00       84.41
+                     SUKAWATI |         15        0.02       84.43
+                   SUKAWENING |          1        0.00       84.43
+                   SUKMA JAYA |         49        0.05       84.48
+                     SUKODADI |          1        0.00       84.48
+                     SUKODONO |         22        0.02       84.51
+                    SUKOHARJO |         11        0.01       84.52
+                     SUKOLILO |         10        0.01       84.53
+                SUKOMANUNGGAL |          5        0.01       84.53
+                     SUKORAME |          6        0.01       84.54
+                     SUKOREJO |        176        0.19       84.73
+                     SUKOSEWU |          2        0.00       84.73
+                     SUKOWONO |          1        0.00       84.73
+                        SUKUN |          6        0.01       84.74
+                      SUMBAWA |         44        0.05       84.79
+                       SUMBER |          6        0.01       84.79
+                  SUMBER JAYA |          1        0.00       84.79
+                SUMBER PUCUNG |          2        0.00       84.80
+                 SUMBERGEMPOL |        330        0.35       85.15
+                   SUMBERJAYA |          5        0.01       85.16
+                SUMBERMANJING |        385        0.41       85.57
+                   SUMBERSARI |          8        0.01       85.58
+                       SUMBUL |        309        0.33       85.91
+               SUMEDANG UTARA |          3        0.00       85.91
+                     SUMOBITO |          1        0.00       85.91
+                SUMUR BANDUNG |          2        0.00       85.92
+                SUNGAI DURIAN |          1        0.00       85.92
+                 SUNGAI KERUH |         10        0.01       85.93
+               SUNGAI KUNJANG |          1        0.00       85.93
+                  SUNGAI LIAT |          4        0.00       85.93
+                 SUNGAI LILIN |         19        0.02       85.95
+                 SUNGAI PENUH |          1        0.00       85.96
+                SUNGAI PINANG |        327        0.35       86.31
+                 SUNGAI SELAN |          1        0.00       86.31
+                 SUNGAI TABUK |          6        0.01       86.31
+                      SUNGGAL |          5        0.01       86.32
+              SUNGKAI SELATAN |          1        0.00       86.32
+                SUNGKAI UTARA |          2        0.00       86.32
+                        SUPPA |         12        0.01       86.34
+                     SURADADI |          2        0.00       86.34
+                        SURUH |        249        0.27       86.61
+                      SUSUKAN |          1        0.00       86.61
+                    SUTOJAYAN |          6        0.01       86.61
+                      TABANAN |          6        0.01       86.62
+                   TABUNGANEN |        359        0.39       87.01
+                      TAHUNAN |         16        0.02       87.02
+                     TAKISUNG |          1        0.00       87.02
+                     TAKTAKAN |          7        0.01       87.03
+                   TALAGASARI |         16        0.02       87.05
+                TALANG KELAPA |         24        0.03       87.07
+                TALANG PADANG |        290        0.31       87.39
+                   TALANG UBI |        272        0.29       87.68
+                     TALIWANG |         19        0.02       87.70
+                        TALLO |         11        0.01       87.71
+                     TAMALATE |         46        0.05       87.76
+                        TAMAN |         43        0.05       87.81
+                   TAMAN SARI |        311        0.33       88.14
+                       TAMBAK |          1        0.00       88.14
+                   TAMBAKBOYO |         10        0.01       88.15
+                   TAMBAKSARI |         31        0.03       88.19
+                       TAMBAN |          1        0.00       88.19
+                      TAMBANG |          1        0.00       88.19
+                    TAMBELANG |          3        0.00       88.19
+                      TAMBORA |        143        0.15       88.34
+                       TAMBUN |        101        0.11       88.45
+                TAMPAK SIRING |         11        0.01       88.46
+                       TAMPAN |         18        0.02       88.48
+                  TANA SITOLO |          1        0.00       88.49
+                  TANAH ABANG |        192        0.21       88.69
+                   TANAH JAWA |          2        0.00       88.69
+                 TANAH SEREAL |        198        0.21       88.91
+                       TANDES |         15        0.02       88.92
+                       TANDUN |          3        0.00       88.93
+                 TANETE RIAJA |          2        0.00       88.93
+              TANETE RIATTANG |          2        0.00       88.93
+        TANETE RIATTANG BARAT |          3        0.00       88.93
+        TANETE RIATTANG TIMUR |          2        0.00       88.94
+                 TANETE RILAU |        247        0.27       89.20
+                    TANGERANG |         28        0.03       89.23
+                      TANGGUL |          2        0.00       89.23
+                 TANGGULANGIN |          2        0.00       89.24
+              TANGGUNG GUNUNG |          2        0.00       89.24
+                TANGGUNGHARJO |          5        0.01       89.24
+                      TANJUNG |         49        0.05       89.30
+                  TANJUNG ARU |          1        0.00       89.30
+                TANJUNG BALAI |          2        0.00       89.30
+                 TANJUNG BATU |          1        0.00       89.30
+             TANJUNG BERINGIN |          2        0.00       89.30
+              TANJUNG BINTANG |          2        0.00       89.30
+               TANJUNG GADANG |        294        0.32       89.62
+         TANJUNG KARANG BARAT |        339        0.36       89.98
+         TANJUNG KARANG PUSAT |        199        0.21       90.20
+         TANJUNG KARANG TIMUR |        149        0.16       90.36
+                TANJUNG LUBUK |          4        0.00       90.36
+               TANJUNG MORAWA |         52        0.06       90.42
+               TANJUNG PANDAN |        157        0.17       90.59
+                TANJUNG PRIOK |        262        0.28       90.87
+                 TANJUNG RAJA |          9        0.01       90.88
+                 TANJUNG RAYA |          1        0.00       90.88
+                TANJUNG REDEB |          2        0.00       90.88
+                TANJUNG SAKTI |        266        0.29       91.17
+                TANJUNG TIRAM |         15        0.02       91.18
+                  TANJUNGANOM |          7        0.01       91.19
+                 TANJUNGKERTA |          1        0.00       91.19
+                  TANJUNGSARI |          4        0.00       91.20
+                        TANTA |          6        0.01       91.20
+                 TAPIAN DOLOK |          6        0.01       91.21
+                 TAPIAN NAULI |          2        0.00       91.21
+                  TAPIN UTARA |          2        0.00       91.21
+                       TAPUNG |         21        0.02       91.24
+                TARAKAN UTARA |          1        0.00       91.24
+                        TARIK |          3        0.00       91.24
+                     TAROGONG |          2        0.00       91.24
+                   TARUMAJAYA |          1        0.00       91.24
+                     TARUTUNG |          2        0.00       91.25
+                    TASIKMADU |        292        0.31       91.56
+                       TAWANG |          3        0.00       91.56
+                   TAWANGSARI |          4        0.00       91.57
+                        TEBET |        122        0.13       91.70
+                 TEBINGTINGGI |          3        0.00       91.70
+                  TEGAL BARAT |        251        0.27       91.97
+                   TEGAL SARI |         14        0.02       91.99
+                TEGAL SELATAN |          7        0.01       91.99
+                TEGAL SIWALAN |          2        0.00       92.00
+                  TEGAL TIMUR |         11        0.01       92.01
+                   TEGAL WARU |          2        0.00       92.01
+                   TEGALDLIMO |        195        0.21       92.22
+                  TEGALLALANG |          4        0.00       92.22
+                    TEGALREJO |         45        0.05       92.27
+                     TEJAKULA |          5        0.01       92.28
+                       TEKUNG |          3        0.00       92.28
+                  TELANAIPURA |          1        0.00       92.28
+                 TELLULIMPO E |         10        0.01       92.29
+           TELUK BETUNG BARAT |          4        0.00       92.30
+         TELUK BETUNG SELATAN |          2        0.00       92.30
+           TELUK BETUNG UTARA |          2        0.00       92.30
+                  TELUK DALAM |         97        0.10       92.41
+               TELUK MENGKUDU |          2        0.00       92.41
+                 TELUK NIBUNG |        203        0.22       92.63
+                   TELUKJAMBE |         46        0.05       92.68
+                    TELUKNAGA |        461        0.50       93.17
+                   TEMANGGUNG |         19        0.02       93.19
+                    TEMBALANG |         19        0.02       93.21
+                     TEMBARAK |        366        0.39       93.61
+                   TEMBILAHAN |          1        0.00       93.61
+                     TEMBUSAI |         11        0.01       93.62
+                        TEMON |          8        0.01       93.63
+                        TEMPE |        193        0.21       93.83
+                       TEMPEL |          6        0.01       93.84
+                     TEMPURAN |         13        0.01       93.86
+                    TEMPUREJO |          3        0.00       93.86
+                   TEMPURSARI |          2        0.00       93.86
+                     TENGARAN |          1        0.00       93.86
+          TENGGARONG SEBERANG |          1        0.00       93.86
+             TENGGILIS MEJOYO |         11        0.01       93.87
+                        TENJO |          2        0.00       93.88
+                        TEPUS |          7        0.01       93.88
+                       TERARA |         10        0.01       93.89
+              TERBANGGI BESAR |          5        0.01       93.90
+                 TIGA BINANGA |          2        0.00       93.90
+                  TIGA LINGGA |          1        0.00       93.90
+                    TIGAPANAH |          2        0.00       93.91
+                    TIGARAKSA |         20        0.02       93.93
+              TILATANG KAMANG |         19        0.02       93.95
+                      TINGKIR |        209        0.22       94.17
+                    TIRTAJAYA |          1        0.00       94.17
+                   TIRTAMULYA |         14        0.02       94.19
+                    TIRTAYASA |        316        0.34       94.53
+                        TIRTO |         11        0.01       94.54
+                      TOBOALI |         19        0.02       94.56
+                    TOMPOBULU |          2        0.00       94.56
+                       TONGAS |          2        0.00       94.56
+                      TONJONG |          1        0.00       94.57
+                        TONRA |          1        0.00       94.57
+                     TORGAMBA |         20        0.02       94.59
+                       TRAWAS |          3        0.00       94.59
+                     TRIMURJO |         13        0.01       94.61
+                     TROWULAN |          5        0.01       94.61
+                       TRUCUK |          2        0.00       94.61
+                        TUBAN |          6        0.01       94.62
+         TULANG BAWANG TENGAH |        315        0.34       94.96
+                     TULANGAN |         13        0.01       94.97
+                       TULUNG |          2        0.00       94.97
+                  TULUNGAGUNG |          6        0.01       94.98
+                 TUMBANG TITI |          3        0.00       94.98
+                  TUNGKAL ULU |          4        0.00       94.99
+                      TUNTANG |          4        0.00       94.99
+                        TUREN |         17        0.02       95.01
+                         TURI |         10        0.01       95.02
+                         UBUD |          8        0.01       95.03
+                 UJUNG BERUNG |          5        0.01       95.04
+                   UJUNG BULU |        474        0.51       95.54
+                UJUNG PANDANG |          2        0.00       95.55
+                  UJUNG TANAH |          2        0.00       95.55
+                 UJUNGPANGKAH |        334        0.36       95.91
+               ULAKAN TAPAKIS |          4        0.00       95.91
+                     ULU MUSI |          4        0.00       95.92
+                      ULUJAMI |          1        0.00       95.92
+                   UMBULHARJO |         36        0.04       95.96
+                      UNGARAN |         12        0.01       95.97
+                    UTAN-RHEE |          4        0.00       95.97
+                     VII KOTO |          9        0.01       95.98
+                         WAJO |          2        0.00       95.99
+                    WALANTAKA |          1        0.00       95.99
+                        WALED |          1        0.00       95.99
+                     WANADADI |         27        0.03       96.02
+                     WANAREJA |          1        0.00       96.02
+                     WANASARI |          7        0.01       96.03
+                     WANAYASA |          9        0.01       96.03
+                       WANGON |          1        0.00       96.04
+                         WARA |          7        0.01       96.04
+                   WARA UTARA |          6        0.01       96.05
+               WARINGINKURUNG |          1        0.00       96.05
+                         WARU |         21        0.02       96.07
+                   WARUDOYONG |          9        0.01       96.08
+                 WARUNG KIARA |          1        0.00       96.08
+                 WARUNGGUNUNG |          1        0.00       96.09
+                WARUNGKONDANG |         10        0.01       96.10
+                     WARUREJA |          1        0.00       96.10
+                  WATANG PULU |         16        0.02       96.11
+               WATANG SAWITTO |         22        0.02       96.14
+                        WATES |        663        0.71       96.85
+                     WATULIMO |        411        0.44       97.29
+                   WATUMALANG |          2        0.00       97.29
+                   WAY JEPARA |         13        0.01       97.31
+                  WEDARIJAKSA |          3        0.00       97.31
+                         WEDI |          1        0.00       97.31
+                      WELAHAN |        352        0.38       97.69
+                       WELERI |          1        0.00       97.69
+                         WERA |          3        0.00       97.70
+                         WERU |        383        0.41       98.11
+                       WIDANG |          1        0.00       98.11
+                    WIDODAREN |          1        0.00       98.11
+                       WINONG |          1        0.00       98.11
+                     WIRADESA |          3        0.00       98.11
+                   WIROBRAJAN |         76        0.08       98.20
+                       WIYUNG |          5        0.01       98.20
+                       WLINGI |          1        0.00       98.20
+                         WOHA |         15        0.02       98.22
+                         WOJA |         25        0.03       98.24
+                   WONGSOREJO |          8        0.01       98.25
+                     WONOASIH |          6        0.01       98.26
+                      WONOAYU |        401        0.43       98.69
+                     WONOCOLO |          5        0.01       98.70
+                     WONODADI |          1        0.00       98.70
+                     WONOGIRI |          8        0.01       98.71
+                    WONOKROMO |         20        0.02       98.73
+                    WONOMERTO |          1        0.00       98.73
+                    WONOMULYO |          3        0.00       98.73
+                    WONOSALAM |         11        0.01       98.74
+                     WONOSARI |        284        0.31       99.05
+                     WONOSOBO |        338        0.36       99.41
+                  WRINGINANOM |          1        0.00       99.41
+                        WUNGU |         14        0.02       99.43
+             X KOTO SINGKARAK |          1        0.00       99.43
+                            . |        531        0.57      100.00
+      ------------------------+-----------------------------------
+                        Total |     93,038      100.00
+      
+      ----------------------------------------
+      All variable names (searching for geography hints):
+      ----------------------------------------
+        potential: year
+        potential: urbanbirth
+        potential: inc_real
+        potential: inc_h_real
+        potential: cons_tot_real
+        potential: cons_food_real
+        potential: cons_nfood_real
+        potential: location
+        potential: prov
+        potential: kabu
+        potential: keca
+      
+      
+      ------------------------------------------------------------
+      Country: TZA
+      ------------------------------------------------------------
+      pid           region        incinfself    hhsize_comp   non_switcher
+      period        district      education     hhsize_pse    obs_per_in~l
+      employmain    ward          education_~x  hhsize_cube   pid_first_~s
+      urban         migrant       cpi           choice        loghhsize
+      nonag         year          age2008       depvar        rural
+      switcherru    hhsize        empl          lndepvar      baseline_age
+      switcheran    hhadults      exp           ln_income     baseline_a~2
+      nonagonly     consumption   exp_share     ln_consump~n  age2
+      age           income        exp_max       nr_periods~s  education_~2
+      female        hours         exp_max_sh~e  unbalanced    trend
+      education_~W  consfood      hhsize_oxf~d  unbalanced~e
+      location      consnonfood   hhsize_oecd   trajectory
+      location_d~l  incformal     hhsize_root   switcher
+      
+      ----------------------------------------
+      Candidate geographic variables (name/label):
+      ----------------------------------------
+      FOUND: region
+      
+                    1.Region |      Freq.     Percent        Cum.
+      -----------------------+-----------------------------------
+                      Dodoma |        747        2.50        2.50
+                      Arusha |        888        2.97        5.47
+                 Kilimanjaro |        960        3.21        8.69
+                       Tanga |      1,010        3.38       12.07
+                    Morogoro |        969        3.24       15.32
+                       Pwani |        631        2.11       17.43
+               Dar es salaam |      4,693       15.71       33.14
+                       Lindi |      1,233        4.13       37.27
+                      Mtwara |      1,544        5.17       42.44
+                      Ruvuma |      1,158        3.88       46.32
+                      Iringa |      1,025        3.43       49.75
+                       Mbeya |      1,164        3.90       53.65
+                     Singida |        516        1.73       55.38
+                      Tabora |      1,355        4.54       59.91
+                       Rukwa |        715        2.39       62.31
+                      Kigoma |      1,033        3.46       65.77
+                   Shinyanga |      1,739        5.82       71.59
+                      Kagera |      1,100        3.68       75.27
+                      Mwanza |      1,597        5.35       80.62
+                        Mara |        504        1.69       82.31
+                     Manyara |        602        2.02       84.33
+            KASKAZINI UNGUJA |        644        2.16       86.48
+               KUSINI UNGUJA |        314        1.05       87.53
+      MJINI/MAGHARIBI UNGUJA |      2,053        6.87       94.41
+             KASKAZINI PEMBA |        804        2.69       97.10
+                KUSINI PEMBA |        866        2.90      100.00
+      -----------------------+-----------------------------------
+                       Total |     29,864      100.00
+      FOUND: district
+      
+       2.District |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+                1 |      8,706       29.15       29.15
+                2 |      7,038       23.57       52.72
+                3 |      5,074       16.99       69.71
+                4 |      2,960        9.91       79.62
+                5 |      2,946        9.86       89.49
+                6 |      1,936        6.48       95.97
+                7 |        556        1.86       97.83
+                8 |        648        2.17      100.00
+      ------------+-----------------------------------
+            Total |     29,864      100.00
+      FOUND: dist
+      
+       2.District |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+                1 |      8,706       29.15       29.15
+                2 |      7,038       23.57       52.72
+                3 |      5,074       16.99       69.71
+                4 |      2,960        9.91       79.62
+                5 |      2,946        9.86       89.49
+                6 |      1,936        6.48       95.97
+                7 |        556        1.86       97.83
+                8 |        648        2.17      100.00
+      ------------+-----------------------------------
+            Total |     29,864      100.00
+      
+      ----------------------------------------
+      All variable names (searching for geography hints):
+      ----------------------------------------
+        potential: location
+        potential: location_detail
+        potential: region
+        potential: district
+        potential: year
+      
+     7 . 
+     8 . log close
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/var_lists.smcl
+        log type:  smcl
+       closed on:  22 Apr 2026, 15:51:28
+      -------------------------------------------------------------------------------

@@ -1,0 +1,519 @@
+                                                       ___  ____  ____  ____  ____(R)
+                                                      /__    /   ____/   /   ____/   
+                                                     ___/   /   /___/   /   /___/    
+                                                       Statistics/Data analysis      
+      
+      -------------------------------------------------------------------------------
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/cluster_support_v2.smc
+      > l
+        log type:  text
+       opened on:  22 Apr 2026, 19:46:34
+      
+     1 . 
+     2 . *
+     3 . * Country: CHN
+     4 . *
+     5 . display _newline(2) "================ CHN ================"
+      
+      
+      ================ CHN ================
+      
+     6 . use "$dir/data/processed/CHN_unb.dta", clear
+      
+     7 . display "N obs: " _N
+      N obs: 109535
+      
+     8 . quietly levelsof pid, local(pids)
+      
+     9 . display "N individuals: " `:word count `pids''
+      N individuals: 34746
+      
+    10 . 
+    11 . foreach v in prov provcd hukou birth_province birth_county {
+        2.     capture confirm variable `v'
+        3.     if _rc != 0 {
+        4.         display _newline "--- `v' : variable not present, skipping ---"
+        5.         continue
+        6.     }
+        7.     display _newline "--- CHN / `v' ---"
+        8. 
+    12 .     * first-wave value of v per pid
+    13 .     foreach tmp in vfirst_ nsw_ hasw_ first_obs_ {
+        9.         capture drop `tmp'
+       10.     }
+       11.     bysort pid (year): gen first_obs_ = _n == 1
+       12.     bysort pid: egen vfirst_ = min(cond(!missing(`v'), `v', .))
+       13. 
+    14 .     preserve
+       14.         keep if first_obs_
+       15.         quietly count if !missing(vfirst_)
+       16.         local nind = r(N)
+       17.         quietly levelsof vfirst_, local(cells)
+       18.         display as result "  clusters (distinct v_i values): " `:word coun
+      > t `cells''
+       19.         display as result "  individuals with non-missing v_i: " `nind'
+       20. 
+    15 .         * switcher var
+    16 .         capture confirm variable switcher
+       21.         if _rc != 0 {
+       22.             display as error "  (no switcher variable; skipping)"
+       23.             restore
+       24.             continue
+       25.         }
+       26. 
+    17 .         bysort vfirst_: egen nsw_ = total(switcher == 1)
+       27.         bysort vfirst_: gen firstincluster_ = (_n == 1)
+       28.         tabstat nsw_ if firstincluster_ == 1, stat(mean sd min p25 p50 p75
+      >  max n) col(stat) format(%9.1f)
+       29.         quietly count if nsw_ >= 5 & firstincluster_ == 1
+       30.         display as result "  clusters with >=5 switchers: " r(N)
+       31.         quietly count if nsw_ >= 10 & firstincluster_ == 1
+       32.         display as result "  clusters with >=10 switchers: " r(N)
+       33.         drop firstincluster_
+       34. 
+    18 .         * always-rural support
+    19 .         capture confirm variable never
+       35.         if _rc != 0 {
+       36.             gen never = (switcher == 0)
+       37.         }
+       38.         bysort vfirst_: egen hasw_ = max(switcher == 1)
+       39.         quietly count if never == 1 & !missing(vfirst_)
+       40.         local Nnever = r(N)
+       41.         quietly count if never == 1 & hasw_ == 1 & !missing(vfirst_)
+       42.         local Nsup   = r(N)
+       43.         if `Nnever' > 0 {
+       44.             local frac = 100 * `Nsup' / `Nnever'
+       45.             display as result "  always-rural support: " %6.2f `frac' ///
+      >                 "%  (" `Nsup' " / " `Nnever' ")"
+       46.         }
+       47.     restore
+       48. }
+      
+      --- CHN / prov ---
+      (74,789 observations deleted)
+        clusters (distinct v_i values): 29
+        individuals with non-missing v_i: 34746
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |      40.2      46.5       0.0      10.0      20.0      56.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     190.0      29.0
+      ----------------------------------
+        clusters with >=5 switchers: 22
+        clusters with >=10 switchers: 22
+        always-rural support:  99.99%  (33578 / 33580)
+      
+      --- CHN / provcd ---
+      (74,789 observations deleted)
+        clusters (distinct v_i values): 29
+        individuals with non-missing v_i: 34746
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |      40.2      46.5       0.0      10.0      20.0      56.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     190.0      29.0
+      ----------------------------------
+        clusters with >=5 switchers: 22
+        clusters with >=10 switchers: 22
+        always-rural support:  99.99%  (33578 / 33580)
+      
+      --- CHN / hukou ---
+      (50 missing values generated)
+      (74,789 observations deleted)
+        clusters (distinct v_i values): 2
+        individuals with non-missing v_i: 34724
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |     388.7     537.5       0.0       0.0     164.0    1002.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |    1002.0       3.0
+      ----------------------------------
+        clusters with >=5 switchers: 2
+        clusters with >=10 switchers: 2
+        always-rural support: 100.00%  (33558 / 33558)
+      
+      --- CHN / birth_province ---
+      (296 missing values generated)
+      (74,789 observations deleted)
+        clusters (distinct v_i values): 27
+        individuals with non-missing v_i: 34603
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |      41.6     220.4       0.0       0.0       0.0       0.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |    1166.0      28.0
+      ----------------------------------
+        clusters with >=5 switchers: 1
+        clusters with >=10 switchers: 1
+        always-rural support:  99.19%  (33166 / 33437)
+      
+      --- CHN / birth_county ---
+      (28,403 missing values generated)
+      (74,789 observations deleted)
+        clusters (distinct v_i values): 1370
+        individuals with non-missing v_i: 23290
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       0.9       4.3       0.0       0.0       0.0       0.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |      68.0    1371.0
+      ----------------------------------
+        clusters with >=5 switchers: 57
+        clusters with >=10 switchers: 34
+        always-rural support:  67.46%  (14925 / 22125)
+      
+    20 . 
+    21 . *
+    22 . * Country: IDN
+    23 . *
+    24 . display _newline(2) "================ IDN ================"
+      
+      
+      ================ IDN ================
+      
+    25 . use "$dir/data/processed/IDN_unb.dta", clear
+      (SAS creation date 15MAR00:15:03)
+      
+    26 . display "N obs: " _N
+      N obs: 93038
+      
+    27 . 
+    28 . foreach v in prov kabu keca location {
+        2.     capture confirm variable `v'
+        3.     if _rc != 0 {
+        4.         display _newline "--- `v' : variable not present, skipping ---"
+        5.         continue
+        6.     }
+        7.     display _newline "--- IDN / `v' ---"
+        8.     foreach tmp in vfirst_ nsw_ hasw_ first_obs_ {
+        9.         capture drop `tmp'
+       10.     }
+       11.     bysort pid (year): gen first_obs_ = _n == 1
+       12.     bysort pid: egen vfirst_ = min(cond(!missing(`v'), `v', .))
+       13. 
+    29 .     preserve
+       14.         keep if first_obs_
+       15.         quietly count if !missing(vfirst_)
+       16.         local nind = r(N)
+       17.         quietly levelsof vfirst_, local(cells)
+       18.         display as result "  clusters: " `:word count `cells''
+       19.         display as result "  individuals: " `nind'
+       20. 
+    30 .         capture confirm variable switcher
+       21.         if _rc != 0 {
+       22.             display as error "  (no switcher; skip)"
+       23.             restore
+       24.             continue
+       25.         }
+       26.         bysort vfirst_: egen nsw_ = total(switcher == 1)
+       27.         bysort vfirst_: gen firstincluster_ = (_n == 1)
+       28.         tabstat nsw_ if firstincluster_ == 1, stat(mean sd min p25 p50 p75
+      >  max n) col(stat) format(%9.1f)
+       29.         quietly count if nsw_ >= 5 & firstincluster_ == 1
+       30.         display as result "  clusters with >=5 switchers: " r(N)
+       31.         quietly count if nsw_ >= 10 & firstincluster_ == 1
+       32.         display as result "  clusters with >=10 switchers: " r(N)
+       33.         drop firstincluster_
+       34. 
+    31 .         capture confirm variable never
+       35.         if _rc != 0 gen never = (switcher == 0)
+       36.         bysort vfirst_: egen hasw_ = max(switcher == 1)
+       37.         quietly count if never == 1 & !missing(vfirst_)
+       38.         local Nnever = r(N)
+       39.         quietly count if never == 1 & hasw_ == 1 & !missing(vfirst_)
+       40.         local Nsup   = r(N)
+       41.         if `Nnever' > 0 {
+       42.             local frac = 100 * `Nsup' / `Nnever'
+       43.             display as result "  always-rural support: " %6.2f `frac' ///
+      >                 "%  (" `Nsup' " / " `Nnever' ")"
+       44.         }
+       45.     restore
+       46. }
+      
+      --- IDN / prov ---
+      (300 missing values generated)
+      (63,322 observations deleted)
+        clusters: 22
+        individuals: 29607
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |      57.7      66.4       0.0       0.0      47.0      86.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     212.0      23.0
+      ----------------------------------
+        clusters with >=5 switchers: 15
+        clusters with >=10 switchers: 13
+        always-rural support:  99.65%  (28186 / 28286)
+      
+      --- IDN / kabu ---
+      (300 missing values generated)
+      (63,322 observations deleted)
+        clusters: 236
+        individuals: 29607
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       5.6       9.6       0.0       0.0       2.0       8.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |      96.0     237.0
+      ----------------------------------
+        clusters with >=5 switchers: 87
+        clusters with >=10 switchers: 47
+        always-rural support:  92.43%  (26145 / 28286)
+      
+      --- IDN / keca ---
+      (300 missing values generated)
+      (63,322 observations deleted)
+        clusters: 1354
+        individuals: 29607
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       1.0       2.7       0.0       0.0       0.0       0.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |      25.0    1355.0
+      ----------------------------------
+        clusters with >=5 switchers: 96
+        clusters with >=10 switchers: 35
+        always-rural support:  69.53%  (19668 / 28286)
+      
+      --- IDN / location ---
+      (63,322 observations deleted)
+        clusters: 1477
+        individuals: 29716
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       0.9       2.6       0.0       0.0       0.0       0.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |      26.0    1477.0
+      ----------------------------------
+        clusters with >=5 switchers: 98
+        clusters with >=10 switchers: 33
+        always-rural support:  70.13%  (19910 / 28389)
+      
+    32 . 
+    33 . * IDN: migr / urbanbirth diagnostics
+    34 . display _newline "--- IDN migr / urbanbirth ---"
+      
+      --- IDN migr / urbanbirth ---
+      
+    35 . capture confirm variable migr
+      
+    36 . if _rc == 0 tab migr, missing
+      
+       Not living |
+         at birth |
+         location |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+      Non-migrant |     56,585       60.82       60.82
+          Migrant |     32,312       34.73       95.55
+                . |      4,141        4.45      100.00
+      ------------+-----------------------------------
+            Total |     93,038      100.00
+      
+    37 . capture confirm variable urbanbirth
+      
+    38 . if _rc == 0 tab urbanbirth, missing
+      
+       Born in an |
+       urban area |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+            Rural |     66,690       71.68       71.68
+            Urban |     26,118       28.07       99.75
+                . |        230        0.25      100.00
+      ------------+-----------------------------------
+            Total |     93,038      100.00
+      
+    39 . 
+    40 . *
+    41 . * Country: TZA
+    42 . *
+    43 . display _newline(2) "================ TZA ================"
+      
+      
+      ================ TZA ================
+      
+    44 . use "$dir/data/processed/TZA_unb.dta", clear
+      
+    45 . display "N obs: " _N
+      N obs: 29864
+      
+    46 . 
+    47 . * Also build region x district as a finer cluster
+    48 . capture confirm variable region
+      
+    49 . if _rc == 0 {
+    50 .     capture confirm variable district
+    51 .     if _rc == 0 {
+    52 .         egen regdist = group(region district)
+    53 .     }
+    54 . }
+      
+    55 . 
+    56 . foreach v in region district regdist location_detail {
+        2.     capture confirm variable `v'
+        3.     if _rc != 0 {
+        4.         display _newline "--- `v' : variable not present, skipping ---"
+        5.         continue
+        6.     }
+        7.     display _newline "--- TZA / `v' ---"
+        8.     foreach tmp in vfirst_ nsw_ hasw_ first_obs_ {
+        9.         capture drop `tmp'
+       10.     }
+       11.     bysort pid (year): gen first_obs_ = _n == 1
+       12.     bysort pid: egen vfirst_ = min(cond(!missing(`v'), `v', .))
+       13. 
+    57 .     preserve
+       14.         keep if first_obs_
+       15.         quietly count if !missing(vfirst_)
+       16.         local nind = r(N)
+       17.         quietly levelsof vfirst_, local(cells)
+       18.         display as result "  clusters: " `:word count `cells''
+       19.         display as result "  individuals: " `nind'
+       20. 
+    58 .         capture confirm variable switcher
+       21.         if _rc != 0 {
+       22.             display as error "  (no switcher; skip)"
+       23.             restore
+       24.             continue
+       25.         }
+       26.         bysort vfirst_: egen nsw_ = total(switcher == 1)
+       27.         bysort vfirst_: gen firstincluster_ = (_n == 1)
+       28.         tabstat nsw_ if firstincluster_ == 1, stat(mean sd min p25 p50 p75
+      >  max n) col(stat) format(%9.1f)
+       29.         quietly count if nsw_ >= 5 & firstincluster_ == 1
+       30.         display as result "  clusters with >=5 switchers: " r(N)
+       31.         quietly count if nsw_ >= 10 & firstincluster_ == 1
+       32.         display as result "  clusters with >=10 switchers: " r(N)
+       33.         drop firstincluster_
+       34. 
+    59 .         capture confirm variable never
+       35.         if _rc != 0 gen never = (switcher == 0)
+       36.         bysort vfirst_: egen hasw_ = max(switcher == 1)
+       37.         quietly count if never == 1 & !missing(vfirst_)
+       38.         local Nnever = r(N)
+       39.         quietly count if never == 1 & hasw_ == 1 & !missing(vfirst_)
+       40.         local Nsup   = r(N)
+       41.         if `Nnever' > 0 {
+       42.             local frac = 100 * `Nsup' / `Nnever'
+       43.             display as result "  always-rural support: " %6.2f `frac' ///
+      >                 "%  (" `Nsup' " / " `Nnever' ")"
+       44.         }
+       45.     restore
+       46. }
+      
+      --- TZA / region ---
+      (18,852 observations deleted)
+        clusters: 26
+        individuals: 11012
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |      43.8      64.6       5.0       9.0      25.0      41.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     314.0      26.0
+      ----------------------------------
+        clusters with >=5 switchers: 26
+        clusters with >=10 switchers: 19
+        always-rural support: 100.00%  (9874 / 9874)
+      
+      --- TZA / district ---
+      (18,852 observations deleted)
+        clusters: 8
+        individuals: 11012
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |     142.2     170.7       8.0      25.5      45.0     278.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     433.0       8.0
+      ----------------------------------
+        clusters with >=5 switchers: 8
+        clusters with >=10 switchers: 7
+        always-rural support: 100.00%  (9874 / 9874)
+      
+      --- TZA / regdist ---
+      (18,852 observations deleted)
+        clusters: 130
+        individuals: 11012
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       8.8      23.8       0.0       1.0       2.0       5.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |     221.0     130.0
+      ----------------------------------
+        clusters with >=5 switchers: 38
+        clusters with >=10 switchers: 20
+        always-rural support:  84.87%  (8380 / 9874)
+      
+      --- TZA / location_detail ---
+      (18,852 observations deleted)
+        clusters: 1081
+        individuals: 11012
+      
+          Variable |      Mean        SD       Min       p25       p50       p75
+      -------------+------------------------------------------------------------
+              nsw_ |       1.1       4.9       0.0       0.0       0.0       0.0
+      --------------------------------------------------------------------------
+      
+          Variable |       Max         N
+      -------------+--------------------
+              nsw_ |      65.0    1081.0
+      ----------------------------------
+        clusters with >=5 switchers: 42
+        clusters with >=10 switchers: 31
+        always-rural support:  32.56%  (3215 / 9874)
+      
+    60 . 
+    61 . log close
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/cluster_support_v2.smc
+      > l
+        log type:  text
+       closed on:  22 Apr 2026, 19:46:35
+      -------------------------------------------------------------------------------

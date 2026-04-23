@@ -1,0 +1,225 @@
+                                                       ___  ____  ____  ____  ____(R)
+                                                      /__    /   ____/   /   ____/   
+                                                     ___/   /   /___/   /   /___/    
+                                                       Statistics/Data analysis      
+      
+      -------------------------------------------------------------------------------
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/cluster_support.smcl
+        log type:  smcl
+       opened on:  22 Apr 2026, 17:48:49
+      
+     1 . 
+     2 . * ----------------------------------------------------------------
+     3 . * Programs
+     4 . * ----------------------------------------------------------------
+     5 . 
+     6 . capture program drop report_cluster
+      
+     7 . program define report_cluster
+        1.     syntax , vname(string) label(string)
+        2.     display _newline "{hline 60}"
+        3.     display as text "Candidate v_i: {bf:`label'} (`vname')"
+        4.     display "{hline 60}"
+        5. 
+     8 .     capture confirm variable `vname'
+        6.     if _rc != 0 {
+        7.         display as error "  variable not found; skipping"
+        8.         exit
+        9.     }
+       10. 
+     9 .     * Use the first non-missing observation per pid as v_i.
+    10 .     tempvar vfirst first_obs
+       11.     bysort pid (year): gen `first_obs' = _n == 1
+       12.     bysort pid: egen `vfirst' = min(cond(!missing(`vname'), `vname', .))
+       13. 
+    11 .     * Unique-values tabulation restricted to individuals.
+    12 .     preserve
+       14.         keep if `first_obs'
+       15.         display as text "Number of distinct values: "
+       16.         quietly levelsof `vfirst', local(vals)
+       17.         display as text "  `:word count `vals''"
+       18.         display as text "Number of individuals with non-missing v_i: "
+       19.         count if !missing(`vfirst')
+       20.         local nindiv = r(N)
+       21.         display as text "  `nindiv'"
+       22. 
+    13 .         * Switcher indicator: we want per-individual.
+    14 .         * Assume `switcher' is a 0/1 pid-constant variable already in the dat
+      > a;
+    15 .         * if not, reconstruct from the choice variable.
+    16 .         capture confirm variable switcher
+       23.         if _rc != 0 {
+       24.             display as error "  (no switcher variable -- skipping support 
+      > calc)"
+       25.             restore
+       26.             exit
+       27.         }
+       28. 
+    17 .         capture confirm variable never
+       29.         if _rc != 0 {
+       30.             display as error "  (no never variable -- reconstructing as 1-
+      > switcher-always)"
+       31.             gen never = (switcher == 0)
+       32.         }
+       33. 
+    18 .         * Switcher counts per cluster
+    19 .         display _newline as text "Switchers per cluster (distribution):"
+       34.         tempvar nsw
+       35.         bysort `vfirst': egen `nsw' = total(switcher == 1)
+       36.         preserve
+       37.             bysort `vfirst' : keep if _n == 1
+       38.             tabstat `nsw', stat(mean sd min p25 p50 p75 max n) col(stat)
+       39.             count if `nsw' >= 5
+       40.             display as text "  clusters with >=5 switchers: `r(N)'"
+       41.             count if `nsw' >= 10
+       42.             display as text "  clusters with >=10 switchers: `r(N)'"
+       43.         restore
+       44. 
+    20 .         * Always-rural support: fraction of never-movers in clusters with >=1
+      >  switcher
+    21 .         tempvar hasw
+       45.         bysort `vfirst': egen `hasw' = max(switcher == 1)
+       46.         display _newline as text "Always-rural support (fraction of 'never
+      > ' in clusters with >=1 switcher):"
+       47.         quietly count if never == 1 & !missing(`vfirst')
+       48.         local Nnever = r(N)
+       49.         quietly count if never == 1 & `hasw' == 1 & !missing(`vfirst')
+       50.         local Nneversup = r(N)
+       51.         if `Nnever' > 0 {
+       52.             local frac = 100 * `Nneversup' / `Nnever'
+       53.             display as text "  " %6.2f `frac' "%  (" `Nneversup' " / " `Nn
+      > ever' ")"
+       54.         }
+       55.         else {
+       56.             display as text "  (no 'never' observations)"
+       57.         }
+       58.     restore
+       59. end
+      
+    22 . 
+    23 . * ----------------------------------------------------------------
+    24 . * CHN
+    25 . * ----------------------------------------------------------------
+    26 . display _newline(2) "{hline 60}"
+      
+      
+      ------------------------------------------------------------
+      
+    27 . display "Country: CHN"
+      Country: CHN
+      
+    28 . display "{hline 60}"
+      ------------------------------------------------------------
+      
+    29 . use "$dir/data/processed/CHN_unb.dta", clear
+      
+    30 . capture describe switcher never always prov hukou birth_province birth_county
+      >  provcd, fullnames
+      
+    31 . 
+    32 . foreach v in prov provcd hukou birth_province birth_county {
+        2.     capture report_cluster, vname(`v') label(`v')
+        3. }
+      
+    33 . 
+    34 . * ----------------------------------------------------------------
+    35 . * IDN
+    36 . * ----------------------------------------------------------------
+    37 . display _newline(2) "{hline 60}"
+      
+      
+      ------------------------------------------------------------
+      
+    38 . display "Country: IDN"
+      Country: IDN
+      
+    39 . display "{hline 60}"
+      ------------------------------------------------------------
+      
+    40 . use "$dir/data/processed/IDN_unb.dta", clear
+      (SAS creation date 15MAR00:15:03)
+      
+    41 . capture describe switcher never always prov kabu keca migr urbanbirth, fullna
+      > mes
+      
+    42 . 
+    43 . foreach v in prov kabu keca {
+        2.     capture report_cluster, vname(`v') label(`v')
+        3. }
+      
+    44 . 
+    45 . * Subsample restriction: migr == 0 means still at birth location, so
+    46 . * first-wave location is a genuine "origin" index. Report share.
+    47 . display _newline "{hline 40}"
+      
+      ----------------------------------------
+      
+    48 . display as text "IDN subsample diagnostics (for robustness sample)"
+      IDN subsample diagnostics (for robustness sample)
+      
+    49 . display "{hline 40}"
+      ----------------------------------------
+      
+    50 . capture confirm variable migr
+      
+    51 . if _rc == 0 {
+    52 .     tab migr, missing
+      
+       Not living |
+         at birth |
+         location |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+      Non-migrant |     56,585       60.82       60.82
+          Migrant |     32,312       34.73       95.55
+                . |      4,141        4.45      100.00
+      ------------+-----------------------------------
+            Total |     93,038      100.00
+    53 . }
+      
+    54 . capture confirm variable urbanbirth
+      
+    55 . if _rc == 0 {
+    56 .     tab urbanbirth, missing
+      
+       Born in an |
+       urban area |      Freq.     Percent        Cum.
+      ------------+-----------------------------------
+            Rural |     66,690       71.68       71.68
+            Urban |     26,118       28.07       99.75
+                . |        230        0.25      100.00
+      ------------+-----------------------------------
+            Total |     93,038      100.00
+    57 . }
+      
+    58 . 
+    59 . * ----------------------------------------------------------------
+    60 . * TZA
+    61 . * ----------------------------------------------------------------
+    62 . display _newline(2) "{hline 60}"
+      
+      
+      ------------------------------------------------------------
+      
+    63 . display "Country: TZA"
+      Country: TZA
+      
+    64 . display "{hline 60}"
+      ------------------------------------------------------------
+      
+    65 . use "$dir/data/processed/TZA_unb.dta", clear
+      
+    66 . capture describe switcher never always region district, fullnames
+      
+    67 . 
+    68 . foreach v in region district {
+        2.     capture report_cluster, vname(`v') label(`v')
+        3. }
+      
+    69 . 
+    70 . log close
+            name:  <unnamed>
+             log:  c:/git/ckt/explorations/verdier_feasibility/cluster_support.smcl
+        log type:  smcl
+       closed on:  22 Apr 2026, 17:48:50
+      -------------------------------------------------------------------------------
