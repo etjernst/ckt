@@ -66,17 +66,15 @@ The Stata implementation: `run_grc_overid` adds two extra moment terms to the ex
 
 Sign-off: human review of the consensus transcription and the worked Stata expression before any `run_grc_overid` code is written.
 
-### 2.3 Bootstrap implementation choice
+### 2.3 Inference: analytical default, bootstrap as cross-check
 
-**Three candidates** (web research 2026-04-23):
+**Updated 2026-04-23** after reading [VV's published implementation](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-implementation-findings.md): VV uses analytical cluster-robust standard errors (`vce(cluster vil)`) and reports the LCA-overid p-value via `chi2tail`. He does NOT bootstrap the LCA-overid test. We follow VV.
 
-1. **`boottest` after `gmm`.** Roodman et al. (2019) `boottest` officially supports GMM since v3, with one limitation: the moment-weighting matrix is held fixed at the original-sample value across replications (no re-weighting per replication). Acceptable for tests on $\hat\phi$ and $\hat\Delta$'s; a minor approximation rather than a deal-breaker.
-2. **Kline--Santos (2010) score bootstrap.** Hand-rolled; perturbs GMM influence functions $\hat\psi_i = -\hat G^{-1}\hat g_i$ by random weights and recomputes the test statistic without re-estimating. Fast but requires extracting influence functions manually.
-3. **Cluster bootstrap with `bsample, cluster(vfirst)`.** Re-runs the entire GMM on each resample. Slow (each replication is one full `run_grc_robust` call) but exact.
+**Default for both LCA-overid and $\hat\phi$ inference:** analytical SEs from `vce(cluster vfirst)` (robust spec) or `vce(cluster pid)` (simple spec). Wald p-values via `chi2tail`.
 
-**Default:** route 1 (`boottest` after `gmm`). Fall back to route 2 only if `boottest` rejects the moment-condition syntax. Route 3 is the validation check (run on TZA at small replication count to confirm the route-1 p-values).
+**Cross-check (run alongside, do not replace):** `boottest` after `gmm` with Webb weights and 9999 reps, given $G \in \{13, 19, 22\}$ for our primary specs. `boottest` v3+ supports `gmm` with one caveat (the moment-weighting matrix is held fixed across replications, not re-weighted). If `boottest` rejects the augmented `gmm` syntax, fall back to Kline--Santos (2010) score bootstrap (hand-rolled on GMM influence functions).
 
-The original plan's text "boottest does not natively support gmm" was incorrect; `boottest` v3+ does, with the noted caveat.
+**Validation route (small reps, TZA only):** full cluster bootstrap with `bsample, cluster(vfirst)` re-running `run_grc_robust` per replication. Confirms `boottest` p-values agree to 2 decimals. Only run once per spec for validation.
 
 ### 2.4 `gen_vfirst` unit test
 
@@ -116,16 +114,18 @@ All additive --- existing programs unchanged.
 
 - `gen_vfirst` per §2.4 (after `gen_time_trend` at l. 372).
 - `initial_values_robust` (after `initial_values` at l. 1412). Cluster-OLS with $v$-demeaned variables; for any $(s,v)$ cell that is empty or singleton, substitute the global trajectory mean for $s$ and log substitution count. Validates `initial` local has no `.` literals before passing to `gmm`.
-- `run_grc_robust` (after `run_grc_hukou` at l. 1759). Body:
+- `run_grc_robust` (after `run_grc_hukou` at l. 1759). Per the [within-demeaning derivation memo §4](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_robust-grc-derivation.md), the implementation route is to add $|V|-1$ cluster dummies $\times D_{it}$ as cluster-specific $\Delta_{\underline d_0}$ parameters. This is the single-step CKT-equivalent of VV's two-step within-demeaning; it avoids the saturated trajectory-by-cluster $\mu$ explosion (which would have been $\sim 400$ free parameters for CHN; with this approach we add 21--28 net parameters across the three countries).
+
+    Body:
     1. Confirm `vindex` exists; build `vfirst` via `gen_vfirst`. Drop missing-$v$ obs; log count.
     2. Cluster-support diagnostics inline (mean / median / max switchers per cluster; clusters $\geq 10$ sw; always-rural support). Bail if support below threshold.
-    3. Within-$v$-demean the depvar and switcher trajectory dummies (i.e., subtract within-cluster switcher mean). Add $|V|-1$ cluster dummies as exogenous regressors absorbed into `xb:`.
-    4. Build switcherpars via existing `define_switcherpars` (no cluster interaction needed --- demeaning handles it).
-    5. GMM call structurally identical to `run_grc` but on demeaned data with $|V|-1$ $v$-dummies in the covariate vector. Standard errors `vce(cluster vfirst)`. Logged check: instrument-count : free-parameter ratio < 3 or bail.
+    3. Replace the simple-spec scalar $\Delta_{\underline d_0}$ with a cluster-specific $\Delta_{\underline d_0, v} = \beta(v)$ via $|V|-1$ cluster dummies interacted with $D_{it}$ in the GMM equation. The trajectory-pooled $\mu_{\underline d}$ scalars stay as in `run_grc`.
+    4. Build switcherpars via existing `define_switcherpars` (no cluster interaction needed; the cluster fixed effects on $D_{it}$ absorb the cluster-level intercept variation).
+    5. GMM call structurally identical to `run_grc` plus the cluster-FE-on-$D_{it}$ block. Standard errors `vce(cluster vfirst)`. Logged check: instrument-count : free-parameter ratio < 3 or bail.
     6. Save raw `.ster` as `grc_robust_{country}_{spec}_{vindex}.ster`.
     7. Hansen $J$ + convergence flag.
-    8. Per-cluster $\hat\Delta_{d_N, v}$ via `nlcom`; cluster-share-weighted aggregate $\hat\Delta_{d_N}$ over clusters with both switcher and never support. Report population share covered.
-    9. Always-urban: P2 work.
+    8. Per-cluster $\hat\Delta_{d_N, v}$ via `nlcom`; cluster-share-weighted aggregate $\hat\Delta_{d_N}$ over clusters with both switcher and never support per derivation memo §7. Report population share covered.
+    9. Always-urban: P2 work; default cross-origin extrapolation per derivation memo §6.
     10. Switcher $\Delta$'s and $\Delta_{\text{avg}}$ as in `run_grc`.
 
 ### 3.2 TZA driver
@@ -167,9 +167,15 @@ In addition: for tables, save a sample-matched simple-spec estimate that restric
 
 ### 5.1 `run_grc_overid`
 
-New program in `0_programs.do`. Implements the augmented exactly-identifying moment system from VV E.3.2 per the §2.2 transcription memo. Adds $|S|+1$ moment terms (one for $\eta_0$, one for each $\eta_t$ with $t \in S$), then `test {eta_0=0} {eta_t=0} ...` to produce $\chi^2_{|S|-1}$. Wraps both `run_grc`-style and `run_grc_robust`-style calls (toggled by the presence of `vindex()`).
+New program in `0_programs.do`. Implements the augmented exactly-identifying moment system from VV E.3.2 per the [§2.2 transcription memo](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-derivation.md) and the [implementation-findings memo §5](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-implementation-findings.md). Naming: `grc_{simple|robust}_{country}_{spec}{_vindex}_lca.ster`.
 
-Naming: `grc_{simple|robust}_{country}_{spec}{_vindex}_lca.ster`.
+**Implementation pattern (mirrors VV's `Table1/Code/nrobust.do` and `robust.do`):** single `gmm` call with the system stacked as: original `run_grc` moments + LCA-overid $\eta$ moments. Uses two instrument blocks: block 1 = original CKT instruments (the `wd*` analogues for first-stage covariates), block 2 = per-period treatment indicators (`hybrid`per'IV` analogues) for the overid moments. After estimation, `test [eta0]_cons [eta1]_cons ... [eta_T]_cons` produces a Wald $\chi^2_{|S|-1}$ statistic; p-value via `chi2tail(|S|-1, chi2)`.
+
+**Decided 2026-04-23 (Q7):** single-step extension of `run_grc`'s GMM equation, NOT a parallel Chamberlain projection. The trajectory-pooled trajectory means $\mu_{\underline d}$ in `run_grc` play the role of VV's worker-level $\hat a_i$; the LCA epsilon expression $(a - \alpha_0 - \alpha_1\,\text{return})$ is rewritten in CKT terms as $(\mu_{\underline d_i} - \alpha_0 - \phi(\mu_{\underline d_i} - \mu_{\underline d_0}))$ and added as one moment per worker-period. The augmentation does NOT over-determine $\phi$ (each $\eta_t$ is exactly identified by its own moment; see implementation-findings memo §2 Q2).
+
+**GMM weighting (Q8 still open):** VV uses `winitial(unadjusted, independent), onestep` to keep the first-stage and overid moment groups block-diagonal. Current `run_grc` uses `gmm` defaults (2-step). Default for `run_grc_overid`: match VV's pattern. To resolve before P3 code is written.
+
+**Robust-spec specifics:** drop the $\alpha_0$ scalar from the epsilon expression (the cluster fixed effects on $D_{it}$ in `run_grc_robust` already absorb the cluster-level intercept). Drop the $\eta_0$ moment. Test only $[eta_t]_cons$ for $t \in S$. df remains $|S|-1$ (we lose one parameter and one moment). See implementation-findings memo §2 Q3.
 
 ### 5.2 Constant-$\beta(v)$ Wald test
 
