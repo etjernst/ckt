@@ -33,8 +33,5 @@ desktop.ini
 # Editor
 .vscode/
 
-# Working documents
-docs/
-
 # Claude Code local state
 .claude/state/
