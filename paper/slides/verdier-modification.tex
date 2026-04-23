@@ -60,7 +60,7 @@
   \end{itemize}
 
   \vspace{0.8em}
-  Verdier calls our approach the \emph{simple extrapolation} \& proposes a \emph{robust} alternative.
+  Verdier calls our approach the \emph{simple extrapolation} \& proposes a \emph{robust} alternative
 
 \end{frame}
 
@@ -72,14 +72,13 @@
     \nuil \quad \text{is i.i.d.\ across individuals } i, \text{ time } t, \text{ \& locations } l
   \]
 
-  \vspace{0.4em}
-  $\nuil$ is independent of baseline skill \& comparative advantage \alert{everywhere in the sample}
-
-  \vspace{0.4em}
-  Rules out systematic differences in $\nuil$ across regions/institutions
-
   \vspace{0.6em}
-  Workers in different locations have the same shock distribution, conditional on comparative advantage
+  This implies:
+  \begin{itemize}
+    \item $\nuil$ independent of baseline skill \& comparative advantage \alert{everywhere}
+    \item rules out systematic differences in $\nuil$ across regions/institutions
+    \item workers in different locations have the same shock distribution, conditional on comparative advantage
+  \end{itemize}
 
 \end{frame}
 
@@ -90,14 +89,14 @@
 
   \vspace{0.6em}
   \begin{itemize}
-    \item \textbf{Bryan \& Morten (2019):} Indonesian migration costs put productivity near misallocation frontier
-    \item \textbf{Lagakos et al.\ (2020):} migration costs vary substantially across developing countries
-    \item \textbf{Pulido \& Swiecki (2021):} sector frictions correlate with regional productivity
-    \item \textbf{China:} hukou generates regionally-varying migration barriers
+    \item \textbf{Bryan \& Morten (2019):} structural model of Indonesian internal migration estimates large bilateral migration costs
+    \item \textbf{Lagakos et al.\ (2020):} migration cost estimates differ substantially across developing countries
+    \item \textbf{Pulido \& Swiecki (2021):} cross-sector barriers in Indonesia explain a large share of within-country income gaps
+    \item \textbf{China:} hukou is an institutional source of region-specific migration barriers
   \end{itemize}
 
   \vspace{0.6em}
-  Our current model rules this out by assumption.
+  Our current model rules this out by assumption
 
 \end{frame}
 
@@ -108,7 +107,7 @@
   \[
     \nuil \;=\; m_{l}(\vii) \;+\; \tildenu
   \]
-  where $\vii$ is an observed, time-invariant individual-level index.
+  where $\vii$ is an observed, time-invariant individual-level index
 
   \vspace{0.6em}
   \textbf{New assumption (A2$'$):}
@@ -118,7 +117,7 @@
   \end{itemize}
 
   \vspace{0.6em}
-  We use first-wave province as $\vii$ to index region-level shocks (all three countries).
+  We use first-wave province as $\vii$ to index region-level shocks (all three countries)
 
   \vspace{0.6em}
   \begin{alertblock}{Why this is weaker}
@@ -131,7 +130,7 @@
 % ---------------------------------------------------------------
 \begin{frame}{The LCA gets a province-specific intercept}
 
-  Slope stays common; intercept varies.
+  Slope stays common; intercept varies
 
   \vspace{0.4em}
   Simple:
@@ -212,8 +211,8 @@
 
   \vspace{0.6em}
   \begin{flushleft}
-  Each province's switcher cloud has true slope $\phicoef$. \\
-  The pooled line tilts because of intercept differences, not because $\phicoef$ varies.
+  Each province's switcher cloud has true slope $\phicoef$ \\
+  The pooled line tilts because of intercept differences, not because $\phicoef$ varies
   \end{flushleft}
 
 \end{frame}
@@ -248,29 +247,6 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The cost-shifter diagnostic is a falsification test}
-
-  Verdier proposes a diagnostic via observed continuous cost shifter $w_i$:
-
-  \vspace{0.3em}
-  \[
-    \thetai^{*} = \alpha_0 + \alpha_1 \Deltai + \alpha_2 w_i + e_i,
-    \qquad H_0: \alpha_2 = 0
-  \]
-
-  In Kenya he uses $w_i = $ average distance to nearest seed seller.
-
-  \vspace{0.6em}
-  \begin{itemize}
-    \item requires an observed exogenous $w_i$
-    \item falsifies the simple extrapolation if $\alpha_2 \neq 0$
-    \item does not deliver an alternative estimate
-    \item not required for the robust extrapolation, which uses $\vii$
-  \end{itemize}
-
-\end{frame}
-
-% ---------------------------------------------------------------
 \begin{frame}{The move buys a weaker assumption at tractable cost}
 
   We gain:
@@ -287,6 +263,32 @@
     \item thinner identification of $\phicoef$: only within-province switcher variation contributes
     \item cluster-robust standard errors at the $\vii$ level
   \end{itemize}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{An observed shifter $w_i$ provides a separate falsification test}
+
+  Regress estimated $\thetai^{*}$ on $\Deltai$ and an observed shifter $w_i$:
+  \[
+    \thetai^{*} = \alpha_0 + \alpha_1 \Deltai + \alpha_2 w_i + e_i,
+    \qquad H_0: \alpha_2 = 0
+  \]
+  Kenya: $w_i = $ distance to nearest seed seller; rejects if $\alpha_2 \neq 0$
+
+  \vspace{0.5em}
+  $w_i$ must be observed, exogenous to skill conditional on $\Deltai$, and correlated with $\nuil$
+
+  \vspace{0.5em}
+  Candidates in our data:
+  \begin{itemize}
+    \item distance / travel time to nearest urban center
+    \item rainfall variability or pre-period climate shock (mergeable via GPS/admin code)
+    \item distance to family already in urban area (closest analogue, but reflection problem)
+  \end{itemize}
+
+  \vspace{0.3em}
+  None is perfect; data availability is the binding constraint
 
 \end{frame}
 
