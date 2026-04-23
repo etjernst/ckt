@@ -1,7 +1,9 @@
 # Feasibility note: $v_i$ candidates per country
 
+> **2026-04-23 update:** numbers in this note were produced with a buggy `gen_vfirst` that returned the smallest numeric value of $v$ per worker rather than the value at the earliest year. **Superseded by the [corrected feasibility comparison](2026-04-23_feasibility-comparison.md).** Headline recommendations (first-wave province for all three countries) are unchanged; CHN `birth_province` is now usable as a robustness spec (was incorrectly dismissed here).
+
 **Date:** 2026-04-22
-**Source:** `explorations/verdier_feasibility/cluster_support_v2.txt` (see [raw log](file:///C:/git/ckt/explorations/verdier_feasibility/cluster_support_v2.txt))
+**Source:** `explorations/verdier/cluster_support_v2.txt` (see [raw log](file:///C:/git/ckt/explorations/verdier/cluster_support_v2.txt))
 **Inputs:** `data/processed/{CHN,IDN,TZA}_unb.dta`
 **Method:** First-wave value of each candidate $v_i$; report number of distinct values, switcher count distribution per cluster, fraction of always-rural workers in clusters containing at least one switcher.
 

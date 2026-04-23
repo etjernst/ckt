@@ -15,7 +15,7 @@
 | `scripts/0_programs.do` ll. 1412--1664 | `initial_values`, `define_switcherpars`, `run_grc` (existing) |
 | `scripts/0_programs.do` ll. 1764--1843 | `grc_tex_table` (existing table builder) |
 | `scripts/5_GrRC.do` | Country drivers; pattern of `run_grc` calls per spec |
-| `explorations/verdier_feasibility/2_cluster_support_v2.do` | Helper logic (note: `min(cond(...))` semantic bug; see §2.1) |
+| `explorations/verdier/2_cluster_support_v2.do` | Helper logic (note: `min(cond(...))` semantic bug; see §2.1) |
 
 ## 1. Phasing
 
@@ -269,7 +269,7 @@ Modified (single file, additive only):
 - `scripts/5_GrRC.do`: parallel `run_grc_robust`, `run_grc_overid`, `boottest` calls per country.
 
 Modified (small fix):
-- `explorations/verdier_feasibility/2_cluster_support_v2.do`: replace `min(cond(...))` with corrected `gen_vfirst` logic. Re-run; update feasibility note.
+- `explorations/verdier/2_cluster_support_v2.do`: replace `min(cond(...))` with corrected `gen_vfirst` logic. Re-run; update feasibility note.
 
 Generated:
 - `output/grc_robust_{country}_{spec}_{vindex}[_subsample].ster` plus `_never`, `_always`, `_delta`, `_avg`, `_lca` siblings.
