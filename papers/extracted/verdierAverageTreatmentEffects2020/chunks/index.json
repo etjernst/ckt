@@ -1,0 +1,90 @@
+{
+  "source": "paper.docling.md",
+  "source_chars": 90738,
+  "chunk_count": 4,
+  "page_markers_found": 32,
+  "target_chunk_chars": 25000,
+  "max_chunk_chars": 40000,
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "path": "chunks/chunk_001.md",
+      "char_start": 0,
+      "char_end": 24423,
+      "char_count": 24423,
+      "line_count": 226,
+      "start_page": 1,
+      "end_page": 9,
+      "section_headings": [
+        "<!-- page 1 -->",
+        "Abstract",
+        "<!-- page 2 -->",
+        "2 Correlated Random Coefficient Model and Extrapolation to Stayers",
+        "2.1 Average Treatment Effects of Stayers as Objects of Interest",
+        "2.2 Identification with the Correlated Random Coefficient Model",
+        "2.3 Extrapolation to Stayers",
+        "2.4 Interpretation of the Extrapolation Identifying Assumption"
+      ],
+      "contains_table": false
+    },
+    {
+      "chunk_id": "chunk_002",
+      "path": "chunks/chunk_002.md",
+      "char_start": 24423,
+      "char_end": 50144,
+      "char_count": 25721,
+      "line_count": 266,
+      "start_page": 11,
+      "end_page": 21,
+      "section_headings": [
+        "2.5 Extrapolation in the Presence of Correlated Cost Shifters",
+        "2.6 Model with Additional Control Covariates",
+        "2.7 CRC Model with Time-Varying Treatment Effects",
+        "3 Estimation and Inference",
+        "3.1 First Step CRC Regression",
+        "3.2 Non-Robust Extrapolation",
+        "3.3 Robust Extrapolation"
+      ],
+      "contains_table": false
+    },
+    {
+      "chunk_id": "chunk_003",
+      "path": "chunks/chunk_003.md",
+      "char_start": 50144,
+      "char_end": 75506,
+      "char_count": 25362,
+      "line_count": 141,
+      "start_page": 22,
+      "end_page": 29,
+      "section_headings": [
+        "3.4 Testing the Validity of the Extrapolation to Stayers",
+        "4 Empirical Application: Returns to Hybrid Seeds",
+        "4.1 Effect of Using Hybrid Seeds for Movers",
+        "4.1.1 Discussion of the CRC Assumptions",
+        "4.1.2 Estimation Results",
+        "4.2 Simple Extrapolation to Stayers",
+        "4.2.1 Discussion of the Simple Extrapolation Identifying Assumption",
+        "4.2.2 Estimation Results",
+        "4.2.3 Evidence against the Validity of the Simple Extrapolation",
+        "4.3 Robust Extrapolation to Stayers",
+        "4.3.1 Discussion of the Robust Extrapolation Identifying Assumption",
+        "4.3.2 Estimation Results"
+      ],
+      "contains_table": false
+    },
+    {
+      "chunk_id": "chunk_004",
+      "path": "chunks/chunk_004.md",
+      "char_start": 75506,
+      "char_end": 90738,
+      "char_count": 15232,
+      "line_count": 110,
+      "start_page": 31,
+      "end_page": 35,
+      "section_headings": [
+        "5 Conclusion"
+      ],
+      "contains_table": true
+    }
+  ]
+}
