@@ -67,29 +67,49 @@ def _robust_inv(M: np.ndarray, rcond: float = 1e-10) -> np.ndarray:
     return np.linalg.pinv(M, rcond=rcond)
 
 
-def _drop_collinear(Z: np.ndarray, tol: float = 1e-10) -> tuple[np.ndarray, np.ndarray]:
+def _drop_collinear(Z: np.ndarray, tol: float = 1e-7) -> tuple[np.ndarray, np.ndarray]:
     """Drop columns of ``Z`` that are linearly dependent on earlier columns.
 
-    Mirrors Stata's ``gmm`` collinearity-dropping behaviour: the
-    rank-revealing QR with column pivoting identifies redundant
-    columns and removes them from the instrument matrix. Returns
-    ``(Z_kept, kept_idx)`` where ``kept_idx`` is sorted, so the
-    remaining columns preserve the original ordering.
+    Mirrors Stata's ``_rmcoll`` / ``gmm`` collinearity-dropping
+    behaviour: columns are processed in their original order
+    (first-come, first-served), not reordered by magnitude. A column
+    ``Z[:,j]`` is dropped when the norm of its residual after projection
+    onto the previously kept columns drops below ``tol * ||Z[:,j]||``.
 
-    Keeping Z rank-deficient and using ``pinv`` for ``(G' W G)^{-1}``
-    inflates the variance estimates for parameters that enter the
-    redundant directions (e.g., ``phi`` on the IDN sample, where
-    ``switcher_31_choice`` is collinear with earlier instruments).
-    Dropping the offending columns matches Stata's SE.
+    This matches what Stata reports as "instrument ``varname`` omitted
+    because of collinearity." Rank-revealing QR with column pivoting
+    would reorder columns by magnitude and drop columns Stata would
+    keep, so it is not used here.
+
+    The default tolerance ``1e-7`` matches Stata's ``_rmcoll`` default
+    on the sweep-operator relative-pivot test. References: Goodnight
+    (1979), "A Tutorial on the SWEEP Operator", *The American
+    Statistician* 33(3), 149-158; Stata ``[P] _rmcoll``.
     """
-    if Z.shape[1] == 0:
+    n, m = Z.shape
+    if m == 0:
         return Z, np.zeros(0, dtype=int)
-    _, R, piv = sla.qr(Z, mode="economic", pivoting=True)
-    diag = np.abs(np.diag(R))
-    cutoff = tol * diag.max() if diag.size else 0.0
-    keep_mask = diag > cutoff
-    kept = np.sort(piv[keep_mask])
-    return Z[:, kept], kept
+
+    kept: list[int] = []
+    Q_cols: list[np.ndarray] = []
+    for j in range(m):
+        col = Z[:, j].astype(float)
+        col_norm = float(np.linalg.norm(col))
+        if col_norm == 0.0:
+            continue  # trivially zero column
+        if Q_cols:
+            Q = np.column_stack(Q_cols)
+            residual = col - Q @ (Q.T @ col)
+            # Second reorthogonalization pass (numerical stability).
+            residual = residual - Q @ (Q.T @ residual)
+        else:
+            residual = col
+        res_norm = float(np.linalg.norm(residual))
+        if res_norm / col_norm < tol:
+            continue  # collinear with already-kept columns, drop
+        Q_cols.append(residual / res_norm)
+        kept.append(j)
+    return Z[:, kept], np.array(kept, dtype=int)
 
 
 @dataclass
@@ -445,16 +465,16 @@ class RestrictedGRC:
         """Two-step efficient GMM (identity, then S^{-1})."""
         data = self._build_design(df)
         Z_raw = self._build_instruments(data)
-        # Preliminary collinearity check. If Stata's `gmm` would drop
-        # any instruments (note: "instrument ... omitted because of
-        # collinearity"), the equivalent numerical behaviour here is
-        # to pseudo-invert S and GtWG with a strict rcond. Dropping
-        # the columns outright changed the optimization landscape
-        # and produced worse point estimates on IDN, so we keep Z
-        # intact and rely on _robust_inv.
+        # Drop instrument columns that are collinear with earlier
+        # columns (sequential Gram-Schmidt, matching Stata's
+        # _rmcoll). This mirrors Stata's "instrument ... omitted
+        # because of collinearity" step in `gmm`. Columns are
+        # processed in their original order, so the algorithm is
+        # deterministic and not dependent on column magnitudes
+        # (unlike QR with pivoting).
         Z_kept, kept_idx = _drop_collinear(Z_raw)
         self.dropped_moments_ = int(Z_raw.shape[1] - Z_kept.shape[1])
-        data["Z"] = Z_raw  # keep full Z; pinv handles the redundancy
+        data["Z"] = Z_kept
         data["Z_kept_idx"] = kept_idx
         data["n"] = len(data["y"])
         data["base"] = int(self.base_trajectory
