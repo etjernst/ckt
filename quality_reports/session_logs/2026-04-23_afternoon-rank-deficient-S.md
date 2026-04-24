@@ -294,11 +294,68 @@ Refined the LCA inversion to a 0.01 grid (from 0.05) and added 90% CIs alongside
 
 - `docs/communications/2026-04-23_ster-filename-collision-email.md` --- coauthor email draft
 
+## Stage 8e: Stata wrapper for the LCA inversion CI (prototype)
+
+User asked to wire the inversion into the main Stata pipeline so it can attach to every spec via one extra call after `run_grc`. Stata 19.5 ships with embedded Python; `python query` showed Anaconda already configured (no `python set exec` needed). Three new files in `explorations/python-grc/`:
+
+- **`lca_inversion_ci.ado`** --- `eclass` program. After a `run_grc` call has saved an estimate, calling `lca_inversion_ci, estname(...) outcome(...) traj(...) choice(...) hhid(...) base(...) controls(...)` restores the saved estimate, runs the auxiliary OLS + grid inversion via Python, and `ereturn scalar`s eight values: `inv_ci90_lo`, `inv_ci90_hi`, `inv_ci95_lo`, `inv_ci95_hi`, `inv_phi_at_waldmin`, `inv_wald_min`, `inv_J_R`, `inv_n_kept`. Then re-saves the .ster so the scalars persist for downstream table generation.
+- **`lca_inversion_ci_helper.py`** --- the Python helper called via `python script`. Handles Stata <-> pandas conventions and delegates to `lca_inversion.py`.
+- **`demo_lca_inversion_ci.do`** --- end-to-end test on IDN/cons/urban/unb at covs_trend and covs_all. Verifies the saved scalars come back after `estimates use`.
+
+End-to-end test passes:
+
+```
+covs_trend:
+  Wald min = 32.90 at phi = -0.3700
+  95% CI: [-0.6400, -0.0700]
+  90% CI: [-0.5400, -0.1900]
+
+covs_all (after estimates use grc_IDN_covs_all):
+  e(inv_ci95_lo) = -1.2300
+  e(inv_ci95_hi) = -0.0100
+```
+
+Numbers match the pure-Python `run_idn_inversion.py` baseline exactly.
+
+### Six pitfalls debugged during the prototype
+
+The Stata <-> Python boundary surfaced more friction than expected. Documenting each so the next person doesn't repeat them.
+
+1. **`python: ... end` blocks cannot nest inside `program define ... end`.** Stata's parser cannot tell which `end` terminates which scope, so the inner `end` accidentally closes the program and the outer `end` becomes a stray command. Symptom: `command end is unrecognized` at `.ado` load time. Fix: move the Python code to a separate `.py` file and call via `python script "..."` from the program. Confirmed with the minimal `test_pyado.{ado,do}` --- two files of three lines each that reproduce the bug.
+2. **Stata's `python script` does not set `__file__` in the child interpreter.** A helper that needs to know its own directory cannot use `Path(__file__)`. Fix: have the calling .ado pass the helper directory as a Stata local (here, `helper_dir`) that Python reads via `sfi.Macro.getLocal`.
+3. **`setup_grc_estimation` recodes unbalanced trajectories to 999, not NaN.** `data_loader.py` uses NaN. The helper would otherwise treat 999 as the largest trajectory and label it the "always" group, breaking the entire switcher inventory. Fix: in the helper, after pulling the dataset, set `df.loc[df["unbalanced"] == 1, traj] = np.nan`. Rows are kept; only the trajectory label is cleared (unbalanced observers stay in the regression via `unbalanced` and `unbalanced_choice` shifters).
+4. **The helper did not drop rows with missing controls.** statsmodels' OLS otherwise propagates NaN through the design and the cluster-robust VCV overflows. Symptom: `RuntimeWarning: overflow in multiply` followed by `LinAlgError: SVD did not converge` from the inversion's `pinv`. Fix: mirror `data_loader`'s `dropna(subset=...)` on outcome, choice, hhid, unbalanced indicators, and all controls (but NOT trajectory).
+5. **`sfi.Data.get` returns Stata's missing-value sentinel `8.98847e+307` instead of NaN.** This was the dominant cause of the SVD failure once 4 was fixed. Diagnostic: a column-by-column min/max scan in the helper printed `column female has extreme values: max=8.98847e+307`. Fix: after pulling, `df = df.where(df.abs() < 1e300, np.nan)`. Also kept the diagnostic warning so we catch any future variable that arrives in the same shape.
+6. **`ereturn scalar` requires the program to be declared `eclass`.** Trying to set `e()` from an `rclass` program fails with `non e-class program may not set e()`. Trivial fix: change `program define ..., rclass` to `program define ..., eclass`.
+
+Of these, 1 and 5 are durable Stata <-> Python integration gotchas worth saving for the rcond / bootstrap work later. The others are project-specific data conventions.
+
+### Production-integration design (deferred to a future session)
+
+To wire `lca_inversion_ci` into the production pipeline:
+
+1. After every `run_grc` call in `5_GrRC.do`, `6_GrRC_NonAg.do`, and `8_GrRC_hukou.do` (and downstream the experience family), call `lca_inversion_ci, estname(...) ...` with matching args. Spec-by-spec.
+2. Update `grc_tex_table_trend` (in `0_programs.do`) to read `e(inv_ci95_lo)`, `e(inv_ci95_hi)` (and 90%) and emit them as a row in the LaTeX table.
+3. Coordinate with the ster-filename rename PR so each script's inversion CIs land on uniquely-named .ster files.
+
+Tracked in `docs/TODO.md`.
+
+## Files added in stage 8e (worktree)
+
+- `explorations/python-grc/lca_inversion_ci.ado` --- the wrapper program (eclass)
+- `explorations/python-grc/lca_inversion_ci_helper.py` --- Python helper called via `python script`
+- `explorations/python-grc/demo_lca_inversion_ci.do` --- end-to-end test driver
+- `explorations/python-grc/test_pyado.{ado,do}` --- minimal reproduction of pitfall #1
+
+Committed in worktree `lca-inversion` as `8122fe3`.
+
 ## Open / next steps (revised again)
 
-1. **Commit Stream A work** in the worktree branch (lots of files; one or two atomic commits).
-2. **Apply critic fixes 4, 5, 2** (effective-rank dof in pinv; symmetric sparse drop; Stata-style cluster correction). Re-run IDN to see if the 0.06--0.07 phi gap closes.
-3. **Run CHN and TZA** at all 5 covariate specs to complete the country panel.
-4. **User decision:** when to send the email to coauthors. Consider also sending after the rename PR is prepared so they have the full picture.
-5. **TODO from earlier (still open):** port rcond fix into Python `_robust_inv` for the GMM port (Stream B).
-6. **Paper writeup item:** in the inference subsection, document the LCA inversion as the primary CI for $\phi$ and the sandwich SE as a sensitivity. Especially flag covs_all CI nearly touching $\phi = 0$.
+1. **Run CHN and TZA** at all 5 covariate specs to complete the country panel. The Stata wrapper is the natural vehicle now --- write a `demo_lca_inversion_ci_chn_tza.do` (or extend the IDN demo) once the user decides the ster-rename strategy.
+2. **Apply critic fixes 4, 5, 2** (effective-rank dof in pinv; symmetric sparse drop; Stata-style cluster correction). Re-run IDN to see if the 0.06--0.07 $\phi$ gap closes.
+3. **TODO (separate effort):** port the rcond fix into Python `_robust_inv` for the GMM port (Stream B).
+4. **TODO (deferred):** island detection in LCA inversion CI (relevant for CHN under hukou heterogeneity).
+5. **TODO (deferred from earlier):** cluster bootstrap for empirical paper headline objects.
+6. **User decision:** when to send the email to coauthors. Consider sending after the rename PR is prepared so they have the full picture.
+7. **Paper writeup item:** in the inference subsection, document the LCA inversion as the primary CI for $\phi$ and the sandwich SE as a sensitivity. Especially flag the covs_all 95% CI nearly touching $\phi = 0$ (right endpoint $-0.010$).
+8. **Production integration (Stage 8f, future):** wire `lca_inversion_ci` into `5_GrRC.do`, `6_GrRC_NonAg.do`, the experience family, and `8_GrRC_hukou.do`; update `grc_tex_table_trend` to emit the inversion CI as a table row.
