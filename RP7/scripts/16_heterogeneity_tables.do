@@ -80,14 +80,11 @@ initial_values lndepvar,        ///
 local iterations 500
 
 * ************
-* Estimate restricted GMM model, uses `switcherpars' & `initial' from above
+* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 5_GrRC.do and because
+* the spec is identical (urban, all covariates, time FE). The estimates
+* are loaded below via `estimates use`.
 * ************
-* All covariates and time FE
-run_grc, estname(grc_`country'_covs_all)                           ///
-    switchers($switchers) base(`base') initial(`initial') ///
-    balance(`balance')                                             ///
-    covars(`periodFE' $covs_gmm_all)                               ///
-    iterate(`iterations')
 
 * Build the ordered coefficient list we want in the Delta table
 local `country'_keep_list_delta ""
@@ -159,14 +156,11 @@ initial_values lndepvar,       ///
 local iterations 500
 
 * ************
-* Estimate restricted GMM model, uses `switcherpars' & `initial' from above
+* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 5_GrRC.do and because
+* the spec is identical (urban, all covariates, time FE). The estimates
+* are loaded below via `estimates use`.
 * ************
-* All covariates and time FE
-run_grc, estname(grc_`country'_covs_all)                           ///
-    switchers($switchers) base(`base') initial(`initial') ///
-    balance(`balance')                                             ///
-    covars(`periodFE' $covs_gmm_all)                               ///
-    iterate(`iterations')
 
 * Build the ordered coefficient list we want in the Delta table
 local `country'_keep_list_delta ""
@@ -238,14 +232,11 @@ initial_values lndepvar,       ///
 local iterations 500
 
 * ************
-* Estimate restricted GMM model, uses `switcherpars' & `initial' from above
+* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 5_GrRC.do and because
+* the spec is identical (urban, all covariates, time FE). The estimates
+* are loaded below via `estimates use`.
 * ************
-* All covariates and time FE
-run_grc, estname(grc_`country'_covs_all)                           ///
-    switchers($switchers) base(`base') initial(`initial') ///
-    balance(`balance')                                             ///
-    covars(`periodFE' $covs_gmm_all)                               ///
-    iterate(`iterations')
 
 * Build the ordered coefficient list we want in the Delta table
 local `country'_keep_list_delta ""
@@ -281,21 +272,21 @@ foreach s of numlist $switchers {
 * Add statistics and table markers
 * **********************************************************************
 foreach country in IDN CHN TZA {
-		estimates use "$dir/output/grc_`country'_covs_all"
-        estimates store grc_`country'_covs_all
-		estimates use "$dir/output/grc_`country'_covs_all_delta"
-        estimates store grc_`country'_covs_all_delta
+		estimates use "$dir/output/grc_`country'_urban_covs_all"
+        estimates store grc_`country'_urban_covs_all
+		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
+        estimates store grc_`country'_urban_covs_all_delta
     }
 
 * Display a simple table of results
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_covs_all		                      ///
+    grc_`country'_urban_covs_all	                  ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 estimates table                                       ///
-    grc_`country'_covs_all_delta                      ///
+    grc_`country'_urban_covs_all_delta                ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 }
@@ -324,10 +315,10 @@ TEXTdepvar(string asis): Dependent variable as string
 
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
-		estimates use "$dir/output/grc_`country'_covs_all"
-        estimates store grc_`country'_covs_all
-		estimates use "$dir/output/grc_`country'_covs_all_delta"
-        estimates store grc_`country'_covs_all_delta
+		estimates use "$dir/output/grc_`country'_urban_covs_all"
+        estimates store grc_`country'_urban_covs_all
+		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
+        estimates store grc_`country'_urban_covs_all_delta
     }
 
 * **********************************************************************

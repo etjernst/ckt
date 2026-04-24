@@ -91,34 +91,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations')
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -165,34 +165,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -239,34 +239,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -290,9 +290,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_covs_0 grc_`country'_covs_trend     ///
-    grc_`country'_covs_1 grc_`country'_covs_2         ///
-    grc_`country'_covs_all                            ///
+    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
+    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
+    grc_`country'_urban_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -358,6 +358,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -397,6 +398,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -436,6 +438,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -515,34 +518,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -589,34 +592,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -663,34 +666,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2    
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -714,9 +717,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_covs_0 grc_`country'_covs_trend     ///
-    grc_`country'_covs_1 grc_`country'_covs_2         ///
-    grc_`country'_covs_all                            ///
+    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
+    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
+    grc_`country'_urban_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -780,6 +783,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -819,6 +823,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -858,6 +863,7 @@ local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -932,34 +938,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -1001,34 +1007,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -1070,34 +1076,34 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_covs_0)                             ///
+run_grc, estname(grc_`country'_urban_covs_0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc, estname(grc_`country'_covs_trend)                         ///
+run_grc, estname(grc_`country'_urban_covs_trend)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_covs_1)                             ///
+run_grc, estname(grc_`country'_urban_covs_1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_covs_2)                             ///
+run_grc, estname(grc_`country'_urban_covs_2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_covs_all)                           ///
+run_grc, estname(grc_`country'_urban_covs_all)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -1121,9 +1127,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_covs_0 grc_`country'_covs_trend     ///
-    grc_`country'_covs_1 grc_`country'_covs_2         ///
-    grc_`country'_covs_all                            ///
+    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
+    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
+    grc_`country'_urban_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -1186,6 +1192,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -1217,6 +1224,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -1248,6 +1256,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
+    spec(urban)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///

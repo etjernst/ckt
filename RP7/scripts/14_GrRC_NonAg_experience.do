@@ -91,28 +91,28 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * Experience control
-run_grc, estname(grc_`country'_c1)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_exp)                               ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_c2)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2_exp)                              ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_c3)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c3)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm3_exp)                              ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_ca)                             ///
+run_grc, estname(grc_`country'_nonag_exp_ca)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all_exp)	                       ///
@@ -136,8 +136,8 @@ foreach country in IDN {
 foreach country in IDN {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_c1 grc_`country'_c2     			  ///
-    grc_`country'_c3 grc_`country'_ca         		  ///
+    grc_`country'_nonag_exp_c1 grc_`country'_nonag_exp_c2     			  ///
+    grc_`country'_nonag_exp_c3 grc_`country'_nonag_exp_ca         		  ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -200,6 +200,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_exp} 
 
 * Run program to create output table
 grc_tex_table_trend_exp, columns(4)                     ///
+    spec(nonag_exp)                                     ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance'_exp) ///
     keep(`reportvars')                                  ///
@@ -279,28 +280,28 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * Experience control
-run_grc, estname(grc_`country'_c1)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_exp_max)                               ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_c2)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2_exp_max)                              ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_c3)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c3)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm3_exp_max)                              ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_ca)                             ///
+run_grc, estname(grc_`country'_nonag_exp_ca)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all_exp_max)	                       ///
@@ -324,8 +325,8 @@ foreach country in IDN {
 foreach country in IDN {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_c1 grc_`country'_c2     			  ///
-    grc_`country'_c3 grc_`country'_ca         		  ///
+    grc_`country'_nonag_exp_c1 grc_`country'_nonag_exp_c2     			  ///
+    grc_`country'_nonag_exp_c3 grc_`country'_nonag_exp_ca         		  ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -388,6 +389,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_exp_m
 
 * Run program to create output table
 grc_tex_table_trend_exp, columns(4)                     ///
+    spec(nonag_exp)                                     ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance'_exp_max) ///
     keep(`reportvars')                                  ///
@@ -467,28 +469,28 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * Experience control
-run_grc, estname(grc_`country'_c1)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_exp_sh)                               ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_c2)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2_exp_sh)                              ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_c3)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c3)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm3_exp_sh)                              ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_ca)                             ///
+run_grc, estname(grc_`country'_nonag_exp_ca)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all_exp_sh)	                       ///
@@ -512,8 +514,8 @@ foreach country in IDN {
 foreach country in IDN {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_c1 grc_`country'_c2     			  ///
-    grc_`country'_c3 grc_`country'_ca         		  ///
+    grc_`country'_nonag_exp_c1 grc_`country'_nonag_exp_c2     			  ///
+    grc_`country'_nonag_exp_c3 grc_`country'_nonag_exp_ca         		  ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -576,6 +578,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_exp_s
 
 * Run program to create output table
 grc_tex_table_trend_exp, columns(4)                     ///
+    spec(nonag_exp)                                     ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance'_exp_sh) ///
     keep(`reportvars')                                  ///
@@ -655,28 +658,28 @@ local iterations 500
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * Experience control
-run_grc, estname(grc_`country'_c1)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_exp_m_sh)                               ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_c2)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2_exp_m_sh)                              ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_c3)                             ///
+run_grc, estname(grc_`country'_nonag_exp_c3)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm3_exp_m_sh)                              ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_ca)                             ///
+run_grc, estname(grc_`country'_nonag_exp_ca)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all_exp_m_sh)	                       ///
@@ -700,8 +703,8 @@ foreach country in IDN {
 foreach country in IDN {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_c1 grc_`country'_c2     			  ///
-    grc_`country'_c3 grc_`country'_ca         		  ///
+    grc_`country'_nonag_exp_c1 grc_`country'_nonag_exp_c2     			  ///
+    grc_`country'_nonag_exp_c3 grc_`country'_nonag_exp_ca         		  ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -764,6 +767,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_exp_m
 
 * Run program to create output table
 grc_tex_table_trend_exp, columns(4)                     ///
+    spec(nonag_exp)                                     ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance'_exp_m_sh) ///
     keep(`reportvars')                                  ///

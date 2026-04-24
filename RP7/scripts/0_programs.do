@@ -2664,7 +2664,12 @@ program define grc_tex_table_trend
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
 				htb(string) PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
+				COEFLABels(string asis) TEXTdepvar(string asis) ///
+				SPEC(string)
+	* SPEC is a required prefix that separates urban from nonag (or similar)
+	* estimate-name families. Callers pass e.g. spec(urban) or spec(nonag)
+	* so the loop below reads grc_<country>_<spec>_covs_<k>.ster rather
+	* than colliding on a shared grc_<country>_covs_<k>.ster name.
 	
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2691,9 +2696,9 @@ program define grc_tex_table_trend
 		
     * Generate the list of stored estimates for the current panel
       foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        local ests_never     = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests           = "`ests' grc_`country'_`estname'"
+        local ests_never     = "`ests_never' grc_`country'_`spec'_`estname'_never"
+        local ests_avg = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
+        local ests           = "`ests' grc_`country'_`spec'_`estname'"
       }
         
       * Output Delta-never row
@@ -2836,7 +2841,12 @@ program define grc_tex_table_trend_exp
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
 				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
+				COEFLABels(string asis) TEXTdepvar(string asis) ///
+				SPEC(string)
+	* SPEC selects which experience-family estimates to read. Callers pass
+	* spec(exp), spec(maxexp), spec(expsh), spec(maxexpsh), spec(nonag_exp)
+	* so the loop reads grc_<country>_<spec>_c<k>.ster and avoids the
+	* old c1/c2/c3/ca collision across scripts 10-14.
 	
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2863,9 +2873,9 @@ program define grc_tex_table_trend_exp
 		
     * Generate the list of stored estimates for the current panel
       foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
+        local ests_never  = "`ests_never' grc_`country'_`spec'_`estname'_never"
+        local ests_avg  = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`spec'_`estname'"
       }
         
       * Output Delta-never row
@@ -2922,7 +2932,10 @@ program define grc_tex_table_trend_birth
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
 				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
+				COEFLABels(string asis) TEXTdepvar(string asis) ///
+				SPEC(string)
+	* SPEC is typically spec(birth); the only current caller is 15_GrRC_birth.do.
+	* See grc_tex_table_trend_exp for details.
 	
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2949,9 +2962,9 @@ program define grc_tex_table_trend_birth
 		
     * Generate the list of stored estimates for the current panel
       foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
+        local ests_never  = "`ests_never' grc_`country'_`spec'_`estname'_never"
+        local ests_avg  = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`spec'_`estname'"
       }
         
       * Output Delta-never row
@@ -3022,8 +3035,8 @@ program define het_table_delta
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates
-    local ests_delta = "grc_`country'_covs_all_delta"
+    * Stored estimates (heterogeneity tables are always urban-spec)
+    local ests_delta = "grc_`country'_urban_covs_all_delta"
 	
 	* Output Deltas and mus
 	esttab `ests_delta'						 ///
@@ -3070,8 +3083,8 @@ program define het_table_mu
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates
-    local ests = "grc_`country'_covs_all"
+    * Stored estimates (heterogeneity tables are always urban-spec)
+    local ests = "grc_`country'_urban_covs_all"
 	
 	* Output Deltas and mus
 	esttab `ests'							 ///
