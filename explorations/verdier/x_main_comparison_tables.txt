@@ -1,0 +1,283 @@
+                                                       ___  ____  ____  ____  ____(R)
+                                                      /__    /   ____/   /   ____/   
+                                                     ___/   /   /___/   /   /___/    
+                                                       Statistics/Data analysis      
+      
+      -------------------------------------------------------------------------------
+            name:  <unnamed>
+             log:  C:\git\ckt\explorations\verdier\x_main_comparison_tables.smcl
+        log type:  text
+       opened on:  24 Apr 2026, 15:03:53
+      
+     1 . version 17
+      
+     2 . 
+     3 . use "x_main_comparison_results.dta", clear
+      
+     4 . describe
+      
+      Contains data from x_main_comparison_results.dta
+       Observations:            30                  
+          Variables:            16                  24 Apr 2026 13:28
+      -------------------------------------------------------------------------------
+      Variable      Storage   Display    Value
+          name         type    format    label      Variable label
+      -------------------------------------------------------------------------------
+      country         str4    %9s                   
+      spec            str10   %10s                  
+      approach        str10   %10s                  
+      phi             double  %10.0g                
+      se_phi          double  %10.0g                
+      Delta_never     double  %10.0g                
+      se_never        double  %10.0g                
+      Delta_always    double  %10.0g                
+      se_always       double  %10.0g                
+      Delta_avg       double  %10.0g                
+      se_avg          double  %10.0g                
+      Jstat           double  %10.0g                
+      Jpval           double  %10.0g                
+      Q               double  %10.0g                
+      converged       double  %10.0g                
+      N               double  %10.0g                
+      -------------------------------------------------------------------------------
+      Sorted by: 
+      
+     5 . 
+     6 . * Helper to format a value-se cell
+     7 . capture program drop fmt_cell
+      
+     8 . program define fmt_cell, rclass
+        1.     args val se digits
+        2.     if "`digits'" == "" local digits 3
+        3.     if missing(`val') {
+        4.         return local cell "-- "
+        5.     }
+        6.     else {
+        7.         local vstr = string(`val', "%6.`digits'f")
+        8.         if missing(`se') {
+        9.             return local cell "`vstr'"
+       10.         }
+       11.         else {
+       12.             local sstr = string(`se', "%5.`digits'f")
+       13.             return local cell "`vstr' (`sstr')"
+       14.         }
+       15.     }
+       16. end
+      
+     9 . 
+    10 . foreach country in IDN CHN TZA {
+        2.     di as result _newline(2) "## `country' --- consumption | urban | unbal
+      > anced"
+        3.     di as result _newline ///
+      >         "| Statistic | covs_0 | covs_trend | covs_1 | covs_2 | covs_all |"
+        4.     di as result ///
+      >         "|-----------|--------|------------|--------|--------|----------|"
+        5. 
+    11 .     * Helper loop over (stat, approach) pairs
+    12 .     foreach stat in phi Dnever Dalways Davg {
+        6.         local statlabel "phi"
+        7.         if "`stat'" == "Dnever"  local statlabel "Delta_never"
+        8.         if "`stat'" == "Dalways" local statlabel "Delta_always"
+        9.         if "`stat'" == "Davg"    local statlabel "Delta_avg"
+       10. 
+    13 .         local valvar "phi"
+       11.         local sevar  "se_phi"
+       12.         if "`stat'" == "Dnever"  local valvar "Delta_never"
+       13.         if "`stat'" == "Dnever"  local sevar  "se_never"
+       14.         if "`stat'" == "Dalways" local valvar "Delta_always"
+       15.         if "`stat'" == "Dalways" local sevar  "se_always"
+       16.         if "`stat'" == "Davg"    local valvar "Delta_avg"
+       17.         if "`stat'" == "Davg"    local sevar  "se_avg"
+       18. 
+    14 .         foreach appr in simple verdier {
+       19.             local row "| `statlabel' (`appr') |"
+       20.             foreach cov in 0 trend 1 2 all {
+       21.                 qui sum `valvar' if country == "`country'" & spec == "`cov
+      > '" & approach == "`appr'"
+       22.                 if r(N) == 0 {
+       23.                     local row "`row' -- |"
+       24.                     continue
+       25.                 }
+       26.                 local val = r(mean)
+       27.                 qui sum `sevar' if country == "`country'" & spec == "`cov'
+      > " & approach == "`appr'"
+       28.                 local se = r(mean)
+       29.                 fmt_cell `val' `se' 3
+       30.                 local row "`row' `r(cell)' |"
+       31.             }
+       32.             di as result "`row'"
+       33.         }
+       34.     }
+       35. 
+    15 .     * Hansen J (simple only)
+    16 .     local row "| Hansen J (simple) |"
+       36.     foreach cov in 0 trend 1 2 all {
+       37.         qui sum Jstat if country == "`country'" & spec == "`cov'" & approa
+      > ch == "simple"
+       38.         if r(N) == 0 | missing(r(mean)) {
+       39.             local row "`row' -- |"
+       40.         }
+       41.         else {
+       42.             local jstat = r(mean)
+       43.             qui sum Jpval if country == "`country'" & spec == "`cov'" & ap
+      > proach == "simple"
+       44.             local jpval = r(mean)
+       45.             local jstr = string(`jstat', "%5.2f")
+       46.             local pstr = string(`jpval', "%4.2f")
+       47.             local row "`row' `jstr' (p=`pstr') |"
+       48.         }
+       49.     }
+       50.     di as result "`row'"
+       51. 
+    17 .     * GMM criterion Q (both)
+    18 .     foreach appr in simple verdier {
+       52.         local row "| Q (`appr') |"
+       53.         foreach cov in 0 trend 1 2 all {
+       54.             qui sum Q if country == "`country'" & spec == "`cov'" & approa
+      > ch == "`appr'"
+       55.             if r(N) == 0 | missing(r(mean)) {
+       56.                 local row "`row' -- |"
+       57.             }
+       58.             else {
+       59.                 local q = r(mean)
+       60.                 local qstr = string(`q', "%9.2e")
+       61.                 local row "`row' `qstr' |"
+       62.             }
+       63.         }
+       64.         di as result "`row'"
+       65.     }
+       66. 
+    19 .     * Converged flags
+    20 .     foreach appr in simple verdier {
+       67.         local row "| Converged (`appr') |"
+       68.         foreach cov in 0 trend 1 2 all {
+       69.             qui sum converged if country == "`country'" & spec == "`cov'" 
+      > & approach == "`appr'"
+       70.             if r(N) == 0 {
+       71.                 local row "`row' -- |"
+       72.             }
+       73.             else {
+       74.                 local cvg = r(mean)
+       75.                 local cvgstr = cond(`cvg' == 1, "Y", "N")
+       76.                 local row "`row' `cvgstr' |"
+       77.             }
+       78.         }
+       79.         di as result "`row'"
+       80.     }
+       81. 
+    21 .     * N
+    22 .     foreach appr in simple verdier {
+       82.         local row "| N (`appr') |"
+       83.         foreach cov in 0 trend 1 2 all {
+       84.             qui sum N if country == "`country'" & spec == "`cov'" & approa
+      > ch == "`appr'"
+       85.             if r(N) == 0 {
+       86.                 local row "`row' -- |"
+       87.             }
+       88.             else {
+       89.                 local nn = r(mean)
+       90.                 local nstr = string(`nn', "%10.0fc")
+       91.                 local row "`row' `nstr' |"
+       92.             }
+       93.         }
+       94.         di as result "`row'"
+       95.     }
+       96. }
+      
+      
+      ## IDN --- consumption | urban | unbalanced
+      
+      | Statistic | covs_0 | covs_trend | covs_1 | covs_2 | covs_all |
+      |-----------|--------|------------|--------|--------|----------|
+      | phi (simple) | -2.445 (0.070) | -0.309 (0.087) | -0.310 (0.087) | -0.321 (0.0
+      > 86) | -0.526 (0.102) |
+      | phi (verdier) | -2.678 (0.300) | -0.228 (0.121) | -0.229 (0.121) | -0.240 (0.
+      > 124) | -0.334 (0.147) |
+      | Delta_never (simple) | 0.304 (0.054) | 0.086 (0.021) | 0.086 (0.021) | 0.091 
+      > (0.021) | 0.071 (0.018) |
+      | Delta_never (verdier) | 0.311 (0.115) | 0.075 (0.028) | 0.075 (0.028) | 0.080
+      >  (0.028) | 0.057 (0.025) |
+      | Delta_always (simple) | 0.460 (0.041) | -0.053 (0.042) | -0.053 (0.042) | -0.
+      > 053 (0.043) | -0.096 (0.061) |
+      | Delta_always (verdier) | 0.448 (0.043) | -0.021 (0.041) | -0.021 (0.041) | -0
+      > .020 (0.041) | -0.026 (0.032) |
+      | Delta_avg (simple) | 0.027 (0.002) | 0.003 (0.001) | 0.003 (0.001) | 0.003 (0
+      > .001) | 0.003 (0.001) |
+      | Delta_avg (verdier) | 0.028 (0.002) | 0.003 (0.001) | 0.003 (0.001) | 0.003 (
+      > 0.001) | 0.003 (0.001) |
+      | Hansen J (simple) | 86.52 (p=0.00) | 32.50 (p=0.21) | 32.44 (p=0.22) | 33.30 
+      > (p=0.19) | 28.16 (p=0.40) |
+      | Q (simple) | 9.36e-04 | 3.51e-04 | 3.51e-04 | 3.60e-04 | 3.05e-04 |
+      | Q (verdier) | 1.95e-03 | 2.21e-04 | 2.21e-04 | 2.31e-04 | 2.34e-04 |
+      | Converged (simple) | Y | Y | Y | Y | Y |
+      | Converged (verdier) | Y | Y | Y | Y | Y |
+      | N (simple) | 92,450 | 92,450 | 92,439 | 92,439 | 92,439 |
+      | N (verdier) | 92,153 | 92,153 | 92,142 | 92,142 | 92,142 |
+      
+      
+      ## CHN --- consumption | urban | unbalanced
+      
+      | Statistic | covs_0 | covs_trend | covs_1 | covs_2 | covs_all |
+      |-----------|--------|------------|--------|--------|----------|
+      | phi (simple) | -0.898 (0.056) | -0.073 (0.134) | -0.073 (0.134) | -0.161 (0.1
+      > 17) | -0.205 (0.134) |
+      | phi (verdier) | -0.742 (0.126) | -0.076 (0.202) | -0.076 (0.201) | -0.130 (0.
+      > 197) | -0.155 (0.231) |
+      | Delta_never (simple) | 0.424 (0.021) | 0.090 (0.028) | 0.090 (0.028) | 0.104 
+      > (0.023) | 0.098 (0.021) |
+      | Delta_never (verdier) | 0.398 (0.044) | 0.091 (0.042) | 0.091 (0.042) | 0.101
+      >  (0.038) | 0.095 (0.035) |
+      | Delta_always (simple) | -0.109 (0.398) | 0.059 (0.046) | 0.059 (0.046) | 0.03
+      > 2 (0.054) | 0.033 (0.050) |
+      | Delta_always (verdier) | 0.150 (0.247) | 0.058 (0.079) | 0.058 (0.079) | 0.04
+      > 4 (0.094) | 0.049 (0.085) |
+      | Delta_avg (simple) | 0.020 (0.001) | 0.003 (0.001) | 0.003 (0.001) | 0.004 (0
+      > .001) | 0.004 (0.001) |
+      | Delta_avg (verdier) | 0.019 (0.002) | 0.003 (0.002) | 0.003 (0.002) | 0.004 (
+      > 0.002) | 0.004 (0.002) |
+      | Hansen J (simple) | 98.93 (p=0.00) | 17.09 (p=0.03) | 17.09 (p=0.03) | 18.29 
+      > (p=0.02) | 17.54 (p=0.02) |
+      | Q (simple) | 9.03e-04 | 1.56e-04 | 1.56e-04 | 1.67e-04 | 1.60e-04 |
+      | Q (verdier) | 1.19e-03 | 9.98e-05 | 9.98e-05 | 1.09e-04 | 1.11e-04 |
+      | Converged (simple) | Y | Y | Y | Y | Y |
+      | Converged (verdier) | Y | Y | Y | Y | Y |
+      | N (simple) | 109,535 | 109,535 | 109,535 | 109,535 | 109,535 |
+      | N (verdier) | 109,535 | 109,535 | 109,535 | 109,535 | 109,535 |
+      
+      
+      ## TZA --- consumption | urban | unbalanced
+      
+      | Statistic | covs_0 | covs_trend | covs_1 | covs_2 | covs_all |
+      |-----------|--------|------------|--------|--------|----------|
+      | phi (simple) | -0.998 (0.064) | -0.515 (0.091) | -0.523 (0.092) | -0.534 (0.0
+      > 93) | -0.719 (0.124) |
+      | phi (verdier) | -0.998 (0.145) | -0.406 (0.144) | -0.414 (0.146) | -0.425 (0.
+      > 147) | -0.690 (0.087) |
+      | Delta_never (simple) | 0.539 (0.036) | 0.301 (0.039) | 0.304 (0.039) | 0.301 
+      > (0.039) | 0.270 (0.033) |
+      | Delta_never (verdier) | 0.539 (0.085) | 0.261 (0.053) | 0.264 (0.054) | 0.263
+      >  (0.052) | 0.259 (0.033) |
+      | Delta_always (simple) | -138.579 (5950.886) | -0.262 (0.133) | -0.273 (0.138)
+      >  | -0.289 (0.146) | -0.662 (0.469) |
+      | Delta_always (verdier) | -138.579 (1.3e+04) | -0.129 (0.205) | -0.136 (0.212)
+      >  | -0.146 (0.223) | -0.578 (0.388) |
+      | Delta_avg (simple) | 0.010 (0.002) | 0.012 (0.002) | 0.012 (0.002) | 0.012 (0
+      > .002) | 0.012 (0.002) |
+      | Delta_avg (verdier) | 0.010 (0.005) | 0.012 (0.003) | 0.012 (0.003) | 0.012 (
+      > 0.003) | 0.012 (0.003) |
+      | Hansen J (simple) | 63.03 (p=0.00) | 6.65 (p=0.08) | 6.52 (p=0.09) | 6.66 (p=
+      > 0.08) | 3.83 (p=0.28) |
+      | Q (simple) | 2.11e-03 | 2.23e-04 | 2.18e-04 | 2.23e-04 | 1.28e-04 |
+      | Q (verdier) | 4.96e-03 | 7.13e-05 | 7.01e-05 | 7.32e-05 | 8.12e-05 |
+      | Converged (simple) | N | Y | Y | Y | Y |
+      | Converged (verdier) | N | Y | Y | Y | Y |
+      | N (simple) | 29,864 | 29,864 | 29,864 | 29,864 | 29,864 |
+      | N (verdier) | 29,864 | 29,864 | 29,864 | 29,864 | 29,864 |
+      
+    23 . 
+    24 . log close
+            name:  <unnamed>
+             log:  C:\git\ckt\explorations\verdier\x_main_comparison_tables.smcl
+        log type:  text
+       closed on:  24 Apr 2026, 15:03:53
+      -------------------------------------------------------------------------------
