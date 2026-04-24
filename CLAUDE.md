@@ -30,11 +30,11 @@
 - Git: conventional commits, branch per feature. Co-authoring line: `with Claude`.
 
 ```bash
-# Stata (run full pipeline)
-cd scripts && stata-mp -b do 0_master.do
+# Stata (run full pipeline) --- run from RP7/scripts, not the top-level junction
+cd RP7/scripts && stata-mp -b do 0_master.do
 
-# Stata (run single do-file; set $dir first)
-cd scripts && stata-mp -b do 5_GrRC.do
+# Stata (run single do-file; $dir is set in 0_master.do per c(username))
+cd RP7/scripts && stata-mp -b do 5_GrRC.do
 
 # Python
 python scripts/python/analysis.py
@@ -44,15 +44,23 @@ python scripts/python/analysis.py
 
 ```
 paper/              # main.tex lives here (added manually, not symlinked)
-scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # do-files + 0_programs.do
-data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/
-output/  -> Dropbox/.../ReplicationPackage6/output/     # .ster files, tables/, figures/
+scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # READ-ONLY view into coauthor's live RP6 (gitignored)
+data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/ (gitignored)
+output/  -> Dropbox/.../ReplicationPackage6/output/     # coauthor's .ster, tables/, figures/ (gitignored)
+
+RP7/                # local working copy (tracked in git) --- edit here, not in the junctions
+  scripts/          # real copy of RP6 scripts as of 2026-04-24. Our edits live here.
+  data/ -> Dropbox/.../ReplicationPackage6/data/   # junctioned; raw data stays shared (immutable)
+  output/           # fresh empty dir; our reruns land here. tables/ and figures/ tracked; .ster ignored.
+
 docs/               # specs, plans, session_logs, reviews
 quality_reports/    # quality scores
 explorations/       # experimental analysis
 ```
 
-Symlinks are Windows directory junctions into `C:\Users\maand\Dropbox (Personal)\Returns to migration\ReplicationPackage6\`.
+Top-level `scripts/`, `output/` junctions are frozen as a read-only window onto the coauthor's live RP6 --- do not edit through them, do not commit them. Work happens in `RP7/`. When this branch's edits are ready for the team, copy `RP7/{scripts,output}/` into Dropbox as `ReplicationPackage7/`.
+
+Junctions are Windows directory junctions created with `cmd /c mklink /J`.
 
 ## Stata code structure
 
