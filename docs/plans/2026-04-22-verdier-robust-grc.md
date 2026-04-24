@@ -21,14 +21,16 @@
 
 Six phases. Each ends in a verification gate before the next begins.
 
-| Phase | Scope | Gate |
-|---|---|---|
-| P0 | Design-cleanup memos: VV-Section-F adaptation + E.3.2 transcription + bootstrap-implementation choice + `gen_vfirst` unit test | Two memos signed off; bootstrap path chosen; helper passes test on a fabricated 5-row dataset |
-| P1 | `gen_vfirst`, `initial_values_robust`, `run_grc_robust` via VV's within-$v$-demeaning route; smoke-test on TZA only | TZA primary spec converges; degenerate-$v$ test reproduces simple spec to 6 dec.; cluster diagnostics in log match feasibility note |
-| P2 | Roll out to CHN + IDN; per-cluster always-urban extrapolation; sample-matched simple-spec column | Three primary triples (`.ster`, `_never`, `_always`) saved; un-extrapolated population shares logged |
-| P3 | LCA-overid (E.3.2) for both simple and robust specs; Wald test that $\beta(v)$ collapses to a scalar | Six new `.ster` files; both p-values reported alongside Hansen $J$ for each country |
-| P4 | Secondary specs: CHN hukou (`boottest`, $G=2$), IDN kabu, TZA regdist, IDN `migr==0`. WCB inference applied to $\phi$ and $\Delta_{d_N}$ in **all three** primary specs (not just hukou). | All robustness `.ster` files saved; WCB p-values in log |
-| P5 | Side-by-side tables, heterogeneity plot overlay, sign-of-$\phi$ stress matrix, results memo | `paper/main.tex` builds; results memo saved; all support shares disclosed |
+**Update 2026-04-24:** P1 initially used a single-step cluster-FE parameterization (`run_grc_robust`). Sensitivity testing revealed two local minima on TZA (initial-value-dependent) and a $>70$-min hang on CHN fit 1. Root cause: with $\|V\| \in \{22, 26, 29\}$ clusters and a rank-deficient cluster-robust $W_2$, the $\|V\|-1$ cluster-FE parameters make the GMM objective nearly flat in $\phi$. Retired in favor of `run_grc_robust_vv`, which ports VV's `Table1/Code/robust.do` idea: cluster-demeaned treatment indicators as **instruments** (not parameters). Parameter count stays at `run_grc`'s level; 5-start sensitivity stable on all three countries. See memo §5 / §9.
+
+| Phase | Scope | Gate | Status |
+|---|---|---|---|
+| P0 | Design-cleanup memos: VV-Section-F adaptation + E.3.2 transcription + bootstrap-implementation choice + `gen_vfirst` unit test | Two memos signed off; bootstrap path chosen; helper passes test on a fabricated 5-row dataset | ✅ Done |
+| P1 | `gen_vfirst`, `initial_values_robust`, **`run_grc_robust_vv`** (VV cluster-demeaned instruments; replaces `run_grc_robust` after 2026-04-24 sensitivity); smoke-test on all three countries | All three countries' VV-robust phi stable across 5 phi starts (range $\leq 0.017$); degenerate-$v$ test on original `run_grc_robust` matches simple onestep to 6 dec.; cluster diagnostics in log match feasibility note | ✅ Done (commit `f7949c8`) |
+| P2 | Roll out `run_grc_robust_vv` across all five cov variants ($\text{covs\_0 / covs\_trend / covs\_1 / covs\_2 / covs\_all}$) in `5_GrRC.do` for all three countries; sample-matched simple-spec column | Three country × five cov triples (`.ster`, `_never`, `_always`) saved; un-extrapolated population shares logged | Not started |
+| P3 | LCA-overid (E.3.2) for both simple-onestep and VV-robust; Wald test that $\beta(v)$ collapses to a scalar (via VV's $\eta_t$ moments) | Six new `.ster` files; p-values reported alongside Hansen $J$ for each country | Not started |
+| P4 | Secondary specs: CHN hukou (`boottest`, $G=2$), IDN kabu, TZA regdist, IDN `migr==0`. WCB inference applied to $\phi$ and $\Delta_{d_N}$ in all three primary specs (not just hukou). | All robustness `.ster` files saved; WCB p-values in log | Not started |
+| P5 | Side-by-side tables, heterogeneity plot overlay, sign-of-$\phi$ stress matrix, results memo | `paper/main.tex` builds; results memo saved; all support shares disclosed | Not started |
 
 ## 2. Phase 0 --- Design cleanup (must complete before P1)
 
@@ -106,51 +108,52 @@ The user asked: for CHN should we use a coarser-than-province $v$ to ease conver
 
 **Decision:** Stick with `vindex(prov)` (29 clusters) for CHN under the within-demeaning route; flag macro-region as an explicit fallback in P4 only if P2 convergence fails. Add a CHN-specific macro-region helper (4-region mapping: East, Central, West, Northeast) to be ready as a fallback.
 
-## 3. Phase 1 --- TZA smoke test (within-demeaning route)
+## 3. Phase 1 --- Robust spec + TZA/CHN/IDN smoke test
 
-### 3.1 New programs in `scripts/0_programs.do`
+### 3.1 Programs added to `RP7/scripts/0_programs.do`
 
-All additive --- existing programs unchanged.
+All additive --- existing programs unchanged. Located in `RP7/scripts/0_programs.do` (Dropbox junction is coauthor's read-only RP6 copy --- see MEMORY.md).
 
-- `gen_vfirst` per §2.4 (after `gen_time_trend` at l. 372).
-- `initial_values_robust` (after `initial_values` at l. 1412). Cluster-OLS with $v$-demeaned variables; for any $(s,v)$ cell that is empty or singleton, substitute the global trajectory mean for $s$ and log substitution count. Validates `initial` local has no `.` literals before passing to `gmm`.
-- `run_grc_robust` (after `run_grc_hukou` at l. 1759). Per the [within-demeaning derivation memo §4](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_robust-grc-derivation.md), the implementation route is to add $|V|-1$ cluster dummies $\times D_{it}$ as cluster-specific $\Delta_{\underline d_0}$ parameters. This is the single-step CKT-equivalent of VV's two-step within-demeaning; it avoids the saturated trajectory-by-cluster $\mu$ explosion (which would have been $\sim 400$ free parameters for CHN; with this approach we add 21--28 net parameters across the three countries).
+- `gen_vfirst` (after `gen_time_trend`). Returns first-wave non-missing value of `vname` per pid. Unit-tested at `explorations/verdier/3_test_gen_vfirst.do`.
+- `initial_values_robust` (after `initial_values`). OLS of lndepvar on trajectory dummies + $\|V\|-1$ cluster × choice interactions; used for starting values of the retired `run_grc_robust`.
+- `run_grc_onestep` (after `run_grc`). Sibling of `run_grc` using VV's `winitial(unadjusted, independent), onestep`. Provides the apples-to-apples simple-spec comparator for the robust specs.
+- `run_grc_robust` (after `run_grc_hukou`). **RETIRED 2026-04-24** --- single-step cluster-FE parameterization. Adds $\|V\|-1$ cluster × choice interactions as free GMM parameters. Asymptotically equivalent to VV, but in finite sample with $\|V\| \in \{22, 26, 29\}$ the cluster-robust $W_2$ is rank-deficient and the objective becomes nearly flat in $\phi$ along a cluster-FE ridge. TZA sensitivity across 5 phi starts found two local minima; CHN hung $>70$ min on fit 1. Kept in the file for reference but should not be used.
+- **`run_grc_robust_vv`** (after `run_grc_robust`). **Primary robust estimator going forward.** Ports VV's `Table1/Code/robust.do` idea to CKT's trajectory-pooled structure:
+    1. Regress `switcher_s_choice` on `i.vfirst` among workers with `switcher_s == 1`; residual `swd_switcher_s_choice` replaces raw `switcher_s_choice` in the instrument list. Zero-fill for non-switcher-s workers.
+    2. Same for `always_choice` (demeaned among `always == 1`).
+    3. GMM uses the same parameter set as `run_grc` (phi, $\mu_{\underline d}$, $\Delta_{\text{base}}$, $\kappa$, $\gamma$) --- no $\beta(v)$ parameters.
+    4. Options: `vce(cluster vfirst), winitial(unadjusted, independent), onestep, quickderivatives, nolog`.
 
-    Body:
-    1. Confirm `vindex` exists; build `vfirst` via `gen_vfirst`. Drop missing-$v$ obs; log count.
-    2. Cluster-support diagnostics inline (mean / median / max switchers per cluster; clusters $\geq 10$ sw; always-rural support). Bail if support below threshold.
-    3. Replace the simple-spec scalar $\Delta_{\underline d_0}$ with a cluster-specific $\Delta_{\underline d_0, v} = \beta(v)$ via $|V|-1$ cluster dummies interacted with $D_{it}$ in the GMM equation. The trajectory-pooled $\mu_{\underline d}$ scalars stay as in `run_grc`.
-    4. Build switcherpars via existing `define_switcherpars` (no cluster interaction needed; the cluster fixed effects on $D_{it}$ absorb the cluster-level intercept variation).
-    5. GMM call structurally identical to `run_grc` plus the cluster-FE-on-$D_{it}$ block. Standard errors `vce(cluster vfirst)`. Logged check: instrument-count : free-parameter ratio < 3 or bail.
-    6. Save raw `.ster` as `grc_robust_{country}_{spec}_{vindex}.ster`.
-    7. Hansen $J$ + convergence flag.
-    8. Per-cluster $\hat\Delta_{d_N, v}$ via `nlcom`; cluster-share-weighted aggregate $\hat\Delta_{d_N}$ over clusters with both switcher and never support per derivation memo §7. Report population share covered.
-    9. Always-urban: P2 work; default cross-origin extrapolation per derivation memo §6.
-    10. Switcher $\Delta$'s and $\Delta_{\text{avg}}$ as in `run_grc`.
+All four new programs take a `phistart(real -1)` option (backward-compatible default) for the initial-value sensitivity sweep.
 
-### 3.2 TZA driver
+### 3.2 TZA driver (delivered via smoke test)
 
-In `scripts/5_GrRC.do` TZA section, add **one** parallel `run_grc_robust` call after `grc_TZA_covs_all`:
+Instead of commenting out IDN/CHN sections of `5_GrRC.do`, P1 was delivered via a standalone smoke test at `explorations/verdier/x_tza_robust_vv_smoke.do` that exercises all three programs (`run_grc`, `run_grc_onestep`, `run_grc_robust_vv`) on TZA. This leaves `5_GrRC.do` clean for additive P2 edits.
 
-```stata
-run_grc_robust, estname(grc_robust_TZA_covs_all_region) ///
-    switchers($switchers) base(`base') initial(`initial') ///
-    balance(`balance') vindex(region) ///
-    covars(`periodFE' $covs_gmm_all) iterate(`iterations')
-```
+### 3.3 P1 verification gate (final)
 
-Comment out IDN and CHN sections temporarily; revert in P2.
+- Cluster-support log matches feasibility note (TZA: 26 regions, 21 with $\geq 10$ switchers, 100% support). ✅
+- `grcvv_{TZA,CHN,IDN}_sens_{1..5}` `.ster` triples exist from the 5-start sensitivity; all 15 fits converged. ✅
+- **Degenerate-$v$ test:** with `vindex(v_one)` the retired `run_grc_robust` reduces to `run_grc_onestep` and matches 18/18 common parameters within 1e-6 (max diff = 0.00e+00 on TZA). ✅
+- **Phi stability across initial values (added gate, 2026-04-24):** `run_grc_robust_vv` 5-start range $\leq 0.017$ on all three countries. ✅
+- **Simple spec phi stability (added gate, 2026-04-24):** `run_grc` 5-start range = 0.0001, `run_grc_onestep` range = 0.0020. Published CKT simple-spec numbers are safe. ✅
+- Committed in `e731dd3` (P1 initial) + `f7949c8` (sensitivity + VV port).
 
-### 3.3 P1 verification gate
+### 3.4 Point estimates (all cov_all, unbalanced, consumption)
 
-- Cluster-support log matches feasibility note (26 regions, 19 with $\geq 10$ switchers, 100% support) **after** re-running `2_cluster_support_v2.do` with corrected `gen_vfirst`.
-- `grc_robust_TZA_covs_all_region.ster` plus `_never`, `_avg`, `_delta` siblings exist; convergence flag = "Y".
-- **Degenerate-$v$ test:** with `vindex(_one)` (single cluster, all obs), $\hat\phi$ and all $\hat\Delta$'s match simple `run_grc` to 6 decimals.
-- Commit at this point with message `verdier robust: P1 -- run_grc_robust + TZA smoke test`.
+| Country | simple two-step | simple onestep | VV-robust |
+|---|---:|---:|---:|
+| TZA | $-0.72$ (se 0.12) | $-0.69$ (se 0.12) | $-0.69$ (se 0.087) |
+| CHN | -- | $-0.15$ (se 0.15) | $-0.16$ (se 0.23) |
+| IDN | -- | $-0.33$ (se 0.13) | $-0.33$ (se 0.15) |
 
-## 4. Phase 2 --- CHN + IDN primary, always-urban
+All three countries show negative $\phi$ (pro-poor) under VV-robust, consistent with the simple spec. TZA SE tightens under VV-robust; CHN and IDN SEs stay similar or widen (depends on within-cluster vs between-cluster variance ratio).
 
-Insert parallel `run_grc_robust` calls in IDN (`vindex(prov)`) and CHN (`vindex(prov)`) sections of `5_GrRC.do`. Run full `5_GrRC.do`. Verify cluster diagnostics in log against the corrected feasibility note (CHN: 29 prov, 22 $\geq 10$ sw; IDN: 22 prov, 13 $\geq 10$ sw).
+## 4. Phase 2 --- Production rollout in `5_GrRC.do`
+
+Insert parallel `run_grc_onestep` and `run_grc_robust_vv` calls alongside each existing `run_grc` in `5_GrRC.do`, for all five cov variants (`covs_0`, `covs_trend`, `covs_1`, `covs_2`, `covs_all`) across all three countries. Keep the published simple-spec calls (`run_grc`) intact.
+
+`vindex`: `region` (TZA), `provcd` (CHN), `prov` (IDN). Verify cluster diagnostics in log against the corrected feasibility note (CHN: 29 prov, 22 $\geq 10$ sw; IDN: 22 prov, 13 $\geq 10$ sw; TZA: 26 region, 21 $\geq 10$ sw).
 
 Implement always-urban per-cluster extrapolation (per spec §3.3). Two sub-options to choose between in P2:
 

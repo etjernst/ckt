@@ -74,15 +74,32 @@ For TZA ($|V| = 26$): adds 25.
 
 Standard errors switch from `vce(cluster pid)` to `vce(cluster vfirst)`.
 
-## 5. Why this is equivalent to VV's within-demeaning
+## 5. Why this is equivalent to VV's within-demeaning (asymptotically)
 
-Conditional on the (saturated) GMM equation in §4, the FOC for $\phi$ partials out the cluster fixed effects on $D_{it}$, leaving identification of $\phi$ to come from within-cluster covariation between $(\mu_{\underline d_i} - \mu_{\underline d_0})$ and $\Delta_{i} - \beta(v_i)$ among switchers. This is the same identifying variation as in VV's two-step within-demeaned estimator, just packaged into a single GMM call rather than VV's two stages.
+**Asymptotic claim.** Conditional on the (saturated) GMM equation in §4, the FOC for $\phi$ partials out the cluster fixed effects on $D_{it}$, leaving identification of $\phi$ to come from within-cluster covariation between $(\mu_{\underline d_i} - \mu_{\underline d_0})$ and $\Delta_{i} - \beta(v_i)$ among switchers. In large samples this matches VV's two-step within-demeaned estimator.
 
-The structural difference between VV and CKT:
-- VV does it in two steps because his first-stage is a Chamberlain (1992) projection that's separable from the second-stage GMM.
-- CKT does it in one step because `run_grc` already estimates the trajectory means and $\phi$ jointly.
+**Finite-sample failure (discovered 2026-04-24).** The asymptotic equivalence does NOT hold in finite sample with few clusters. The single-step parameterization adds $|V|-1$ cluster-FE parameters; under onestep GMM with $\text{vce(cluster\ vfirst)}$, the cluster-robust weighting matrix $W_2$ has maximum rank equal to the number of clusters. With $|V| \in \{22, 26, 29\}$ and $\#\text{moments} = 47$ on typical specs, $W_2$ is rank-deficient, making the GMM objective nearly flat in $\phi$ along a ridge of cluster-FE combinations.
 
-Result: the same $\hat\phi$ and the same $\hat\beta(v)$, up to numerical precision.
+This was confirmed by a 5-start sensitivity sweep on TZA (`explorations/verdier/x_tza_phi_sensitivity.do`):
+
+| phistart | $\hat\phi$ | $Q$ |
+|---:|---:|---:|
+| $-1$ | $-1.003$ | 0.000227 |
+| $-0.5, 0, +0.5, +1$ | $\approx +1.25$ | 0.000192 (lowest) |
+
+Two local minima. The global minimum has $\text{se}(\hat\phi) \approx 3.5$ — statistically zero. CHN showed the same pathology (first fit hung $>70$ min). The "headline" TZA result from P1 ($\hat\phi = -1.00$) was an artifact of the Stata default initial value `{phi=-1}`.
+
+**Diagnosis of the finite-sample gap.** Asymptotically the extra cluster-FE parameters are identified by within-cluster variation. In finite sample they compete with $\phi$ for explaining the same within-cluster variation, and with a rank-deficient $W_2$ the optimizer can drift along a near-flat ridge. VV's original design avoids this by using the cluster structure only in the instruments, keeping the parameter set small.
+
+**Implementation decision (2026-04-24).** Retire the single-step cluster-FE parameterization (`run_grc_robust` in `0_programs.do`) as the robust spec. Replace with `run_grc_robust_vv`, which ports VV's `Table1/Code/robust.do` idea directly:
+
+1. Regress `switcher_s_choice` on `i.vfirst` among workers with `switcher_s == 1`; residual is `swd_switcher_s_choice`; zero-fill non-switchers.
+2. Same regression for `always_choice` among always-urban workers → `swd_always_choice`.
+3. GMM with the same parameter set as `run_grc` (phi, $\mu_{\underline d}$, $\Delta_{\text{base}}$, $\kappa$, $\gamma$) -- no cluster FEs -- and the demeaned instruments in place of raw $\text{switcher\_s\_choice}$ / $\text{always\_choice}$. `vce(cluster vfirst)`, `winitial(unadjusted, independent)`, `onestep` as in VV.
+
+5-start sensitivity on the VV-adapted spec is stable on all three countries: phi ranges are $0.002$ (TZA), $0.007$ (CHN), $0.017$ (IDN). All converge to values within $5\%$ of each other. Point estimates match `run_grc_onestep` (simple) closely, with SE changes that depend on the within-cluster vs between-cluster variance ratio.
+
+**The cluster-FE parameterization is retained in `run_grc_robust` for reference** but should not be the primary estimator. See the §9 table below for the structural comparison.
 
 ## 6. Always-urban extrapolation under the robust spec
 
@@ -121,17 +138,21 @@ If $|V| = 1$ (everyone in one cluster), then $\beta(v)$ collapses to a single sc
 
 This is the cheapest correctness test for `run_grc_robust`. To implement: `gen v_one = 1`, then `run_grc_robust, vindex(v_one) ...`. The estimates must match `run_grc` to 6 decimals. Reproduce on TZA in P1 verification gate.
 
-## 9. Comparison to VV's `robust.do` choices
+## 9. Comparison to VV's `robust.do` choices (revised 2026-04-24)
 
-| Element | VV's robust.do | CKT's run_grc_robust |
-|---|---|---|
-| First-stage projection | Chamberlain (1992) `areg lyield w1-wN, absorb(hhid_hybrid)` then `predict yresid, dresiduals` | Skipped --- subsumed by `run_grc`'s joint GMM. |
-| Cluster intercepts | Separate `reg yp1 i.vil if switcher; predict yp1_intercept, xb` | $|V|-1$ cluster dummies times $D_{it}$ as free parameters in the GMM. |
-| Slope estimation | Joint GMM with multiple instrument blocks | Single GMM call extending `run_grc`. |
-| Standard errors | `vce(cluster vil)` analytical | `vce(cluster vfirst)` analytical, plus `boottest` cross-check (see implementation-findings memo §3). |
-| LCA-overid test | Wald on $\eta_t$ from augmented GMM | Same approach (in `run_grc_overid`, separate spec). |
+| Element | VV's robust.do | CKT `run_grc_robust` (retired) | CKT `run_grc_robust_vv` (primary) |
+|---|---|---|---|
+| First-stage projection | Chamberlain (1992) `areg lyield w1-wN, absorb(hhid_hybrid)` | Skipped --- subsumed by `run_grc`'s joint GMM. | Skipped --- trajectory pooling already aggregates worker-level info. |
+| Role of cluster structure | Instruments: `hybrid_per` regressed on `i.vil` among switchers; residuals are optimal instruments for $\phi$. | **Parameters:** $\|V\|-1$ cluster dummies times $D_{it}$ as free GMM parameters. | **Instruments:** `switcher_s_choice` regressed on `i.vfirst` among `switcher_s = 1`; residuals replace raw `switcher_s_choice` in the instrument list. |
+| Parameter count | phi + gammas + ATE parameters | phi + mu_d + Delta_base + kappa + gammas + $\|V\|-1$ beta_dev | phi + mu_d + Delta_base + kappa + gammas (same as simple spec) |
+| Finite-sample identification | Stable (VV shows in Section F) | **Fails** for $\|V\| \in \{22, 26, 29\}$: two local minima, ridge-flat objective | Stable on TZA/CHN/IDN (5-start sensitivity ranges $\leq 0.017$) |
+| Slope estimation | Joint GMM with two instrument blocks | Single GMM call extending `run_grc` | Single GMM call; demeaned instruments replace raw ones |
+| GMM settings | `winitial(unadjusted, independent), onestep, vce(cluster vil)` | Same settings (updated 2026-04-24) | Same settings |
+| LCA-overid test | Wald on $\eta_t$ from augmented GMM (`Table1/Code/nrobust.do`) | Same approach (would be `run_grc_overid`, P3) | Same approach, same augmented moments --- just different baseline instrument set |
 
-The structural difference (two-step vs single-step) does not affect identification or asymptotic distribution. We pick the one-step route because it leverages the existing CKT machinery and produces fewer intermediate variables.
+**Why `run_grc_robust` fails in finite sample.** Asymptotically, the extra cluster-FE parameters are identified by within-cluster treatment variation --- exactly the variation VV uses for $\phi$. In finite sample with few clusters, the cluster-FE parameters and $\phi$ compete for the same variation, and onestep GMM with rank-deficient cluster-robust $W_2$ lets the optimizer drift along a near-flat ridge. The first local minimum reached depends on the initial value.
+
+**Why `run_grc_robust_vv` works.** Only $\phi$ and the existing `run_grc` parameters need to be identified. The cluster structure enters exclusively in the instrument construction, which does not add parameters to the GMM. $W_2$ is still rank-deficient but the objective is strictly convex in $\phi$ (within the usual identification conditions), so the optimizer converges regardless of starting value.
 
 ## 10. Sign-off
 
