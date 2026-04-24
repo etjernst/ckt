@@ -293,5 +293,5 @@ Not touched:
 
 ## 10. Sign-off
 
-- [ ] **Plan approved (revised).** Reviewer: _________ Date: _________
-- [ ] **Begin Phase 0.**
+- [x] **Plan approved (revised).** Reviewer: Emilia Date: 2026-04-23
+- [x] **Begin Phase 0.**

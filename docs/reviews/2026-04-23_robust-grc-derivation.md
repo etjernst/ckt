@@ -135,10 +135,10 @@ The structural difference (two-step vs single-step) does not affect identificati
 
 ## 10. Sign-off
 
-- [ ] **Derivation approved.**
-- [ ] **`run_grc_robust` skeleton (§4) translates correctly into Stata.**
-- [ ] **Degenerate-$v$ test (§8) is part of P1 verification gate.**
-- [ ] **Q5 (always-urban $\phi^U$) deferred to P2 per §6.**
+- [x] **Derivation approved.** Reviewer: Emilia Date: 2026-04-23
+- [x] **`run_grc_robust` skeleton (§4) translates correctly into Stata.**
+- [x] **Degenerate-$v$ test (§8) is part of P1 verification gate.**
+- [x] **Q5 (always-urban $\phi^U$) deferred to P2 per §6.**
 
 ---
 
