@@ -63,8 +63,54 @@ def _robust_inv(M: np.ndarray, rcond: float = 1e-10) -> np.ndarray:
     Fallback for residual ill-conditioning. Prefer ``_drop_collinear``
     for instrument matrices because Stata's ``gmm`` drops redundant
     columns outright rather than pseudo-inverting.
+
+    NOTE: an earlier attempt to bump rcond to 1e-5 (to mirror Stata's
+    drop of rank-deficient cluster-S directions in the IDN/cons spec)
+    cascaded through the iterated GMM and broke identification of
+    other small-cluster switchers, producing a 50% drift in
+    $\\hat\\phi$. The right approach to rank-deficient moments is
+    ``_drop_sparse_moments`` at the data step, not rcond tuning.
+    See ``FRESH_EYES_SE_phi.md`` and the session log entry for
+    2026-04-24 (rcond-fix-attempt).
     """
     return np.linalg.pinv(M, rcond=rcond)
+
+
+def _drop_sparse_moments(
+    Z: np.ndarray, ids: np.ndarray, threshold: int = 5
+) -> tuple[np.ndarray, np.ndarray, list[int]]:
+    """Drop instrument columns identified by too few clusters.
+
+    For each column ``j`` of Z, count the number of unique cluster IDs
+    where some row has a nonzero ``Z[i, j]``. Columns with count below
+    ``threshold`` are dropped: they correspond to moments that are
+    rank-deficient at the cluster level, contribute no identifying
+    information for their associated parameters, and destabilize the
+    pseudo-inverse of the cluster-S covariance matrix.
+
+    Same logic and threshold as ``lca_inversion.drop_sparse_switchers``,
+    applied here at the GMM moment-matrix level. Mirrors what Stata's
+    ``gmm`` does implicitly when its generalized inverse drops the
+    rank-deficient direction associated with a sparse switcher.
+
+    Returns ``(Z_kept, kept_idx, dropped_counts)`` where ``kept_idx``
+    is the array of original column indices retained, and
+    ``dropped_counts`` is a list of ``(orig_col, n_clusters_nonzero)``
+    tuples for the dropped columns.
+    """
+    n, m = Z.shape
+    if m == 0 or threshold <= 0:
+        return Z, np.arange(m), []
+    nz_mask = np.abs(Z) > 0
+    n_clusters = np.zeros(m, dtype=int)
+    for j in range(m):
+        rows = np.where(nz_mask[:, j])[0]
+        if rows.size:
+            n_clusters[j] = len(np.unique(ids[rows]))
+    keep = n_clusters >= threshold
+    dropped = [(int(j), int(n_clusters[j])) for j in range(m) if not keep[j]]
+    kept_idx = np.where(keep)[0]
+    return Z[:, kept_idx], kept_idx, dropped
 
 
 def _drop_collinear(Z: np.ndarray, tol: float = 1e-7) -> tuple[np.ndarray, np.ndarray]:
@@ -152,6 +198,15 @@ class RestrictedGRC:
     always_label: int | None = None
     tol: float = 1e-10
     maxiter: int = 500
+    # Drop instrument columns whose moment fires for fewer than this many
+    # unique clusters. Default 2 drops only mechanically rank-1 moments
+    # (one or zero clusters contributing); the cluster-robust covariance
+    # of any moment with >= 2 contributing clusters has at least rank 2
+    # and is non-degenerate. Set to 0 to disable. The LCA inversion's
+    # drop_sparse_switchers uses 5 because it's a different decision
+    # (whether to include the switcher in the auxiliary OLS test), not
+    # whether the moment's contribution to S is degenerate.
+    sparse_moment_threshold: int = 2
 
     # Populated by fit()
     coef_: dict[str, float] | None = None
@@ -473,8 +528,28 @@ class RestrictedGRC:
         # deterministic and not dependent on column magnitudes
         # (unlike QR with pivoting).
         Z_kept, kept_idx = _drop_collinear(Z_raw)
-        self.dropped_moments_ = int(Z_raw.shape[1] - Z_kept.shape[1])
-        data["Z"] = Z_kept
+        # Then drop columns whose moment is rank-deficient at the cluster
+        # level (e.g., switcher trajectories with too few contributing pids).
+        # See _drop_sparse_moments docstring for rationale.
+        Z_kept2, sparse_keep_idx, sparse_dropped = _drop_sparse_moments(
+            Z_kept, data["ids"], threshold=self.sparse_moment_threshold,
+        )
+        # Compose the two drop steps so kept_idx tracks columns of Z_raw.
+        kept_idx = kept_idx[sparse_keep_idx]
+        self.dropped_moments_ = int(Z_raw.shape[1] - Z_kept2.shape[1])
+        self.sparse_dropped_ = sparse_dropped  # list of (orig_col, n_clusters)
+        if verbose and sparse_dropped:
+            print(
+                f"[fit] _drop_sparse_moments removed "
+                f"{len(sparse_dropped)} columns "
+                f"(threshold={self.sparse_moment_threshold} unique pids):",
+                flush=True,
+            )
+            for orig_col, n_pids in sparse_dropped:
+                print(f"  col idx {orig_col} (post-collinearity): "
+                      f"{n_pids} unique pid(s) contribute",
+                      flush=True)
+        data["Z"] = Z_kept2
         data["Z_kept_idx"] = kept_idx
         data["n"] = len(data["y"])
         data["base"] = int(self.base_trajectory
