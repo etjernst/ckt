@@ -1,0 +1,3096 @@
+* adjustment: set covarlist in the run_grc command as always as:
+* 	covarlist "unbalanced unbalanced_choice" "unbalanced unbalanced_choice"
+* (otherwise the xb vector is empty in specs wo/ log HH size)
+* (not a problem for balanced specifications since unbalanced varis empty?)
+
+* **********************************************************************
+* List of programs
+    * copyOverleaf						copies files to Overleaf
+	* data_setup						combines below programs
+	* use_data							opens data
+	* handle_choice						sets 'treatment' variable
+	* handle_depvar						sets choice dimension 
+	* handle_balance					sets balanced/unbalanced panel
+	* handle_trajectory_groups			creates trajectories and switcher variable 
+	* gen_time_trend					creates time trend variable	
+	* set_covariates					sets covariates
+	* fix_varlabels						fixes variable labels
+	* sumstats_table 					creates summary stats LaTeX table
+	* country_summary_stats				prep for summary stats table
+	* country_summary_stats_nonag		prep for summary stats table (non-ag)
+	* removeStringFromTex				removes string from .tex using filefilter
+	* create_panel_tex_table			creates three-part LaTeX table
+	* reghdfe_regressions				OLS regressions (using reghdfe)
+	* heterogeneity_plots				makes heterogeneity plots
+	* setup_grc_estimation				get data ready for GRC regs
+	* ugrc_regressions					uGRC regressions
+	* initial_values					creates initial values for GRC
+	* define_switcherpars				defines switcher parameters
+	* grc_tex_table						creates country-specific LaTeX table for GRC
+
+* **********************************************************************
+capture program drop copyOverleaf
+program define copyOverleaf
+	syntax anything(name=fileName1), SUBdir(string asis)
+	* Make all slashes forward slashes
+	
+	local 	betterFileName1 = subinstr(`fileName1', "\", "/", .)
+	
+	local 	destDir = "$overleaf/`subdir'"
+
+* Make destination filepath
+	local fileName2 = "`destDir'/" + substr("`betterFileName1'", strrpos("`betterFileName1'", "/") + 1, .)
+	copy 		`fileName1' "`fileName2'", replace
+end
+
+capture program drop data_setup
+program define data_setup
+  args country choice depvar balance
+* Open data
+  use_data 					`country'
+
+* Define choice dimension ('urban' or 'nonag')
+  handle_choice			`choice'
+
+* Define outcome variable and drop if missing or negative
+  handle_depvar			`depvar'
+  
+* Impose balanced or unbalanced panel
+  handle_balance		`balance'
+
+* Create trajectories and switcher variable  
+  handle_trajectory_groups
+
+* *******
+* Covariate management
+* *******  
+* Drop observations with missing values 
+  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+  gen_time_trend
+  fix_varlabels
+end
+
+capture program drop data_setup_2waves
+program define data_setup_2waves
+  args country choice depvar balance
+* Open data
+  use_data 					`country'
+
+* Define choice dimension ('urban' or 'nonag')
+  handle_choice			`choice'
+
+* Define outcome variable and drop if missing or negative
+  handle_depvar			`depvar'
+  
+* Impose balanced or unbalanced panel
+  handle_balance		`balance'
+
+* Create trajectories and switcher variable  
+  handle_trajectory_groups
+
+* Create trajectories and switcher variable for individuals in at least 2 waves
+  handle_trajectory_groups_2waves
+
+* *******
+* Covariate management
+* *******  
+* Drop observations with missing values 
+  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+  gen_time_trend
+  fix_varlabels
+end
+
+capture program drop data_setup_3waves
+program define data_setup_3waves
+  args country choice depvar balance
+* Open data
+  use_data 					`country'
+
+* Define choice dimension ('urban' or 'nonag')
+  handle_choice			`choice'
+
+* Define outcome variable and drop if missing or negative
+  handle_depvar			`depvar'
+  
+* Impose balanced or unbalanced panel
+  handle_balance		`balance'
+
+* Create trajectories and switcher variable  
+  handle_trajectory_groups
+
+* Create trajectories and switcher variable for individuals in at least 3 waves
+  handle_trajectory_groups_3waves
+
+* *******
+* Covariate management
+* *******  
+* Drop observations with missing values 
+  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+  gen_time_trend
+  fix_varlabels
+end
+
+* **********************************************************************
+* Open data
+* **********************************************************************
+cap program drop use_data
+program define use_data
+    args country
+    use "$dirdata/countries/`country'", clear
+end
+
+* **********************************************************************
+* Set choice variable
+* **********************************************************************
+cap program drop handle_choice
+program define handle_choice
+    args choice
+    clonevar choice = `choice'
+    drop if mi(choice)
+    display as text "Note: Dropped `r(N_drop)' observations due to missing values in `choice'"
+    if "`choice'" == "nonag" label var choice "Non-Agricultural"
+    if "`choice'" == "urban" label var choice "Urban"
+end
+
+* **********************************************************************
+* Set dependent variable
+* **********************************************************************
+cap program drop handle_depvar
+program define handle_depvar
+    args depvar
+    clonevar depvar = `depvar'
+    drop if mi(depvar) | depvar <= 0
+	display as text "Note: Dropped `r(N_drop)' observations due to missing/negative values in `depvar' "
+    gen lndepvar = ln(depvar)
+	label var lndepvar "Log (`depvar')"
+	
+	gen ln_income		= ln(income)
+	lab var				ln_income "Log Income"
+	gen ln_consumption 	= ln(consumption)
+	lab var 			ln_consumption "Log Consumption"
+end
+
+* **********************************************************************
+* Declare panel, impose balance if balance = bal
+* **********************************************************************
+cap program drop handle_balance
+program define handle_balance
+    args balance
+    xtset pid period
+	local max_period = r(tmaxs)
+    by pid: gen nr_periods_obs	= _N		// number of obs for pid
+		label var nr_periods_obs "Number of observations per individual"
+	gen unbalanced = (nr_periods_obs != `max_period')
+	gen unbalanced_choice = unbalanced*choice
+	lab var unbalanced "Unbalanced panel = 1"
+	lab var unbalanced_choice "Unbalanced panel * choice"
+    if "`balance'" == "bal" {
+		keep if unbalanced == 0
+	}
+end
+
+* **********************************************************************
+* Handle trajectory groups
+* **********************************************************************
+cap program drop handle_trajectory_groups
+program define handle_trajectory_groups
+  preserve
+	* Keep relevant observations and variables
+	keep if !unbalanced
+	keep pid period choice
+	
+	* Reshape the data
+	reshape wide choice, i(pid) j(period)
+	
+	* Initialize an empty string variable for trajectories
+    gen string_traj = ""
+	
+    * Unabbreviate the list of 'choice' variables
+	unab choice_vars: choice*
+	
+	* Concatenate choice variables into a single string
+	foreach var of varlist `choice_vars' {
+		tostring `var', gen(`var'S)
+		replace string_traj = string_traj + `var'S
+		drop `var'S  // Drop temporary string variables
+	}
+
+	* Encode string trajectories to numerical form, maintaining natural order
+	* it automatically orders them in a "natural" way (000, 001, ..., 110, 111)
+	* ordering matters for defining globals for 1st switcher, last switcher, etc
+    encode string_traj, gen(traj)
+    lab var traj "Trajectory indicators"
+    drop string_traj
+
+	* Save this as a tempfile for merging with original data
+	drop choice*
+	tempfile traj
+	save `traj'
+	
+	* Restore original data and merge with trajectories
+	restore
+	merge m:1 pid using `traj', nogen
+
+	* Verify the trajectories (missing indicates unbalanced observations)
+	rename traj trajectory
+	tab trajectory
+	* Grab biggest number (always-adopters)
+	local max_trajectory = r(r)
+	gen switcher_temp = ((trajectory > 1 & trajectory < `max_trajectory'))
+	bys pid: egen switcher = min(switcher_temp)
+	label variable switcher "Switcher"
+	gen non_switcher_temp = trajectory == 1 | trajectory == `max_trajectory'
+	bys pid: egen non_switcher = min(non_switcher_temp)
+	label variable non_switcher "Non-switcher"
+	drop switcher_temp non_switcher_temp
+	
+	bysort pid: egen obs_per_individual = count(pid)
+	label variable obs_per_individual "Number of obs per pid"
+	
+	bysort pid (year): g pid_first_obs = _n == 1
+	label variable pid_first_obs "Indicator for pid's first obs"
+end	
+
+* **********************************************************************
+* Handle trajectory groups with at least 2 waves
+* **********************************************************************
+cap program drop handle_trajectory_groups_2waves
+program define handle_trajectory_groups_2waves
+  preserve
+	* Keep relevant observations and variables
+	bys pid: g pid_obs = _N
+	lab var pid_obs "# of periods individual is present in survey"
+	keep if pid_obs >= 2
+	keep pid period choice pid_obs
+	
+	* Reshape the data
+	reshape wide choice, i(pid) j(period)
+	
+	* Initialize an empty string variable for trajectories
+    gen traj_2waves = ""
+	
+    * Unabbreviate the list of 'choice' variables
+	unab choice_vars: choice*
+	
+	* Concatenate choice variables into a single string
+	foreach var of varlist `choice_vars' {
+		tostring `var', gen(`var'S)
+		replace `var'S = "" if `var'S == "."
+		replace traj_2waves = traj_2waves + `var'S
+		drop `var'S  // Drop temporary string variables
+	}
+	lab var traj_2waves "Trajectory indicators"
+
+	* Save this as a tempfile for merging with original data
+	keep pid traj_2waves pid_obs
+	tempfile traj
+	save `traj'
+	
+	* Restore original data and merge with trajectories
+	restore
+	merge m:1 pid using `traj', nogen
+
+	* Verify the trajectories (missing indicates unbalanced observations)
+	rename traj_2waves trajectory_2waves
+	tab trajectory_2waves
+	
+	* Grab biggest number (always-adopters)
+	gen non_switcher_2waves = .
+	replace non_switcher_2waves = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000" | trajectory_2waves == "00000" | trajectory_2waves == "11" | trajectory_2waves == "111" | trajectory_2waves == "1111" | trajectory_2waves == "11111"
+	replace non_switcher_2waves = 0 if trajectory_2waves == "00001" | trajectory_2waves == "0001" | trajectory_2waves == "00011" | trajectory_2waves == "001" | trajectory_2waves == "0011" | trajectory_2waves == "00111" | trajectory_2waves == "01" | trajectory_2waves == "011" | trajectory_2waves == "0111" | trajectory_2waves == "01111" | trajectory_2waves == "00010" | trajectory_2waves == "0010" | trajectory_2waves == "00100" | trajectory_2waves == "00101" | trajectory_2waves == "00110" | trajectory_2waves == "010" | trajectory_2waves == "0100" | trajectory_2waves == "01000" | trajectory_2waves == "01001" | trajectory_2waves == "0101" | trajectory_2waves == "01010" | trajectory_2waves == "01011" | trajectory_2waves == "0110" | trajectory_2waves == "01100" | trajectory_2waves == "01101" | trajectory_2waves == "01110" | trajectory_2waves == "10001" | trajectory_2waves == "1001" | trajectory_2waves == "10010" | trajectory_2waves == "10011" | trajectory_2waves == "101" | trajectory_2waves == "1010" | trajectory_2waves == "10100" | trajectory_2waves == "10101" | trajectory_2waves == "1011" | trajectory_2waves == "10110" | trajectory_2waves == "10111" | trajectory_2waves == "11001" | trajectory_2waves == "1101" | trajectory_2waves == "11010" | trajectory_2waves == "11011" | trajectory_2waves == "11101" | trajectory_2waves == "10" | trajectory_2waves == "100" | trajectory_2waves == "1000" | trajectory_2waves == "10000" | trajectory_2waves == "110" | trajectory_2waves == "1100" | trajectory_2waves == "11000" | trajectory_2waves == "1110" | trajectory_2waves == "11100" | trajectory_2waves == "11110"
+	label variable non_switcher_2waves "Non-switcher"
+	gen switcher_2waves = non_switcher_2waves == 0
+	label variable switcher_2waves "Switcher"
+	
+	bysort pid: egen obs_per_individual_2waves = count(pid)
+	label variable obs_per_individual_2waves "Number of obs per pid"
+	
+	bysort pid (year): g pid_first_obs_2waves = _n == 1
+	label variable pid_first_obs_2waves "Indicator for pid's first obs"
+end	
+
+* **********************************************************************
+* Handle trajectory groups with at least 3 waves
+* **********************************************************************
+cap program drop handle_trajectory_groups_3waves
+program define handle_trajectory_groups_3waves
+  preserve
+	* Keep relevant observations and variables
+	bys pid: g pid_obs = _N
+	lab var pid_obs "# of periods individual is present in survey"
+	keep if pid_obs >= 3
+	keep pid period choice pid_obs
+	
+	* Reshape the data
+	reshape wide choice, i(pid) j(period)
+	
+	* Initialize an empty string variable for trajectories
+    gen traj_3waves = ""
+	
+    * Unabbreviate the list of 'choice' variables
+	unab choice_vars: choice*
+	
+	* Concatenate choice variables into a single string
+	foreach var of varlist `choice_vars' {
+		tostring `var', gen(`var'S)
+		replace `var'S = "" if `var'S == "."
+		replace traj_3waves = traj_3waves + `var'S
+		drop `var'S  // Drop temporary string variables
+	}
+	lab var traj_3waves "Trajectory indicators"
+
+	* Save this as a tempfile for merging with original data
+	keep pid traj_3waves pid_obs
+	tempfile traj
+	save `traj'
+	
+	* Restore original data and merge with trajectories
+	restore
+	merge m:1 pid using `traj', nogen
+
+	* Verify the trajectories (missing indicates unbalanced observations)
+	rename traj_3waves trajectory_3waves
+	tab trajectory_3waves
+	
+	gen non_switcher_3waves = .
+	replace non_switcher_3waves = 1 if trajectory_3waves == "000" | trajectory_3waves == "0000" | trajectory_3waves == "00000" | trajectory_3waves == "111" | trajectory_3waves == "1111" | trajectory_3waves == "11111"
+	replace non_switcher_3waves = 0 if trajectory_3waves == "00001" | trajectory_3waves == "0001" | trajectory_3waves == "00011" | trajectory_3waves == "001" | trajectory_3waves == "0011" | trajectory_3waves == "00111" | trajectory_3waves == "011" | trajectory_3waves == "0111" | trajectory_3waves == "01111" | trajectory_3waves == "00010" | trajectory_3waves == "0010" | trajectory_3waves == "00100" | trajectory_3waves == "00101" | trajectory_3waves == "00110" | trajectory_3waves == "010" | trajectory_3waves == "0100" | trajectory_3waves == "01000" | trajectory_3waves == "01001" | trajectory_3waves == "0101" | trajectory_3waves == "01010" | trajectory_3waves == "01011" | trajectory_3waves == "0110" | trajectory_3waves == "01100" | trajectory_3waves == "01101" | trajectory_3waves == "01110" | trajectory_3waves == "10001" | trajectory_3waves == "1001" | trajectory_3waves == "10010" | trajectory_3waves == "10011" | trajectory_3waves == "101" | trajectory_3waves == "1010" | trajectory_3waves == "10100" | trajectory_3waves == "10101" | trajectory_3waves == "1011" | trajectory_3waves == "10110" | trajectory_3waves == "10111" | trajectory_3waves == "11001" | trajectory_3waves == "1101" | trajectory_3waves == "11010" | trajectory_3waves == "11011" | trajectory_3waves == "11101" | trajectory_3waves == "100" | trajectory_3waves == "1000" | trajectory_3waves == "10000" | trajectory_3waves == "110" | trajectory_3waves == "1100" | trajectory_3waves == "11000" | trajectory_3waves == "1110" | trajectory_3waves == "11100" | trajectory_3waves == "11110"
+	label variable non_switcher_3waves "Non-switcher"
+	gen switcher_3waves = non_switcher_3waves == 0
+	label variable switcher_3waves "Switcher"
+	
+	bysort pid: egen obs_per_individual_3waves = count(pid)
+	label variable obs_per_individual_3waves "Number of obs per pid"
+	
+	bysort pid (year): g pid_first_obs_3waves = _n == 1
+	label variable pid_first_obs_3waves "Indicator for pid's first obs"
+end	
+
+* **********************************************************************
+* Time trend
+* **********************************************************************
+cap program drop gen_time_trend
+program define gen_time_trend
+    sum year if period == 1
+    gen trend = year - r(min)
+	lab var trend "Time trend"
+end
+
+* **********************************************************************
+* gen_vfirst: earliest non-missing value of `vname' per pid
+* **********************************************************************
+* Used by initial_values_robust / run_grc_robust to build the
+* time-invariant cluster index v_i (first-wave province/region) that
+* VV (2020) Section F requires for the robust extrapolation.
+* Unit-tested at explorations/verdier/3_test_gen_vfirst.do.
+* The buggy bysort pid: egen min(cond(!missing(v), v, .)) returns the
+* smallest numeric value of v per pid, NOT the first-wave value; the
+* correct form below marks the FIRST non-missing row per pid sorted by
+* year, then propagates its value within pid.
+capture program drop gen_vfirst
+program define gen_vfirst
+    syntax , vname(varname) genname(name)
+    capture drop `genname'
+    tempvar seq mark tmp
+    bysort pid (year): gen `seq' = sum(!missing(`vname'))
+    by pid: gen `mark' = (!missing(`vname')) & (`seq' == 1)
+    gen `tmp' = `vname' if `mark'
+    by pid: egen `genname' = max(`tmp')
+    lab var `genname' "First-wave non-missing `vname'"
+end
+
+* **********************************************************************
+* Covariate management
+* **********************************************************************
+
+cap program drop set_covariates
+program define set_covariates
+  args 			depvar country
+	gen 			loghhsize = log(hhsize)	
+	label var 	loghhsize "Log Household Size"
+
+	gen 			rural = 1-urban
+	lab var 	rural	"Rural"
+
+	if "`country'" ==	"IDN" {
+		clonevar baseline_age = age1993
+    gen 			ag = 1-nonag
+    lab var 	ag	"Agricultural"
+	}
+	if "`country'" == "CHN" | "`country'" == "CHN_hukou_rural_only" | "`country'" == "CHN_hukou_urban_only" | "`country'" == "CHN_hukou_rural_first" | "`country'" == "CHN_hukou_urban_first" {
+		clonevar baseline_age = age2010
+	}
+	if "`country'" ==	"TZA" {
+		clonevar baseline_age = age2008
+	}
+	
+	global 	covs_1 					"female"
+	global 	covs_2					"$covs_1 c.age#c.age"
+	global 	covs_all				"$covs_2 c.education_max##c.education_max"
+	
+	global  covs_1_hukou			"hukou"
+	global 	covs_2_hukou 			"$covs_1_hukou female"
+	global 	covs_3_hukou			"$covs_2_hukou c.age#c.age"
+	global 	covs_all_hukou			"$covs_3_hukou c.education_max##c.education_max"
+	
+	* gmm doesn't play nice with some factor variables
+	* so reluctantly generating the interaction terms
+	* factor variables also drastically increase the computation time for gmm
+	gen baseline_age2  = baseline_age*baseline_age
+    gen age2           = age*age
+	gen education_max2 = education_max*education_max
+	global covs_gmm   "female"
+// 	global covs_gmm2  "$covs_gmm baseline_age baseline_age2"
+    global covs_gmm2  "$covs_gmm age2"
+
+	global covs_gmm_all "$covs_gmm2 education_max education_max2"
+	
+	global covs_gmm_hukou   	"hukou"
+	global covs_gmm2_hukou   	"$covs_gmm_hukou female"
+    global covs_gmm3_hukou		"$covs_gmm2_hukou age2"
+	global covs_gmm_all_hukou 	"$covs_gmm3_hukou education_max education_max2"
+
+  drop if mi(education_max)
+	drop if mi(age)
+	drop if obs_per_individual == 1
+
+end
+* **********************************************************************
+* Variable labels
+* **********************************************************************
+cap program drop 	fix_varlabels
+program define 		fix_varlabels
+	lab variable          baseline_age 		"Age at baseline (years)"
+	lab variable          baseline_age2 	"Age at baseline (years) squared"
+  lab variable          age             "Age (years)"
+  lab variable          age2            "Age (years) squared"
+	lab variable          education_max 	"Education (years)"
+	lab variable          education_max2 	"Education (years) squared"
+	lab variable          hhsize          "Household Size"
+	lab variable          female          "Female"
+	capture: lab variable nonag           "Non-Agricultural"
+end
+
+* **********************************************************************
+* Custom LaTeX table (for summary stats by country)
+* **********************************************************************
+* Create a custom LaTeX table
+cap program 		drop sumstats_table
+program 				define sumstats_table
+	syntax, TABle_notes(string asis) COUNTRY(string asis) OUTputdir(string asis) FILEname(string asis) BALance(string asis)
+	
+	if "`country'" 	== "IDN" {
+		local 		country_name "Indonesia"
+	}
+	if "`country'" 	== "CHN" {
+		local 		country_name "China"
+	}
+	if "`country'" 	== "TZA" {
+		local 		country_name "Tanzania"
+	}	 
+  local       balance_caption ""
+  if "`balance'"  == "bal" {
+      local   balance_caption ", Balanced Panel"
+  }
+  
+	* Clear any existing file handle
+	file close _all
+
+  * Construct the full file path using the output directory
+  local filepath "`outputdir'/`filename'.tex"
+	local table_label "tab:`filename'"
+
+  file open myfile using "`filepath'", write replace
+	if "`choice'"  == "urban" & "`balance'"  == "unb" {
+		file write myfile "\begin{table}[h!] \centering \caption{Summary Statistics `country_name'`balance_caption'}\label{`table_label'} \begin{threeparttable} \begin{tabular}{l cccc} \toprule" _n
+	}
+	else {
+		file write myfile "\begin{table}[htbp] \centering \caption{Summary Statistics `country_name'`balance_caption'}\label{`table_label'} \begin{threeparttable} \begin{tabular}{l cccc} \toprule" _n
+	}
+	if "`choice'"  == "urban" {
+      file write myfile "& All & Rural & Urban & Difference \\" _n
+	}
+	if "`choice'"  == "nonag" {
+      file write myfile "& All & Agricultural & Non-Agricultural & Difference \\" _n
+	}
+	file write myfile " &  &  &  & \$t\$-test \\" _n
+	/* file write myfile "\addlinespace" _n */
+	file write myfile "\midrule" _n
+
+	* Loop through each observation and write to the LaTeX file
+	quietly {
+		forvalues i = 1/`=_N' {
+			local varname 		  = v1[`i']
+			local all 				  = v3[`i']
+			local rural 			  = v5[`i']
+			local urban 			  = v7[`i']
+			local difference 		= v9[`i']
+			* Add one linespace after Location
+			if `i' == 1 {
+				file write myfile "`varname' & `all' & `rural' & `urban' & `difference' \\  \addlinespace \addlinespace" _n
+			}
+			else {
+				* Only add \addlinespace to odd lines, except for "Observations" row
+				if mod(`i', 2) == 1 & `i' != 15 {
+					file write myfile "`varname' & `all' & `rural' & `urban' & `difference' \\  \addlinespace" _n
+				}
+				else {
+						file write myfile "`varname' & `all' & `rural' & `urban' & `difference' \\" _n
+				}
+			}
+		}
+	}
+
+	file write myfile "\bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}"
+	file close myfile
+		
+end
+
+* **********************************************************************
+* Summary stats table prep
+* **********************************************************************
+cap program drop		country_summary_stats
+program define			country_summary_stats
+args								country choice depvar balance
+	
+* Grab number of observations	
+	summarize 					pid
+	local observations 			= r(N)
+* Format the observations to have a comma
+	local observations_formatted = string(`observations', "%9.0fc")	
+* Grab number of individuals
+	egen tag 					= tag(pid)
+	summarize 					tag
+	local num_individuals 		= r(sum)
+	local num_individuals_formatted = string(`num_individuals', "%9.0fc")		
+* Grab number of obs for urban/rural
+	count if rural
+	local num_rural			= r(N)	
+	local num_rural_formatted = string(`num_rural', "%9.0fc")		
+	count if urban
+	local num_urban			= r(N)	
+	local num_urban_formatted = string(`num_urban', "%9.0fc")		
+* Grab percentages of urban and rural
+	summarize 					rural
+	local percent_rural			= r(mean)*100
+	local percent_rural_formatted : display %6.1f `percent_rural' "\%"
+	summarize 					urban
+	local percent_urban			= r(mean)*100
+	local percent_urban_formatted : display %6.1f `percent_urban' "\%"	
+* Grab percent non-switchers	
+	summarize 					non_switcher if pid_first_obs == 1
+	local non_switchers			= r(mean)*100
+	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
+			
+* Create summary stats table, export as .csv file	
+	iebaltab 		rural ln_consumption ln_income female age 	          ///
+					education_max hhsize, ///
+					savecsv("summary_stats_`country'_`balance'.csv") replace  ///
+					groupvar(urban) total ///
+					totallabel(All) format(%9.2fc) ///
+					rowvarlabels stats(desc(sd)) nonote
+	
+* Import the saved CSV file
+	import delimited using summary_stats_`country'_`balance'.csv, clear	
+	
+* Drop unnecessary columns & rows
+	drop v2 v4 v6 v8
+	drop in 1/3
+	drop in 2/2
+	set obs 19
+	replace v1		= "Location"			in 1
+	replace v3 		= "" 					in 1
+	replace v5		= "`percent_rural_formatted'" in 1
+	replace v7		= "`percent_urban_formatted'" in 1
+	replace v9 		= "" 					in 1
+	replace v1		= "\cmidrule{2-5}"		in 16
+	replace v1 		= "Observations" 		in 17
+	replace v1 		= "Individuals" 		in 18
+	replace v1 		= "Non-switchers" 		in 19
+	replace v3 		= "`observations_formatted'" 		in 17	
+	replace v3 		= "`num_individuals_formatted'" 	in 18
+	replace v3 		= "`non_switchers_formatted'" 	in 19
+	replace v5		= "`num_rural_formatted'"			in 17
+	replace v7		= "`num_urban_formatted'"			in 17
+end
+
+* **********************************************************************
+* Summary stats table prep - at least 2 waves
+* **********************************************************************
+cap program drop		country_summary_stats_2waves
+program define			country_summary_stats_2waves
+args								country choice depvar balance
+	
+* Grab number of observations	
+	summarize 					pid
+	local observations 			= r(N)
+* Format the observations to have a comma
+	local observations_formatted = string(`observations', "%9.0fc")	
+* Grab number of individuals
+	egen tag 					= tag(pid)
+	summarize 					tag
+	local num_individuals 		= r(sum)
+	local num_individuals_formatted = string(`num_individuals', "%9.0fc")		
+* Grab number of obs for urban/rural
+	count if rural
+	local num_rural			= r(N)	
+	local num_rural_formatted = string(`num_rural', "%9.0fc")		
+	count if urban
+	local num_urban			= r(N)	
+	local num_urban_formatted = string(`num_urban', "%9.0fc")		
+* Grab percentages of urban and rural
+	summarize 					rural
+	local percent_rural			= r(mean)*100
+	local percent_rural_formatted : display %6.1f `percent_rural' "\%"
+	summarize 					urban
+	local percent_urban			= r(mean)*100
+	local percent_urban_formatted : display %6.1f `percent_urban' "\%"	
+* Grab percent non-switchers	
+	keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & non_switcher_2waves != .
+	summarize 					non_switcher_2waves
+	local non_switchers			= r(mean)*100
+	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
+			
+* Create summary stats table, export as .csv file	
+	iebaltab 		rural ln_consumption ln_income female age 	          ///
+					education_max hhsize, ///
+					savecsv("summary_stats_`country'_`balance'_2waves.csv") replace  ///
+					groupvar(urban) total ///
+					totallabel(All) format(%9.2fc) ///
+					rowvarlabels stats(desc(sd)) nonote
+	
+* Import the saved CSV file
+	import delimited using summary_stats_`country'_`balance'_2waves.csv, clear	
+	
+* Drop unnecessary columns & rows
+	drop v2 v4 v6 v8
+	drop in 1/3
+	drop in 2/2
+	set obs 19
+	replace v1		= "Location"			in 1
+	replace v3 		= "" 					in 1
+	replace v5		= "`percent_rural_formatted'" in 1
+	replace v7		= "`percent_urban_formatted'" in 1
+	replace v9 		= "" 					in 1
+	replace v1		= "\cmidrule{2-5}"		in 16
+	replace v1 		= "Observations" 		in 17
+	replace v1 		= "Individuals" 		in 18
+	replace v1 		= "Non-switchers" 		in 19
+	replace v3 		= "`observations_formatted'" 		in 17	
+	replace v3 		= "`num_individuals_formatted'" 	in 18
+	replace v3 		= "`non_switchers_formatted'" 	in 19
+	replace v5		= "`num_rural_formatted'"			in 17
+	replace v7		= "`num_urban_formatted'"			in 17
+end
+
+* **********************************************************************
+* Summary stats table prep - at least 3 waves
+* **********************************************************************
+cap program drop		country_summary_stats_3waves
+program define			country_summary_stats_3waves
+args								country choice depvar balance
+	
+* Grab number of observations	
+	summarize 					pid
+	local observations 			= r(N)
+* Format the observations to have a comma
+	local observations_formatted = string(`observations', "%9.0fc")	
+* Grab number of individuals
+	egen tag 					= tag(pid)
+	summarize 					tag
+	local num_individuals 		= r(sum)
+	local num_individuals_formatted = string(`num_individuals', "%9.0fc")		
+* Grab number of obs for urban/rural
+	count if rural
+	local num_rural			= r(N)	
+	local num_rural_formatted = string(`num_rural', "%9.0fc")		
+	count if urban
+	local num_urban			= r(N)	
+	local num_urban_formatted = string(`num_urban', "%9.0fc")		
+* Grab percentages of urban and rural
+	summarize 					rural
+	local percent_rural			= r(mean)*100
+	local percent_rural_formatted : display %6.1f `percent_rural' "\%"
+	summarize 					urban
+	local percent_urban			= r(mean)*100
+	local percent_urban_formatted : display %6.1f `percent_urban' "\%"	
+* Grab percent non-switchers	
+	keep if pid_first_obs_3waves == 1 & pid_obs >= 3 & non_switcher_3waves != .
+	summarize 					non_switcher_3waves
+	local non_switchers			= r(mean)*100
+	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
+			
+* Create summary stats table, export as .csv file	
+	iebaltab 		rural ln_consumption ln_income female age 	          ///
+					education_max hhsize, ///
+					savecsv("summary_stats_`country'_`balance'_3waves.csv") replace  ///
+					groupvar(urban) total ///
+					totallabel(All) format(%9.2fc) ///
+					rowvarlabels stats(desc(sd)) nonote
+	
+* Import the saved CSV file
+	import delimited using summary_stats_`country'_`balance'_3waves.csv, clear	
+	
+* Drop unnecessary columns & rows
+	drop v2 v4 v6 v8
+	drop in 1/3
+	drop in 2/2
+	set obs 19
+	replace v1		= "Location"			in 1
+	replace v3 		= "" 					in 1
+	replace v5		= "`percent_rural_formatted'" in 1
+	replace v7		= "`percent_urban_formatted'" in 1
+	replace v9 		= "" 					in 1
+	replace v1		= "\cmidrule{2-5}"		in 16
+	replace v1 		= "Observations" 		in 17
+	replace v1 		= "Individuals" 		in 18
+	replace v1 		= "Non-switchers" 		in 19
+	replace v3 		= "`observations_formatted'" 		in 17	
+	replace v3 		= "`num_individuals_formatted'" 	in 18
+	replace v3 		= "`non_switchers_formatted'" 	in 19
+	replace v5		= "`num_rural_formatted'"			in 17
+	replace v7		= "`num_urban_formatted'"			in 17
+end
+
+* **********************************************************************
+* Summary stats table prep for ag/nonag 
+*   - should instead make the main one more robust but no time
+* **********************************************************************
+cap program drop		country_summary_stats_nonag
+program define			country_summary_stats_nonag
+args								country choice depvar balance
+	
+* Grab number of observations	
+	summarize 					pid
+	local observations 			= r(N)
+* Format the observations to have a comma
+	local observations_formatted = string(`observations', "%9.0fc")	
+* Grab number of individuals
+	egen tag 					= tag(pid)
+	summarize 					tag
+	local num_individuals 		= r(sum)
+	local num_individuals_formatted = string(`num_individuals', "%9.0fc")		
+* Grab number of obs for urban/rural
+	count if ag
+	local num_ag			= r(N)	
+	local num_ag_formatted = string(`num_ag', "%9.0fc")		
+	count if nonag
+	local num_nonag			= r(N)	
+	local num_nonag_formatted = string(`num_nonag', "%9.0fc")		
+* Grab percentages of ag and nonag
+	summarize 					ag
+	local percent_ag			= r(mean)*100
+	local percent_ag_formatted : display %6.1f `percent_ag' "\%"
+	summarize 					nonag
+	local percent_nonag			= r(mean)*100
+	local percent_nonag_formatted : display %6.1f `percent_nonag' "\%"	
+* Grab percent non-switchers	
+	summarize 					non_switcher if pid_first_obs == 1
+	local non_switchers			= r(mean)*100
+	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
+			
+* Create summary stats table, export as .csv file	
+	iebaltab 		ag ln_consumption ln_income female age 	          ///
+					education_max hhsize, ///
+					savecsv("summary_stats_`country'_`balance'_nonag.csv") replace  ///
+					groupvar(nonag) total ///
+					totallabel(All) format(%9.2fc) ///
+					rowvarlabels stats(desc(sd)) nonote
+	
+* Import the saved CSV file
+	import delimited using summary_stats_`country'_`balance'_nonag.csv, clear	
+	
+* Drop unnecessary columns & rows
+	drop v2 v4 v6 v8
+	drop in 1/3
+	drop in 2/2
+	set obs 19
+	replace v1		= "Non-Agricultural"			in 1
+	replace v3 		= "" 					in 1
+	replace v5		= "`percent_ag_formatted'" in 1
+	replace v7		= "`percent_nonag_formatted'" in 1
+	replace v9 		= "" 					in 1
+	replace v1		= "\cmidrule{2-5}"		in 16
+	replace v1 		= "Observations" 		in 17
+	replace v1 		= "Individuals" 		in 18
+	replace v1 		= "Non-switchers" 		in 19
+	replace v3 		= "`observations_formatted'" 		in 17	
+	replace v3 		= "`num_individuals_formatted'" 	in 18
+	replace v3 		= "`non_switchers_formatted'" 	in 19
+	replace v5		= "`num_ag_formatted'"			in 17
+	replace v7		= "`num_nonag_formatted'"			in 17
+end
+
+* **********************************************************************
+* Clean up .tex files
+* **********************************************************************
+capture program drop removeStringFromTex
+program define removeStringFromTex
+    syntax anything(name=texFileName) , REMove(string asis)
+
+    * Create a temporary file to store the modified content
+    tempfile tempFile
+
+    * Use filefilter to remove the specified string
+    filefilter `texFileName' `tempFile', from(`remove') to("")
+
+    * Replace the original file with the modified file
+    copy `tempFile' `texFileName', replace
+end
+
+* **********************************************************************
+* Create three-part LaTeX table
+* **********************************************************************
+cap program drop create_panel_tex_table
+program define create_panel_tex_table
+    syntax , 	Panels(integer) COLumns(integer) FILEname(string asis) 	///
+				COUNTRIES(string asis) Keep(varlist) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+    
+	forvalues i = 1/`num_panels' {
+		local replace append
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+		if `i' == 1 & `i' == `num_panels' {
+			local replace replace
+			local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+			local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+			local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+			local table_posthead "\textbf{Panel A: Indonesia} \\"
+			local table_postfoot "\cmidrule{2 -`cmid'} `postfoot'"
+		}
+		if `i' == 1 & `i' != `num_panels' {
+			local replace replace
+			local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+			local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+			local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+			local table_posthead "\textbf{Panel A: Indonesia} \\"
+			local table_postfoot "\cmidrule{2 -`cmid'}"
+		}
+		if `i' == 2 {
+			local colnumbers nonum
+			local table_posthead "\textbf{Panel B: China} \\"
+			local table_postfoot "\cmidrule{2-`cmid'}"
+		}
+		if `i' == 3 {
+			local colnumbers nonum
+			local table_posthead "\textbf{Panel C: Tanzania} \\"
+			local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+		}
+
+		local panelname `i'
+    local ests = ""        
+		
+		// Extract word i of panelnames
+		local country : word `i' of `countries'
+		di as error "Panel `i' `country'"
+		
+        // Generate the list of stored estimates for the current panel
+        forvalues j = 1/`columns' {
+            local ests = "`ests' reg`j'_`country'"
+        }
+        
+        esttab `ests'                          ///
+        using "$output/tables/`filename'.tex", ///
+		se b(%8.3f)                            ///           
+        keep(`keep') fragment booktabs         ///
+        collabels("")                          ///
+        starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+		s(N N_clust r2_a, label("Observations" "Individuals" "Adj. R\$^{2}\$") ///
+        fmt(%9.0fc %9.0fc a2))                 ///
+        varwidth(20)                           ///
+        nolines nomtitles `colnumbers'         ///
+        coeflabels(`coeflabels')               ///
+        prehead(`table_prehead')               ///
+        posthead(`table_posthead')             ///
+        postfoot("`table_postfoot'")           ///
+        `replace' substitute(\_ _)
+    }
+
+end
+
+* **********************************************************************
+* Create three-part LaTeX table - learning IDN
+* **********************************************************************
+cap program drop create_panel_tex_table_learn_IDN
+program define create_panel_tex_table_learn_IDN
+    syntax , 	COLumns(integer) FILEname(string asis) 	///
+				Keep(varlist) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+    
+	local replace append
+	local colnumbers ""
+	local table_prehead 	""
+	local table_postfoot 	""
+	local posthead 			""
+	local replace replace
+	local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+	local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+	local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+	local table_postfoot "\cmidrule{2 -`cmid'} `postfoot'"
+
+	local ests = ""        
+		
+	// Generate the list of stored estimates for the current panel
+    forvalues j = 1/`columns' {
+		local ests = "`ests' reg`j'_IDN"
+    }
+        
+    esttab `ests'                          ///
+    using "$output/tables/`filename'.tex", ///
+	se b(%8.3f)                            ///           
+    keep(`keep') fragment booktabs         ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+	s(urban_p urban_2 urban_3 urban_4 rural_p rural_2 rural_3 rural_4 N N_clust r2_a, label("Joint p-value urban learning" "p-value: 1 year urban = 2 years urban" "p-value: 1 year urban = 3 years urban" "p-value: 1 year urban = 4 years urban" "Joint p-value rural learning" "p-value: 1 year rural = 2 years rural" "p-value: 1 year rural = 3 years rural" "p-value: 1 year rural = 4 years rural" "Observations" "Individuals" "Adj. R\$^{2}\$") ///
+    fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.0fc %9.0fc a2))	///
+    varwidth(20)                           ///
+    nolines nomtitles `colnumbers'         ///
+    coeflabels(`coeflabels')               ///
+    prehead(`table_prehead')               ///
+    postfoot("`table_postfoot'")           ///
+    `replace' substitute(\_ _)
+
+end
+
+* **********************************************************************
+* Create three-part LaTeX table - learning CHN
+* **********************************************************************
+cap program drop create_panel_tex_table_learn_CHN
+program define create_panel_tex_table_learn_CHN
+    syntax , 	COLumns(integer) FILEname(string asis) 	///
+				Keep(varlist) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+    
+	local replace append
+	local colnumbers ""
+	local table_prehead 	""
+	local table_postfoot 	""
+	local posthead 			""
+	local replace replace
+	local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+	local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+	local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+	local table_postfoot "\cmidrule{2 -`cmid'} `postfoot'"
+
+	local ests = ""        
+		
+	// Generate the list of stored estimates for the current panel
+    forvalues j = 1/`columns' {
+		local ests = "`ests' reg`j'_CHN"
+    }
+        
+    esttab `ests'                          ///
+    using "$output/tables/`filename'.tex", ///
+	se b(%8.3f)                            ///           
+    keep(`keep') fragment booktabs         ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+	s(urban_p urban_2 urban_3 rural_p rural_2 rural_3 N N_clust r2_a, label("Joint p-value urban learning" "p-value: 1 year urban = 2 years urban" "p-value: 1 year urban = 3 years urban" "Joint p-value rural learning" "p-value: 1 year rural = 2 years rural" "p-value: 1 year rural = 3 years rural" "Observations" "Individuals" "Adj. R\$^{2}\$") ///
+    fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.0fc %9.0fc a2))	///
+    varwidth(20)                           ///
+    nolines nomtitles `colnumbers'         ///
+    coeflabels(`coeflabels')               ///
+    prehead(`table_prehead')               ///
+    postfoot("`table_postfoot'")           ///
+    `replace' substitute(\_ _)
+
+end
+
+* **********************************************************************
+* OLS regressions
+* **********************************************************************
+cap program drop reghdfe_regressions
+program define reghdfe_regressions
+    args country choice depvar balance
+    * OLS / FE regressions using reghdfe
+	* Run col 7 first as it has the smallest sample, then use e(sample)
+    eststo reg7_`country': reghdfe lndepvar choice			 					///
+				$covs_all				 										///
+				, vce(cluster pid) absorb(pid period)
+		gen regression_sample = e(sample)
+	
+    eststo reg1_`country': reghdfe lndepvar choice		 						///
+		if regression_sample, noabsorb vce(cluster pid)
+	  eststo reg2_`country': reghdfe lndepvar choice			 				///
+		if regression_sample, vce(cluster pid) absorb(period)
+    eststo reg3_`country': reghdfe lndepvar choice $covs_1 						///
+		if regression_sample, vce(cluster pid) absorb(period)
+	  eststo reg4_`country': reghdfe lndepvar choice $covs_2 					///
+		if regression_sample, vce(cluster pid) absorb(period)
+    eststo reg5_`country': reghdfe lndepvar choice $covs_all 					///
+		if regression_sample, vce(cluster pid) absorb(period)
+    eststo reg6_`country': reghdfe lndepvar choice $covs_all 			 		///
+		if regression_sample & switcher, vce(cluster pid) absorb(period)
+end
+
+* **********************************************************************
+* OLS regressions (learning)
+* **********************************************************************
+cap program drop reghdfe_regressions_learn_IDN
+program define reghdfe_regressions_learn_IDN
+    args country depvar balance
+    * OLS / FE regressions using reghdfe
+	* Run col 4 first as it has the smallest sample, then use e(sample)
+    eststo reg4_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all , vce(cluster pid) absorb(pid period)
+	gen regression_sample = e(sample)
+	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	local urban_1_4 = r(mtest)[3,3]
+	test rural_1period=rural_2period=rural_3period=rural_4period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	local rural_1_4 = r(mtest)[3,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar urban_4 = `urban_1_4'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+	estadd scalar rural_4 = `rural_1_4'
+
+    eststo reg1_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period	if regression_sample, noabsorb vce(cluster pid)
+	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	local urban_1_4 = r(mtest)[3,3]
+	test rural_1period=rural_2period=rural_3period=rural_4period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	local rural_1_4 = r(mtest)[3,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar urban_4 = `urban_1_4'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+	estadd scalar rural_4 = `rural_1_4'
+	
+	eststo reg2_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period if regression_sample, vce(cluster pid) absorb(period)
+	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	local urban_1_4 = r(mtest)[3,3]
+	test rural_1period=rural_2period=rural_3period=rural_4period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	local rural_1_4 = r(mtest)[3,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar urban_4 = `urban_1_4'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+	estadd scalar rural_4 = `rural_1_4'
+    
+	eststo reg3_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all if regression_sample, vce(cluster pid) absorb(period)
+	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	local urban_1_4 = r(mtest)[3,3]
+	test rural_1period=rural_2period=rural_3period=rural_4period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	local rural_1_4 = r(mtest)[3,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar urban_4 = `urban_1_4'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+	estadd scalar rural_4 = `rural_1_4'
+		
+end
+
+cap program drop reghdfe_regressions_learn_CHN
+program define reghdfe_regressions_learn_CHN
+    args country depvar balance
+    * OLS / FE regressions using reghdfe
+	* Run col 4 first as it has the smallest sample, then use e(sample)
+    eststo reg4_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all , vce(cluster pid) absorb(pid period)
+	gen regression_sample = e(sample)
+	test urban_1period=urban_2period=urban_3period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	test rural_1period=rural_2period=rural_3period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+
+    eststo reg1_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, noabsorb vce(cluster pid)
+	test urban_1period=urban_2period=urban_3period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	test rural_1period=rural_2period=rural_3period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+	
+	eststo reg2_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, vce(cluster pid) absorb(period)
+	test urban_1period=urban_2period=urban_3period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	test rural_1period=rural_2period=rural_3period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+    
+	eststo reg3_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all if regression_sample, vce(cluster pid) absorb(period)
+	test urban_1period=urban_2period=urban_3period, mtest
+	local urban_p = r(p)
+	local urban_1_2 = r(mtest)[1,3]
+	local urban_1_3 = r(mtest)[2,3]
+	test rural_1period=rural_2period=rural_3period, mtest
+	local rural_p = r(p)
+	local rural_1_2 = r(mtest)[1,3]
+	local rural_1_3 = r(mtest)[2,3]
+	estadd scalar urban_p = `urban_p'
+	estadd scalar urban_2 = `urban_1_2'
+	estadd scalar urban_3 = `urban_1_3'
+	estadd scalar rural_p = `rural_p'
+	estadd scalar rural_2 = `rural_1_2'
+	estadd scalar rural_3 = `rural_1_3'
+		
+end
+
+* **********************************************************************
+* Get ready for GRC
+* **********************************************************************
+
+cap program drop setup_grc_estimation
+program define setup_grc_estimation
+    global 		never 1
+    qui: tab 			trajectory
+    global 		always `r(r)'	// Last trajectory
+    local 		lastswitcher = $always-1
+    numlist 	"2(1)`lastswitcher'"	// Grab list of switchers
+    global 		switchers `r(numlist)'
+    numlist 	"1(1)`lastswitcher'"	// Grab list of all-but-always
+    global 		noalways `r(numlist)'
+    global 		last = $always-1
+    global 		first = $never+1
+
+    replace trajectory = 999 if trajectory == .	// Unbalanced
+
+    * Generating dummies for gmm
+    gen always = (trajectory == $always)
+    gen always_choice = always*choice
+
+    gen never = (trajectory == 1)
+
+    foreach s of numlist $switchers {
+      gen switcher_`s' = (trajectory == `s')
+      gen switcher_`s'_choice = switcher_`s'*choice
+    }
+    
+end
+
+* **********************************************************************
+* Make heterogeneity figures
+* **********************************************************************
+cap program drop heterogeneity_plots
+program define heterogeneity_plots
+	args country choice depvar balance
+	if "`country'" == "IDN" {
+		local textcountry "Indonesia"
+	}
+	if "`country'" == "CHN" {
+		local textcountry "China"
+	}
+	if "`country'" == "TZA" {
+		local textcountry "Tanzania"
+	}
+
+* Compute \Delta estimates for switchers centered around \Delta_never estimate
+* Without covariates
+  eststo nocovars_`country': 	reg lndepvar i.trajectory							    ///
+															i($switchers).trajectory#i.choice    			///
+															i.unbalanced#i.choice  						///
+															, vce(cluster pid)
+
+* F-test of equality for \mu
+	testparm i($switchers).trajectory, equal
+  estadd sca F_mus_`country'_nocovars = r(F), replace
+	estadd sca p_mus_`country'_nocovars = r(p), replace
+	local F_mus_`country'_nocovars: di %-6.2f r(F)
+	local p_mus_`country'_nocovars: di %-3.2f r(p)
+
+* F-test of equality for \Delta
+	testparm i($switchers).trajectory#1.choice, equal
+	estadd sca F_dts_`country'_nocovars = r(F), replace
+	estadd sca p_dts_`country'_nocovars = r(p), replace
+	local F_dts_`country'_nocovars: di %-6.2f r(F)
+	local p_dts_`country'_nocovars: di %-3.2f r(p)
+
+* With covariates for \Delta
+  eststo covars_`country': 	  reghdfe lndepvar i.trajectory   							///
+														  i($switchers).trajectory#i.choice    			///
+              							  i.unbalanced#i.choice $covs_all	  ///
+														  , vce(cluster pid) absorb(period)
+
+* F-test of equality for \mu
+	testparm i($switchers).trajectory, equal
+  estadd sca F_mus_`country'_covars = r(F), replace
+	estadd sca p_mus_`country'_covars = r(p), replace
+	local F_mus_`country'_covars: di %-6.2f r(F)
+	local p_mus_`country'_covars: di %-3.2f r(p)
+
+* F-test of equality for \Delta
+	testparm i($switchers).trajectory#1.choice, equal
+	estadd sca F_dts_`country'_covars = r(F), replace
+	estadd sca p_dts_`country'_covars = r(p), replace
+	local F_dts_`country'_covars: di %-6.2f r(F)
+	local p_dts_`country'_covars: di %-3.2f r(p)
+			  
+* Grab interaction coefficients to plot for \Delta
+  local interaction_coefs ""
+  local coefnames: colnames e(b)
+  foreach coef of local coefnames {
+  	* if the coefname contains #1.choice
+    if strpos("`coef'", "#1.choice") {
+      local interaction_coefs "`interaction_coefs' `coef'"
+		}
+}
+
+* Grab coefficients to plot for \mu
+  local mu_coefs ""
+  foreach coef of local coefnames {
+  	* if the coefname is a trajectory without choice
+    if regexm("`coef'", "trajectory$") {
+      local mu_coefs "`mu_coefs' `coef'"
+		}
+}
+
+* Set truncation length for coeflabels
+	if "`country'" == "IDN" {
+		local coefnr    5
+	}
+	if "`country'" == "CHN" {
+		local coefnr		4
+ 	}
+	if "`country'" == "TZA" {
+		local coefnr    3
+	}
+	
+* Plot them for \Delta, sorting by size
+	coefplot ///
+		(covars_`country', keep(`interaction_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
+		(nocovars_`country', keep(`interaction_coefs') msymb(O) mcolor(lavender%50) ciopts(lwidth(thick) lcolor(lavender%50)))	///
+		, sort coeflabels(, truncate(`coefnr')) grid(none) ///	
+		legend(order(2 "All covariates & time FE" 4 "No covariates") pos(6) rows(1) size(small) span) 		///
+		ysize(10) xsize(8) 						///
+		ylabel(, labsize(small)) xlabel(, labsize(small))						///
+		xline(0, lwidth(thin) lcolor(%40)) title("`textcountry'") ///
+		note("F-stat (all equal): `F_dts_`country'_covars' (p-value: `p_dts_`country'_covars')", size(small) pos(6) span) ///
+		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
+	
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+	
+	coefplot ///
+		(covars_`country', keep(`interaction_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
+		(nocovars_`country', keep(`interaction_coefs') msymb(O) mcolor(lavender%50) ciopts(lwidth(thick) lcolor(lavender%50)))	///
+		, sort coeflabels(, truncate(`coefnr')) grid(none) ///	
+		legend(order(2 "All covariates & time FE" 4 "No covariates") pos(6) rows(1) size(small) span) 		///
+		ysize(10) xsize(8) 						///
+		ylabel(, labsize(small)) xlabel(, labsize(small))						///
+		xline(0, lwidth(thin) lcolor(%40)) title("`textcountry'") ///
+		note("F-stat (all equal): `F_dts_`country'_nocovars' (p-value: `p_dts_`country'_nocovars')", size(small) pos(6) span) ///
+		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
+	
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+	
+* Plot them for \mu, sorting by size
+	coefplot ///
+		(covars_`country', keep(`mu_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
+		(nocovars_`country', keep(`mu_coefs') msymb(O) mcolor(lavender%50) ciopts(lwidth(thick) lcolor(lavender%50)))	///
+		, sort coeflabels(, truncate(`coefnr')) grid(none) ///	
+		legend(order(2 "All covariates & time FE" 4 "No covariates") pos(6) rows(1) size(small) span) 		///
+		ysize(10) xsize(8) 						///
+		ylabel(, labsize(small)) xlabel(, labsize(small))						///
+		xline(0, lwidth(thin) lcolor(%40)) title("`textcountry'") ///
+		note("F-stat (all equal): `F_mus_`country'_covars' (p-value: `p_mus_`country'_covars')", size(small) pos(6) span) ///
+		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
+	
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+	
+	coefplot ///
+		(covars_`country', keep(`mu_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
+		(nocovars_`country', keep(`mu_coefs') msymb(O) mcolor(lavender%50) ciopts(lwidth(thick) lcolor(lavender%50)))	///
+		, sort coeflabels(, truncate(`coefnr')) grid(none) ///	
+		legend(order(2 "All covariates & time FE" 4 "No covariates") pos(6) rows(1) size(small) span) 		///
+		ysize(10) xsize(8) 						///
+		ylabel(, labsize(small)) xlabel(, labsize(small))						///
+		xline(0, lwidth(thin) lcolor(%40)) title("`textcountry'") ///
+		note("F-stat (all equal): `F_mus_`country'_nocovars' (p-value: `p_mus_`country'_nocovars')", size(small) pos(6) span) ///
+		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
+	
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+
+end
+
+* **********************************************************************
+* uGRC regressions
+* **********************************************************************
+cap program drop ugrc_regressions
+program define ugrc_regressions
+    args country choice depvar balance
+    * OLS / FE regressions using reghdfe
+	* Run col 7 first as it has the smallest sample, then use e(sample)
+    eststo reg7_`country': reghdfe lndepvar choice 					///
+				$covs_all trend 							///
+				, vce(cluster pid) absorb(pid)
+	gen regression_sample = e(sample)
+	
+	eststo reg7_`country': reghdfe lndepvar i.trajectory 			///
+				i($switchers).trajectory#i.choice 					///
+				i.unbalanced#i.choice $covs_all trend		///
+				, vce(cluster pid)
+	
+	
+    eststo reg1_`country': reghdfe lndepvar choice 						///
+		if regression_sample,  noabsorb vce(cluster pid)
+	eststo reg2_`country': reghdfe lndepvar choice $covs_1 				///
+		if regression_sample,  noabsorb vce(cluster pid)
+    eststo reg3_`country': reghdfe lndepvar choice $covs_2				///
+		if regression_sample,  noabsorb vce(cluster pid)
+	eststo reg4_`country': reghdfe lndepvar choice $covs_all	///
+		if regression_sample,  noabsorb vce(cluster pid)
+    eststo reg5_`country': reghdfe lndepvar choice $covs_all trend		///
+		if regression_sample,  noabsorb vce(cluster pid)
+    eststo reg6_`country': reghdfe lndepvar choice $covs_all trend 		///
+		if regression_sample & switcher, noabsorb vce(cluster pid)
+end
+
+* **********************************************************************
+* regs to grab initial values for GMM
+* **********************************************************************
+
+capture program drop initial_values
+program define initial_values, rclass
+
+    * Define local variables for the country and switchers
+    syntax varlist(min=1) [if], switchers(numlist) estname(string) balance(string) [print]
+
+		local balance_covars ""
+		if "`balance'" == "unb" {
+			local balance_covars "`balance_covars' unbalanced unbalanced_choice"
+		}
+		
+    * Run OLS regression
+    eststo `estname': reg `varlist' always* switcher_*				///
+											, vce(cluster pid) nocons
+											
+    * Store first trajectory coefficient as a scalar
+    scalar mu_1 = 0
+
+    * Loop through the list of switchers and define the scalars for mu and Delta
+    foreach s of numlist `switchers' {
+        scalar mu_`s'    = _b[switcher_`s']
+        scalar Delta_`s' = _b[switcher_`s'_choice]
+        scalar kappa     = _b[always]
+    }
+    
+    * Return scalars so they can be accessed outside the program
+    return scalar mu_1 = mu_1
+    foreach s of numlist `switchers' {
+        return scalar mu_`s' = mu_`s'
+        return scalar Delta_`s' = Delta_`s'
+    }
+		
+    * Accumulate mu-coeffs for initial values
+		foreach s of numlist $switchers {
+			local initial "`initial' mu:switcher_`s' mu_`s'"
+		}	
+    
+    * Accumulate Delta-coeffs for initial values
+// 		foreach s of numlist $switchers {
+// 			local initial "`initial' Delta:Delta_`s' switcher_`s'_choice"
+// 		} 
+//    Tricky to do with the potentially-changing Delta_base
+    
+    * Add kappa-coeff for initial values
+		local initial "`initial' kappa: kappa"
+    
+    * Accumulate mu-coeffs for initial values
+    foreach s of numlist $switchers {
+			local initial "`initial' mu:switcher_`s' mu_`s'"
+		}	
+    
+		return local initial "`initial'"
+		
+		* If print option is specified, display the scalars in formatted output
+    if "`print'" != "" {
+        di "mu_1 : " %9.2f scalar(mu_1)
+        foreach s of numlist `switchers' {
+            di "mu_`s' : " %9.2f scalar(mu_`s')
+            di "Delta_`s' : " %9.2f scalar(Delta_`s')
+        }
+        
+        di "Initial local: `initial'"
+    }
+
+		* Define base trajectory (default is switcher 2)
+		* criterion: trajectory with highest t-stat for Delta estimate 
+		* (out of those trajectories with more than 5 individual observations)
+		
+		* Retrieve panel data structure
+    quietly xtdescribe
+    scalar T = r(max)
+		
+		* Initialize macros with default
+    local base = 2
+    local max_t = -1
+		
+		* Loop through the switchers and compute t-values
+    foreach s of numlist `switchers' {
+      scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
+        
+			* Summarize trajectory for the current switcher
+			quietly sum trajectory if trajectory == `s'
+			scalar N_`s' = r(N)
+			
+			* Check if condition N_s / T > 5 is met
+			if N_`s' / T > 5 {
+				* Check if the current t-value is the largest
+				if abs(`=scalar(t_`s')') > `max_t' {
+					local max_t = abs(`=scalar(t_`s')')
+					local base = `s'
+				}
+			}
+    }
+		
+		* Return the base value in r()
+    return local base `base'
+end
+
+* **********************************************************************
+* initial_values_robust: OLS initial values for run_grc_robust
+* **********************************************************************
+* Extends initial_values to the Verdier (2020) Section F robust spec.
+* Generates vfirst (first-wave cluster index) and vchoice_v dummies
+* (vchoice_v = 1{vfirst==v} * choice for v != v_base), then runs the
+* same OLS as initial_values but augmented with the v-choice
+* interactions so the OLS coefficients on vchoice_v serve as starting
+* values for {beta_dev:vchoice_v} in run_grc_robust's GMM.
+* NOTE: drops observations with missing vfirst. Re-entering run_grc
+* after this program will see a trimmed sample.
+capture program drop initial_values_robust
+program define initial_values_robust, rclass
+
+    syntax varlist(min=1) [if], switchers(numlist) estname(string) ///
+        balance(string) vindex(varname) [print]
+
+    * ----------------------------------------------------------------
+    * Build first-wave cluster variable + drop missing
+    * ----------------------------------------------------------------
+    gen_vfirst, vname(`vindex') genname(vfirst)
+
+    qui count if missing(vfirst)
+    if r(N) > 0 {
+        di as text "initial_values_robust: dropping " r(N) ///
+            " obs with missing vfirst"
+    }
+    qui drop if missing(vfirst)
+
+    * Enumerate distinct clusters (sorted ascending by levelsof)
+    qui levelsof vfirst, local(vvals)
+    local V : word count `vvals'
+    local v_base : word 1 of `vvals'
+    di as text "initial_values_robust: |V| = `V' clusters, baseline v = `v_base'"
+
+    * ----------------------------------------------------------------
+    * Generate vchoice_v = I(vfirst==v) * choice for v != v_base
+    * ----------------------------------------------------------------
+    local vchoice_list ""
+    foreach v of local vvals {
+        if `v' != `v_base' {
+            capture drop vchoice_`v'
+            qui gen vchoice_`v' = (vfirst == `v') * choice
+            local vchoice_list "`vchoice_list' vchoice_`v'"
+        }
+    }
+
+    * ----------------------------------------------------------------
+    * OLS (same as initial_values, augmented with vchoice_*)
+    * ----------------------------------------------------------------
+    eststo `estname': reg `varlist' always* switcher_* `vchoice_list' ///
+        , vce(cluster pid) nocons
+
+    * Extract mu, Delta, kappa exactly as in initial_values
+    scalar mu_1 = 0
+    foreach s of numlist `switchers' {
+        scalar mu_`s'    = _b[switcher_`s']
+        scalar Delta_`s' = _b[switcher_`s'_choice]
+        scalar kappa     = _b[always]
+    }
+    return scalar mu_1 = mu_1
+    foreach s of numlist `switchers' {
+        return scalar mu_`s' = mu_`s'
+        return scalar Delta_`s' = Delta_`s'
+    }
+
+    * ----------------------------------------------------------------
+    * Build `initial' local: mu, kappa (mirrors initial_values exactly)
+    * ----------------------------------------------------------------
+    local initial ""
+    foreach s of numlist $switchers {
+        local initial "`initial' mu:switcher_`s' mu_`s'"
+    }
+    local initial "`initial' kappa: kappa"
+    foreach s of numlist $switchers {
+        local initial "`initial' mu:switcher_`s' mu_`s'"
+    }
+
+    * Append beta_dev initial values, one per non-baseline cluster.
+    * Guard against unidentified coefficients (e.g., collinear vchoice_v
+    * with zero within-cluster variation in choice): default to 0.
+    foreach v of local vvals {
+        if `v' != `v_base' {
+            capture scalar beta_dev_`v' = _b[vchoice_`v']
+            if _rc != 0 {
+                di as text "  beta_dev_`v' unidentified in OLS; using 0"
+                scalar beta_dev_`v' = 0
+            }
+            if missing(scalar(beta_dev_`v')) {
+                di as text "  beta_dev_`v' missing in OLS; using 0"
+                scalar beta_dev_`v' = 0
+            }
+            local initial "`initial' beta_dev:vchoice_`v' beta_dev_`v'"
+        }
+    }
+
+    return local initial "`initial'"
+    return local vchoice_list "`vchoice_list'"
+    return local vvals "`vvals'"
+    return local v_base `v_base'
+    return scalar V = `V'
+
+    if "`print'" != "" {
+        di "Initial local: `initial'"
+    }
+
+    * ----------------------------------------------------------------
+    * Base trajectory selection (identical to initial_values)
+    * ----------------------------------------------------------------
+    quietly xtdescribe
+    scalar T = r(max)
+    local base = 2
+    local max_t = -1
+    foreach s of numlist `switchers' {
+        scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
+        quietly sum trajectory if trajectory == `s'
+        scalar N_`s' = r(N)
+        if N_`s' / T > 5 {
+            if abs(`=scalar(t_`s')') > `max_t' {
+                local max_t = abs(`=scalar(t_`s')')
+                local base = `s'
+            }
+        }
+    }
+    return local base `base'
+end
+
+* **********************************************************************
+* Define switcher parameters
+* **********************************************************************
+
+capture program drop define_switcherpars
+program define define_switcherpars, rclass
+
+    * Syntax for accepting the list of switchers and the base trajectory
+    syntax , switchers(numlist) base(numlist)
+
+    * Initialize the local macro for the switcher parameters
+    local switcherpars "0"
+
+		* Loop over the switchers and build the local switcherpars
+		foreach s of numlist `switchers' {
+			if `s' != `base' {
+				local switcherpars 																	///
+        "`switcherpars' + ({mu:switcher_`s'} - {mu:switcher_`base'})*(switcher_`s'#1.choice)"
+			}
+    }
+		* Store the switcherpars in r() for external access
+		return local switcherpars "`switcherpars'"
+	
+end
+
+* **********************************************************************
+* GMM regression
+* **********************************************************************
+capture program drop run_grc
+program define run_grc
+
+    * Syntax to accept user-specified covariates and estname
+    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+
+    * Construct the covariates string for the regression and instruments
+		if "`balance'" == "unb" {
+			local covarlist "`covars' unbalanced unbalanced_choice"
+		}
+		else {
+			capture drop covar_cons
+			gen covar_cons = 0
+			local covarlist "`covars' covar_cons"
+		}
+
+		* Initialize a local to hold switcher variables
+		local switcher_traj
+
+		* Loop through switchers and add them to local
+		foreach s of numlist `switchers' {
+			local switcher_traj "`switcher_traj' switcher_`s'"
+		}
+
+		* Build switcherpars internally — guarantees same base everywhere
+		define_switcherpars, switchers(`switchers') base(`base')
+		local switcherpars `r(switcherpars)'
+		di as text "run_grc: base trajectory = `base'"
+		di as text "run_grc: phi initial value = `phistart'"
+
+    * Run the GMM estimation
+    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
+									- {Delta_base}*choice  																///
+									- {phi=`phistart'}*(`switcherpars')		 										///
+									- ({kappa}+{phi}*({kappa} 										        ///
+									- {mu: switcher_`base'}))*(always#1.choice)           ///
+									- {xb: `covarlist'})  																///
+									, instruments(  																			///
+									`covarlist'  																					///
+									never `switcher_traj' choice 													///
+									always_choice switcher_*_choice, nocons								///
+									) 																										///
+                      vce(cluster pid) 																	///
+											from(`initial') 																	///
+											quickderivatives nolog						                ///
+											iterate(`iterate')
+      
+      * Joint test for mus
+	  local mu_test ""
+	  local s0 : word 1 of $switchers
+	  local mu_test "[mu]switcher_`s0'"
+	  foreach s of numlist $switchers {
+		if `s' != `s0'{
+			local mu_test "`mu_test' = [mu]switcher_`s'"
+		}
+	  }
+	  test `mu_test'
+	  estadd scalar joint_chi2 = r(chi2), replace   : `estname' 
+	  estadd scalar joint_p    = r(p),    replace   : `estname' 
+	  
+	  * Add J-stat estimates from Hansen's J-test  
+      estat overid 
+      estadd sca Jstat    = r(J)      , replace   : `estname' 
+      estadd sca Jdf      = r(J_df)   , replace   : `estname'  
+      estadd sca Jpval    = r(J_p)    , replace   : `estname'  
+	  local converged_str = cond(e(converged)==1, "Y", "N")
+	  estadd local converged_str "`converged_str'", replace : `estname'
+	  
+	  * Save results
+      estimates save "$dir/output/`estname'", replace
+      
+      * Compute Delta_never
+	  estimates restore `estname'   // make sure the results are in memory
+	  nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
+            (_b[mu:never] - _b[mu:switcher_`base']))), post
+      * Save results
+      estimates save "$dir/output/`estname'_never", replace
+           
+      * Compute Delta_always (average Delta for always-urban)
+      estimates restore `estname'   // make sure the results are in memory
+      nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
+            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
+      * Save results
+      estimates save "$dir/output/`estname'_always", replace
+      
+      * Compute all switcher Deltas
+	  estimates restore `estname'   // make sure the results are in memory
+	  local nlcom_expr ""
+	  foreach s of numlist $switchers {
+	  	local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+      }
+	  nlcom `nlcom_expr', post
+	  * Joint test for Deltas
+	  local d_test ""
+	  local s0 : word 1 of $switchers
+	  local d_test "Delta_`s0'"
+	  foreach s of numlist $switchers {
+		if `s' != `s0'{
+			local d_test "`d_test' = Delta_`s'"
+		}
+	  }
+	  test `d_test'
+	  estadd scalar joint_chi2 = r(chi2), replace
+	  estadd scalar joint_p    = r(p),    replace
+      * Save results
+      estimates save "$dir/output/`estname'_delta", replace
+	  
+	  * Compute Delta_avg (average Delta for all switchers)
+	  local first_loop = 1
+	  local Delta_avg_nlcom ""
+	  foreach s of numlist $switchers {
+	  	estimates restore `estname'   // make sure the results are in memory
+        sum 1.switcher_`s' if e(sample)
+        local num_`s' = r(mean)   // proportion of sample in this trajectory
+		if `first_loop' == 0 {
+			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+		}
+		else if `first_loop' == 1 {
+			local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+			local first_loop = 0
+		}
+      }
+	  estimates restore `estname'   // make sure the results are in memory
+	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
+      * Save results
+      estimates save "$dir/output/`estname'_avg", replace
+
+end
+
+* **********************************************************************
+* run_grc_onestep: simple spec with VV's onestep GMM settings
+* **********************************************************************
+* Identical to run_grc except for winitial(unadjusted, independent) +
+* onestep options. Exists so the paper can report a simple-spec
+* comparator that is apples-to-apples with run_grc_robust (which uses
+* onestep because the cluster-robust two-step weighting matrix is
+* rank-deficient when #moments > #vfirst clusters). Also serves as the
+* reference for run_grc_robust's degenerate-v (|V|=1) test.
+* Hansen's J is not available under onestep, so estat overid is
+* wrapped in capture.
+capture program drop run_grc_onestep
+program define run_grc_onestep
+
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+
+    if "`balance'" == "unb" {
+        local covarlist "`covars' unbalanced unbalanced_choice"
+    }
+    else {
+        capture drop covar_cons
+        gen covar_cons = 0
+        local covarlist "`covars' covar_cons"
+    }
+
+    local switcher_traj
+    foreach s of numlist `switchers' {
+        local switcher_traj "`switcher_traj' switcher_`s'"
+    }
+
+    define_switcherpars, switchers(`switchers') base(`base')
+    local switcherpars `r(switcherpars)'
+    di as text "run_grc_onestep: base trajectory = `base'"
+    di as text "run_grc_onestep: phi initial value = `phistart'"
+
+    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                    ///
+                            - {Delta_base}*choice                                    ///
+                            - {phi=`phistart'}*(`switcherpars')                      ///
+                            - ({kappa}+{phi}*({kappa}                                ///
+                            - {mu: switcher_`base'}))*(always#1.choice)              ///
+                            - {xb: `covarlist'})                                     ///
+                           , instruments(                                            ///
+                            `covarlist'                                              ///
+                            never `switcher_traj' choice                             ///
+                            always_choice switcher_*_choice, nocons                  ///
+                           )                                                         ///
+                             vce(cluster pid)                                        ///
+                             winitial(unadjusted, independent)                       ///
+                             onestep                                                 ///
+                             from(`initial')                                         ///
+                             quickderivatives nolog                                  ///
+                             iterate(`iterate')
+
+    local mu_test ""
+    local s0 : word 1 of $switchers
+    local mu_test "[mu]switcher_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local mu_test "`mu_test' = [mu]switcher_`s'"
+        }
+    }
+    test `mu_test'
+    estadd scalar joint_chi2 = r(chi2), replace : `estname'
+    estadd scalar joint_p    = r(p),    replace : `estname'
+
+    capture estat overid
+    if _rc == 0 {
+        estadd sca Jstat = r(J),    replace : `estname'
+        estadd sca Jdf   = r(J_df), replace : `estname'
+        estadd sca Jpval = r(J_p),  replace : `estname'
+    }
+    else {
+        di as text "run_grc_onestep: estat overid unavailable (onestep GMM) -- Jstat not computed"
+    }
+    local converged_str = cond(e(converged)==1, "Y", "N")
+    estadd local converged_str "`converged_str'", replace : `estname'
+
+    estimates save "$dir/output/`estname'", replace
+
+    estimates restore `estname'
+    nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
+            (_b[mu:never] - _b[mu:switcher_`base']))), post
+    estimates save "$dir/output/`estname'_never", replace
+
+    estimates restore `estname'
+    nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
+            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
+    estimates save "$dir/output/`estname'_always", replace
+
+    estimates restore `estname'
+    local nlcom_expr ""
+    foreach s of numlist $switchers {
+        local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+    }
+    nlcom `nlcom_expr', post
+    local d_test ""
+    local s0 : word 1 of $switchers
+    local d_test "Delta_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local d_test "`d_test' = Delta_`s'"
+        }
+    }
+    test `d_test'
+    estadd scalar joint_chi2 = r(chi2), replace
+    estadd scalar joint_p    = r(p),    replace
+    estimates save "$dir/output/`estname'_delta", replace
+
+    local first_loop = 1
+    local Delta_avg_nlcom ""
+    foreach s of numlist $switchers {
+        estimates restore `estname'
+        sum 1.switcher_`s' if e(sample)
+        local num_`s' = r(mean)
+        if `first_loop' == 0 {
+            local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+        }
+        else if `first_loop' == 1 {
+            local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+            local first_loop = 0
+        }
+    }
+    estimates restore `estname'
+    nlcom (Delta_avg: `Delta_avg_nlcom'), post
+    estimates save "$dir/output/`estname'_avg", replace
+
+end
+
+* **********************************************************************
+* GMM regression
+* **********************************************************************
+capture program drop run_grc_hukou
+program define run_grc_hukou
+
+    * Syntax to accept user-specified covariates and estname
+    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string)] 
+
+    * Construct the covariates string for the regression and instruments
+		if "`balance'" == "unb" {
+			local covarlist "`covars' unbalanced unbalanced_choice"
+		}
+		else {
+			capture drop covar_cons
+			gen covar_cons = 0
+			local covarlist "`covars' covar_cons"
+		}
+
+		* Initialize a local to hold switcher variables
+		local switcher_traj
+		
+		* Loop through switchers and add them to local
+		foreach s of numlist `switchers' {
+			local switcher_traj "`switcher_traj' switcher_`s'"
+		}
+		
+		* Build switcherpars internally — guarantees same base everywhere
+		define_switcherpars, switchers(`switchers') base(`base')
+		local switcherpars `r(switcherpars)'
+		di as text "run_grc: base trajectory = `base'"
+		
+    * Run the GMM estimation
+    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
+									- {Delta_base}*choice  																///
+									- {phi=-1}*(`switcherpars')				 										///
+									- ({kappa}+{phi}*({kappa} 										        ///
+									- {mu: switcher_`base'}))*(always#1.choice)           ///
+									- {xb: `covarlist'})  																///
+									, instruments(  																			///
+									`covarlist'  																					///
+									never `switcher_traj' choice 													///
+									always_choice switcher_*_choice, nocons								///
+									) 																										///
+                      vce(cluster pid) 																	///
+											from(`initial') 																	///
+											quickderivatives nolog						                ///
+											iterate(`iterate')
+      
+      * Add J-stat estimates from Hansen's J-test  
+      estat overid 
+      estadd sca Jstat    = r(J)      , replace   : `estname' 
+      estadd sca Jdf      = r(J_df)   , replace   : `estname'  
+      estadd sca Jpval    = r(J_p)    , replace   : `estname'  
+	  local converged_str = cond(e(converged)==1, "Y", "N")
+	  estadd local converged_str "`converged_str'", replace : `estname'
+	  
+	  * Save results
+      estimates save "$dir/output/`estname'", replace
+      
+      * Compute Delta_never
+      nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
+            (_b[mu:never] - _b[mu:switcher_`base']))), post
+      * Save results
+      estimates save "$dir/output/`estname'_n", replace
+           
+      * Compute Delta_always (average Delta for always-urban)
+      estimates restore `estname'   // make sure the results are in memory
+      nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
+            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
+      * Save results
+      estimates save "$dir/output/`estname'_a", replace
+	  
+	  * Compute Delta_avg (average Delta for all switchers)
+	  local first_loop = 1
+	  local Delta_avg_nlcom ""
+	  foreach s of numlist $switchers {
+	  	estimates restore `estname'   // make sure the results are in memory
+        sum 1.switcher_`s' if e(sample)
+        local num_`s' = r(mean)   // proportion of sample in this trajectory
+		if `first_loop' == 0 {
+			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+		}
+		else if `first_loop' == 1 {
+			local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+			local first_loop = 0
+		}
+      }
+	  estimates restore `estname'   // make sure the results are in memory
+	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
+      * Save results
+      estimates save "$dir/output/`estname'_avg", replace
+
+end
+
+* **********************************************************************
+* run_grc_robust: Verdier (2020) Section F robust extrapolation
+* **********************************************************************
+* Implements the within-v demeaning estimator as a single-step
+* extension of run_grc: adds |V|-1 cluster dummies x choice to the
+* GMM equation so Delta_{d_0} becomes cluster-specific (beta(v)).
+* See docs/reviews/2026-04-23_robust-grc-derivation.md for the full
+* derivation. Standard errors switch from vce(cluster pid) to
+* vce(cluster vfirst). The always-urban term uses scalar kappa
+* (cross-origin extrapolation) per memo section 6.
+* P1 aggregations: _never uses the cluster-share-weighted aggregate
+* from memo section 7 (weights = never-urban counts per support
+* cluster); _delta, _avg, _always use baseline-cluster beta
+* (= Delta_base) as a placeholder -- proper cross-cluster aggregation
+* deferred to P2.
+capture program drop run_grc_robust
+program define run_grc_robust
+
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
+        vindex(varname) ///
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+
+    * ----------------------------------------------------------------
+    * Build vfirst + vchoice_* (idempotent; initial_values_robust may
+    * have already built them and dropped missing-vfirst obs)
+    * ----------------------------------------------------------------
+    gen_vfirst, vname(`vindex') genname(vfirst)
+    qui count if missing(vfirst)
+    if r(N) > 0 {
+        di as text "run_grc_robust: dropping " r(N) " obs with missing vfirst"
+    }
+    qui drop if missing(vfirst)
+
+    qui levelsof vfirst, local(vvals)
+    local V : word count `vvals'
+    local v_base : word 1 of `vvals'
+
+    local vchoice_list ""
+    foreach v of local vvals {
+        if `v' != `v_base' {
+            capture drop vchoice_`v'
+            qui gen vchoice_`v' = (vfirst == `v') * choice
+            local vchoice_list "`vchoice_list' vchoice_`v'"
+        }
+    }
+
+    * ----------------------------------------------------------------
+    * Cluster-support diagnostics (per plan section 3.1 step 2)
+    * ----------------------------------------------------------------
+    tempvar first_obs n_sw_v n_nev_v n_tot_v
+    qui bysort pid (year): gen byte `first_obs' = (_n == 1)
+    qui bysort vfirst: egen `n_sw_v'  = sum(switcher * `first_obs')
+    qui bysort vfirst: egen `n_nev_v' = sum(never    * `first_obs')
+    qui bysort vfirst: egen `n_tot_v' = sum(`first_obs')
+
+    di as txt _newline(1) "run_grc_robust: cluster-support diagnostics"
+    di as txt "  |V| = `V' clusters (baseline v = `v_base')"
+
+    preserve
+        qui duplicates drop vfirst, force
+        qui sum `n_sw_v', detail
+        di as txt "  Switchers per cluster: mean=" %6.2f r(mean) ///
+            ", p50=" %6.0f r(p50) ", max=" %6.0f r(max)
+        qui count if `n_sw_v' >= 10
+        local nclust_ge10 = r(N)
+        qui count if `n_sw_v' > 0 & `n_nev_v' > 0
+        local V_supp = r(N)
+        qui sum `n_nev_v' if `n_sw_v' > 0 & `n_nev_v' > 0
+        local nev_supp = r(sum)
+        qui sum `n_nev_v'
+        local nev_tot = r(sum)
+    restore
+
+    di as txt "  Clusters with >=10 switchers: `nclust_ge10' / `V'"
+    di as txt "  Clusters with both sw & never: `V_supp' / `V'"
+    if `nev_tot' > 0 {
+        di as txt "  Always-rural support share: " ///
+            %5.1f (100 * `nev_supp' / `nev_tot') "%"
+    }
+
+    * ----------------------------------------------------------------
+    * Build covarlist and switcher_traj (same as run_grc)
+    * ----------------------------------------------------------------
+    if "`balance'" == "unb" {
+        local covarlist "`covars' unbalanced unbalanced_choice"
+    }
+    else {
+        capture drop covar_cons
+        gen covar_cons = 0
+        local covarlist "`covars' covar_cons"
+    }
+
+    local switcher_traj
+    foreach s of numlist `switchers' {
+        local switcher_traj "`switcher_traj' switcher_`s'"
+    }
+
+    define_switcherpars, switchers(`switchers') base(`base')
+    local switcherpars `r(switcherpars)'
+    di as text "run_grc_robust: base trajectory = `base'"
+    di as text "run_grc_robust: |V|-1 cluster deviations = " ///
+        `: word count `vchoice_list''
+
+    * ----------------------------------------------------------------
+    * GMM estimation
+    * ----------------------------------------------------------------
+    * Degenerate V=1 branch: vchoice_list empty, equation reduces
+    * exactly to run_grc_onestep. Used by the P1 degenerate-v test
+    * (derivation memo section 8). vce switches to cluster pid
+    * because vce(cluster vfirst) with 1 cluster yields undefined
+    * cluster-robust variance (division by G-1=0). Uses the same
+    * onestep + winitial settings as the non-degenerate branch so the
+    * comparison to run_grc_onestep is apples-to-apples.
+    di as text "run_grc_robust: phi initial value = `phistart'"
+    if "`vchoice_list'" == "" {
+        di as text "run_grc_robust: degenerate |V|=1 branch (no beta_dev parameters)"
+        di as text "run_grc_robust: switching to vce(cluster pid) for |V|=1"
+        eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                ///
+                                - {Delta_base}*choice                                ///
+                                - {phi=`phistart'}*(`switcherpars')                  ///
+                                - ({kappa}+{phi}*({kappa}                            ///
+                                - {mu: switcher_`base'}))*(always#1.choice)          ///
+                                - {xb: `covarlist'})                                 ///
+                               , instruments(                                        ///
+                                `covarlist'                                          ///
+                                never `switcher_traj' choice                         ///
+                                always_choice switcher_*_choice, nocons              ///
+                               )                                                     ///
+                                 vce(cluster pid)                                    ///
+                                 winitial(unadjusted, independent)                   ///
+                                 onestep                                             ///
+                                 from(`initial')                                     ///
+                                 quickderivatives nolog                              ///
+                                 iterate(`iterate')
+    }
+    else {
+        * Q8 (2026-04-23): adopt VV robust.do's GMM settings --
+        * winitial(unadjusted, independent) onestep. VV does one-step
+        * GMM with independence-weighted initial matrix; we match so
+        * the second-step cluster-robust weighting matrix (which is
+        * rank-deficient when #moments > #clusters, typical here --
+        * 47 moments vs 26 TZA clusters) is never computed. This
+        * resolves the non-convergence + singular-SE issues observed
+        * under Stata default two-step GMM. Inference via
+        * vce(cluster vfirst) still uses the cluster-robust formula.
+        eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                ///
+                                - {Delta_base}*choice                                ///
+                                - {beta_dev: `vchoice_list'}                         ///
+                                - {phi=`phistart'}*(`switcherpars')                  ///
+                                - ({kappa}+{phi}*({kappa}                            ///
+                                - {mu: switcher_`base'}))*(always#1.choice)          ///
+                                - {xb: `covarlist'})                                 ///
+                               , instruments(                                        ///
+                                `covarlist'                                          ///
+                                never `switcher_traj' choice `vchoice_list'          ///
+                                always_choice switcher_*_choice, nocons              ///
+                               )                                                     ///
+                                 vce(cluster vfirst)                                 ///
+                                 winitial(unadjusted, independent)                   ///
+                                 onestep                                             ///
+                                 from(`initial')                                     ///
+                                 quickderivatives nolog                              ///
+                                 iterate(`iterate')
+    }
+
+    * ----------------------------------------------------------------
+    * Joint mu test + Hansen J (same as run_grc)
+    * ----------------------------------------------------------------
+    local mu_test ""
+    local s0 : word 1 of $switchers
+    local mu_test "[mu]switcher_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local mu_test "`mu_test' = [mu]switcher_`s'"
+        }
+    }
+    test `mu_test'
+    estadd scalar joint_chi2 = r(chi2), replace : `estname'
+    estadd scalar joint_p    = r(p),    replace : `estname'
+
+    * Hansen's J: only available under twostep GMM. The non-degenerate
+    * branch uses onestep (Q8 decision, matches VV), so estat overid
+    * would error; capture and skip gracefully. Do-file must not abort
+    * before log close / exit, STATA clear (avoids the Windows batch
+    * "Stata finished" popup).
+    capture estat overid
+    if _rc == 0 {
+        estadd sca Jstat = r(J),    replace : `estname'
+        estadd sca Jdf   = r(J_df), replace : `estname'
+        estadd sca Jpval = r(J_p),  replace : `estname'
+    }
+    else {
+        di as text "run_grc_robust: estat overid unavailable (onestep GMM) -- Jstat not computed"
+    }
+    local converged_str = cond(e(converged)==1, "Y", "N")
+    estadd local converged_str "`converged_str'", replace : `estname'
+
+    * Cluster diagnostics stored on the estimate for table builders
+    estadd scalar V_clusters = `V',           replace : `estname'
+    estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
+    estadd scalar V_supp     = `V_supp',      replace : `estname'
+
+    * Save main .ster
+    estimates save "$dir/output/`estname'", replace
+
+    * ----------------------------------------------------------------
+    * Delta_never: cluster-share-weighted aggregate over V_supp
+    *   Delta_never = Delta_base + sum_{v != v_base, v in V_supp} w_v * beta_dev_v
+    *                            + phi * (mu:never - mu:switcher_base)
+    *   w_v = n^N_v / sum_{v' in V_supp} n^N_{v'}
+    * (Delta_base absorbs the baseline-cluster weight since weights sum to 1
+    *  and beta_dev_{v_base} is 0 by the drop-a-dummy convention.)
+    * ----------------------------------------------------------------
+    estimates restore `estname'
+
+    * Recompute support + per-cluster never counts (vchoice_list-indexed only)
+    preserve
+        qui duplicates drop vfirst, force
+        qui keep if `n_sw_v' > 0 & `n_nev_v' > 0
+        qui sum `n_nev_v'
+        local nev_supp_sum = r(sum)
+
+        * Build weighted sum of beta_dev terms
+        local beta_agg_expr "_b[Delta_base:_cons]"
+        if `nev_supp_sum' > 0 & "`vchoice_list'" != "" {
+            forvalues i = 1/`=_N' {
+                local v_i = vfirst[`i']
+                local n_nev_i = `n_nev_v'[`i']
+                if `v_i' != `v_base' {
+                    local w_i = `n_nev_i' / `nev_supp_sum'
+                    local beta_agg_expr "`beta_agg_expr' + `w_i' * _b[beta_dev:vchoice_`v_i']"
+                }
+            }
+        }
+    restore
+
+    di as text "run_grc_robust: Delta_never aggregate expression:"
+    di as text "  `beta_agg_expr' + phi * (mu_never - mu_base)"
+
+    nlcom (Delta_never: `beta_agg_expr' + _b[phi:_cons] * ///
+            (_b[mu:never] - _b[mu:switcher_`base'])), post
+    estadd scalar V_never_supp = `V_supp', replace
+    estimates save "$dir/output/`estname'_never", replace
+
+    * ----------------------------------------------------------------
+    * Delta_always (baseline-cluster beta; proper aggregation in P2)
+    * ----------------------------------------------------------------
+    estimates restore `estname'
+    nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
+            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
+    estimates save "$dir/output/`estname'_always", replace
+
+    * ----------------------------------------------------------------
+    * Per-switcher Deltas (baseline-cluster beta) + joint test
+    * ----------------------------------------------------------------
+    estimates restore `estname'
+    local nlcom_expr ""
+    foreach s of numlist $switchers {
+        local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+    }
+    nlcom `nlcom_expr', post
+
+    local d_test ""
+    local s0 : word 1 of $switchers
+    local d_test "Delta_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local d_test "`d_test' = Delta_`s'"
+        }
+    }
+    test `d_test'
+    estadd scalar joint_chi2 = r(chi2), replace
+    estadd scalar joint_p    = r(p),    replace
+    estimates save "$dir/output/`estname'_delta", replace
+
+    * ----------------------------------------------------------------
+    * Delta_avg: trajectory-share-weighted average across switchers
+    * (baseline-cluster beta; mirror run_grc structure)
+    * ----------------------------------------------------------------
+    local first_loop = 1
+    local Delta_avg_nlcom ""
+    foreach s of numlist $switchers {
+        estimates restore `estname'
+        sum 1.switcher_`s' if e(sample)
+        local num_`s' = r(mean)
+        if `first_loop' == 0 {
+            local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+        }
+        else if `first_loop' == 1 {
+            local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+            local first_loop = 0
+        }
+    }
+    estimates restore `estname'
+    nlcom (Delta_avg: `Delta_avg_nlcom'), post
+    estimates save "$dir/output/`estname'_avg", replace
+
+end
+
+* **********************************************************************
+* run_grc_robust_vv: VV-style robust extrapolation via cluster-demeaned
+*                    instruments (no cluster-FE parameters)
+* **********************************************************************
+* Ports the core identification idea of Verdier (2020) Online Appendix
+* Section F / Table1/Code/robust.do to CKT's trajectory-pooled GRC.
+*
+* Key difference vs run_grc_robust (single-step cluster-dummy version):
+*   - run_grc_robust adds |V|-1 cluster*choice interactions as free
+*     parameters (beta_dev_v). Asymptotically equivalent to VV's
+*     approach, but in finite sample with few clusters the extra |V|-1
+*     parameters make the GMM objective nearly flat in phi, giving
+*     multiple local minima (confirmed on TZA; hung on CHN).
+*   - run_grc_robust_vv keeps CKT's original parameters (phi, mu_d,
+*     Delta_base, kappa, xb gammas) -- no cluster FEs -- and instead
+*     replaces the switcher_s_choice instruments with their within-
+*     cluster-demeaned residuals (regressed on i.vfirst among workers
+*     in trajectory s). The within-cluster variation in treatment
+*     identifies phi robustly to cluster-level confounders in the
+*     outcome, matching VV's Prop. F identification assumption.
+*
+* This mirrors VV's Table1/Code/robust.do: he demeans hybrid_per on
+* i.vil among switchers (line 12), uses the residual as the optimal
+* instrument (line 14), and fits GMM with vce(cluster vil), winitial
+* unadjusted independent, onestep (line 206). We follow the same
+* pattern but adapted to CKT's trajectory structure.
+*
+* Aggregations for _never etc. follow VV Eq. F.3 conceptually -- for
+* P1 we defer the full cluster-share-weighted aggregator to P2 and use
+* the simple-spec extrapolation with VV-style phi.
+capture program drop run_grc_robust_vv
+program define run_grc_robust_vv
+
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
+        vindex(varname) ///
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+
+    * ----------------------------------------------------------------
+    * Build vfirst + drop missing-vfirst obs
+    * ----------------------------------------------------------------
+    gen_vfirst, vname(`vindex') genname(vfirst)
+    qui count if missing(vfirst)
+    if r(N) > 0 {
+        di as text "run_grc_robust_vv: dropping " r(N) " obs with missing vfirst"
+    }
+    qui drop if missing(vfirst)
+
+    qui levelsof vfirst, local(vvals)
+    local V : word count `vvals'
+    di as text "run_grc_robust_vv: |V| = `V' clusters"
+
+    * ----------------------------------------------------------------
+    * VV's first-stage optimal instrument construction:
+    * for each switcher trajectory s, demean switcher_s_choice on
+    * i.vfirst AMONG workers in trajectory s; residual is the within-
+    * cluster treatment variation that identifies phi robustly.
+    * Zero-fill for non-trajectory-s workers so the moment is defined
+    * over the whole sample (contributes zero from non-switchers).
+    * ----------------------------------------------------------------
+    local swd_list ""
+    foreach s of numlist `switchers' {
+        capture drop swd_switcher_`s'_choice
+
+        tempvar tmpy tmpresid
+        qui gen `tmpy' = switcher_`s'_choice if switcher_`s' == 1
+        qui reg `tmpy' i.vfirst if switcher_`s' == 1
+        qui predict `tmpresid' if switcher_`s' == 1, resid
+
+        qui gen swd_switcher_`s'_choice = `tmpresid'
+        qui replace swd_switcher_`s'_choice = 0 if missing(swd_switcher_`s'_choice)
+        local swd_list "`swd_list' swd_switcher_`s'_choice"
+    }
+
+    * Demean always_choice on i.vfirst among always-urban workers.
+    * Always-urban have choice=1 in every period so within-person
+    * variation is zero; BUT cross-person variation in always-urban
+    * status within a cluster contributes. Same pattern as VV.
+    capture drop swd_always_choice
+    tempvar tmpy tmpresid
+    qui gen `tmpy' = always_choice if always == 1
+    qui reg `tmpy' i.vfirst if always == 1
+    qui predict `tmpresid' if always == 1, resid
+    qui gen swd_always_choice = `tmpresid'
+    qui replace swd_always_choice = 0 if missing(swd_always_choice)
+
+    * ----------------------------------------------------------------
+    * Cluster-support diagnostics (brief)
+    * ----------------------------------------------------------------
+    tempvar first_obs n_sw_v
+    qui bysort pid (year): gen byte `first_obs' = (_n == 1)
+    qui bysort vfirst: egen `n_sw_v' = sum(switcher * `first_obs')
+
+    preserve
+        qui duplicates drop vfirst, force
+        qui sum `n_sw_v', detail
+        di as txt "run_grc_robust_vv: switchers/cluster mean=" ///
+            %6.2f r(mean) " p50=" %6.0f r(p50) " max=" %6.0f r(max)
+        qui count if `n_sw_v' >= 10
+        local nclust_ge10 = r(N)
+    restore
+    di as txt "run_grc_robust_vv: clusters >=10 sw = `nclust_ge10' / `V'"
+
+    * ----------------------------------------------------------------
+    * Build covarlist + switcher_traj (same as run_grc)
+    * ----------------------------------------------------------------
+    if "`balance'" == "unb" {
+        local covarlist "`covars' unbalanced unbalanced_choice"
+    }
+    else {
+        capture drop covar_cons
+        gen covar_cons = 0
+        local covarlist "`covars' covar_cons"
+    }
+
+    local switcher_traj
+    foreach s of numlist `switchers' {
+        local switcher_traj "`switcher_traj' switcher_`s'"
+    }
+
+    define_switcherpars, switchers(`switchers') base(`base')
+    local switcherpars `r(switcherpars)'
+    di as text "run_grc_robust_vv: base trajectory = `base'"
+    di as text "run_grc_robust_vv: phi initial value = `phistart'"
+
+    * ----------------------------------------------------------------
+    * GMM: same moment equation as run_grc, BUT instruments
+    * swd_switcher_*_choice replace switcher_*_choice, and
+    * swd_always_choice replaces always_choice. vce(cluster vfirst),
+    * winitial unadjusted independent, onestep (VV's settings).
+    * Parameter count identical to run_grc -- no beta_dev.
+    * ----------------------------------------------------------------
+    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                   ///
+                            - {Delta_base}*choice                                   ///
+                            - {phi=`phistart'}*(`switcherpars')                     ///
+                            - ({kappa}+{phi}*({kappa}                               ///
+                            - {mu: switcher_`base'}))*(always#1.choice)             ///
+                            - {xb: `covarlist'})                                    ///
+                           , instruments(                                           ///
+                            `covarlist'                                             ///
+                            never `switcher_traj' choice                            ///
+                            swd_always_choice `swd_list', nocons                    ///
+                           )                                                        ///
+                             vce(cluster vfirst)                                    ///
+                             winitial(unadjusted, independent)                      ///
+                             onestep                                                ///
+                             from(`initial')                                        ///
+                             quickderivatives nolog                                 ///
+                             iterate(`iterate')
+
+    * ----------------------------------------------------------------
+    * Post-estimation (joint mu test, Hansen J, convergence flag)
+    * ----------------------------------------------------------------
+    local mu_test ""
+    local s0 : word 1 of $switchers
+    local mu_test "[mu]switcher_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local mu_test "`mu_test' = [mu]switcher_`s'"
+        }
+    }
+    test `mu_test'
+    estadd scalar joint_chi2 = r(chi2), replace : `estname'
+    estadd scalar joint_p    = r(p),    replace : `estname'
+
+    capture estat overid
+    if _rc == 0 {
+        estadd sca Jstat = r(J),    replace : `estname'
+        estadd sca Jdf   = r(J_df), replace : `estname'
+        estadd sca Jpval = r(J_p),  replace : `estname'
+    }
+    else {
+        di as text "run_grc_robust_vv: estat overid unavailable (onestep GMM) -- Jstat not computed"
+    }
+    local converged_str = cond(e(converged)==1, "Y", "N")
+    estadd local converged_str "`converged_str'", replace : `estname'
+    estadd scalar V_clusters = `V',           replace : `estname'
+    estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
+
+    estimates save "$dir/output/`estname'", replace
+
+    * ----------------------------------------------------------------
+    * Standard nlcoms (Delta_never, Delta_always, per-switcher Delta,
+    * Delta_avg). Identical structure to run_grc (phi is now
+    * VV-robust; the LCA extrapolation formulas are unchanged).
+    * ----------------------------------------------------------------
+    estimates restore `estname'
+    nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
+            (_b[mu:never] - _b[mu:switcher_`base']))), post
+    estimates save "$dir/output/`estname'_never", replace
+
+    estimates restore `estname'
+    nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
+            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
+    estimates save "$dir/output/`estname'_always", replace
+
+    estimates restore `estname'
+    local nlcom_expr ""
+    foreach s of numlist $switchers {
+        local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+    }
+    nlcom `nlcom_expr', post
+
+    local d_test ""
+    local s0 : word 1 of $switchers
+    local d_test "Delta_`s0'"
+    foreach s of numlist $switchers {
+        if `s' != `s0' {
+            local d_test "`d_test' = Delta_`s'"
+        }
+    }
+    test `d_test'
+    estadd scalar joint_chi2 = r(chi2), replace
+    estadd scalar joint_p    = r(p),    replace
+    estimates save "$dir/output/`estname'_delta", replace
+
+    local first_loop = 1
+    local Delta_avg_nlcom ""
+    foreach s of numlist $switchers {
+        estimates restore `estname'
+        sum 1.switcher_`s' if e(sample)
+        local num_`s' = r(mean)
+        if `first_loop' == 0 {
+            local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+        }
+        else if `first_loop' == 1 {
+            local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
+            local first_loop = 0
+        }
+    }
+    estimates restore `estname'
+    nlcom (Delta_avg: `Delta_avg_nlcom'), post
+    estimates save "$dir/output/`estname'_avg", replace
+
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results
+* **********************************************************************
+cap program drop grc_tex_table
+program define grc_tex_table
+    syntax , COLumns(integer) FILEname(string asis) 	///
+				COUNTRY(string asis) KEEP(string) varlabel(string asis) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Empty locals to store estimates
+    local ests_never = "" 
+	local ests_avg = ""
+    local ests = ""       
+		
+    * Generate the list of stored estimates for the current panel
+      foreach estname in covs_0 covs_1 covs_2 covs_all covs_trend {
+        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
+		local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`estname'"
+      }
+        
+      * Output Delta-never row
+      esttab `ests_never'                    ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles `colnumbers'         ///
+      prehead(`table_prehead')               ///
+      posthead(`table_posthead')             ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      replace substitute(\_ _)
+        
+      * Output Delta average row
+      esttab `ests_avg'   		             ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_avg "Average $\Delta$") ///
+      append substitute(\_ _)
+    
+    * Output other estimates
+      esttab `ests'	                         ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      keep(`keep')                           ///
+      fragment booktabs                      ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      varwidth(20)                           ///
+      nolines nomtitles nonum                ///
+      postfoot("`table_postfoot'")           ///
+	  varlabels(`keep' "`varlabel'")         ///
+      append substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results 
+*	==> FOR TREND FIRST DO FILE
+* **********************************************************************
+cap program drop grc_tex_table_trend
+program define grc_tex_table_trend
+    syntax , COLumns(integer) FILEname(string asis) 	///
+				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Empty locals to store estimates
+    local ests_never = ""
+	local ests_avg = ""
+    local ests = ""       
+		
+    * Generate the list of stored estimates for the current panel
+      foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
+        local ests_never     = "`ests_never' grc_`country'_`estname'_never"
+        local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
+        local ests           = "`ests' grc_`country'_`estname'"
+      }
+        
+      * Output Delta-never row
+      esttab `ests_never'                    ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles `colnumbers'         ///
+      prehead(`table_prehead')               ///
+      posthead(`table_posthead')             ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      replace substitute(\_ _)
+        
+      * Output Delta average row
+      esttab `ests_avg'   		             ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_avg "Average $\Delta$") ///
+      append substitute(\_ _)
+    
+    * Output other estimates
+      esttab `ests'	                         ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      keep(`keep')                           ///
+      varlabels(`keep' "`varlabel'")         ///
+      eqlabels(none)				         ///
+      fragment booktabs                      ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      varwidth(20)                           ///
+      nolines nomtitles nonum                ///
+      postfoot("`table_postfoot'")           ///
+      append substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results 
+*	==> FOR TREND FIRST DO FILE
+* **********************************************************************
+cap program drop grc_tex_table_trend_hukou
+program define grc_tex_table_trend_hukou
+    syntax , COLumns(integer) FILEname(string asis) 	///
+				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Empty locals to store estimates
+    local ests_never = ""
+    local ests_avg = ""
+    local ests = ""       
+		
+    * Generate the list of stored estimates for the current panel
+      foreach estname in c0 ct c1 c2 ca {
+        local ests_never  = "`ests_never' grc_`country'_`estname'_n"
+        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`estname'"
+      }
+        
+      * Output Delta-never row
+      esttab `ests_never'                    ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles `colnumbers'         ///
+      prehead(`table_prehead')               ///
+      posthead(`table_posthead')             ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      replace substitute(\_ _)
+        
+      * Output Delta average row
+      esttab `ests_avg'   		             ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_avg "Average $\Delta$") ///
+      append substitute(\_ _)
+    
+    * Output other estimates
+      esttab `ests'	                         ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      keep(`keep')                           ///
+      varlabels(`keep' "`varlabel'")         ///
+      eqlabels(none)				         ///
+      fragment booktabs                      ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      varwidth(20)                           ///
+      nolines nomtitles nonum                ///
+      postfoot("`table_postfoot'")           ///
+      append substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results 
+*	==> FOR TREND FIRST DO FILE
+* **********************************************************************
+cap program drop grc_tex_table_trend_exp
+program define grc_tex_table_trend_exp
+    syntax , COLumns(integer) FILEname(string asis) 	///
+				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Empty locals to store estimates
+    local ests_never = ""
+	local ests_avg = ""
+    local ests = ""       
+		
+    * Generate the list of stored estimates for the current panel
+      foreach estname in c1 c2 c3 ca {
+        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
+        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`estname'"
+      }
+        
+      * Output Delta-never row
+      esttab `ests_never'                    ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles `colnumbers'         ///
+      prehead(`table_prehead')               ///
+      posthead(`table_posthead')             ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      replace substitute(\_ _)
+        
+      * Output Delta average row
+      esttab `ests_avg'   		             ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_avg "Average $\Delta$") ///
+      append substitute(\_ _)
+    
+    * Output other estimates
+      esttab `ests'	                         ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      keep(`keep')                           ///
+      varlabels(`keep' "`varlabel'")         ///
+      eqlabels(none)				         ///
+      fragment booktabs                      ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      varwidth(20)                           ///
+      nolines nomtitles nonum                ///
+      postfoot("`table_postfoot'")           ///
+      append substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results 
+*	==> FOR TREND FIRST DO FILE
+* **********************************************************************
+cap program drop grc_tex_table_trend_birth
+program define grc_tex_table_trend_birth
+    syntax , COLumns(integer) FILEname(string asis) 	///
+				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+				PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local num_panels `panels'
+    local ccc ""
+    * Loop to concatenate "c" the number of times specified in `columns'
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Empty locals to store estimates
+    local ests_never = ""
+	local ests_avg = ""
+    local ests = ""       
+		
+    * Generate the list of stored estimates for the current panel
+      foreach estname in c1 c2 c3 ca {
+        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
+        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
+        local ests        = "`ests' grc_`country'_`estname'"
+      }
+        
+      * Output Delta-never row
+      esttab `ests_never'                    ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles `colnumbers'         ///
+      prehead(`table_prehead')               ///
+      posthead(`table_posthead')             ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      replace substitute(\_ _)
+        
+      * Output Delta average row
+      esttab `ests_avg'   		             ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_avg "Average $\Delta$") ///
+      append substitute(\_ _)
+    
+    * Output other estimates
+      esttab `ests'	                         ///
+      using "$output/tables/`filename'.tex", ///
+	  se b(%8.3f)                            ///           
+      keep(`keep')                           ///
+      varlabels(`keep' "`varlabel'")         ///
+      eqlabels(none)				         ///
+      fragment booktabs                      ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      varwidth(20)                           ///
+      nolines nomtitles nonum                ///
+      postfoot("`table_postfoot'")           ///
+      append substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Make heterogeneity tables for Delta estimates
+* **********************************************************************
+cap program drop het_table_delta
+program define het_table_delta
+    syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
+				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local ccc "c"		// one column
+    local cmid = 2
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+		local table_prefoot		"\addlinespace"
+    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Stored estimates
+    local ests_delta = "grc_`country'_covs_all_delta"
+	
+	* Output Deltas and mus
+	esttab `ests_delta'						 ///
+    using "$output/tables/`filename'.tex",   ///
+	se b(%8.3f)                              ///  
+    keep(`keep') 							 ///
+    coeflabels(`coeflabels') 				 ///
+    eqlabels(none)					         ///
+	fragment booktabs nogaps noobs           ///
+    collabels("$\Delta$")		 			 ///
+    star(* 0.10 ** 0.05 *** 0.01) 			 ///
+	s(joint_chi2 joint_p, label("$\chi^2$ (all equal)" "p-value") ///
+    fmt(%8.3fc %8.3fc))  				     ///
+    varwidth(20) 	                         ///
+    nolines nomtitles `colnumbers'           ///
+    prehead(`table_prehead')                 ///
+    posthead(`table_posthead')               ///
+    prefoot(`table_prefoot')   	             ///
+    postfoot("`table_postfoot'")             ///
+    replace substitute(\_ _)
+   
+end
+
+* **********************************************************************
+* Make heterogeneity tables for mu estimates
+* **********************************************************************
+cap program drop het_table_mu
+program define het_table_mu
+    syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
+				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				COEFLABels(string asis) TEXTdepvar(string asis)
+	
+    // Split the panel names, prehead, and postfoot strings into tokens
+
+    local ccc "c"		// one column
+    local cmid = 2
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+		local table_prefoot		"\addlinespace"
+    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Stored estimates
+    local ests = "grc_`country'_covs_all"
+	
+	* Output Deltas and mus
+	esttab `ests'							 ///
+    using "$output/tables/`filename'.tex",   ///
+	se b(%8.3f)                              ///  
+    keep(`keep') 							 ///
+    coeflabels(`coeflabels') 				 ///
+    eqlabels(none)					         ///
+	fragment booktabs nogaps noobs           ///
+    collabels("$\mu$")			 			 ///
+    star(* 0.10 ** 0.05 *** 0.01) 			 ///
+	s(joint_chi2 joint_p, label("$\chi^2$ (all equal)" "p-value") ///
+    fmt(%8.3fc %8.3fc))  				     ///
+    varwidth(20) 	                         ///
+    nolines nomtitles `colnumbers'           ///
+    prehead(`table_prehead')                 ///
+    posthead(`table_posthead')               ///
+    prefoot(`table_prefoot')   	             ///
+    postfoot("`table_postfoot'")             ///
+    replace substitute(\_ _)
+   
+end
