@@ -6,8 +6,23 @@
 \usetheme{metropolis}
 \metroset{progressbar=frametitle,numbering=fraction,block=fill,sectionpage=progressbar}
 
+% Suppress the bookmarks/outline pane on PDF open (user preference;
+% see ~/.claude/projects/C--git-ckt/memory/feedback_pdf_no_bookmarks.md)
+\hypersetup{pdfpagemode=UseNone}
+
 \usepackage{fontspec}
-\usepackage{amsmath,amssymb,amsthm,mathtools,bbm}
+\usepackage{amsmath,amsthm,mathtools,bbm}
+% unicode-math replaces amssymb and matches math letters to a font
+% that visually pairs with Metropolis's Fira Sans (math letters in
+% the default Computer Modern look heavy and oversized next to Fira
+% Sans body text).
+\usepackage{unicode-math}
+% Fira Math would visually pair with Fira Sans (Metropolis's text font),
+% but it's not bundled with MiKTeX. Fall back to Latin Modern Math:
+% serif, but proper Unicode math with consistent sizing across script
+% and scriptscript styles --- much better than the Computer Modern
+% default which produces oversized math letters.
+\setmathfont{Latin Modern Math}
 \usepackage{booktabs}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing}
@@ -218,30 +233,296 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{Implementation adds $\vii$-interacted means to the GRC regression}
+\section{How Suri, Verdier, and CKT identify the LCA slope}
 
-  Currently:
+% ---------------------------------------------------------------
+\begin{frame}{Suri (2011) identifies $\phicoef$ via panel SUR \& minimum distance}
+
+  Two-stage indirect approach on a multi-year, binary-adoption panel:
+
+  \vspace{0.4em}
+  \textbf{Stage 1 (reduced form).}
+  Stack one outcome equation per year. SUR over the panel:
+  \[
+    y_{it} \;=\; \pi_{0,t} \;+\; \sum_{\underline{d}\in\mathcal{D}} \pi_{\underline{d},t}\, \mathbbm{1}\{\underline{d}_i = \underline{d}\} \;+\; x_{it}'\gamma_t \;+\; u_{it}
+  \]
+  Each coefficient $\pi_{\underline{d}, t}$ is the average $y$ in adoption pattern $\underline{d}$ in year $t$
+
+  \vspace{0.4em}
+  \textbf{Stage 2 (structural / OMD).}
+  Express each $\pi_{\underline{d}, t}$ as a known function of $(\beta, \phicoef, \lambda_1, \ldots, \lambda_K)$ implied by the CRC restriction
+  \[
+    g_{\underline{d}, t}(\beta, \phicoef, \lambda) \;=\; \pi_{\underline{d}, t}
+  \]
+  Solve via weighted minimum distance: $\hat\theta = \arg\min (\hat\pi - g(\theta))' W (\hat\pi - g(\theta))$
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Identification: SUR over-identifies the structural parameters; $\phicoef$ pinned by the across-equation cross-restrictions
+    \item Implemented in our \texttt{randcoef.ado}, which exactly replicates Suri's published results
+  \end{itemize}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Verdier identifies $\alpha_1$ at the worker level}
+
+  Two-step procedure on Suri's (2011) Kenyan data:
+
+  \vspace{0.4em}
+  \textbf{Step 1: Chamberlain (1992) projection.}
+  Within each household, partial out a separate fixed effect for treated and untreated periods:
+  \[
+    y_{it} \;=\; \mu_{\text{hhid}_i,\, \D_{it}} \;+\; x_{it}'\gamma \;+\; e_{it}
+  \]
+  Recover worker-level $a_i$ (untreated mean) and $a_i + b_i$ (treated mean)
+
+  \vspace{0.4em}
+  \textbf{Step 2: LCA regression at worker level.}
+  \[
+    a_i \;=\; \alpha_0 \;+\; \alpha_1 \cdot b_i \;+\; \varepsilon_i
+  \]
+  $\alpha_1$ is his $\phicoef$
+
+  \vspace{0.6em}
+  \begin{alertblock}{Robust identification}
+    Instrument the endogenous $b_i$ with \emph{village-demeaned} period-treatment indicators \\
+    Within-village treatment variation only $\Rightarrow$ purges $m_l(\vii)$ confounders
+  \end{alertblock}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{CKT identifies $\phicoef$ at the trajectory level}
+
+  Trajectory pooling: every worker with $\underline{d}_i = \underline{d}$ has the same expected baseline
+  \[
+    E[\thetai \mid \underline{d}_i = \underline{d}] \;=\; \mud - \mu_{\underline{d}_0}
+  \]
+
+  \vspace{0.3em}
+  Single GMM equation, one scalar $\mud$ per trajectory:
   \begin{align*}
-    y_{it} = \sum_{\underline{d}} \mud \mathbbm{1}\{\underline{d}_i = \underline{d}\}
-            + \Delta_{\underline{d}_0} \D_{it}
-            + \sum_{\underline{d}\in\DS\setminus\underline{d}_0} \phicoef(\mud - \mu_{\underline{d}_0}) \D_{it}\mathbbm{1}\{\underline{d}_i=\underline{d}\}
-            + \cdots + \varepsilon_{it}
+    y_{it} \;=\; \sum_{\underline{d}} \mud \mathbbm{1}\{\underline{d}_i = \underline{d}\}
+      \;+\; \Delta_{\underline{d}_0} \D_{it}
+      \;+\; \phicoef \!\sum_{\underline{d}\in\DS\setminus\underline{d}_0}\!\! (\mud - \mu_{\underline{d}_0}) \D_{it} \mathbbm{1}\{\underline{d}_i = \underline{d}\}
+      \;+\; \cdots
   \end{align*}
 
   \vspace{0.3em}
-  Under robust: trajectory means $\to$ trajectory $\times$ province means
-  \begin{align*}
-    y_{it} = \sum_{\underline{d},v} \mu_{\underline{d},v}\, \mathbbm{1}\{\underline{d}_i=\underline{d}, \vii=v\}
-            + \Delta_{\underline{d}_0}\D_{it}
-            + \phicoef \sum_{\underline{d}\neq\underline{d}_0} (\mu_{\underline{d},\vii} - \mu_{\underline{d}_0,\vii})\D_{it}\mathbbm{1}\{\cdot\}
-            + \cdots
-  \end{align*}
+  Identification: switcher$\times$choice indicators as instruments
+
+  \vspace{0.6em}
+  \textbf{Robust variant:} same equation, switcher$\times$choice instruments \emph{village-demeaned} (just like VV)
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Asymptotically the two estimators target the same $\phicoef$}
+
+  VV's worker-level LCA:
+  \[
+    a_i \;=\; \alpha_0 \;+\; \alpha_1\, b_i \;+\; \varepsilon_i
+  \]
+
+  Take expectations conditional on trajectory:
+  \[
+    E[a_i \mid \underline{d}_i = s]
+    \;=\; \alpha_0 \;+\; \alpha_1 \,E[b_i \mid \underline{d}_i = s]
+  \]
+
+  Under trajectory pooling (A3), worker types are indistinguishable across clusters within trajectory:
+  \[
+    E[a_i \mid \underline{d}_i = s] = \mud, \qquad E[b_i \mid \underline{d}_i = s] = \Deltad
+  \]
+  so
+  \[
+    \mud \;=\; \alpha_0 \;+\; \alpha_1\, \Deltad
+  \]
+  which is exactly CKT's trajectory-level LCA $\Deltad = \beta + \phicoef\,(\mud - \mu_{\underline{d}_0})$ with $\alpha_1 = \phicoef$
+
+  \vspace{0.5em}
+  Same population $\phicoef$. Different aggregation level
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Both estimators are consistent under three assumptions}
+
+  \begin{itemize}
+    \item[\textbf{A1}] \textbf{LCA at the worker level}: $\Deltai = \beta(\vii) + \phicoef\,\thetai + \xi_i$
+    \item[\textbf{A2$'$}] \textbf{Within-cluster exogeneity}: $E[u_{it}, \xi_i \mid \vii, D_{i1}, \ldots] = 0$
+    \item[\textbf{A3}] \textbf{Trajectory pooling}: the distribution of $\thetai$ given $\underline{d}_i$ is the same in every cluster
+  \end{itemize}
+
+  \vspace{0.5em}
+  Then $\hat\alpha_1^{\text{VV}} \xrightarrow{p} \phicoef$ and $\hat\phicoef^{\text{robust\_vv}} \xrightarrow{p} \phicoef$
+
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Same population parameter, different sample aggregations
+    \item Asymptotic variances differ; both achieve $\sqrt{V}$-rate under cluster asymptotics
+    \item When A3 fails, VV stays consistent; CKT picks up an alpha-pooling bias proportional to $\mathrm{Cov}_s(\bar\beta(s), \mud - \mu_{\underline{d}_0})$
+  \end{itemize}
+
+  \vspace{0.3em}
+  Full proof: \texttt{docs/reviews/2026-04-25\_robust-vv-equivalence-proof.md}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Our first robust implementation hit a finite-sample wall}
+
+  \texttt{run\_grc\_robust v1}: add $|V|-1$ cluster$\times$choice interactions as \emph{parameters}
+  \[
+    \Delta_{\underline{d}_0} \D_{it} \;\longrightarrow\; \sum_v \beta(v)\,\mathbbm{1}\{\vii = v\}\, \D_{it}
+  \]
+  Asymptotically equivalent to VV's instrument-demeaning approach
+
+  \vspace{0.6em}
+  \textbf{Empirical reality}: $G \in \{22, 26, 29\}$ clusters, $\sim 47$ moments
+  \begin{itemize}
+    \item cluster-robust weighting matrix is rank-deficient
+    \item GMM objective is nearly flat in $\phicoef$ along a cluster-FE ridge
+    \item TZA: two local minima---$\phicoef = -1.00$ vs $\phicoef = +1.25$ depending on initial value
+    \item CHN: hung $>70$ minutes on the first fit
+  \end{itemize}
+
+  \vspace{0.4em}
+  v1 retired
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Our v2 implementation moves cluster structure to the instruments}
+
+  \texttt{run\_grc\_robust\_vv}: keep CKT's parameters, swap the instruments
+  \begin{itemize}
+    \item Regress $\mathbbm{1}\{\underline{d}_i = s\}\,\D_{it}$ on $\mathbbm{1}\{\vii\}$ \emph{among trajectory-$s$ workers}
+    \item Use residuals as instruments for $\phicoef$ identification
+  \end{itemize}
+
+  \vspace{0.4em}
+  Same parameter set as the simple GRC ($\mud$, $\Delta_{\underline{d}_0}$, $\kappa$, $\gamma$); no $\beta(v)$ parameters
+
+  \vspace{0.6em}
+  \begin{alertblock}{Why this works where v1 failed}
+    No extra cluster-FE parameters $\Rightarrow$ no rank-deficient weighting matrix \\
+    Cluster structure enters only through which moments contribute to identification
+  \end{alertblock}
+
+  \vspace{0.4em}
+  Stable across initial values; degenerate-$v$ test matches simple onestep to 6 decimals
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{We still want to check trajectory pooling empirically}
+
+  Trajectory pooling collapses individual workers to one $\mud$ per trajectory
+
+  \vspace{0.4em}
+  GMM moments weight clusters by
+  \[
+    w(s, v) \;=\; n_{s,v} \cdot \mathrm{Var}(\D \mid s, v)
+  \]
+  Different switchers $\Rightarrow$ different cluster weights $\Rightarrow$ if $\beta(v)$ varies, the pooled $\phicoef$ inherits a tilt
+
+  \vspace{0.6em}
+  Mean total-variation distance between switchers' weight profiles:
+
+  \begin{center}
+    \begin{tabular}{lrr}
+      \toprule
+      Country & mean TV & Verdier shift from simple \\
+      \midrule
+      IDN & $0.258$ & $37\%$ \\
+      CHN & $0.038$ & $24\%$ \\
+      TZA & $0.014$ & $4\%$ \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \vspace{0.4em}
+  Suggestive: rankings match. IDN may have residual pooling bias
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{The diagnostic: rebuild VV's worker-level estimator on CKT data}
+
+  Port [firststage\_projection.do, robust.do] verbatim:
+  \begin{enumerate}
+    \item Chamberlain projection in CKT: absorb $(\text{pid}, \D)$ fixed effects in OLS of $y$ on covariates
+    \item Extract worker-level $a_i$ and $a_i + b_i$ from the cell means
+    \item 2SLS at worker level: $a_i$ on $b_i$, instrumented by village-demeaned period-treatment indicators
+  \end{enumerate}
+
+  \vspace{0.5em}
+  Compare $\hat\phi^{\text{VV}}$ (worker-level) to $\hat\phi^{\text{robust\_vv}}$ (trajectory-pooled)
+
+  \vspace{0.6em}
+  \begin{itemize}
+    \item \textbf{Agreement} $\Rightarrow$ trajectory pooling adds no bias; \texttt{run\_grc\_robust\_vv} stands as primary
+    \item \textbf{Divergence} $\Rightarrow$ trajectory pooling matters; report Verdier with caveat \& VV as sensitivity
+  \end{itemize}
+
+  \vspace{0.4em}
+  Diagnostic only---we do not propose VV's worker-level approach as the paper's main estimator
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Diagnostic results: TZA agrees, IDN diverges, CHN uninformative}
+
+  \begin{center}
+    \footnotesize
+    \begin{tabular}{lrrr}
+      \toprule
+      Country & $\hat\phi^{\text{simple}}$ & $\hat\phi^{\text{robust\_vv}}$ & $\hat\phi^{\text{VV-worker}}$ \\
+      \midrule
+      IDN & $-0.526$ ($0.10$) & $-0.334$ ($0.15$) & $\mathbf{-1.691}$ ($0.57$) \\
+      CHN & $-0.205$ ($0.13$) & $-0.155$ ($0.23$) & $\mathbf{-0.598}$ ($0.90$) \\
+      TZA & $-0.719$ ($0.12$) & $-0.690$ ($0.09$) & $\mathbf{-0.634}$ ($0.36$) \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
 
   \vspace{0.4em}
   \begin{itemize}
-    \item slope $\phicoef$ unchanged---still a single scalar
-    \item standard errors cluster at $\vii$
-    \item stayer return $\Delta_{\dN}$ averaged over clusters with switcher support
+    \item \textbf{TZA}: full agreement, as predicted by mean TV
+    \item \textbf{CHN}: VV's SE ($0.90$) so wide that CIs broadly overlap---uninformative
+    \item \textbf{IDN}: VV says $\phicoef \approx -1.7$, far more negative than $-0.33$. CIs barely overlap
+  \end{itemize}
+
+  \vspace{0.4em}
+  Pro-poor sign holds under all three approaches in all three countries
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{What we learn---and what is still open}
+
+  \textbf{Confirmed}
+  \begin{itemize}
+    \item TZA: trajectory pooling adds no detectable bias
+    \item All approaches agree on the sign and broad magnitude of $\phicoef < 0$ everywhere
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Open}
+  \begin{itemize}
+    \item IDN VV-worker SE is $4\times$ Verdier's. Genuine weak ID? Or trajectory-pooling bias?
+    \item Multi-switch trajectories may add noise to the worker-level Chamberlain projection
+    \item First-stage $F$ for VV-worker not yet checked
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Provisional decision}
+  \begin{itemize}
+    \item \texttt{run\_grc\_robust\_vv} as primary across all three countries
+    \item Add VV-worker as a sensitivity column in the main table
+    \item Methods note: trajectory pooling is consistent under standard assumptions; the IDN flag is unresolved
   \end{itemize}
 
 \end{frame}

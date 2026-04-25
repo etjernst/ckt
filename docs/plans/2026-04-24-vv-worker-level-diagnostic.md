@@ -17,18 +17,41 @@ What we DO want: a worker-level $\hat\phi^{\text{VV}}$ computed on the same data
 
 ## 2. Decision matrix
 
+Constraint: the paper uses ONE primary estimator across all three countries. No per-country branching. The diagnostic must produce a global verdict.
+
 Let $\hat\phi^{\text{simple}}$ (published two-step), $\hat\phi^{\text{robust\_vv}}$ (main comparison), $\hat\phi^{\text{VV}}$ (new worker-level) at covs_all per country.
 
-Tolerance: call them "agreeing" if $|\hat\phi^{\text{VV}} - \hat\phi^{\text{robust\_vv}}| < \max(0.05, \hat{\text{se}}(\hat\phi^{\text{robust\_vv}}))$. Looser than 1/2 SE because the worker-level estimator has its own noise from the Chamberlain projection.
+Tolerance: $|\hat\phi^{\text{VV}} - \hat\phi^{\text{robust\_vv}}| < \max(0.05, \hat{\text{se}}(\hat\phi^{\text{robust\_vv}}))$ per country; "diverges" otherwise.
 
-| Pattern | Interpretation | Paper treatment |
-|---|---|---|
-| simple $\neq$ robust_vv $\approx$ VV | Verdier correctly absorbs between-cluster selection. Trajectory pooling adds no further bias. | `run_grc_robust_vv` as primary with confidence. VV check relegated to appendix or footnote. |
-| simple $\neq$ robust_vv $\neq$ VV | Trajectory pooling fails; Verdier is biased by $\bar\beta(s)$ tilt. | Report Verdier with explicit caveat. Add VV as a sensitivity column. Narrative: "Two checks against the simple estimator; they differ, we report both, the true effect is likely bracketed." |
-| simple $\approx$ robust_vv $\approx$ VV | Neither between-cluster selection nor alpha-pooling matters empirically. Simple spec was fine all along. | Robustness: all three agree. Still keep Verdier as primary for interpretability, but the caveats in the comparison memo soften. |
-| Mixed across countries (e.g. IDN diverges, CHN/TZA agree) | Country-specific issue. | Flag per-country caveats. |
+### Three global outcomes
 
-Expected, given the mean-TV diagnostic: IDN most likely to diverge; CHN mild divergence; TZA essentially identical.
+**Outcome 1: VV agrees with robust_vv in all three countries.**
+
+Empirical evidence that trajectory pooling adds no meaningful bias on top of whatever the Verdier demeaning fixed. Primary = `run_grc_robust_vv` with confidence. Three-way comparison table in an appendix or footnote. No changes to the paper's narrative beyond that.
+
+Also worth reporting if simple $\approx$ robust_vv $\approx$ VV everywhere: neither between-cluster selection nor alpha-pooling matters empirically. The simple spec was already fine; robust_vv and VV are reassurance.
+
+**Outcome 2: VV diverges from robust_vv in at least one country.**
+
+Trajectory pooling creates detectable bias for at least one country. Two candidate responses, all three countries treated the same way:
+
+**Option 2a.** Keep `run_grc_robust_vv` as primary everywhere, add VV as a sensitivity column to the main table in the paper. Caveat paragraph in the methods section: "We compare our trajectory-pooled Verdier estimator to a worker-level variant adapted from Verdier (2020). The two estimates agree to within [X] log points in [country]; they differ by up to [Y] log points in [country(ies)]. We report both; the true LCA slope is plausibly bracketed by the two." Lose some of the "Verdier is clean" narrative but preserve the main extrapolations (which require trajectory structure).
+
+**Option 2b.** Demote `run_grc_robust_vv` from primary back to sensitivity. Primary reverts to the simple GRC (as published). The paper becomes "we tried two robustness exercises (trajectory-pooled Verdier, worker-level VV); both pull $\phi$ toward zero from the simple estimate, but they disagree with each other enough that we don't have a clean second best." Honest but loses the Verdier chapter's main contribution.
+
+**Option 2c.** Commit to a different robust estimator that avoids both the old `run_grc_robust`'s finite-sample blowup AND the trajectory-pooling alpha-pooling bias. Candidates not yet scoped: a within-trajectory-cluster-cell saturated estimator (Option A in the LCA-inversion memo, feasibility questionable on IDN/CHN), or a principled weighting scheme that matches VV weights across switchers.
+
+**Outcome 3: VV and robust_vv agree, but both differ sharply from simple.**
+
+Trajectory pooling doesn't cause the shift (VV agrees), and the simple estimator was the biased one. Primary = `run_grc_robust_vv`. This is the cleanest robustness story: simple had a between-cluster-selection problem; both robust approaches fix it and agree with each other.
+
+### Probability ranking (pre-diagnostic prior, from the mean-TV evidence)
+
+Given mean TV distances of 0.26 (IDN), 0.04 (CHN), 0.01 (TZA), and the matching Verdier-shift ranking, Outcome 2 is most likely (IDN diverges; CHN, TZA agree). Outcome 1 is possible if beta(v) happens to be weakly informative. Outcome 3 would be surprising given IDN's large weight tilt.
+
+### Decision rule if Outcome 2
+
+Default to Option 2a (Verdier primary with caveat + VV sensitivity column), unless the divergence is large enough in magnitude that Option 2b becomes defensible. "Large enough" provisionally = $|\hat\phi^{\text{VV}} - \hat\phi^{\text{robust\_vv}}| > 0.15$ in any country, OR sign flip between VV and robust_vv anywhere. The user makes the final call once numbers are in.
 
 ## 3. Scope
 
