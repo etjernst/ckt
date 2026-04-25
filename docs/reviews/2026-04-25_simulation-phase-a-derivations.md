@@ -97,8 +97,10 @@ Deterministically tie $\beta(v)$ to the same $h(v)$ shape that drives the tilt: 
 
 ### R2a bias (Mode B, analytical)
 
-From the [alpha-pooling derivation](file:///C:/git/ckt/docs/reviews/2026-04-24_alpha-pooling-derivation.md) §3, the CKT trajectory-pooled estimator's bias is:
-$$\hat\phi^{\text{robust\_vv}} - \phi \;=\; -\frac{\mathrm{Cov}_s(\bar\beta(s),\, m_s - m_{d_0})}{\mathrm{Var}_s(m_s - m_{d_0})} + o_p(1)$$
+**Sign convention.** Under CKT's $\Delta_i = \beta(v_i) + \phi \theta_i + \xi_i$, the trajectory-pooled regression of $\Delta_i$ on $m_s$ yields $\hat\phi = \phi + \mathrm{Cov}(\beta(v_i), m_{d_i})/\mathrm{Var}(m_{d_i})$, so the alpha-pooling bias is $+\mathrm{Cov}/\mathrm{Var}$, not $-\mathrm{Cov}/\mathrm{Var}$. The Phase C MC confirms this empirically (observed bias $+0.198$, predicted $+0.193$). The earlier write-up in [`2026-04-24_alpha-pooling-derivation.md`](file:///C:/git/ckt/docs/reviews/2026-04-24_alpha-pooling-derivation.md) §3 stated this with a leading minus, which was incorrect.
+
+The trajectory-pooled estimator's bias is:
+$$\hat\phi^{\text{robust\_vv}} - \phi \;=\; +\frac{\mathrm{Cov}_s(\bar\beta(s),\, m_s - m_{d_0})}{\mathrm{Var}_s(m_s - m_{d_0})} + o_p(1)$$
 
 where $\bar\beta(s) = \sum_v \tilde w(s, v)\, \beta(v)$ and $\tilde w(s, v) = w(s, v) / \sum_{v'} w(s, v')$ with $w(s, v) = n_{s,v} \cdot \mathrm{Var}(D \mid s, v)$.
 
@@ -115,12 +117,12 @@ $$\bar\beta(s) \;=\; \frac{\sigma_\beta}{V}\sum_v h(v)(1 + \lambda g(s) h(v)) \;
 since $\sum_v h(v) = 0$ by centering. So $\bar\beta(s)$ is linear in $g(s)$ with slope $\sigma_\beta \lambda \sigma_h^2$.
 
 Now the bias:
-$$\hat\phi^{\text{robust\_vv}} - \phi \;=\; -\sigma_\beta \lambda \sigma_h^2 \cdot \frac{\mathrm{Cov}_s(g(s),\, m_s)}{\mathrm{Var}_s(m_s)}$$
+$$\hat\phi^{\text{robust\_vv}} - \phi \;=\; +\sigma_\beta \lambda \sigma_h^2 \cdot \frac{\mathrm{Cov}_s(g(s),\, m_s)}{\mathrm{Var}_s(m_s)}$$
 
 With the DGP's $m_s = m_1 (s - 8.5)$ and $g(s) = (s - 8.5)/7.5$, we have $\mathrm{Cov}_s(g, m) / \mathrm{Var}_s(m) = 1/(7.5 m_1)$, so:
-$$\boxed{\hat\phi^{\text{robust\_vv}} - \phi \;\approx\; -\frac{\sigma_\beta \lambda \sigma_h^2}{7.5\, m_1}}$$
+$$\boxed{\hat\phi^{\text{robust\_vv}} - \phi \;\approx\; +\frac{\sigma_\beta \lambda \sigma_h^2}{7.5\, m_1}}$$
 
-For the DGP parameters below ($\sigma_\beta = 0.4$, $\sigma_h^2 \approx 1/3$, $m_1 = 0.1$), this gives bias $\approx -\lambda \cdot 0.18$. So $\lambda = 1.78$ produces bias $\approx -0.32$, matching IDN's empirical $|VV^{-1} - \text{CKT}| \approx 0.26$ order of magnitude.
+For the DGP parameters below ($\sigma_\beta = 0.4$, $\sigma_h^2 \approx 0.36$, $m_1 = 0.1$), this gives bias $\approx +\lambda \cdot 0.19$. So $\lambda = 1.78$ produces bias $\approx +0.34$, matching IDN's empirical $|VV^{-1} - \text{CKT}| \approx 0.26$ order of magnitude. Phase C empirical bias at $\lambda = 1.0$: $+0.198$, consistent with the formula's $+0.193$ within MC SE.
 
 ### R2b bias (Mode A, qualitative)
 
@@ -155,7 +157,7 @@ Double-check: $\lambda^{\text{R2a}} = 1.78$ must keep $P(v \mid s) > 0$ for all 
 
 **Fix:** reduce the calibration target. Set $\lambda^{\text{R2a}} = 1.0$ (safely under the constraint) and note that the implied mean TV is $0.145 \cdot 1.0 = 0.145$, below IDN's 0.258 but of the same order. Alternatively, rescale $g$ or $h$ to smaller range.
 
-Let me use $\lambda^{\text{R2a}} = 1.0$. Implied bias: $-0.18$ at $m_1 = 0.1$.
+Let me use $\lambda^{\text{R2a}} = 1.0$. Implied bias: $+0.19$ at $m_1 = 0.1$.
 
 ### R2b calibration
 
@@ -165,6 +167,6 @@ Under R2b, the TV distance between switcher weight profiles stays at zero becaus
 
 ### Combined recommendation
 
-- $\lambda^{\text{R2a}} = 1.0$, implies mean TV $\approx 0.145$, CKT bias $\approx -0.18$, VV unbiased.
+- $\lambda^{\text{R2a}} = 1.0$, implies mean TV $\approx 0.145$, CKT bias $\approx +0.19$, VV unbiased.
 - $\lambda^{\text{R2b}} = 1.0$, implies mean TV $= 0$ (tilt doesn't affect weights), both estimators biased.
 - Sanity check: if R2a and R2b both show expected bias patterns, we have evidence for both failure modes.
