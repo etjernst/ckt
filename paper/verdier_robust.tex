@@ -1,0 +1,67 @@
+%==============================================================================
+%  Robustness subsection: cluster-pooling robustness check.
+%  Included from main.tex under \section{Robustness}.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{assumption}{Assumption}
+%==============================================================================
+
+\subsection{Robustness to cluster pooling}\label{subsec:verdier-robustness}
+
+The restricted GRC of Section~\ref{subsec:restricted-grc-model} identifies $\phi$ from variation across switcher trajectories, with workers in the same trajectory pooled regardless of their cluster of origin.
+\citet{verdierAverageTreatmentEffects2020a} observes that this pooling step can pick up bias if cluster assignment is correlated with trajectory: workers in different switcher trajectories who live in different clusters bring different cluster-level consumption levels into the trajectory means, and the differences distort the LCA slope.
+Verdier's solution is a worker-level estimator that recovers $\phi$ without aggregating across clusters within trajectory.
+
+Rather than re-engineer our estimation pipeline around Verdier's worker-level GMM, we adapt his cluster-residualization to the trajectory-pooled GMM of Equation~\eqref{eq:restricted-grc-unbalanced}.
+This choice is deliberate, for two reasons.
+First, the worker-level estimator parameterizes the LCA in the reverse direction: it estimates $\alpha_1 = 1/\phi$ rather than $\phi$ directly, so its point estimates and standard errors are not on the same scale as our baseline.
+Second, the worker-level estimator is identified only on workers observed in both rural and urban states, which discards the unbalanced observers that Proposition~\ref{prop:pooling} validates including.
+Adapting the cluster-residualization to the trajectory-pooled GMM keeps both the parameterization in $\phi$ and the unbalanced-pooling step intact, so $\hat\phi^{\mathrm{rob}}$ is directly comparable to our baseline $\hat\phi$.
+The two estimators target the same population $\phi$ under our identifying restrictions plus a cluster-pooling condition we make precise below; Appendix~\ref{app:robust-equivalence} proves the equivalence.
+
+We re-estimate $\phi$ from the moment system of Equation~\eqref{eq:restricted-grc-unbalanced} after replacing the switcher-treatment instruments $D_{it}\cdot\mathbbm 1\{\underline d_i = \underline d\}$ with their cluster residuals.
+For each switcher trajectory $\underline d \in \mathcal D_S$ the residualized instrument is
+\begin{equation}\label{eq:residualized-instrument}
+\tilde D_{it}^{\,\underline d} \;\equiv\; D_{it}\,\mathbbm 1\{\underline d_i=\underline d\} \;-\; \overline{D_{\cdot\cdot}\,\mathbbm 1\{\underline d_{\cdot}=\underline d\}}_{v_i,\,\underline d},
+\end{equation}
+where the second term is the within-cluster mean of $D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$ taken among trajectory-$\underline d$ workers in cluster $v_i$.
+Identification of $\phi$ comes from how much the within-cluster mean of $D$ varies across switcher trajectories, with between-cluster variation absorbed.
+Standard errors are clustered at the village ($v_i$) level rather than the individual level.
+We denote this estimator $\hat\phi^{\mathrm{rob}}$ and reserve $\hat\phi$ for the baseline of Section~\ref{sec:grc-returns}.
+
+Table~\ref{tab:verdier-robust} reports $\hat\phi^{\mathrm{rob}}$ alongside the baseline $\hat\phi$ for the three baseline consumption specifications: log per-capita consumption with the urban indicator as treatment, on the unbalanced panel, with full controls and period fixed effects, separately for Indonesia, China, and Tanzania.
+
+% \input{tables/verdier_robust_consumption_unb}
+
+% [PLACEHOLDER --- results paragraph below to be revised once
+% explorations/verdier/x_main_comparison_results.dta is folded into a
+% paper-grade table.]
+The two estimators are similar across all three countries.
+[Placeholder for the per-country numerical comparison: report $\hat\phi^{\mathrm{rob}}$ and $\hat\phi$ point estimates and standard errors for IDN, CHN, TZA; flag any country where the gap is more than one standard error.]
+We read the agreement as evidence that trajectory pooling across clusters does not materially affect our baseline $\hat\phi$.
+[Placeholder for any country-specific divergence interpretation, if applicable.]
+
+The agreement has a population-level rationale.
+Let $v_i \in \{1,\ldots,V\}$ index the cluster of worker $i$ and consider the following condition.
+
+\begin{assumption}[Trajectory pooling across clusters]
+\label{ass:cluster-pooling}
+$\Pr(v_i = v\mid \underline d_i = \underline d)$ does not depend on $\underline d$ for any switcher trajectory $\underline d \in \mathcal D_S$.
+\end{assumption}
+
+Assumption~\ref{ass:cluster-pooling} requires switcher trajectory and cluster of first observation to be marginally independent.
+The condition is separate from the within-cluster exogeneity already implied by (A1)--(A5).
+
+\begin{proposition}[Equivalence under cluster pooling]
+\label{prop:robust-equivalence}
+Under (A1)--(A5) of Section~\ref{subsec:empirical-model} and Assumption~\ref{ass:cluster-pooling}, $\hat\phi^{\mathrm{rob}}$ and the worker-level GMM estimator of \citet{verdierAverageTreatmentEffects2020a} have the same probability limit, equal to the LCA slope $\phi$ of \eqref{eq:LCA-restriction}.
+\end{proposition}
+
+Just as Proposition~\ref{prop:pooling} validates pooling across the balanced and unbalanced strata under Assumptions~\ref{ass:mar} and \ref{ass:common-gamma}, Proposition~\ref{prop:robust-equivalence} validates pooling across clusters within trajectory under Assumption~\ref{ass:cluster-pooling}.
+The two estimators differ in finite-sample efficiency and cluster-robust variance, but they target the same parameter.
+Appendix~\ref{app:robust-equivalence} gives the construction of the worker-level estimator and proves the equivalence; the argument also covers the generalization that adds a cluster-level intercept $c(v_i)$ to Equation~\eqref{eq:generalized-consumption-eq-simple}, under which $\hat\phi^{\mathrm{rob}}$ remains consistent.
+
+This robustness check uses the identifying restrictions (A1)--(A5); the comparison probes pooling across clusters, not (A1)--(A5) themselves.
+We do not implement the joint-GMM extension of \citet{verdierAverageTreatmentEffects2020a} that simultaneously estimates trajectory-specific average treatment effects for stayers, since our object of interest is $\phi$.
