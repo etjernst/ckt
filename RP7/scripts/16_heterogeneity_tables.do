@@ -77,7 +77,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * GMM estimate is read from 5_GrRC.do's output rather than re-run here,
@@ -153,7 +153,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * GMM estimate is read from 5_GrRC.do's output rather than re-run here,
@@ -229,7 +229,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * GMM estimate is read from 5_GrRC.do's output rather than re-run here,
@@ -273,20 +273,20 @@ foreach s of numlist $switchers {
 * **********************************************************************
 foreach country in IDN CHN TZA {
 		estimates use "$dir/output/grc_`country'_urban_covs_all"
-        estimates store grc_`country'_urban_covs_all
+        estimates store grc_`country'_u_covs_all
 		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
-        estimates store grc_`country'_urban_covs_all_delta
+        estimates store grc_`country'_u_covs_all_delta
     }
 
 * Display a simple table of results
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_urban_covs_all	                  ///
+    grc_`country'_u_covs_all	                  ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 estimates table                                       ///
-    grc_`country'_urban_covs_all_delta                ///
+    grc_`country'_u_covs_all_delta                ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 }
@@ -316,9 +316,9 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
 		estimates use "$dir/output/grc_`country'_urban_covs_all"
-        estimates store grc_`country'_urban_covs_all
+        estimates store grc_`country'_u_covs_all
 		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
-        estimates store grc_`country'_urban_covs_all_delta
+        estimates store grc_`country'_u_covs_all_delta
     }
 
 * **********************************************************************

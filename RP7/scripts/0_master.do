@@ -47,9 +47,9 @@ if "`c(username)'"=="etje0002" {
 	global dir = "C:/Users/etje0002/Desktop/git/ReturnsToMigration"
 }
 if "`c(username)'"=="maand" {
-	* Local RP7 working copy. Active path while the lca-inversion worktree exists:
-	global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
-	* After the branch merges to main, comment the line above and uncomment:
+	* Path varies by worktree. Pick ONE --- uncomment the active line.
+	global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
 	* global dir = "C:/git/ckt/RP7"
 }
 

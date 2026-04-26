@@ -1689,7 +1689,20 @@ capture program drop run_grc
 program define run_grc
 
     * Syntax to accept user-specified covariates and estname
-    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
+
+    * Resume-on-interrupt. If ${skip_if_exists} == "1" and the last-written
+    * ster for this estname exists (the _avg subgroup, saved at the end of
+    * run_grc), skip the whole block. Lets an interrupted master pipeline
+    * pick up from the next missing cell on relaunch. To force a fresh run,
+    * either delete `$output/`estname'*.ster` or unset ${skip_if_exists}.
+    if "${skip_if_exists}" == "1" {
+        capture confirm file "$output/`estname'_avg.ster"
+        if _rc == 0 {
+            di as text "run_grc: SKIP `estname' (`estname'_avg.ster present)"
+            exit
+        }
+    }
 
     * Construct the covariates string for the regression and instruments
 		if "`balance'" == "unb" {
@@ -1715,6 +1728,15 @@ program define run_grc
 		di as text "run_grc: base trajectory = `base'"
 		di as text "run_grc: phi initial value = `phistart'"
 
+    * M9: time the GMM fit + post-estimation. Each call uses a fresh
+    * sequential timer slot (1, 2, 3, ...) so all per-fit times survive
+    * for `timer list` at the end of the session, in addition to being
+    * stashed into the ster as a custom scalar `runtime` via `estadd`.
+    if "${grc_timer_slot}" == "" global grc_timer_slot 0
+    global grc_timer_slot = ${grc_timer_slot} + 1
+    local _tslot = ${grc_timer_slot}
+    timer on `_tslot'
+
     * Run the GMM estimation
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
 									- {Delta_base}*choice  																///
@@ -1729,7 +1751,6 @@ program define run_grc
 									) 																										///
                       vce(cluster pid) 																	///
 											from(`initial') 																	///
-											quickderivatives nolog						                ///
 											iterate(`iterate')
       
       * Joint test for mus
@@ -1752,7 +1773,13 @@ program define run_grc
       estadd sca Jpval    = r(J_p)    , replace   : `estname'  
 	  local converged_str = cond(e(converged)==1, "Y", "N")
 	  estadd local converged_str "`converged_str'", replace : `estname'
-	  
+
+	  * M9: stop timer; record GMM-fit wall-clock seconds in e(runtime).
+	  timer off `_tslot'
+	  qui timer list `_tslot'
+	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
+	  estadd scalar timer_slot = `_tslot', replace : `estname'
+
 	  * Save results
       estimates save "$dir/output/`estname'", replace
       
@@ -1828,7 +1855,7 @@ end
 capture program drop run_grc_onestep
 program define run_grc_onestep
 
-    syntax , estname(string) switchers(numlist) base(numlist) balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     if "`balance'" == "unb" {
         local covarlist "`covars' unbalanced unbalanced_choice"
@@ -1849,6 +1876,13 @@ program define run_grc_onestep
     di as text "run_grc_onestep: base trajectory = `base'"
     di as text "run_grc_onestep: phi initial value = `phistart'"
 
+    * M9: same sequential-slot timer scheme as run_grc; all slots survive
+    * for `timer list` at the end of the session.
+    if "${grc_timer_slot}" == "" global grc_timer_slot 0
+    global grc_timer_slot = ${grc_timer_slot} + 1
+    local _tslot = ${grc_timer_slot}
+    timer on `_tslot'
+
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                    ///
                             - {Delta_base}*choice                                    ///
                             - {phi=`phistart'}*(`switcherpars')                      ///
@@ -1864,7 +1898,6 @@ program define run_grc_onestep
                              winitial(unadjusted, independent)                       ///
                              onestep                                                 ///
                              from(`initial')                                         ///
-                             quickderivatives nolog                                  ///
                              iterate(`iterate')
 
     local mu_test ""
@@ -1977,7 +2010,7 @@ program define run_grc_hukou
     * Run the GMM estimation
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
 									- {Delta_base}*choice  																///
-									- {phi=-1}*(`switcherpars')				 										///
+									- {phi=-0.1}*(`switcherpars')				 										///
 									- ({kappa}+{phi}*({kappa} 										        ///
 									- {mu: switcher_`base'}))*(always#1.choice)           ///
 									- {xb: `covarlist'})  																///
@@ -1988,7 +2021,6 @@ program define run_grc_hukou
 									) 																										///
                       vce(cluster pid) 																	///
 											from(`initial') 																	///
-											quickderivatives nolog						                ///
 											iterate(`iterate')
       
       * Add J-stat estimates from Hansen's J-test  
@@ -1998,7 +2030,13 @@ program define run_grc_hukou
       estadd sca Jpval    = r(J_p)    , replace   : `estname'  
 	  local converged_str = cond(e(converged)==1, "Y", "N")
 	  estadd local converged_str "`converged_str'", replace : `estname'
-	  
+
+	  * M9: stop timer; record GMM-fit wall-clock seconds in e(runtime).
+	  timer off `_tslot'
+	  qui timer list `_tslot'
+	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
+	  estadd scalar timer_slot = `_tslot', replace : `estname'
+
 	  * Save results
       estimates save "$dir/output/`estname'", replace
       
@@ -2057,7 +2095,7 @@ program define run_grc_robust
 
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     * ----------------------------------------------------------------
     * Build vfirst + vchoice_* (idempotent; initial_values_robust may
@@ -2169,7 +2207,6 @@ program define run_grc_robust
                                  winitial(unadjusted, independent)                   ///
                                  onestep                                             ///
                                  from(`initial')                                     ///
-                                 quickderivatives nolog                              ///
                                  iterate(`iterate')
     }
     else {
@@ -2198,7 +2235,6 @@ program define run_grc_robust
                                  winitial(unadjusted, independent)                   ///
                                  onestep                                             ///
                                  from(`initial')                                     ///
-                                 quickderivatives nolog                              ///
                                  iterate(`iterate')
     }
 
@@ -2371,7 +2407,7 @@ program define run_grc_robust_vv
 
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     * ----------------------------------------------------------------
     * Build vfirst + drop missing-vfirst obs
@@ -2482,7 +2518,6 @@ program define run_grc_robust_vv
                              winitial(unadjusted, independent)                      ///
                              onestep                                                ///
                              from(`initial')                                        ///
-                             quickderivatives nolog                                 ///
                              iterate(`iterate')
 
     * ----------------------------------------------------------------
@@ -2694,11 +2729,19 @@ program define grc_tex_table_trend
 	local ests_avg = ""
     local ests = ""       
 		
+    * Stata's `estimates store` creates an internal `_est_<name>` matrix
+    * that must fit in 32 chars; the verbose spec prefixes `urban_` / `nonag_`
+    * combined with `covs_<k>_<sub>` push past that limit, so use a one-letter
+    * short form (`u`/`n`) for stored-name construction. Disk file names keep
+    * the verbose form. Callers in 5_GrRC.do and 6_GrRC_NonAg.do follow the
+    * same convention when they `estimates store`.
+    local spec_short = cond("`spec'"=="urban", "u", cond("`spec'"=="nonag", "n", "`spec'"))
+
     * Generate the list of stored estimates for the current panel
       foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        local ests_never     = "`ests_never' grc_`country'_`spec'_`estname'_never"
-        local ests_avg = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
-        local ests           = "`ests' grc_`country'_`spec'_`estname'"
+        local ests_never     = "`ests_never' grc_`country'_`spec_short'_`estname'_never"
+        local ests_avg = "`ests_avg' grc_`country'_`spec_short'_`estname'_avg"
+        local ests           = "`ests' grc_`country'_`spec_short'_`estname'"
       }
         
       * Output Delta-never row
@@ -3035,8 +3078,11 @@ program define het_table_delta
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates (heterogeneity tables are always urban-spec)
-    local ests_delta = "grc_`country'_urban_covs_all_delta"
+    * Stored estimates (heterogeneity tables are always urban-spec).
+    * Caller (16_heterogeneity_tables.do) stores under the Option-B short
+    * form `grc_<c>_u_covs_all{,_delta}` to fit Stata's 32-char limit on
+    * stored-estimate names, so reference the same short form here.
+    local ests_delta = "grc_`country'_u_covs_all_delta"
 	
 	* Output Deltas and mus
 	esttab `ests_delta'						 ///
@@ -3083,8 +3129,9 @@ program define het_table_mu
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates (heterogeneity tables are always urban-spec)
-    local ests = "grc_`country'_urban_covs_all"
+    * Stored estimates (heterogeneity tables are always urban-spec).
+    * Caller stores under the Option-B short form to fit the 32-char limit.
+    local ests = "grc_`country'_u_covs_all"
 	
 	* Output Deltas and mus
 	esttab `ests'							 ///

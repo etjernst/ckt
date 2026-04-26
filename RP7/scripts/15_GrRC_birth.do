@@ -86,7 +86,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -124,12 +124,12 @@ run_grc, estname(grc_`country'_birth_ca)                             ///
 * **********************************************************************
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_birth_`estname'"
+        estimates store grc_`country'_birth_`estname'
+        estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+        estimates store grc_`country'_birth_`estname'_never
+        estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+        estimates store grc_`country'_birth_`estname'_avg
     }
     }
 
@@ -167,12 +167,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN {
 foreach estname in c1 c2 c3 ca {
-    estimates use "$dir/output/grc_`country'_`estname'"
-    estimates store grc_`country'_`estname'
-    estimates use "$dir/output/grc_`country'_`estname'_never"
-    estimates store grc_`country'_`estname'_never
-    estimates use "$dir/output/grc_`country'_`estname'_avg"
-    estimates store grc_`country'_`estname'_avg
+    estimates use "$dir/output/grc_`country'_birth_`estname'"
+    estimates store grc_`country'_birth_`estname'
+    estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+    estimates store grc_`country'_birth_`estname'_never
+    estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+    estimates store grc_`country'_birth_`estname'_avg
     }
 }
 
@@ -276,7 +276,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -314,12 +314,12 @@ run_grc, estname(grc_`country'_birth_ca)                             ///
 * **********************************************************************
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_birth_`estname'"
+        estimates store grc_`country'_birth_`estname'
+        estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+        estimates store grc_`country'_birth_`estname'_never
+        estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+        estimates store grc_`country'_birth_`estname'_avg
     }
     }
 
@@ -356,12 +356,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-    estimates use "$dir/output/grc_`country'_`estname'"
-    estimates store grc_`country'_`estname'
-    estimates use "$dir/output/grc_`country'_`estname'_never"
-    estimates store grc_`country'_`estname'_never
-    estimates use "$dir/output/grc_`country'_`estname'_avg"
-    estimates store grc_`country'_`estname'_avg
+    estimates use "$dir/output/grc_`country'_birth_`estname'"
+    estimates store grc_`country'_birth_`estname'
+    estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+    estimates store grc_`country'_birth_`estname'_never
+    estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+    estimates store grc_`country'_birth_`estname'_avg
     }
 }
 
@@ -460,7 +460,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -498,12 +498,12 @@ run_grc, estname(grc_`country'_birth_ca)                             ///
 * **********************************************************************
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_birth_`estname'"
+        estimates store grc_`country'_birth_`estname'
+        estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+        estimates store grc_`country'_birth_`estname'_never
+        estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+        estimates store grc_`country'_birth_`estname'_avg
     }
     }
 
@@ -539,12 +539,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_birth_`estname'"
+        estimates store grc_`country'_birth_`estname'
+        estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+        estimates store grc_`country'_birth_`estname'_never
+        estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+        estimates store grc_`country'_birth_`estname'_avg
     }
 }
 
@@ -648,7 +648,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -686,12 +686,12 @@ run_grc, estname(grc_`country'_birth_ca)                             ///
 * **********************************************************************
 foreach country in IDN {
     foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_birth_`estname'"
+        estimates store grc_`country'_birth_`estname'
+        estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+        estimates store grc_`country'_birth_`estname'_never
+        estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+        estimates store grc_`country'_birth_`estname'_avg
     }
     }
 
@@ -728,12 +728,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN {
 foreach estname in c1 c2 c3 ca {
-    estimates use "$dir/output/grc_`country'_`estname'"
-    estimates store grc_`country'_`estname'
-    estimates use "$dir/output/grc_`country'_`estname'_never"
-    estimates store grc_`country'_`estname'_never
-    estimates use "$dir/output/grc_`country'_`estname'_avg"
-    estimates store grc_`country'_`estname'_avg
+    estimates use "$dir/output/grc_`country'_birth_`estname'"
+    estimates store grc_`country'_birth_`estname'
+    estimates use "$dir/output/grc_`country'_birth_`estname'_never"
+    estimates store grc_`country'_birth_`estname'_never
+    estimates use "$dir/output/grc_`country'_birth_`estname'_avg"
+    estimates store grc_`country'_birth_`estname'_avg
     }
 }
 

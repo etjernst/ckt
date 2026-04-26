@@ -86,7 +86,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -264,7 +264,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -438,7 +438,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -616,7 +616,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -794,7 +794,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -968,7 +968,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1145,7 +1145,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1323,7 +1323,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1497,7 +1497,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1675,7 +1675,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1853,7 +1853,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -2027,7 +2027,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above

@@ -85,7 +85,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -159,7 +159,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -233,7 +233,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -277,12 +277,12 @@ run_grc, estname(grc_`country'_urban_covs_all)                           ///
 * **********************************************************************
 foreach country in IDN CHN TZA {
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_urban_`estname'"
+        estimates store grc_`country'_u_`estname'
+        estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+        estimates store grc_`country'_u_`estname'_never
+        estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+        estimates store grc_`country'_u_`estname'_avg
     }
     }
 
@@ -290,9 +290,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
-    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
-    grc_`country'_urban_covs_all                            ///
+    grc_`country'_u_covs_0 grc_`country'_u_covs_trend     ///
+    grc_`country'_u_covs_1 grc_`country'_u_covs_2         ///
+    grc_`country'_u_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -322,12 +322,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
 foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-    estimates use "$dir/output/grc_`country'_`estname'"
-    estimates store grc_`country'_`estname'
-    estimates use "$dir/output/grc_`country'_`estname'_never"
-    estimates store grc_`country'_`estname'_never
-    estimates use "$dir/output/grc_`country'_`estname'_avg"
-    estimates store grc_`country'_`estname'_avg
+    estimates use "$dir/output/grc_`country'_urban_`estname'"
+    estimates store grc_`country'_u_`estname'
+    estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+    estimates store grc_`country'_u_`estname'_never
+    estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+    estimates store grc_`country'_u_`estname'_avg
     }
 }
 
@@ -512,7 +512,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -586,7 +586,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -660,7 +660,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -704,12 +704,12 @@ run_grc, estname(grc_`country'_urban_covs_all)                           ///
 * **********************************************************************
 foreach country in IDN CHN TZA {
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_urban_`estname'"
+        estimates store grc_`country'_u_`estname'
+        estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+        estimates store grc_`country'_u_`estname'_never
+        estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+        estimates store grc_`country'_u_`estname'_avg
     }
     }
 
@@ -717,9 +717,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
-    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
-    grc_`country'_urban_covs_all                            ///
+    grc_`country'_u_covs_0 grc_`country'_u_covs_trend     ///
+    grc_`country'_u_covs_1 grc_`country'_u_covs_2         ///
+    grc_`country'_u_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -747,12 +747,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-    estimates use "$dir/output/grc_`country'_`estname'"
-    estimates store grc_`country'_`estname'
-    estimates use "$dir/output/grc_`country'_`estname'_never"
-    estimates store grc_`country'_`estname'_never
-    estimates use "$dir/output/grc_`country'_`estname'_avg"
-    estimates store grc_`country'_`estname'_avg
+    estimates use "$dir/output/grc_`country'_urban_`estname'"
+    estimates store grc_`country'_u_`estname'
+    estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+    estimates store grc_`country'_u_`estname'_never
+    estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+    estimates store grc_`country'_u_`estname'_avg
     }
 }
 
@@ -932,7 +932,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1001,7 +1001,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1070,7 +1070,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 500
+local iterations 100
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -1114,12 +1114,12 @@ run_grc, estname(grc_`country'_urban_covs_all)                           ///
 * **********************************************************************
 foreach country in IDN CHN TZA {
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_urban_`estname'"
+        estimates store grc_`country'_u_`estname'
+        estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+        estimates store grc_`country'_u_`estname'_never
+        estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+        estimates store grc_`country'_u_`estname'_avg
     }
     }
 
@@ -1127,9 +1127,9 @@ foreach country in IDN CHN TZA {
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_urban_covs_0 grc_`country'_urban_covs_trend     ///
-    grc_`country'_urban_covs_1 grc_`country'_urban_covs_2         ///
-    grc_`country'_urban_covs_all                            ///
+    grc_`country'_u_covs_0 grc_`country'_u_covs_trend     ///
+    grc_`country'_u_covs_1 grc_`country'_u_covs_2         ///
+    grc_`country'_u_covs_all                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -1156,12 +1156,12 @@ TEXTdepvar(string asis): Dependent variable as string
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_never"
-        estimates store grc_`country'_`estname'_never
-        estimates use "$dir/output/grc_`country'_`estname'_avg"
-        estimates store grc_`country'_`estname'_avg
+        estimates use "$dir/output/grc_`country'_urban_`estname'"
+        estimates store grc_`country'_u_`estname'
+        estimates use "$dir/output/grc_`country'_urban_`estname'_never"
+        estimates store grc_`country'_u_`estname'_never
+        estimates use "$dir/output/grc_`country'_urban_`estname'_avg"
+        estimates store grc_`country'_u_`estname'_avg
     }
 }
 
