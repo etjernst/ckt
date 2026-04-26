@@ -90,7 +90,6 @@ Junctions are Windows directory junctions created with `cmd /c mklink /J`.
 
 ## Known issues
 
-- `define_switcherpars` in `0_programs.do` is hardcoded to `base(2)`. This is wrong for income specs with IDN (base=16) and TZA (base=5). Consumption results are unaffected.
 - Hansen's J-test rejects in pooled CHN sample. Splitting by hukou status (rural-first vs urban-first) resolves rejection, suggesting institutional heterogeneity rather than model failure. Separate $\phi$ estimates needed per hukou regime.
 
 ## Sync protocol
