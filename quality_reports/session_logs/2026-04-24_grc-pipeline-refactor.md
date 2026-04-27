@@ -314,8 +314,86 @@ Not established:
 - Whether smoke #2/#3 took ~30 min for 45 fits (claimed from memory; no timestamps recorded).
 - Why smoke #8's first fit took ~53 min wall-clock.
 
-### Open next steps
+### Open next steps (as of 2026-04-26)
 
 1. Commit current changes (drift match + rename completion + Option B + M9 + M10 + smoke drivers + planning artifacts).
 2. When ready to do another smoke run: it will write `runtime` into each ster, giving us per-fit timings for the first time.
 3. Phase 0 of the spec (M7 regression scaffold + reference freeze).
+
+## Continuation 2026-04-27 / 28 --- overnight smoke succeeded, tables verified
+
+### Smoke #9 (full pipeline, no wrap, no resume guard)
+
+Driver: `_smoke_5_GrRC.do`.
+Launched 2026-04-26 21:31, log closed 2026-04-27 17:56 --- ~20.5 h wall clock.
+Exit code 0, clean.
+
+Produced all 9 expected LaTeX tables under `RP7/output/tables/`:
+`GRC_<CHN|IDN|TZA>_<consumption|income>_urban_<unb|bal>.tex`.
+
+### Bit-identical to RP6 2026-04-22 reference
+
+Diffed all 9 tables against the coauthor's RP6 in Dropbox (latest run there is 2026-04-22).
+All 9 are byte-for-byte identical.
+This is strong evidence that:
+
+- The drift-match settings (iterations 100, $\phi_{\text{start}} = -0.1$, no `quickderivatives nolog`) reproduce the same numerical results as the coauthor's published run.
+- The completed ster-rename + Option B short stored names produce identical LaTeX output.
+- GMM is robust to the change in starting value of $\phi$ (-1 to -0.1).
+
+(Caveat: the comparison is to RP6's 2026-04-22 output, not to whatever tables are currently in the paper draft on Overleaf. User confirmed RP6 2026-04-22 is the right reference at this point.)
+
+### M9 timing data captured
+
+Section 3 (income/urban/unb) sters were inspected via `_peek_runtime.do` reading `e(runtime)` and `e(timer_slot)`.
+Section 1 (cons/unb) and section 2 (cons/bal) timings live only in the smoke's in-session `timer list`, which evaporated at Stata exit; only section 3 sters survive on disk after the M11 overwrite.
+
+Per-fit runtimes from section 3:
+
+| Country | Spec | Runtime | Slot | Converged |
+|---|---|---|---|---|
+| IDN | covs_0 | 1667 s | 31 | Y |
+| IDN | covs_all | 2183 s | 35 | Y |
+| TZA | covs_0 | 6 s | 36 | Y |
+| TZA | covs_all | 12 s | 40 | Y |
+| CHN | covs_trend | 220 s | 42 | **N** |
+| CHN | covs_1 | 241 s | 43 | **N** |
+| CHN | covs_2 | 258 s | 44 | **N** |
+| CHN | covs_all | 177 s | 45 | Y |
+
+Worth noting: CHN income covs_trend / covs_1 / covs_2 reported `converged=N` at the iter=100 cap, yet the LaTeX tables match the published 2026-04-22 RP6 tables exactly --- which means the published tables were ALSO produced under the same iter cap and reached the same final values.
+Not a problem for reproducing what's published, but worth knowing if anyone re-examines the iter cap.
+
+IDN is the slow country (~28--36 min per income fit), TZA is fast (~5--12 sec), CHN is moderate (~3--5 min).
+
+### Timer visibility added (after smoke #9 was already running)
+
+Two changes for the next run:
+
+- `run_grc` and `run_grc_onestep` now display `run_grc: <estname> fit in NNN.NN sec (timer slot K)` immediately after each fit's M9 timer stop.
+- `_smoke_5_GrRC.do` now appends `timer list` at the end so the log shows the full slot table.
+  `_smoke_full.do` already had `timer list` at the end.
+
+These don't affect the just-completed run --- Stata held the old in-memory copies of those scripts.
+
+### Other artifacts
+
+- `_peek_runtime.do`: standalone inspection script that reads each ster's `e(runtime)` / `e(timer_slot)` / `e(Jpval)` / `e(converged_str)`.
+- `_smoke_full.do`: overnight driver that runs 5_GrRC + 6 + 8 + 10--15 + 16 with `${skip_if_exists} 1` enabled.
+  Created but not yet successfully run (M11 should land first so the bigger run gets unique sters).
+
+### Open next steps (2026-04-28 view)
+
+1. (now) Commit the timer-display additions + spec M11 revision + smoke artifacts + helpers.
+2. **Phase 0**: M7 regression-test scaffold (use the just-produced 9 tables as the reference).
+3. **Phase 1**: M1 + M2 + M11 together (collapse 10/11/12/13/14/15 into `5_GrRC.do` + add `extra_regressor` / `exp_variant` options + new `<spec3><covs2><sfx1>` naming everywhere).
+   M11 needs to land WITH the collapse, not after, so we don't rewrite name-construction twice.
+4. **Phase 2**: M3 (unify `grc_tex_table_trend*`) + S3 (program-caller map).
+5. **Later phases** per spec.
+
+### What we know is true (this turn)
+
+- Smoke #9 launched 2026-04-26 21:31, finished 2026-04-27 17:56, ~20.5 h.
+- 75 ster files on disk after run; 9 LaTeX tables; all 9 bit-identical to RP6 2026-04-22.
+- `e(runtime)` and `e(timer_slot)` survive in section-3 sters; sections 1 and 2 sters were overwritten (M11 pending).
+- CHN income (slots 42--44) converged=N; the matching published tables presumably did too.

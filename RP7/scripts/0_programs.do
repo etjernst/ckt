@@ -1779,6 +1779,7 @@ program define run_grc
 	  qui timer list `_tslot'
 	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
 	  estadd scalar timer_slot = `_tslot', replace : `estname'
+	  di as text "run_grc: `estname' fit in " %7.2f r(t`_tslot') " sec  (timer slot `_tslot')"
 
 	  * Save results
       estimates save "$dir/output/`estname'", replace
@@ -2036,6 +2037,7 @@ program define run_grc_hukou
 	  qui timer list `_tslot'
 	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
 	  estadd scalar timer_slot = `_tslot', replace : `estname'
+	  di as text "run_grc: `estname' fit in " %7.2f r(t`_tslot') " sec  (timer slot `_tslot')"
 
 	  * Save results
       estimates save "$dir/output/`estname'", replace

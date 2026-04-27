@@ -20,5 +20,10 @@ global copyOverleaf 0
 
 include "$dir/scripts/5_GrRC.do"
 
+* Print every per-fit timer slot in one place so log readers don't have
+* to scroll through GMM output to find them.
+display as text "============ M9 timer list (one row per slot) ============"
+timer list
+
 * Suppress the Windows batch-mode "Stata finished" popup (on success).
 exit, STATA clear
