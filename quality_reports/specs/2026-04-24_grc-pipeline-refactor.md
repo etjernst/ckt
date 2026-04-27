@@ -145,6 +145,115 @@ Wrap the GMM fit inside `run_grc` with a `timer clear 99 / timer on 99 / ... / t
 This populates the overview layer's runtime column (S1) without requiring a separate profiling pass.
 No impact on estimation numerics; regression test (M7) should still pass bit-for-bit.
 
+### M11. Unique `.ster` filenames per fit, with locked-in shorthand.
+
+Note: should have been in the original spec. Discovered post-hoc when running an overnight smoke and noticing slots 1--15 (cons/urban/unb section) get clobbered by slots 16--30 (cons/urban/bal) which are then clobbered by slots 31--45 (income/urban/unb).
+Today every section in `5_GrRC.do` writes the same `grc_<c>_urban_covs_<k>` filenames, so only the LAST section's sters survive on disk.
+Same overwrite issue applies in `8_GrRC_hukou.do` (3 sections per hukou subgroup, all writing the same hukou-prefixed names).
+
+Cost of the current scheme:
+
+- **Cannot reload prior-section results from disk** once the full pipeline has run.
+- **Cannot inspect or reuse individual past fits** for ad-hoc analysis, sensitivity exercises, or reviewer requests.
+- **M9 runtime values** for sections 1 and 2 are lost once section 3 overwrites the main sters.
+- **S1 scraper** can only see the LAST fit per filename (15 of 45 fits in `5_GrRC.do` alone).
+- **M10 resume guard** misfires if a partial run from section 1 leaves `_avg.ster` files on disk; section 2's first fit falsely skips.
+
+#### Locked-in shorthand scheme (file names AND stored names)
+
+Single shared format:
+
+```
+grc_<country>_<spec3>_<covs2>_<sfx1>
+```
+
+- `country`: 3 chars (`CHN` / `IDN` / `TZA`).
+- `spec3`: 3-char positional triplet (`<depvar><choice><balance>`):
+  - `cuu` = consumption / urban / unbalanced
+  - `cub` = consumption / urban / balanced
+  - `iuu` = income / urban / unbalanced
+  - `cnu` = consumption / nonag / unbalanced (IDN-only path in `6_GrRC_NonAg.do`)
+  - Add additional triplets if/when new specs land. Document the table mapping at the top of `0_programs.do`.
+- `covs2`: 2--3 char covariate-set abbreviation. Apply the existing experience-family convention to the `5_GrRC.do` family too:
+  - `c0` = no covariates
+  - `ct` = trend (time FE only)
+  - `c1` = trend + female
+  - `c2` = trend + female + age$^2$
+  - `ca` = trend + female + age$^2$ + education + education$^2$
+  - The existing experience suffixes `c1/c2/c3/ca` keep their meaning inside `10/11/12/13/14/15_*.do`.
+- `sfx1`: 0--1 char post-estimation marker:
+  - `<empty>` = main GMM result
+  - `n` = $\Delta_{\text{never}}$ (replaces `_never`)
+  - `a` = $\Delta_{\text{always}}$ (replaces `_always`)
+  - `d` = per-trajectory $\Delta_d$ + joint test (replaces `_delta`)
+  - `g` = population-weighted average $\Delta$ (replaces `_avg`)
+
+Example: `grc_IDN_cuu_ct_n.ster` is "Δ_never extrapolation for IDN consumption/urban/unbalanced, time-FE-only covariate spec".
+Length 20 chars. Stored-estimate name (without `.ster`) same 20 chars. With Stata's `_est_` prefix: 25 chars --- well under the 32-char limit, no Option B abbreviation needed for these files.
+
+#### Hukou variant (8_GrRC_hukou.do)
+
+`country_short` already encodes the hukou subgroup, e.g. `CHN_rural_first`.
+Naive concat `grc_CHN_rural_first_cuu_ct_n` = 28 chars + `_est_` = 33 --- one over.
+Two options, decide at implementation:
+
+- **Compress hukou subgroup**: `rural_first -> rf`, `urban_first -> uf`, `rural_only -> ro`, `urban_only -> uo`. Result: `grc_CHN_rf_cuu_ct_n` = 19 chars. Cleaner.
+- **Drop the triplet for hukou**: hukou-specific tables already imply the spec context. Result: `grc_CHN_rural_first_ct_n` = 24 chars. Within limit. Loses cross-section disambiguation though, which is the very thing M11 is fixing.
+
+Recommend the first.
+
+#### Why this replaces Option B in these files
+
+After M11, file names and stored names are short enough that we don't need a separate "long disk / short memory" Option B convention.
+The `urban -> u` and `nonag -> n` translations in `grc_tex_table_trend` (the `spec_short` local) become unnecessary.
+Remove that complication when M11 lands.
+Net simplification: single naming scheme everywhere.
+
+#### Concrete code-paths that change
+
+For each numbered file:
+
+| File | Current pattern | After M11 |
+|---|---|---|
+| 5_GrRC.do | `grc_<c>_urban_covs_<k>` (collides across 3 sections) | `grc_<c>_<spec3>_<covs2>` with `spec3` $\in \{cuu, cub, iuu\}$ per section |
+| 6_GrRC_NonAg.do | `grc_<c>_nonag_covs_<k>` | `grc_<c>_cnu_<covs2>` |
+| 8_GrRC_hukou.do | `grc_<country_short>_c<k>` (collides across 3 sections) | `grc_<country_short_compressed>_<spec3>_<covs2>` |
+| 10_GrRC_experience.do | `grc_<c>_exp_c<k>` (no collision today; single-section) | `grc_<c>_cuu_exp_<covs2>` --- adds `cuu` for consistency, OR keep as-is since unique already |
+| 11/12/13_GrRC_*.do | analogous | analogous |
+| 14_GrRC_NonAg_experience.do | `grc_<c>_nonag_exp_c<k>` | `grc_<c>_cnu_exp_<covs2>` (or keep as-is) |
+| 15_GrRC_birth.do | `grc_<c>_birth_c<k>` | `grc_<c>_cuu_birth_<covs2>` (or keep as-is) |
+| 16_heterogeneity_tables.do | reads `grc_<c>_urban_covs_all{,_delta}` | reads `grc_<c>_cuu_ca{,_d}` |
+
+For the experience/birth families (10--15), they don't have the collision problem because their estname pattern differs by file (`exp_`, `maxexp_`, `birth_`, etc.). M11 can either:
+
+- Add the triplet for consistency: `grc_<c>_<spec3>_exp_<covs2>` → all sters have the same shape.
+- Leave as-is: their existing scheme is unique enough.
+
+Recommend **add the triplet for consistency**, even where not strictly needed --- the S1 scraper's parser is simpler with one scheme everywhere.
+
+For each program in `0_programs.do`:
+
+| Program | What changes |
+|---|---|
+| `run_grc` `estimates save` block (5 sites) | suffix `_never/_always/_delta/_avg` -> `_n/_a/_d/_g` |
+| `run_grc_hukou` `estimates save` block | same |
+| `run_grc_onestep` | same |
+| `run_grc_robust` / `run_grc_robust_vv` | same |
+| `grc_tex_table_trend` foreach loop | rebuild `<estname>` to use new shorthand; drop `spec_short` (no longer needed) |
+| `grc_tex_table_trend_exp/_birth/_hukou` | same |
+| `het_table_delta`, `het_table_mu` | reference `grc_<c>_cuu_ca_d` and `grc_<c>_cuu_ca` |
+
+#### Phase placement
+
+Phase 1, with M1/M2 (collapse the experience family + non-ag/birth into `5_GrRC.do`).
+Doing M11 + collapse together avoids editing the same call sites twice.
+
+#### Verification after M11
+
+- A clean smoke run of the full pipeline should leave a number of unique sters per fit equal to (number of `run_grc` calls) × 5 (subgroups). For `5_GrRC.do` alone that's 45 × 5 = 225 sters.
+- The S1 scraper enumerates every fit with its `e(runtime)` and `e(timer_slot)`.
+- No stored-name length errors regardless of country / spec / covariate combination.
+
 ### M10. Resume-on-interrupt guard inside `run_grc`.
 
 The Phase 0 reference run (M6) is expected to take ~40 hours and would otherwise have to restart from zero if interrupted.
