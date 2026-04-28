@@ -563,3 +563,29 @@ Phase 1b plan revised:
 - Macro shape details (argument order, optional vs required) --- sketched above, will refine in Phase 1b step 2.
 - Whether 10--15 absorb into 5_GrRC.do/6_GrRC_NonAg.do as new sections, or stay as separate thin numbered files. Lean: stay as separate thin files, since the user emphasized per-file granularity for re-runs (`do 11_GrRC_max_experience.do` should still mean "re-run the maxexp family alone").
 - Country and depvar specific information must be CLEARLY LABELED in extraction doc (per user direction). Country-specific = data source, country name; depvar-specific = "log consumption" vs "log income"; both should be separate macro components, not blended.
+
+### Phase 1b.1 done (commit cceb9cb)
+
+[quality_reports/reviews/2026-04-28_paper-table-text-extraction.md](../reviews/2026-04-28_paper-table-text-extraction.md) catalogs all caption / notes / postfoot blocks from 5/6/8/10--16 organized by pattern.
+5 distinct notes templates identified (A: IDN canonical, B: standard cross-ref, C: income shared, D/E: heterogeneity).
+3 postfoot patterns (P1: 5-col main, P2: 4-col experience/birth, P3: 1-col heterogeneity).
+59 paper-side macro calls to write at Phase 1b.4.
+
+### Phase 1b.2 done (commit 22bafce + 2ebe9f1)
+
+Drafted macros at [quality_reports/reviews/2026-04-28_preamble-macros-draft.tex](../reviews/2026-04-28_preamble-macros-draft.tex), got user sign-off (with two revisions: keep income notes shared, normalize TZA on "Tanzanian National Panel Survey"), ported to Overleaf:
+
+`C:\Users\maand\Monash Uni Enterprise Dropbox\Emilia Tjernstrom\Apps\Overleaf\ReturnsToMigration-clean\preamble.tex`
+
+Added `\usepackage{etoolbox}`, atomic helper macros, country/treatment/depvar caption components, 3 notes assembly macros (Templates A, B, C), and 3 table macros (`\GRCtable`, `\GRCexptable`, `\GRChukoutable`).
+Heterogeneity macros (D/E) deferred until 1b.3 reads the canonical IDN heterogeneity prose.
+
+`xelatex main-sections.tex` succeeds: 59-page PDF, no new errors (only pre-existing overfull hboxes).
+
+Note: Overleaf folder is outside this git repo. The staging draft in `quality_reports/reviews/` is the in-repo record of what was added.
+
+### Phase 1b.3 starting
+
+Modify `grc_tex_table_trend*` programs in `0_programs.do` to drop only the wrapper-and-notes pieces from `prehead`/`postfoot`. Keep label-free tabular + indicator rows + bottomrule. Update all call sites in 5/6/8/10--16 to drop the now-stale `htb`, full-prehead, full-postfoot args.
+
+Sequencing risk: 1b.3 changes the bytes of every .tex file the pipeline produces. Tier 2 verify (1b.5) will compile the paper with new slim tables to confirm visual identity.
