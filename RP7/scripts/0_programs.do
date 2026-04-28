@@ -1953,7 +1953,7 @@ end
 * **********************************************************************
 cap program drop run_grc_with_extra_regressor
 program define run_grc_with_extra_regressor
-    syntax , country(string) spec3(string) regressor(varname)         ///
+    syntax , country(string) spec3(string) regressor(name)            ///
         [ iterate(integer 100) data_path_override(string)             ///
           KEEPLNsize ]
 
@@ -1973,10 +1973,26 @@ program define run_grc_with_extra_regressor
     local choice  ""
     local depvar  ""
     local balance ""
-    if      "`spec3'" == "cuu" { local choice urban ; local depvar consumption ; local balance unb }
-    else if "`spec3'" == "cub" { local choice urban ; local depvar consumption ; local balance bal }
-    else if "`spec3'" == "iuu" { local choice urban ; local depvar income      ; local balance unb }
-    else if "`spec3'" == "cnu" { local choice nonag ; local depvar consumption ; local balance unb }
+    if "`spec3'" == "cuu" {
+        local choice  urban
+        local depvar  consumption
+        local balance unb
+    }
+    else if "`spec3'" == "cub" {
+        local choice  urban
+        local depvar  consumption
+        local balance bal
+    }
+    else if "`spec3'" == "iuu" {
+        local choice  urban
+        local depvar  income
+        local balance unb
+    }
+    else if "`spec3'" == "cnu" {
+        local choice  nonag
+        local depvar  consumption
+        local balance unb
+    }
     else {
         di as error "run_grc_with_extra_regressor: unknown spec3 `spec3'"
         exit 198
@@ -3370,26 +3386,36 @@ end
 * **********************************************************************
 cap program drop extras_tex_table
 program define extras_tex_table
-    syntax , country(string) spec3(string) regressor(varname)
+    syntax , country(string) spec3(string) regressor(name)
 
     * Family token (ster name) and file suffix (filename)
     local fam ""
     local file_suffix ""
     local fam_label   ""
     if "`regressor'" == "exp" {
-        local fam "exp"           ; local file_suffix "exp"      ; local fam_label "Experience"
+        local fam         exp
+        local file_suffix exp
+        local fam_label   "Experience"
     }
     if "`regressor'" == "exp_max" {
-        local fam "maxexp"        ; local file_suffix "exp_max"  ; local fam_label "Max Experience"
+        local fam         maxexp
+        local file_suffix exp_max
+        local fam_label   "Max Experience"
     }
     if "`regressor'" == "exp_share" {
-        local fam "expsh"         ; local file_suffix "exp_sh"   ; local fam_label "Experience Share"
+        local fam         expsh
+        local file_suffix exp_sh
+        local fam_label   "Experience Share"
     }
     if "`regressor'" == "exp_max_share" {
-        local fam "maxexpsh"      ; local file_suffix "exp_m_sh" ; local fam_label "Max Experience Share"
+        local fam         maxexpsh
+        local file_suffix exp_m_sh
+        local fam_label   "Max Experience Share"
     }
     if "`regressor'" == "urbanbirth" {
-        local fam "birth"         ; local file_suffix "birth"    ; local fam_label "Urban Birth"
+        local fam         birth
+        local file_suffix birth
+        local fam_label   "Urban Birth"
     }
     if "`fam'" == "" {
         di as error "extras_tex_table: unknown regressor `regressor'"
@@ -3400,10 +3426,26 @@ program define extras_tex_table
     local choice  ""
     local depvar  ""
     local balance ""
-    if      "`spec3'" == "cuu" { local choice urban ; local depvar consumption ; local balance unb }
-    else if "`spec3'" == "cub" { local choice urban ; local depvar consumption ; local balance bal }
-    else if "`spec3'" == "iuu" { local choice urban ; local depvar income      ; local balance unb }
-    else if "`spec3'" == "cnu" { local choice nonag ; local depvar consumption ; local balance unb }
+    if "`spec3'" == "cuu" {
+        local choice  urban
+        local depvar  consumption
+        local balance unb
+    }
+    else if "`spec3'" == "cub" {
+        local choice  urban
+        local depvar  consumption
+        local balance bal
+    }
+    else if "`spec3'" == "iuu" {
+        local choice  urban
+        local depvar  income
+        local balance unb
+    }
+    else if "`spec3'" == "cnu" {
+        local choice  nonag
+        local depvar  consumption
+        local balance unb
+    }
     else {
         di as error "extras_tex_table: unknown spec3 `spec3'"
         exit 198
