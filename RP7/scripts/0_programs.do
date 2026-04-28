@@ -1906,6 +1906,168 @@ program define run_grc
 end
 
 * **********************************************************************
+* run_grc_with_extra_regressor
+* Phase 1b.6: extracts the per-stem GMM logic of files 10/11/12/13/14/15
+* (now deleted) into a single program. One call estimates ONE STEM
+* (country x spec3 x extra-regressor family) and writes 5 sters per
+* stem under fully disambiguated names:
+*     grc_<country>_<spec3>_<fam>_{c1,c2,c3,ca}     (main)
+*     grc_<country>_<spec3>_<fam>_<col>_n           (never subgroup; via run_grc)
+*     grc_<country>_<spec3>_<fam>_<col>_g           (group-avg; via run_grc)
+*
+* This finally fixes the "preserve prior cross-section ster collisions"
+* deferred from M11 (Phase 1a). All 44 stems now coexist on disk.
+*
+* Args:
+*   country(IDN|CHN|TZA)
+*   spec3(cuu|cub|iuu|cnu)
+*   regressor(varname)        e.g. exp, exp_max, exp_share, exp_max_share, urbanbirth
+*   [iterate(integer 100)]
+*   [data_path_override(string)]   override resolved dataset path
+*
+* Internal lookup regressor -> family-name token used in ster filenames:
+*   exp           -> exp
+*   exp_max       -> maxexp
+*   exp_share     -> expsh
+*   exp_max_share -> maxexpsh
+*   urbanbirth    -> birth
+*
+* spec3 dispatch (sets choice/depvar/balance for the table label and
+* picks the dataset+lndepvar handling that matches the original 10-15
+* per-section code):
+*   cuu -> choice=urban, depvar=consumption, balance=unb,
+*          dataset=<country>_unb.dta,  lndepvar=log(consumption/hhsize_cube)
+*   cub -> choice=urban, depvar=consumption, balance=bal,
+*          dataset=<country>_bal.dta,  lndepvar=log(consumption/hhsize_cube)
+*   iuu -> choice=urban, depvar=income,      balance=unb,
+*          dataset=<country>_unb_income.dta, lndepvar already log(income/hhsize_cube)
+*          on disk (no replace)
+*   cnu -> choice=nonag, depvar=consumption, balance=unb,
+*          dataset=<country>_unb_nonag.dta,  lndepvar=log(consumption/hhsize_cube)
+*
+* data_path_override is for the one cell from file 15 sec 4 where the
+* original code opened the urban dataset (IDN_unb.dta) but labeled the
+* output as cnu in the filename. Faithful replication preserves that
+* historical behavior; pass data_path_override("...IDN_unb.dta") when
+* needed.
+* **********************************************************************
+cap program drop run_grc_with_extra_regressor
+program define run_grc_with_extra_regressor
+    syntax , country(string) spec3(string) regressor(varname)         ///
+        [ iterate(integer 100) data_path_override(string)             ///
+          KEEPLNsize ]
+
+    * --- 1. Family token lookup ---
+    local fam ""
+    if "`regressor'" == "exp"           local fam "exp"
+    if "`regressor'" == "exp_max"       local fam "maxexp"
+    if "`regressor'" == "exp_share"     local fam "expsh"
+    if "`regressor'" == "exp_max_share" local fam "maxexpsh"
+    if "`regressor'" == "urbanbirth"    local fam "birth"
+    if "`fam'" == "" {
+        di as error "run_grc_with_extra_regressor: unknown regressor `regressor'"
+        exit 198
+    }
+
+    * --- 2. Spec3 dispatch ---
+    local choice  ""
+    local depvar  ""
+    local balance ""
+    if      "`spec3'" == "cuu" { local choice urban ; local depvar consumption ; local balance unb }
+    else if "`spec3'" == "cub" { local choice urban ; local depvar consumption ; local balance bal }
+    else if "`spec3'" == "iuu" { local choice urban ; local depvar income      ; local balance unb }
+    else if "`spec3'" == "cnu" { local choice nonag ; local depvar consumption ; local balance unb }
+    else {
+        di as error "run_grc_with_extra_regressor: unknown spec3 `spec3'"
+        exit 198
+    }
+
+    * --- 3. Resolve dataset path ---
+    if "`data_path_override'" != "" {
+        local dpath "`data_path_override'"
+    }
+    else if "`spec3'" == "iuu" {
+        local dpath "$dirdata/processed/`country'_`balance'_income.dta"
+    }
+    else if "`spec3'" == "cnu" {
+        local dpath "$dirdata/processed/`country'_`balance'_`choice'.dta"
+    }
+    else {
+        local dpath "$dirdata/processed/`country'_`balance'.dta"
+    }
+
+    * --- 4. Open data; build lndepvar (skip for iuu --- already on disk) ---
+    use "`dpath'", clear
+    if "`spec3'" != "iuu" {
+        replace lndepvar = log(`depvar'/hhsize_cube)
+    }
+    sum ln*
+
+    * --- 5. GMM-side variable construction (uses dataset's `choice' column) ---
+    setup_grc_estimation
+
+    * Keep only relevant variables (speeds up estimation). Mirrors the
+    * original keepvars from 10-15. Section 3 of 15 (iuu) included
+    * $lnsize; reproduce that when keeplnsize is passed (or always for
+    * iuu, which is the only place it matters).
+    if "`spec3'" == "iuu" | "`keeplnsize'" != "" {
+        keep lndepvar $lnsize trajectory choice pid `regressor' ///
+             period unbalanced* switcher non_switcher           ///
+             female age age2 education_max education_max2 trend ///
+             always always_choice never switcher_*
+    }
+    else {
+        keep lndepvar trajectory choice pid `regressor'         ///
+             period unbalanced* switcher non_switcher           ///
+             female age age2 education_max education_max2 trend ///
+             always always_choice never switcher_*
+    }
+
+    * --- 6. Period fixed effects ---
+    tab period, gen(period_)
+    local periodFE "period_2 - period_`r(r)'"
+
+    * --- 7. Initial values ---
+    initial_values lndepvar,         ///
+        switchers($switchers)        ///
+        balance(`balance')           ///
+        estname(initial_`country')
+    local base    "`r(base)'"
+    local initial "`r(initial)'"
+
+    * --- 8. Per-fit covariate strings (locals; no global pollution) ---
+    local covs1   "`regressor'"
+    local covs2   "`regressor' female"
+    local covs3   "`regressor' female age2"
+    local covsall "`regressor' female age2 education_max education_max2"
+
+    * --- 9. Four fits with progressive covariates ---
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c1)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs1')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c2)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs2')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c3)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs3')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_ca)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covsall')                                ///
+        iterate(`iterate')
+end
+
+* **********************************************************************
 * run_grc_onestep: simple spec with VV's onestep GMM settings
 * **********************************************************************
 * Identical to run_grc except for winitial(unadjusted, independent) +
@@ -3189,7 +3351,104 @@ program define grc_tex_table_trend_birth
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
-   
+
+end
+
+* **********************************************************************
+* extras_tex_table
+* Phase 1b.6: per-cell wrapper that builds ONE family-table for the
+* extras specs (matches run_grc_with_extra_regressor's GMM cells 1:1).
+* Looks up everything --- file suffix, fam_token, postfoot label, and
+* depvar/choice/balance for the filename --- from the same (country,
+* spec3, regressor) arg triple as the GMM call. Reads disambiguated
+* sters from disk (grc_<country>_<spec3>_<fam>_<col>.ster).
+*
+* Args identical to run_grc_with_extra_regressor:
+*   country(IDN|CHN|TZA)
+*   spec3(cuu|cub|iuu|cnu)
+*   regressor(varname)
+* **********************************************************************
+cap program drop extras_tex_table
+program define extras_tex_table
+    syntax , country(string) spec3(string) regressor(varname)
+
+    * Family token (ster name) and file suffix (filename)
+    local fam ""
+    local file_suffix ""
+    local fam_label   ""
+    if "`regressor'" == "exp" {
+        local fam "exp"           ; local file_suffix "exp"      ; local fam_label "Experience"
+    }
+    if "`regressor'" == "exp_max" {
+        local fam "maxexp"        ; local file_suffix "exp_max"  ; local fam_label "Max Experience"
+    }
+    if "`regressor'" == "exp_share" {
+        local fam "expsh"         ; local file_suffix "exp_sh"   ; local fam_label "Experience Share"
+    }
+    if "`regressor'" == "exp_max_share" {
+        local fam "maxexpsh"      ; local file_suffix "exp_m_sh" ; local fam_label "Max Experience Share"
+    }
+    if "`regressor'" == "urbanbirth" {
+        local fam "birth"         ; local file_suffix "birth"    ; local fam_label "Urban Birth"
+    }
+    if "`fam'" == "" {
+        di as error "extras_tex_table: unknown regressor `regressor'"
+        exit 198
+    }
+
+    * Spec3 -> filename label tokens (matches GRC_extras.do dispatch)
+    local choice  ""
+    local depvar  ""
+    local balance ""
+    if      "`spec3'" == "cuu" { local choice urban ; local depvar consumption ; local balance unb }
+    else if "`spec3'" == "cub" { local choice urban ; local depvar consumption ; local balance bal }
+    else if "`spec3'" == "iuu" { local choice urban ; local depvar income      ; local balance unb }
+    else if "`spec3'" == "cnu" { local choice nonag ; local depvar consumption ; local balance unb }
+    else {
+        di as error "extras_tex_table: unknown spec3 `spec3'"
+        exit 198
+    }
+
+    local reportvars "phi:_cons"
+    local varlab "$\phi$"
+
+    * "Time FE Y Y Y Y" indicator + family covariate labels (per 10-15 convention)
+    local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & `fam_label' & \& Female & \& Age$^2$ & All \\
+
+    * Dispatch to the right table builder. The birth family has its own
+    * builder to allow potential layout differences; everything else uses
+    * grc_tex_table_trend_exp.
+    if "`regressor'" == "urbanbirth" {
+        grc_tex_table_trend_birth, columns(4)                                       ///
+            spec(`spec3'_`fam')                                                      ///
+            country(`country')                                                       ///
+            filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
+            keep(`reportvars')                                                       ///
+            varlabel(`varlab')                                                       ///
+            postfoot(`postfoot_str')                                                 ///
+            coeflabels(choice "Urban")                                               ///
+            textdepvar( log(`depvar') )
+    }
+    else {
+        grc_tex_table_trend_exp, columns(4)                                         ///
+            spec(`spec3'_`fam')                                                      ///
+            country(`country')                                                       ///
+            filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
+            keep(`reportvars')                                                       ///
+            varlabel(`varlab')                                                       ///
+            postfoot(`postfoot_str')                                                 ///
+            coeflabels(choice "Urban")                                               ///
+            textdepvar( log(`depvar') )
+    }
+
+    if $copyOverleaf == 1 {
+        capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix'.tex"
+        if _rc == 0 {
+            copyOverleaf                                                                              ///
+                "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix'.tex"          ///
+                , subdir(tables)
+        }
+    }
 end
 
 * **********************************************************************

@@ -1021,4 +1021,77 @@ if $copyOverleaf == 1 {
     , subdir(tables)
 }
 
+* **********************************************************************
+* Phase 1b.6: extras family tables (44 cells, GRC_extras.do output)
+* Wrapper extras_tex_table reads disambiguated sters
+*   grc_<country>_<spec3>_<fam>_<col>.ster
+* and writes one .tex per cell:
+*   GRC_<country>_<depvar>_<choice>_<balance>_<file_suffix>.tex
+* Each line is a 1-call per stem; explicit per-cell, no loops.
+* **********************************************************************
+
+* --- Family: experience  (regressor = exp) ---
+extras_tex_table, country(IDN) spec3(cuu) regressor(exp)
+extras_tex_table, country(CHN) spec3(cuu) regressor(exp)
+extras_tex_table, country(TZA) spec3(cuu) regressor(exp)
+
+extras_tex_table, country(IDN) spec3(cub) regressor(exp)
+extras_tex_table, country(CHN) spec3(cub) regressor(exp)
+extras_tex_table, country(TZA) spec3(cub) regressor(exp)
+
+extras_tex_table, country(IDN) spec3(iuu) regressor(exp)
+extras_tex_table, country(CHN) spec3(iuu) regressor(exp)
+extras_tex_table, country(TZA) spec3(iuu) regressor(exp)
+
+* --- Family: max_experience  (regressor = exp_max) ---
+extras_tex_table, country(IDN) spec3(cuu) regressor(exp_max)
+extras_tex_table, country(CHN) spec3(cuu) regressor(exp_max)
+extras_tex_table, country(TZA) spec3(cuu) regressor(exp_max)
+
+extras_tex_table, country(IDN) spec3(cub) regressor(exp_max)
+extras_tex_table, country(CHN) spec3(cub) regressor(exp_max)
+extras_tex_table, country(TZA) spec3(cub) regressor(exp_max)
+
+extras_tex_table, country(IDN) spec3(iuu) regressor(exp_max)
+extras_tex_table, country(CHN) spec3(iuu) regressor(exp_max)
+extras_tex_table, country(TZA) spec3(iuu) regressor(exp_max)
+
+* --- Family: experience_share  (regressor = exp_share) ---
+extras_tex_table, country(IDN) spec3(cuu) regressor(exp_share)
+extras_tex_table, country(CHN) spec3(cuu) regressor(exp_share)
+extras_tex_table, country(TZA) spec3(cuu) regressor(exp_share)
+
+extras_tex_table, country(IDN) spec3(cub) regressor(exp_share)
+extras_tex_table, country(CHN) spec3(cub) regressor(exp_share)
+extras_tex_table, country(TZA) spec3(cub) regressor(exp_share)
+
+extras_tex_table, country(IDN) spec3(iuu) regressor(exp_share)
+extras_tex_table, country(CHN) spec3(iuu) regressor(exp_share)
+extras_tex_table, country(TZA) spec3(iuu) regressor(exp_share)
+
+* --- Family: max_experience_share  (regressor = exp_max_share) ---
+extras_tex_table, country(IDN) spec3(cuu) regressor(exp_max_share)
+extras_tex_table, country(CHN) spec3(cuu) regressor(exp_max_share)
+extras_tex_table, country(TZA) spec3(cuu) regressor(exp_max_share)
+
+extras_tex_table, country(IDN) spec3(cub) regressor(exp_max_share)
+extras_tex_table, country(CHN) spec3(cub) regressor(exp_max_share)
+extras_tex_table, country(TZA) spec3(cub) regressor(exp_max_share)
+
+extras_tex_table, country(IDN) spec3(iuu) regressor(exp_max_share)
+extras_tex_table, country(CHN) spec3(iuu) regressor(exp_max_share)
+extras_tex_table, country(TZA) spec3(iuu) regressor(exp_max_share)
+
+* --- IDN cnu (nonag) x experience families (file 14) ---
+extras_tex_table, country(IDN) spec3(cnu) regressor(exp)
+extras_tex_table, country(IDN) spec3(cnu) regressor(exp_max)
+extras_tex_table, country(IDN) spec3(cnu) regressor(exp_share)
+extras_tex_table, country(IDN) spec3(cnu) regressor(exp_max_share)
+
+* --- Family: birth  (regressor = urbanbirth; IDN-only) ---
+extras_tex_table, country(IDN) spec3(cuu) regressor(urbanbirth)
+extras_tex_table, country(IDN) spec3(cub) regressor(urbanbirth)
+extras_tex_table, country(IDN) spec3(iuu) regressor(urbanbirth)
+extras_tex_table, country(IDN) spec3(cnu) regressor(urbanbirth)
+
 log close
