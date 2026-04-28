@@ -20,7 +20,10 @@ if "`c(username)'" == "maand" {
 include "$dir/scripts/0_path_config.do"
 include "$scripts/0_programs.do"
 
-global copyOverleaf 1
+* Verification mode: do NOT copy to Overleaf during this smoke. Tables
+* land only in $output/tables/. The full-pipeline run from 0_master.do
+* still copies via its own global copyOverleaf 1.
+global copyOverleaf 0
 
 include "$scripts/make_tables.do"
 
