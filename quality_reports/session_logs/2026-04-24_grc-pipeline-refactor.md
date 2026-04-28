@@ -620,3 +620,27 @@ Note: Overleaf folder is outside this git repo. Edits to `main-sections.tex`, `s
 Regenerate the IDN/CHN/TZA cuu cell `.tex` files via `_tier2_tza.do`. Compile `main-sections.tex` to confirm `\GRCtable` produces a visually-acceptable PDF for that cell. If TZA cuu compiles correctly, the same macro shape works for the other 10 active sites (CHN/IDN cuu, all 3 cub, IDN cnu, 4 hukou). Refresh `tests/reference/output/tables/GRC_TZA_consumption_urban_unb.tex` to the new slim format.
 
 Important: paper compilation will FAIL for the other 10 sites until they too are regenerated to slim format. Tier 2 here is a single-cell smoke; full coverage waits for Tier 3 (1b.10).
+
+### Phase 1b.5 done; paper-side swap ROLLED BACK (commits 0c713ec + revert)
+
+Macro design verified working for slim TZA. But user reported Overleaf doesn't compile (mid-migration paper has 1 slim table + 19 OLD-format ones, and the new `\GRCtable` macros wrap them again → 10 cells throw "Illegal nested threeparttable").
+
+**Decision:** roll back the section file macro swap so paper compiles. Macros stay defined in preamble.tex (just unused for now). Re-do the swap at Tier 3 once all 11 cells are slim.
+
+What was reverted:
+- `sections/sec_results.tex`: 5 macro calls -> 5 bare `\input{tables/...}` (with macro lines kept as comments)
+- `sections/sec_robustness.tex`: 3 macro calls -> 3 bare `\input{tables/...}`
+- `sections/app_nonag.tex`: 1 macro call -> 1 bare `\input{tables/...}`
+- `sections/app_hukou.tex`: 2 macro calls -> 2 bare `\input{tables/...}`
+- Slim `GRC_TZA_consumption_urban_unb.tex` in Overleaf `tables/` restored to the OLD (envelope-wrapped) Dropbox RP6 version.
+
+Verified: `xelatex main-sections.tex` clean compile, 56 pages, no errors.
+
+**State to be aware of after this revert:**
+
+- Paper-side: bare `\input{tables/GRC_*}`, expects OLD-format tables. Compiles.
+- .do pipeline (Phase 1b.3 changes still committed): produces SLIM tables.
+- IF user re-runs the pipeline now, the new SLIM tables won't have an envelope and the bare `\input` in the paper will break.
+- Recommendation: don't re-run the pipeline until Tier 3 (1b.10), at which point we re-do the paper-side macro swap atomically with the regeneration. OR revert the .do changes too if you want a fully working setup in the meantime.
+
+Committing the paper revert now. Will pause to confirm with user whether to also revert .do changes (Phase 1b.3) before continuing to Phase 1b.6 (run_grc_with_extra_regressor).
