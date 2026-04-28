@@ -51,11 +51,13 @@ if "`c(username)'"=="maand" {
 	global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
 	* global dir = "C:/git/ckt/RP7"
+	* Overleaf-Dropbox lives in Monash Enterprise Dropbox (not Personal).
+	global overleaf = "C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean"
 }
 
 * 2. Set up sub-folders
 	include "$dir/scripts/0_path_config.do"
-    
+
 * 3. Install dependencies
 	include "$scripts/0_setup.do"
 
@@ -63,7 +65,7 @@ if "`c(username)'"=="maand" {
 	include "$scripts/0_programs.do"
 
 * 5. Copy to Overleaf or not? 1 = will copy to Overleaf
-	global copyOverleaf 0
+	global copyOverleaf 1
 
 * **********************************************************************
 * Run do-files

@@ -33,6 +33,17 @@
 \newcommand{\refIDNhetDelta}{and to the notes of Table~\ref{tab:hetDelta_table_IDN} for additional information on the variables}
 \newcommand{\refIDNhetMu}{and to the notes of Table~\ref{tab:hetmu_table_IDN} for additional information on the variables}
 
+% NOTE 2026-04-28 (Phase 1b.5): the case-translation helpers
+% (\GRCtreatmentcase, \GRCdepvarcase, etc.) below were REMOVED in the
+% live preamble because \ifstrequal isn't fully expandable inside
+% \csname...\endcsname (caused "Missing \endcsname inserted" at compile).
+% Replaced with direct csname dispatch using lowercase macro suffixes
+% (\treatmenturban, \depvarconsumption, \connectorincome, \balmodifierbal,
+% etc.) and \expandafter\newcommand\csname...\endcsname for tokens with
+% underscores (variants exp_max etc., hukou subgroups rural_first etc.).
+% This staging draft retains the original ifstrequal form for historical
+% reference; live preamble.tex in Overleaf has the working version.
+
 % ---------------------------------------------------------------------
 % Country-specific data source phrases.
 % Two variants per country: unbalanced ("uses data from") and balanced
