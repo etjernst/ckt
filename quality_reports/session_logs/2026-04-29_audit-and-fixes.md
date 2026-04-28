@@ -168,3 +168,98 @@ User: come back to the pipeline review for the sections on data construction sin
 | `b664422` | Audit: retract master-log recommendation in M2 |
 | `73588da` | Audit batch 1: M1 / M2 / m3 / m4 / m10 / m11 / m12 / m15 |
 | `f2f392c` | Audit batch 2: M3 helper / M7 ugrc_regressions sample fix / M4 test |
+| `7c6d99f` | Session log 2026-04-29 (this file) |
+| `7e80f6c` | C1 + M5 + M6 fixes: run_grc_hukou timer + phistart + summary CSV path |
+| (commit) | Verification harness: 12/12 tabular bodies match RP6 |
+| `8259fd8` | Audit batch 3: kill `$lnsize` / magic numbers to globals / m1 cd-pattern / m5 tombstone |
+
+## Tier 3 status when killed (2026-04-29 ~09:33)
+
+Killed by user at 09:33 mid-`6_GrRC_NonAg.do` (in IDN cnu_c2's GMM Step 2).
+60 `_g.ster` files preserved on disk.
+Skip-if-exists guard in `_smoke_full.do` will pick up at IDN cnu_c2 on relaunch.
+
+## Verification of partial Tier 3 output
+
+Ran `_smoke_tables_only.do` on the 60 surviving sters; got 12 `.tex` tables (9 main 5_GrRC + 3 leftovers from earlier debug smokes).
+Wrote `tests/compare_tabular_bodies.py` to extract `\begin{tabular}...\end{tabular}` from RP6 references and compare with the SLIM live tables.
+Result: **12 matched bit-identical, 0 differed, 41 missing in live (expected---no GRC_extras or hukou run yet)**.
+Confirms the disambiguated Phase 1b.6 code reproduces RP6 numbers exactly for every cell with sters.
+
+## Audit batch 3 (commit `8259fd8`) summary
+
+- C2: `$lnsize` removed from 5 keepvars references in 5_GrRC.do (1) and 8_GrRC_hukou.do (4), and from the dispatch in `run_grc_with_extra_regressor` in 0_programs.do.
+Also dropped the unused `KEEPLNsize` option from the program.
+- m3 / m4: pipeline files now reference `$grc_max_iter` and `$grc_min_switchers_per_wave` (set in `0_master.do`) instead of the hardcoded 100 and 5.
+- m1: removed `cd "$logs"` from all 11 sub-scripts; switched to `log using "$logs/<file>.log"`.
+- m5: deprecated `grc_tex_table` program removed (Python line-delete; the Edit tool failed twice on whitespace mismatches in the 80-line block). 4-line tombstone comment in its place.
+
+## State at end of session
+
+**Done this session (3 audit batches + verification + critical fixes):** M1, M2, M3, M5, M6 (path + erase), M7, m1, m3, m4, m5, m10, m11, m12, m15, C1, C2 (= `$lnsize` kill), 12-table verification.
+
+**Files in clean state ready for relaunch:**
+- `0_programs.do`: new `run_grc_with_extra_regressor`, new `extras_tex_table`, new `assert_merge_clean`, fixed `run_grc_hukou` (C1 + M5), fixed `ugrc_regressions` (M7), removed `grc_tex_table` deprecated, summary-stats CSV writes to `$logs/` and erases.
+- `0_master.do`: version 17, set more off, project globals (`$grc_max_iter`, `$grc_min_switchers_per_wave`), `$overleaf` per-user.
+- `0_path_config.do`: empty-string fallback for `$overleaf` (warns instead of silently using maand path).
+- `5_GrRC.do`, `6_GrRC_NonAg.do`, `8_GrRC_hukou.do`, `GRC_extras.do`: log-using full-path; `$grc_max_iter`; no `$lnsize`.
+- `make_tables.do`: log-using full-path; cleaner header; 44 extras family cells; orphan `cd` lines removed.
+- `make_figures.do`: log-using full-path; `label define ..., replace` on all 9 occurrences; PNG export for trajectory bar graphs.
+
+**Sters on disk (60 `_g`):**
+- 54 from 5_GrRC.do (cuu/cub/iuu × IDN/CHN/TZA × 6 fits)
+- 6 from 6_GrRC_NonAg.do (IDN cnu_{c0,ct,c1} × main+_n+_g sters; cnu_{c2,c3,ca} pending)
+
+## How to pick this up next session
+
+### Quick health check
+```bash
+cd C:/git/ckt/.claude/worktrees/grc-pipeline-refactor
+git log --oneline -10
+ls RP7/output/grc_*_*_g.ster | wc -l    # expect 60
+python tests/compare_tabular_bodies.py  # expect 12 matched / 0 differed
+```
+
+### Remaining cleanup before relaunch (optional, in priority order)
+
+1. **Smoke-test overwrite policy.**
+Flip `_smoke_full.do`'s `global skip_if_exists 1` to 0 by default; create a separate `_smoke_resume.do` driver that explicitly sets `skip_if_exists 1` for resume mode.
+Today's relaunch can stay with `skip_if_exists 1` since the 60 surviving sters are valid; the policy change is for future runs.
+
+2. **M4 test run.**
+`tests/test_gmm_from_duplicate.do` is written but not yet executed.
+One Stata invocation; ~1 minute wall time; settles whether the doubled mu-loop in `initial_values` actually doubles the macro string.
+
+3. **m6 retrofit `assert_merge_clean`.**
+Update merges in `handle_trajectory_groups` and the 2/3-waves variants to use the new helper instead of `nogen`.
+Adds diagnostics; no behavioral change.
+
+4. **m2: cap -> capture consistency pass** in 0_programs.do.
+Bulk one-line replacement.
+
+5. **m14: schemepack install bug** in 0_setup.do.
+Logic inversion + wrong variable name.
+
+6. **m16: hardcoded panel headers** in `create_panel_tex_table*` programs.
+Derive from `countries()` argument.
+
+### Relaunch Tier 3
+
+When ready:
+```bash
+cd RP7/scripts && stata-mp -b do _smoke_full.do
+```
+
+Will resume at IDN cnu_c2 (skip-if-exists preserves the 60 existing sters).
+Wall clock: ~20-30 hours.
+8_GrRC_hukou.do is now safe (C1 timer fix in place).
+
+### Deferred (data-creation scripts)
+
+User: come back to data-construction findings (DC-M1 through DC-M5, DC-m1 through DC-m7) when ready.
+12 findings on Dropbox scripts; reminders in this log and in [docs/plans/2026-04-29-audit-action-plan.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-04-29-audit-action-plan.md).
+
+### Open questions
+
+- m13 (`data_path_override` expansion explained): probably TRIVIA / SKIP. Confirm with user.
+- m6 (2waves/3waves variants): confirmed not vestigial; possible future TODO to unify under `handle_trajectory_groups_window(n_waves)`.
