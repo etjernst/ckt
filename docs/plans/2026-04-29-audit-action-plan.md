@@ -14,7 +14,7 @@ Status legend: NOW = do this session; POST-T3 = do after Tier 3 finishes; TODO =
 | M3 (merge nogen) | Write `assert_merge_clean` helper, drop `nogen`, use it; helper prints diagnostic and drops `_merge` | NOW | New program in 0_programs.do; usage retrofit later |
 | M4 (doubled mu loop) | Investigate: write a test on simulated data to check whether it actually doubles the string or overwrites | NOW | Write a Stata test script |
 | M5 (run_grc_hukou no phistart) | Add `phistart` option | TODO | Mirror `run_grc` syntax |
-| M6 (summary_stats CSV in cwd) | Fix filepath to point to outputs or intermediate data; also: what do we do with this CSV afterwards? Do we make a table? | WAIT | Need user answer about CSV destiny |
+| M6 (summary_stats CSV in cwd) | CSV is one-trip iebaltab intermediate. Fix: save to a logical repo path AND erase via Stata after import delimited. Potential rewrite of country_summary_stats* programs deferred. | NOW (path + erase) + TODO (rewrite) | iebaltab is CSV-only; no clean way around the round-trip without a different package |
 | M7 (ugrc_regressions shadow eststo) | Very very important, fix it | NOW | Two fix options to surface (A: rename first eststo; B: also add `if regression_sample` to col-7) |
 | M8 (initial_values in make_tables) | Keep---needed for freestanding `make_tables.do` (in case ster results exist but we haven't run setup) | SKIP | User clarified: this is intentional |
 | m1 (cd "$logs" everywhere) | Fix everywhere; should always be `log using "$logs/..."` | NOW (partial) | Tier 3 still uses 5/6/8/GRC_extras---defer those until run finishes |
@@ -22,7 +22,7 @@ Status legend: NOW = do this session; POST-T3 = do after Tier 3 finishes; TODO =
 | m3 (magic 5) | Set as a global in master (set once) | NOW | `global grc_min_switchers_per_wave 5` in 0_master.do |
 | m4 (magic 100 iterations) | Set as a global in master (always set once) | NOW | `global grc_max_iter 100` in 0_master.do |
 | m5 (deprecated grc_tex_table) | Get rid of it | NOW | Delete ~80 lines from 0_programs.do |
-| m6 (2waves/3waves hardcoded enumeration) | Propose & test fix on simulated data; also: why do we even need _2waves and _3waves variants? Trajectory string encoding will never change | WAIT | Need to first answer the rationale question, then propose fix |
+| m6 (2waves/3waves hardcoded enumeration) | Investigated: _2waves/_3waves variants drive distinct descriptive outputs (trajectories_2waves.pdf, trajectories_3waves.pdf), not vestigial. Trajectory string encoding will never change so brittleness concern is moot. SKIP brittleness fix; possible future TODO: unify all three under parameterized `handle_trajectory_groups_window(n_waves)` | SKIP (+ future TODO) | User confirmed leave for now |
 | m7 (set obs 19) | No big deal | SKIP |  |
 | m8 (graph save in cwd) | Use tempfile but keep .gph for re-runs (some runs take long); ambivalent | TODO | Defer; not urgent |
 | m10 (label define mega_trajectories) | Add `replace` | NOW | 9 occurrences in make_figures.do |

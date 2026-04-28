@@ -718,17 +718,18 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'.csv, clear	
-	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'.csv"
+
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
 	drop in 1/3
@@ -787,16 +788,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_2waves.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_2waves.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_2waves.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_2waves.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_2waves.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -856,16 +858,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_3waves.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_3waves.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_3waves.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_3waves.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_3waves.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -925,16 +928,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		ag ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_nonag.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_nonag.csv") replace  ///
 					groupvar(nonag) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_nonag.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_nonag.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_nonag.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -2305,8 +2309,12 @@ end
 capture program drop run_grc_hukou
 program define run_grc_hukou
 
-    * Syntax to accept user-specified covariates and estname
-    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string)] 
+    * Syntax to accept user-specified covariates and estname.
+    * Audit-2026-04-28 M5: phistart option added (mirrors run_grc /
+    * run_grc_onestep) so callers can override the default phi initial
+    * value without editing this program.
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     * Construct the covariates string for the regression and instruments
 		if "`balance'" == "unb" {
@@ -2320,21 +2328,30 @@ program define run_grc_hukou
 
 		* Initialize a local to hold switcher variables
 		local switcher_traj
-		
+
 		* Loop through switchers and add them to local
 		foreach s of numlist `switchers' {
 			local switcher_traj "`switcher_traj' switcher_`s'"
 		}
-		
-		* Build switcherpars internally — guarantees same base everywhere
+
+		* Build switcherpars internally --- guarantees same base everywhere
 		define_switcherpars, switchers(`switchers') base(`base')
 		local switcherpars `r(switcherpars)'
 		di as text "run_grc: base trajectory = `base'"
-		
+		di as text "run_grc: phi initial value = `phistart'"
+
+    * Audit-2026-04-28 C1: timer-slot init was missing from run_grc_hukou.
+    * The 'timer off `_tslot'' line below would have crashed with empty
+    * `_tslot'. Mirror run_grc's pattern (lines ~1798-1801).
+    if "${grc_timer_slot}" == "" global grc_timer_slot 0
+    global grc_timer_slot = ${grc_timer_slot} + 1
+    local _tslot = ${grc_timer_slot}
+    timer on `_tslot'
+
     * Run the GMM estimation
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
 									- {Delta_base}*choice  																///
-									- {phi=-0.1}*(`switcherpars')				 										///
+									- {phi=`phistart'}*(`switcherpars')				 										///
 									- ({kappa}+{phi}*({kappa} 										        ///
 									- {mu: switcher_`base'}))*(always#1.choice)           ///
 									- {xb: `covarlist'})  																///
