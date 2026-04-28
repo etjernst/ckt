@@ -59,25 +59,21 @@ Optionally add it to the top of each standalone file too for files that may be r
 
 Lens: reproducibility / MAJOR / HIGH
 
-### M2 --- No master-level log file; no `set more off`
+### M2 --- `set more off` missing from `0_master.do` (master log idea retracted)
 
 [0_master.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/0_master.do) lines 1--97
 
-Individual scripts open their own logs (`5_GrRC.log`, `make_tables.log`, etc.) but `0_master.do` opens no master log.
-A crash between two sub-scripts leaves no record of which sub-script was running.
-`set more off` is also absent from `0_master.do` (it is set in `0_setup.do` as `set varabbrev off` only, and never reaches the "pager freeze" concern).
+`set more off` is absent from `0_master.do` (it is set in `0_setup.do` as `set varabbrev off` only, and never reaches the "pager freeze" concern that `more` controls).
+Add it to prevent interactive runs from freezing on full screens.
 
-**Fix:**
+The original audit also recommended a master-level log file.
+**Retracted (2026-04-29):** Stata only supports one open log at a time, and sub-scripts (`5_GrRC.do`, `make_tables.do`, etc.) each `log using` their own files.
+A master log would have to be closed before each sub-script's `log using`, defeating its purpose.
+Skip the master log; rely on sub-script logs and the `_smoke_full.log` master driver log when running via that path.
 
-```stata
-set more off
-capture log close _all
-log using "$logs/0_master_YYYYMMDD.smcl", replace
-```
+**Fix:** add `set more off` near the top of `0_master.do`.
 
-Place this immediately after the path config include, and close it at the end of `0_master.do`.
-
-Lens: output / MAJOR / HIGH
+Lens: output / MINOR / HIGH
 
 ### M3 --- Merge diagnostics suppressed with `nogen` but not verified
 
@@ -426,9 +422,10 @@ Add `, replace` to every `label define mega_trajectories` call (9 occurrences).
 Without this, the CHN and TZA trajectory bar graphs may display the IDN labels.
 This is a one-word addition per call, testable immediately by running `make_figures.do`.
 
-**SW5 --- Add `version 17`, `set more off`, and a master log to `0_master.do` (M1, M2).**
-Three lines at the top of `0_master.do`, one `log close` at the bottom.
-Zero risk; adds reproducibility metadata and prevents pager-freeze in interactive mode.
+**SW5 --- Add `version 17` and `set more off` to `0_master.do` (M1, M2).**
+Two lines at the top of `0_master.do`.
+Zero risk; adds version pinning for reproducibility and prevents pager-freeze in interactive mode.
+(Master log idea retracted --- Stata supports only one open log at a time and sub-scripts each `log using` their own files.)
 
 ---
 
