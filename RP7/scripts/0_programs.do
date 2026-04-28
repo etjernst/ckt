@@ -92,6 +92,74 @@
 	* grc_tex_table						creates country-specific LaTeX table for GRC
 
 * **********************************************************************
+* assert_merge_clean
+* Audit-2026-04-28 M3: a small helper to validate a Stata merge against
+* an expected set of _merge values, print a one-line diagnostic showing
+* the actual breakdown, and drop _merge so it doesn't conflict downstream.
+*
+* Usage:
+*     merge 1:1 pid year using "$dirdata/foo.dta"
+*     assert_merge_clean, allow(1 3) label("hhsize merge")
+*
+*   allow()  --- list of _merge values that are OK (1=master only,
+*                2=using only, 3=matched). Defaults to "3" (must-match-all).
+*   label()  --- string for the diagnostic line. Defaults to "merge".
+*   drop_unmatched(string) --- which side(s) to drop after the check.
+*                Pass "1" to drop master-only, "2" to drop using-only,
+*                "1 2" to drop both, or "" to keep all rows. Defaults to "".
+*
+* Always drops _merge at the end so callers don't have to remember.
+* **********************************************************************
+cap program drop assert_merge_clean
+program define assert_merge_clean
+    syntax , [allow(numlist integer min=1 max=3) label(string asis) ///
+              drop_unmatched(string)]
+
+    if "`allow'" == "" {
+        local allow "3"
+    }
+    if `"`label'"' == "" {
+        local label "merge"
+    }
+
+    qui count
+    local n_total = r(N)
+    qui count if _merge == 1
+    local n_master = r(N)
+    qui count if _merge == 2
+    local n_using = r(N)
+    qui count if _merge == 3
+    local n_matched = r(N)
+
+    di as text "[`label'] _merge breakdown: master-only=`n_master', using-only=`n_using', matched=`n_matched' (total `n_total')"
+
+    foreach v of numlist 1 2 3 {
+        local in_allow = strpos(" `allow' ", " `v' ")
+        if !`in_allow' {
+            local n = cond(`v'==1, `n_master', cond(`v'==2, `n_using', `n_matched'))
+            if `n' > 0 {
+                di as error "[`label'] FAIL: _merge==`v' has `n' rows but is not in allow(`allow')"
+                exit 459
+            }
+        }
+    }
+
+    if "`drop_unmatched'" != "" {
+        foreach v of numlist `drop_unmatched' {
+            qui count if _merge == `v'
+            if r(N) > 0 {
+                di as text "[`label'] dropping `r(N)' rows with _merge==`v'"
+                qui drop if _merge == `v'
+            }
+        }
+    }
+
+    drop _merge
+end
+
+* **********************************************************************
+* copyOverleaf
+* **********************************************************************
 capture program drop copyOverleaf
 program define copyOverleaf
 	syntax anything(name=fileName1), SUBdir(string asis)
@@ -1470,16 +1538,25 @@ cap program drop ugrc_regressions
 program define ugrc_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
-	* Run col 7 first as it has the smallest sample, then use e(sample)
-    eststo reg7_`country': reghdfe lndepvar choice 					///
-				$covs_all trend 							///
-				, vce(cluster pid) absorb(pid)
-	gen regression_sample = e(sample)
-	
-	eststo reg7_`country': reghdfe lndepvar i.trajectory 			///
-				i($switchers).trajectory#i.choice 					///
-				i.unbalanced#i.choice $covs_all trend		///
-				, vce(cluster pid)
+    * Audit-2026-04-28 M7: the first reghdfe runs ONLY to define the
+    * common sample (smallest-sample col-7-equivalent fixed-effects
+    * specification). It is not the result that goes into the table ---
+    * it used to be stored under reg7_`country' and was silently
+    * overwritten by the trajectory-decomposed regression below, losing
+    * the sample-defining regression. Now we run it 'quietly' without
+    * eststo, capture e(sample), and apply 'if regression_sample' to
+    * EVERY estimated column including col 7, so the uGRC table reports
+    * cols 1-7 on a common sample (matching reghdfe_regressions's pattern).
+    quietly reghdfe lndepvar choice                                  ///
+                $covs_all trend                                      ///
+                , vce(cluster pid) absorb(pid)
+    gen regression_sample = e(sample)
+
+    eststo reg7_`country': reghdfe lndepvar i.trajectory             ///
+                i($switchers).trajectory#i.choice                    ///
+                i.unbalanced#i.choice $covs_all trend                ///
+                if regression_sample                                 ///
+                , vce(cluster pid)
 	
 	
     eststo reg1_`country': reghdfe lndepvar choice 						///
