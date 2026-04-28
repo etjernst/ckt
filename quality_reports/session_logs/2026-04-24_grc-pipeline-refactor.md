@@ -589,3 +589,34 @@ Note: Overleaf folder is outside this git repo. The staging draft in `quality_re
 Modify `grc_tex_table_trend*` programs in `0_programs.do` to drop only the wrapper-and-notes pieces from `prehead`/`postfoot`. Keep label-free tabular + indicator rows + bottomrule. Update all call sites in 5/6/8/10--16 to drop the now-stale `htb`, full-prehead, full-postfoot args.
 
 Sequencing risk: 1b.3 changes the bytes of every .tex file the pipeline produces. Tier 2 verify (1b.5) will compile the paper with new slim tables to confirm visual identity.
+
+### Phase 1b.3 done (commit 87898b7)
+
+`0_programs.do` 6 programs slimmed (`grc_tex_table_trend`, `_hukou`, `_exp`, `_birth`, `het_table_delta`, `het_table_mu`): drop `htb`, `PREhead` from syntax, build slim prehead (just `\begin{tabular}` + col header), append `\bottomrule\end{tabular}` to caller's `POSTfoot`.
+
+Caller stripping via `tools/captions_to_paper_phase1b3.py`: 493 substitutions across 10 GRC files. Drops `local htb_str / table_caption / table_label / table_notes`, drops `htb()` / `prehead()` args, shortens `local postfoot_str` to indicator-rows-only.
+
+Helper smoke drivers (`_tier2_tza.do`, `_smoke_idn_only.do`) updated manually (not in pipeline FILES list).
+
+Deferred: 2_OLS_uGRC.do, 7_OLS_uGRC_hukou.do, 9_learning.do have the same caption/notes/postfoot pattern but produce non-GRC tables via direct esttab calls. Migration deferred --- needs separate paper-side macros for OLS reduced-form table shape.
+
+### Phase 1b.4 done (paper-side macro call swap)
+
+Swapped 11 `\input{tables/GRC_*}` → macro calls in Overleaf-Dropbox:
+
+- `sections/sec_results.tex`: 5 (IDN/CHN/TZA cuu + 2 hukou first), with `[\GRCnotesIDNcanonical]` for IDN canonical
+- `sections/sec_robustness.tex`: 3 (IDN/CHN/TZA cub)
+- `sections/app_nonag.tex`: 1 (IDN cnu)
+- `sections/app_hukou.tex`: 2 (CHN hukou rural_only + urban_only)
+
+Commented-out `\input` lines (income tables in app_nonag, balanced cells in app_balanced, etc.) left as-is --- they were inactive before Phase 1b and remain inactive.
+
+The 33 family tables (10--15 output: experience variants + birth) are NOT yet referenced in the paper. Per user "no paper-prose changes" lean, leaving as-is. They'll exist on disk as slim .tex after Tier 3 but won't be `\input`-ed until the paper grows to reference them.
+
+Note: Overleaf folder is outside this git repo. Edits to `main-sections.tex`, `sections/*.tex`, and `preamble.tex` don't show in `git status` here. Session log + per-step commits in this repo are the only durable trace.
+
+### Phase 1b.5 starting
+
+Regenerate the IDN/CHN/TZA cuu cell `.tex` files via `_tier2_tza.do`. Compile `main-sections.tex` to confirm `\GRCtable` produces a visually-acceptable PDF for that cell. If TZA cuu compiles correctly, the same macro shape works for the other 10 active sites (CHN/IDN cuu, all 3 cub, IDN cnu, 4 hukou). Refresh `tests/reference/output/tables/GRC_TZA_consumption_urban_unb.tex` to the new slim format.
+
+Important: paper compilation will FAIL for the other 10 sites until they too are regenerated to slim format. Tier 2 here is a single-cell smoke; full coverage waits for Tier 3 (1b.10).
