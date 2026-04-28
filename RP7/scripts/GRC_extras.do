@@ -31,9 +31,8 @@ Cell coverage (44 stems = 36 + 4 + 4):
     - 4  = 1 country (IDN) x 4 spec3 x 1 family (birth)  (from 15)
 *******************************************************************************/
 
-cd "$logs"
 capture log close
-log using GRC_extras.log, replace
+log using "$logs/GRC_extras.log", replace
 
 * **********************************************************************
 * Family: experience  (regressor = exp; from file 10)

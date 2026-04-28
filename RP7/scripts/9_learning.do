@@ -7,9 +7,8 @@ This code:
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using 9_learning.log, replace
+log using "$logs/9_learning.log", replace
 
 * **********************************************************************
 * Preliminaries

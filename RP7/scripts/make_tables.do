@@ -27,9 +27,8 @@ sters on disk.
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using make_tables.log, replace
+log using "$logs/make_tables.log", replace
 
 * Common args reused across all cells
 local reportvars "phi:_cons"
@@ -229,7 +228,6 @@ grc_tex_table_trend.
 Sibling to 6_GrRC_NonAg.do.
 *******************************************************************************/
 
-cd "$logs"
 local reportvars "phi:_cons"
 local varlab "$\phi$"
 
@@ -279,7 +277,6 @@ Per-cell explicit calls (no loop) so any single cell can be commented
 out and re-run individually.
 *******************************************************************************/
 
-cd "$logs"
 local reportvars "phi:_cons"
 local varlab "$\phi$"
 

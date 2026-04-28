@@ -1666,7 +1666,7 @@ program define initial_values, rclass
 			scalar N_`s' = r(N)
 			
 			* Check if condition N_s / T > 5 is met
-			if N_`s' / T > 5 {
+			if N_`s' / T > $grc_min_switchers_per_wave {
 				* Check if the current t-value is the largest
 				if abs(`=scalar(t_`s')') > `max_t' {
 					local max_t = abs(`=scalar(t_`s')')
@@ -1796,7 +1796,7 @@ program define initial_values_robust, rclass
         scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
         quietly sum trajectory if trajectory == `s'
         scalar N_`s' = r(N)
-        if N_`s' / T > 5 {
+        if N_`s' / T > $grc_min_switchers_per_wave {
             if abs(`=scalar(t_`s')') > `max_t' {
                 local max_t = abs(`=scalar(t_`s')')
                 local base = `s'
@@ -2040,8 +2040,7 @@ end
 cap program drop run_grc_with_extra_regressor
 program define run_grc_with_extra_regressor
     syntax , country(string) spec3(string) regressor(name)            ///
-        [ iterate(integer 100) data_path_override(string)             ///
-          KEEPLNsize ]
+        [ iterate(integer 100) data_path_override(string) ]
 
     * --- 1. Family token lookup ---
     local fam ""
@@ -2109,21 +2108,13 @@ program define run_grc_with_extra_regressor
     setup_grc_estimation
 
     * Keep only relevant variables (speeds up estimation). Mirrors the
-    * original keepvars from 10-15. Section 3 of 15 (iuu) included
-    * $lnsize; reproduce that when keeplnsize is passed (or always for
-    * iuu, which is the only place it matters).
-    if "`spec3'" == "iuu" | "`keeplnsize'" != "" {
-        keep lndepvar $lnsize trajectory choice pid `regressor' ///
-             period unbalanced* switcher non_switcher           ///
-             female age age2 education_max education_max2 trend ///
-             always always_choice never switcher_*
-    }
-    else {
-        keep lndepvar trajectory choice pid `regressor'         ///
-             period unbalanced* switcher non_switcher           ///
-             female age age2 education_max education_max2 trend ///
-             always always_choice never switcher_*
-    }
+    * original keepvars from 10-15. The $lnsize global referenced in
+    * 10-15 was vestigial scaffolding from David's old OLS code that
+    * was never assigned in the current pipeline; removed 2026-04-29.
+    keep lndepvar trajectory choice pid `regressor'         ///
+         period unbalanced* switcher non_switcher           ///
+         female age age2 education_max education_max2 trend ///
+         always always_choice never switcher_*
 
     * --- 6. Period fixed effects ---
     tab period, gen(period_)
@@ -2949,92 +2940,11 @@ program define run_grc_robust_vv
 end
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results
+* (Deprecated grc_tex_table program removed 2026-04-29. Pre-trend
+* variant; not called by any numbered .do file. Use grc_tex_table_trend
+* instead. Old definition preserved in git history.)
 * **********************************************************************
-* DEPRECATED: pre-trend variant of grc_tex_table. Not called by any
-* numbered .do file in the current pipeline; kept for reference only.
-* If you need this for new work, port the M11 shorthand the way
-* grc_tex_table_trend handles it.
 cap program drop grc_tex_table
-program define grc_tex_table
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string asis) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
-    }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_prehead 	""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
-
-    * Empty locals to store estimates
-    local ests_never = "" 
-	local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
-      foreach estname in covs_0 covs_1 covs_2 covs_all covs_trend {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-		local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-	  varlabels(`keep' "`varlabel'")         ///
-      append substitute(\_ _)
-   
-end
 
 * **********************************************************************
 * Create country-specific LaTeX table with GRC results 

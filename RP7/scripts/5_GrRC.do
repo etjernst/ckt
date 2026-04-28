@@ -12,9 +12,8 @@ This code:
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using 5_GrRC.log, replace
+log using "$logs/5_GrRC.log", replace
 
 * **********************************************************************
 * Preliminaries
@@ -85,7 +84,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -159,7 +158,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -233,7 +232,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -334,7 +333,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -408,7 +407,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -482,7 +481,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -542,7 +541,7 @@ global covs_gmm2    "$covs_gmm age2"
 global covs_gmm_all "$covs_gmm2 education_max education_max2"
 
 * Keep only relevant variables (speeds up estimation)
-global keepvars lndepvar $lnsize trajectory choice pid 
+global keepvars lndepvar trajectory choice pid
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -578,7 +577,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -647,7 +646,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
@@ -716,7 +715,7 @@ initial_values lndepvar,       ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above

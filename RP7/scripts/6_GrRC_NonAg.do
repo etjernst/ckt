@@ -11,9 +11,8 @@ This code:
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using 6_GrRC_NonAg.log, replace
+log using "$logs/6_GrRC_NonAg.log", replace
 
 * **********************************************************************
 * Preliminaries
@@ -84,7 +83,7 @@ initial_values lndepvar,        ///
 * ************
 * Specify general command for GMM 
 * ************
-local iterations 100
+local iterations $grc_max_iter
 
 * ************
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above

@@ -7,9 +7,8 @@ This code:
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using 0_CHN_hukou_restrictions.log, replace
+log using "$logs/0_CHN_hukou_restrictions.log", replace
 
 * **********************************************************************
 * Preliminaries

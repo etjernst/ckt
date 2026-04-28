@@ -13,9 +13,8 @@ This code:
 *******************************************************************************/
 
 * set log file
-cd "$logs"
 capture log close
-log using 2_OLS_uGRC.log, replace
+log using "$logs/2_OLS_uGRC.log", replace
 
 * **********************************************************************
 * Preliminaries
