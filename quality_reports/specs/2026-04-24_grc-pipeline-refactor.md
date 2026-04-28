@@ -438,6 +438,62 @@ Postponed. Not in the refactor's scope.
 Affects the four `replace ... / deflator` lines in `260302 Data preparation real values_DB.do` (upstream of this repo) and any analogous pattern inside `0_programs.do`.
 On the to-do list for a future session.
 
+## 4b. Validation tiers for incremental work
+
+A full smoke run takes ~30 hours wall clock.
+Re-running it at every step would block progress.
+Use a tiered scheme: cheap checks at every commit, narrow runtime checks per phase, full smoke only at major milestones.
+
+### Tier 1 --- static + symbolic (seconds, every commit)
+
+For pure-rename and structural-collapse changes, validation is mostly grep-based:
+
+- Rename audit: every `estimates save / use / store / table / esttab` reference uses the new shorthand consistently.
+- Stored-name length: every constructed name fits 32 chars after `_est_` prefix; trivial to compute from the format spec.
+- Code-path matrix: walk the spec's M11 / M1 / M2 call-site tables, confirm each was updated.
+- Lint / syntax check: `stata-mp -e do <file>` sanity-load to catch syntax errors without running anything.
+
+Exit criterion: zero unaccounted-for references to the OLD names; every change in the matrix is present.
+
+### Tier 2 --- replay smoke (minutes, per phase or per substantive change)
+
+For changes that don't alter GMM math (rename, collapse), use existing surviving sters to validate the read pipeline without re-running estimation:
+
+- Rename existing sters on disk via a one-shot script to match the new convention.
+- Run only the table-builder block of the relevant section in `5_GrRC.do` (skip the GMM `run_grc` calls; just `estimates use` / `estimates store` / `grc_tex_table_trend`).
+- Diff the resulting LaTeX tables against the frozen reference (`tests/reference/output/tables/`).
+
+For sections where we don't have surviving sters (cons/unb and cons/bal were overwritten in smoke #9; only income/unb sters survive on disk), use a tiny GMM subset:
+
+- Run TZA only: TZA's covs_0 was 6 sec and covs_all 12 sec in the reference smoke; 5 specs total ~1 minute. Diff the TZA tables.
+- This validates the write side (run_grc estname) end-to-end at minimal cost.
+
+Exit criterion: tables diff identically against the reference for the sections covered by the replay.
+
+### Tier 3 --- full smoke (~30 hours, end of major milestone)
+
+Re-run the full pipeline once at the end of a phase. This:
+
+- Validates every fit's GMM still converges with the new code paths.
+- Refreshes `tests/reference/` to include any new tables that the milestone's changes produce (e.g. M11 doesn't add new tables, but Phase 1's collapse + M11 will surface the experience/birth families' tables once their sters are uniquely named).
+- Captures M9 timings for sections 1 and 2 (which are currently lost to overwrite, fixed by M11).
+
+Exit criterion: regression test passes against the prior reference; new artifacts (if any) reviewed manually before being committed as the new reference.
+
+### Worked example: M11 (rename only)
+
+| Sub-step | Validation | Time |
+|---|---|---|
+| Rename in `0_programs.do` (run_grc, run_grc_onestep, suffix strings) | Tier 1 grep | seconds |
+| Rename `estimates save / use / store / table` in 5/6/8/10--16 | Tier 1 grep + length check | seconds |
+| Rename in `grc_tex_table_trend*` foreach bodies | Tier 1 grep | seconds |
+| Drop `spec_short` (no longer needed) | Tier 1 | seconds |
+| Replay smoke: rename existing income sters; re-run table-builder for income/urban/unb | Tier 2 diff vs reference | ~5 min |
+| Tiny TZA smoke: 5 GMM fits + 1 table for TZA cons/urban/unb | Tier 2 diff vs reference | ~5 min |
+| Phase 1 wrap: full smoke; refresh reference if new tables produced | Tier 3 | ~30 hours, once |
+
+This pattern applies to every later phase too: Tier 1 + 2 inside the phase, Tier 3 at phase boundary.
+
 ## 4a. To-do list (not in this refactor)
 
 - A2: replace `replace` with `gen` in the deflation layer.
@@ -491,6 +547,7 @@ Internally `run_grc` picks up `${values}` from the global set at `0_path_config.
 Proposed phase order, each with its own PR-sized commit set:
 
 1. **Phase 0**: M8 (smoke-test ster-rename on IDN) + M10 (resume-on-interrupt guard; one three-line insert in `run_grc`) + M7 (regression-test scaffolding) + M6 Phase 0 (run master pipeline once, freeze reference outputs under `tests/reference/`) + M9 (add `e(runtime)` to `run_grc`; no numeric impact, slot it in here before the reference is frozen so runtime columns are populated from the start). The master run is the ~40 h step --- everything else is fast; M10 makes the master run restartable. Unlocks everything.
+   **Status as of 2026-04-28: Phase 0 is DONE.** Smoke #9 completed 2026-04-27 ~17:56 (~20.5 h, not 40), produced all 9 5_GrRC.do tables bit-identical to RP6 2026-04-22 reference; M9 timer captures per-fit runtime; M10 guard in place; tests/reference/ frozen with the 9 tables; tests/regression_test.py passes.
 2. **Phase 1**: M1 + M2 (extend `run_grc` with `exp_variant` and `extra_regressor`; expand `5_GrRC.do`'s loop; delete 10--15). Diff against frozen reference.
 3. **Phase 2**: M3 (unify `grc_tex_table_trend*`) + S3 step 1 (map program callers, no deletions yet).
 4. ~~Phase 3 (M5 enumerated-block collapse): deferred per user 2026-04-25; not in this refactor.~~

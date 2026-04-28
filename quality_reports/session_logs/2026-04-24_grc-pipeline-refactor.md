@@ -382,18 +382,41 @@ These don't affect the just-completed run --- Stata held the old in-memory copie
 - `_smoke_full.do`: overnight driver that runs 5_GrRC + 6 + 8 + 10--15 + 16 with `${skip_if_exists} 1` enabled.
   Created but not yet successfully run (M11 should land first so the bigger run gets unique sters).
 
-### Open next steps (2026-04-28 view)
+### Phase 0 done (2026-04-28)
 
-1. (now) Commit the timer-display additions + spec M11 revision + smoke artifacts + helpers.
-2. **Phase 0**: M7 regression-test scaffold (use the just-produced 9 tables as the reference).
-3. **Phase 1**: M1 + M2 + M11 together (collapse 10/11/12/13/14/15 into `5_GrRC.do` + add `extra_regressor` / `exp_variant` options + new `<spec3><covs2><sfx1>` naming everywhere).
-   M11 needs to land WITH the collapse, not after, so we don't rewrite name-construction twice.
-4. **Phase 2**: M3 (unify `grc_tex_table_trend*`) + S3 (program-caller map).
-5. **Later phases** per spec.
+Three commits:
+- `eec4141` --- Spec M11 (unique ster filenames per fit, locked-in shorthand).
+- `fbef9bf` --- Per-fit timer display in `run_grc` + `timer list` summary at end of `_smoke_5_GrRC.do` + `_smoke_full.do` overnight driver + `_peek_runtime.do` helper + session log update.
+- `b1ddf25` --- Smoke #9 output tables (9 of 9 bit-identical to RP6 2026-04-22).
+- New: `tests/reference/output/tables/*.tex` (9 frozen tables) + `tests/regression_test.py` + `tests/README.md`.
 
-### What we know is true (this turn)
+Verification: `python tests/regression_test.py` passes (9 identical, 0 differs, 0 missing, 0 extra).
+
+### Validation tier scheme adopted (avoid 30h re-run per step)
+
+Spec extended with a "Validation tiers for incremental work" section (4b). Three tiers:
+
+- **Tier 1 (seconds, every commit)**: static grep audit of rename/code-path changes; stored-name length check; lint syntax-check.
+- **Tier 2 (minutes, per phase)**: replay smoke. For pure-rename changes, rename existing surviving sters on disk + run only the table-builder block; for sections without surviving sters, run a tiny TZA-only GMM subset (~1 min). Diff resulting tables against frozen reference.
+- **Tier 3 (~30 hours, end of major milestone)**: full smoke. Refresh `tests/reference/` with any new artifacts.
+
+Worked example for M11 in the spec: ~10 min total of Tier 1 + Tier 2 work, vs. the 20.5h Tier 3 cost.
+
+### Phase 1 plan (next)
+
+Phase 1 = M1 + M2 + M11 together. Sub-steps:
+1. M11 in `0_programs.do` (run_grc, run_grc_onestep, run_grc_robust*, suffix strings).
+2. M11 in 5/6/8/10--16: rename `estimates save / use / store / table` and call-site `estname` args.
+3. M11 in `grc_tex_table_trend*`: rebuild loop bodies; drop `spec_short`.
+4. M1 + M2: extend `run_grc` with `exp_variant` + `extra_regressor` options.
+5. Update 5_GrRC.do to loop over those options; delete 10/11/12/13/14/15.
+6. Tier 1 audit; Tier 2 replay smoke; commit.
+7. Tier 3 full smoke at end of Phase 1; refresh `tests/reference/` to include experience/birth/nonag families.
+
+### What we know is true (2026-04-28)
 
 - Smoke #9 launched 2026-04-26 21:31, finished 2026-04-27 17:56, ~20.5 h.
 - 75 ster files on disk after run; 9 LaTeX tables; all 9 bit-identical to RP6 2026-04-22.
 - `e(runtime)` and `e(timer_slot)` survive in section-3 sters; sections 1 and 2 sters were overwritten (M11 pending).
 - CHN income (slots 42--44) converged=N; the matching published tables presumably did too.
+- Phase 0 committed and validated end-to-end via `tests/regression_test.py`.
