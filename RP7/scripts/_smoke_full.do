@@ -1,28 +1,31 @@
 * **********************************************************************
-* Overnight smoke driver: runs every GMM script that the ster-rename
-* touched, plus the table-builder. Skips the data-prep scripts that
-* would write back to the Dropbox junction.
+* Overnight smoke driver (Phase 1b Tier 3): runs every GMM script that
+* the ster-rename touched, producing fresh sters under the M11 naming
+* scheme. SKIPS table generation (make_tables.do) so paper compilation
+* on Overleaf is unaffected during the run.
 *
-* Scripts run, in order:
+* GMM scripts run, in order:
 *   5_GrRC.do, 6_GrRC_NonAg.do, 8_GrRC_hukou.do,
 *   10/11/12/13_GrRC_*experience*.do,
-*   14_GrRC_NonAg_experience.do, 15_GrRC_birth.do,
-*   16_heterogeneity_tables.do.
+*   14_GrRC_NonAg_experience.do, 15_GrRC_birth.do
 *
-* Skipped (would `save` to `$dirdata/...` = Dropbox junction):
-*   1_processData.do, 0_CHN_hukou_restrictions.do.
-*   The processed and hukou-restricted .dta files already exist in
-*   the Dropbox junction from the coauthor's runs, so reads work.
+* NOT included this run:
+*   make_tables.do, make_figures.do --- run separately AFTER this
+*     completes so .tex tables get refreshed in one atomic step
+*     (then re-do paper macro swap in Overleaf to use \GRCtable).
+*   1_processData.do, 0_CHN_hukou_restrictions.do --- would `save`
+*     back to the Dropbox junction; processed .dta files already exist.
 *
-* M10 resume-on-interrupt guard is enabled (global skip_if_exists 1),
-* so if the run is killed and re-launched, run_grc skips any spec
-* whose `_avg.ster` file is already present. To force a fresh run,
-* delete `$output/*.ster` before launching.
+* M10 resume-on-interrupt guard enabled (global skip_if_exists 1):
+* if killed and re-launched, run_grc skips any spec whose _g.ster
+* file is already present (Phase 1a renamed the sentinel from _avg
+* to _g). Force a fresh run by deleting all .ster files in $output.
 *
-* M9 timer is on by default --- each call to run_grc / run_grc_onestep
-* uses a sequential `timer` slot and stashes elapsed seconds into the
-* main ster as a custom scalar `runtime` (via estadd). After the run,
-* `timer list` shows all per-fit elapsed times in slot order.
+* M9 timer is on --- each call to run_grc stashes elapsed seconds
+* into its main ster as a custom scalar runtime (via estadd).
+* timer list at end shows per-fit elapsed times.
+*
+* global copyOverleaf 0 --- this driver doesn't write tables, so no copies.
 *
 * Do NOT save this file to the production master pipeline.
 * **********************************************************************
@@ -54,8 +57,8 @@ include "$dir/scripts/13_GrRC_max_experience_share.do"
 include "$dir/scripts/14_GrRC_NonAg_experience.do"
 include "$dir/scripts/15_GrRC_birth.do"
 
-* Table builder (no GMM; reads sters that 5/6/etc wrote).
-include "$dir/scripts/16_heterogeneity_tables.do"
+* Table builders skipped --- run make_tables.do separately AFTER this
+* completes (then redo the paper macro swap in Overleaf).
 
 * Show all per-fit elapsed times collected via M9 timer.
 display as text "============ per-fit timer summary ============"
