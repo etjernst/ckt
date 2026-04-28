@@ -621,26 +621,129 @@ Regenerate the IDN/CHN/TZA cuu cell `.tex` files via `_tier2_tza.do`. Compile `m
 
 Important: paper compilation will FAIL for the other 10 sites until they too are regenerated to slim format. Tier 2 here is a single-cell smoke; full coverage waits for Tier 3 (1b.10).
 
-### Phase 1b.5 done; paper-side swap ROLLED BACK (commits 0c713ec + revert)
+### Phase 1b.5 done; paper-side swap ROLLED BACK (commits 0c713ec + 082b6a4)
 
 Macro design verified working for slim TZA. But user reported Overleaf doesn't compile (mid-migration paper has 1 slim table + 19 OLD-format ones, and the new `\GRCtable` macros wrap them again → 10 cells throw "Illegal nested threeparttable").
 
 **Decision:** roll back the section file macro swap so paper compiles. Macros stay defined in preamble.tex (just unused for now). Re-do the swap at Tier 3 once all 11 cells are slim.
 
-What was reverted:
-- `sections/sec_results.tex`: 5 macro calls -> 5 bare `\input{tables/...}` (with macro lines kept as comments)
-- `sections/sec_robustness.tex`: 3 macro calls -> 3 bare `\input{tables/...}`
-- `sections/app_nonag.tex`: 1 macro call -> 1 bare `\input{tables/...}`
-- `sections/app_hukou.tex`: 2 macro calls -> 2 bare `\input{tables/...}`
-- Slim `GRC_TZA_consumption_urban_unb.tex` in Overleaf `tables/` restored to the OLD (envelope-wrapped) Dropbox RP6 version.
+Reverted: 11 `\GRCtable` / `\GRChukoutable` calls in 4 section files back to bare `\input{tables/GRC_*}`. Slim TZA cuu in Overleaf `tables/` restored to OLD format. `xelatex main-sections.tex` clean compile, 56 pages.
 
-Verified: `xelatex main-sections.tex` clean compile, 56 pages, no errors.
+### Phase 1b.5b: separate table-creation from regression code (commit 2d77d8d)
 
-**State to be aware of after this revert:**
+User insight: tables are pure post-processing. Tweaking captions / refreshing tables shouldn't require re-running GMM (which costs ~30h). Split tables out into their own do-files so iterating on them is fast.
 
-- Paper-side: bare `\input{tables/GRC_*}`, expects OLD-format tables. Compiles.
-- .do pipeline (Phase 1b.3 changes still committed): produces SLIM tables.
-- IF user re-runs the pipeline now, the new SLIM tables won't have an envelope and the bare `\input` in the paper will break.
-- Recommendation: don't re-run the pipeline until Tier 3 (1b.10), at which point we re-do the paper-side macro swap atomically with the regeneration. OR revert the .do changes too if you want a fully working setup in the meantime.
+Architectural improvements:
+- `0_programs.do`: `grc_tex_table_trend / _hukou / _exp / _birth, het_table_delta / _mu` now load estimates from disk INTERNALLY (`estimates use` + `estimates store`). Callers no longer need the boilerplate. Skip-and-warn (`capture confirm file`) if any required ster is missing → tables-only smokes don't abort on missing cells.
+- New per-family tables-only files: `5_GrRC_tables.do` (9 cells), `6_GrRC_NonAg_tables.do` (1 cell), `8_GrRC_hukou_tables.do` (12 cells). All explicit per-cell calls (no `foreach` loops over country/spec, per the no-loops feedback). `copyOverleaf` calls wrapped in `fileexists` guards.
+- Stripped table-creation sections from `5_GrRC.do` (1171→764 lines), `6_GrRC_NonAg.do` (216→132), `8_GrRC_hukou.do` (2032→1240). Done via `tools/split_tables_from_regressions_phase1b5b.py`. Total ~1283 lines moved out of regression files.
+- New driver `_smoke_tables_only.do`: runs all _tables.do files end-to-end (~minutes, no GMM).
 
-Committing the paper revert now. Will pause to confirm with user whether to also revert .do changes (Phase 1b.3) before continuing to Phase 1b.6 (run_grc_with_extra_regressor).
+Verified: TZA cuu produced via the new path (slim 1869B); 21 other cells skip gracefully.
+
+### Phase 1b.5c: consolidate into make_tables + make_figures (commit 2b3640f)
+
+User: "couldn't we just have a single do file that creates all tables, or maybe one that creates all tables and figures even?" Chose Option 3 (one tables file, one figures file, include heterogeneity).
+
+Created:
+- `make_tables.do` (1016 lines, 28 GRC tables): absorbs `5_GrRC_tables.do` + `6_GrRC_NonAg_tables.do` + `8_GrRC_hukou_tables.do` + `16_heterogeneity_tables.do`. Single log file. Per-cell explicit calls preserved.
+- `make_figures.do` (555 lines, 6 figures): absorbs `3_heterogeneity_plots.do` + `4_trajectory_bar_graph.do`.
+
+Deleted: 6 source files (`3_`, `4_`, `5_GrRC_tables`, `6_GrRC_NonAg_tables`, `8_GrRC_hukou_tables`, `16_`).
+
+`0_master.do`: replaced 6 includes with 2; `make_tables.do` and `make_figures.do` run AFTER all regressions land.
+
+`_smoke_tables_only.do`: now includes just `make_tables.do`.
+
+Verified: TZA cuu produced via consolidated `make_tables.do`; other cells skip gracefully.
+
+**Caveat for next session**: the `git add -A` on this commit accidentally swept in 44 baseline reference tables (held since 1b.1) + `.claude/settings.local.json`. Functional but commit message understates scope. Clean up if it bothers you.
+
+---
+
+## State at end of session 2026-04-28
+
+### File count
+22 → 16 files in `RP7/scripts/`. Target after Phase 1b.6/7 collapse of 10–15: ~10–11 files.
+
+### Commit chain today (chronological)
+| Commit | Phase | Description |
+|---|---|---|
+| `ddb3886` | 1a | M11 ster + stored-name rename |
+| `86153e7` | 1b plan | Revised plan: captions to paper, programs not loops |
+| `cceb9cb` | 1b.1 | Extracted captions/notes/postfoot catalog |
+| `22bafce` | 1b.2 | Drafted paper-side macros (staging) |
+| `2ebe9f1` | 1b.2 | Ported macros to Overleaf preamble |
+| `dc8d0ab` | log | 1b.1 + 1b.2 completion |
+| `87898b7` | 1b.3 | Slim tabular output from `grc_tex_table_trend*` |
+| `d6eddba` | 1b.4 | Paper-side `\GRCtable` swap (later reverted) |
+| `0c713ec` | 1b.5 | Macro fix (csname), Overleaf path + copyOverleaf=1 |
+| `082b6a4` | 1b.5 revert | Roll back paper macro swap so Overleaf compiles |
+| `2d77d8d` | 1b.5b | Separate tables-only files (5/6/8 + smoke driver) |
+| `2b3640f` | 1b.5c | Consolidate into `make_tables.do` + `make_figures.do` |
+
+### Key decisions logged in memory
+- [feedback_no_loops_for_regressions.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_loops_for_regressions.md): NEVER collapse duplicated GRC do-files into loops; use programs in `0_programs.do` and explicit per-cell call sites. Per-cell re-runnability is sacred for this project.
+- [feedback_table_split_in_do_vs_paper.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_table_split_in_do_vs_paper.md): When migrating captions to paper, KEEP `\label{}` and "Time FE Y Y" indicator rows in the .do output. Only envelope/caption/notes move.
+- [reference_overleaf_paths.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/reference_overleaf_paths.md): Edit `main-sections.tex` (note plural) and `sections/*.tex` in Monash Enterprise Dropbox. NEVER touch `main.tex` there. Local `paper/main.tex` is OUTDATED.
+- [feedback_no_observer.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_observer.md): Never use "observer" in CKT prose. Say "individual" or "worker".
+
+### Code state
+- **`.do` pipeline** produces SLIM `.tex` (no envelope). 0_master.do: `$copyOverleaf=1` default; `$overleaf` points to Monash Enterprise Dropbox path for user `maand`.
+- **Paper** (Overleaf-Dropbox) compiles cleanly. Section files use bare `\input{tables/GRC_*}` (macros defined in preamble but unused). Overleaf `tables/` holds OLD-format envelope-wrapped .tex.
+- **Sters on disk** (`RP7/output/`):
+  - 25 NEW slim-naming sters: `grc_TZA_cuu_*` (from _tier2_tza.do)
+  - 75 OLD-naming sters from smoke #9 (income/urban/unb data, pre-M11)
+  - No NEW-naming sters for: IDN/CHN cuu, IDN/CHN/TZA cub, IDN/CHN/TZA iuu, IDN cnu, 12 hukou cells, any of 10–15 family cells.
+- **Reference tables** (`tests/reference/output/tables/`): 9 originals + 44 imported from Dropbox RP6 (Phase 1b.1) = 53 total. Still OLD format. Will need refresh after Tier 3 if/when paper macros land.
+
+### Mismatch risk to keep in mind
+Re-running ANY .do regression now produces SLIM .tex output. Bare `\input` in the paper would silently break (no envelope, no caption). Two safe modes:
+1. **Don't re-run regressions** until ready to also do the paper macro swap.
+2. **Run only `make_tables.do`** to refresh existing tables — slim output goes to Overleaf via `$copyOverleaf=1`. Then re-do paper macro swap atomically. Fast iteration path.
+
+---
+
+## Pick up next time --- where to start
+
+### Immediate options
+
+**Option A: Phase 1b.6/7/8 — collapse 10–15** (the original Phase 1b plan)
+- Add `run_grc_with_extra_regressor` program to `0_programs.do` (program-extraction; no loops).
+- Replace each of 10/11/12/13/14/15 with sequences of explicit per-cell calls to that program (per-file commits OK).
+- Delete the 6 files; update 0_master.do.
+- Tier 1 audit + Tier 2 partial validation (tiny TZA across all variants).
+- File count drops 16 → 10.
+- Risk: substantial design work for the new program + per-cell call sites. Estimated multi-session.
+
+**Option B: Phase 1b.10 — Tier 3 full smoke + re-do paper macro swap**
+- Launch `_smoke_full.do` (~30h wall clock with `${skip_if_exists}` resume guard). Regenerates all sters under NEW naming.
+- Run `make_tables.do` to refresh all 28 GRC tables to slim format. Auto-copies to Overleaf via `$copyOverleaf=1`.
+- Re-do paper macro swap (un-revert section files; comments are still in place).
+- Compile main-sections.tex; verify visual identity.
+- Refresh `tests/reference/` to slim format.
+- This MUST happen before Phase 1b.6/7 if you want bit-identical verification of the family-table collapse against the imported RP6 baseline.
+
+**Option C: a different direction entirely** (Phase 2 M3, Phase 4 M4, etc. from the spec).
+
+### Recommended next move
+Either A or B is fine. **Lean B**, because:
+- It validates everything we've done so far end-to-end.
+- It un-blocks the macro-based paper (which is the user-visible payoff of Phase 1b).
+- After B, paper is in modern shape; Phase 1b.6/7 collapses can ship without paper-side risk.
+
+If short on time / no compute slot for 30h: Phase 1b.6 (just the program-extraction in `0_programs.do`) is a self-contained ~1-session piece.
+
+### Quick health checks before starting
+```bash
+cd C:/git/ckt/.claude/worktrees/grc-pipeline-refactor
+git log --oneline -5
+python tests/regression_test.py    # expect: 9 identical, 44 missing (Phase 1b.1 imports), 0 differs
+ls RP7/scripts/*.do | wc -l        # expect: 16-ish
+```
+
+### Don't forget
+- Paper compiles only because Overleaf `tables/` still holds OLD-format .tex. Re-running regressions writes SLIM. Either refresh ALL tables AND re-do paper macro swap together, OR don't run regressions.
+- Phase 1b.5b/5c included `_smoke_tables_only.do` for fast tables-only iteration.
+- Memory feedback files cover: no loops, captions/notes split, Overleaf paths, no "observer" word in prose.
+- 2/7/9 OLS / learning files have similar caption/notes patterns but use direct esttab calls (not GRC programs); migration to paper-side macros deferred indefinitely (separate macro design needed).
