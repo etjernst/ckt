@@ -742,6 +742,61 @@ python tests/regression_test.py    # expect: 9 identical, 44 missing (Phase 1b.1
 ls RP7/scripts/*.do | wc -l        # expect: 16-ish
 ```
 
+### Tier 3 launch attempt (end of 2026-04-28 session, commit bd2dd1c)
+
+Tried to launch `_smoke_full.do` in background to run overnight. The driver completed in seconds with zero new sters --- BUG: backticks in the header comment block (`\`global skip_if_exists 1\``, `\`_g.ster\``, `\`runtime\`` etc.) were parsed by Stata as unterminated local-macro references, which made the rest of the file one big "continuation". NO commands executed.
+
+Fixed in commit `bd2dd1c` (replaced backticks with plain text in the comment block; also dropped the now-deleted 16_heterogeneity_tables.do include).
+
+**To launch Tier 3 next session:**
+```bash
+cd C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts
+stata-mp -b do _smoke_full.do
+```
+Expected ~20-30h wall clock with M10 resume guard active. Outputs land in `RP7/output/*.ster` under M11 naming. Skip-if-exists means safe to re-launch after kill.
+
+After Tier 3 completes:
+1. Run `make_tables.do` to refresh all .tex tables (slim format) and auto-copy to Overleaf via `$copyOverleaf=1`.
+2. Re-do paper macro swap in Overleaf section files (un-comment the `\GRCtable` calls; remove the bare `\input` lines). Macro lines are kept as comments in the section files for easy un-revert.
+3. Compile main-sections.tex, verify visual identity.
+4. Refresh `tests/reference/` if you want a slim-format baseline.
+
+### Phase 1b.6 design (started but not implemented)
+
+Planned shape for the new program in `0_programs.do`:
+```stata
+program define run_grc_with_extra_regressor
+    syntax , country(string) spec3(string) variant(string) regressor(varname) ///
+             depvar(string) balance(string) [iterate(integer 100)]
+    * Open data (handle income vs cons file paths)
+    * setup_grc_estimation, get $switchers, etc.
+    * tab period, get periodFE
+    * initial_values
+    * 4 fits: c1/c2/c3/ca with progressive covars
+    *   c1 = periodFE + regressor
+    *   c2 = + female
+    *   c3 = + age2
+    *   ca = + education_max + education_max2
+    * Estname per M11: grc_<country>_<spec3>_<variant>_<covs2>
+end
+```
+
+Family-token → regressor-name mapping (verified from 10/11/12/13/14/15):
+- exp → exp
+- maxexp → exp_max
+- expsh → exp_share
+- maxexpsh → exp_max_share
+- birth → urbanbirth
+
+After collapse, ~44 explicit per-cell calls (no loops):
+- 9 cuu × 4 exp variants = 36 (from 10/11/12/13)
+- 4 cnu × 4 exp variants (from 14, but 14's 4 sections all use IDN cnu so really 4 calls × 1 country = 4)
+- 4 birth (cuu, cub, iuu, cnu — each IDN-only, from 15)
+
+Total 44 calls. Live in either a new `GRC_extras.do` (one new file, then delete 10-15 → net -5 files, total ~11) or absorbed into 5_GrRC.do/6_GrRC_NonAg.do (no new file, total ~10).
+
+Lean: separate `GRC_extras.do` for discoverability (the extras concept is one unit; keeps the main 5/6 files focused).
+
 ### Don't forget
 - Paper compiles only because Overleaf `tables/` still holds OLD-format .tex. Re-running regressions writes SLIM. Either refresh ALL tables AND re-do paper macro swap together, OR don't run regressions.
 - Phase 1b.5b/5c included `_smoke_tables_only.do` for fast tables-only iteration.
