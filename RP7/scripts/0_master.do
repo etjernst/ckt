@@ -84,12 +84,18 @@ if "`c(username)'"=="maand" {
     include 		"$dir/scripts/4_trajectory_bar_graph.do"
 * Run GRC regressions (Urban)
 	include			"$dir/scripts/5_GrRC.do"
+* Build LaTeX tables for GRC (Urban) --- reads sters from disk, no GMM
+	include			"$dir/scripts/5_GrRC_tables.do"
 * Run GRC regressions (Non-Ag)
 	include			"$dir/scripts/6_GrRC_NonAg.do"
+* Build LaTeX tables for GRC (Non-Ag) --- reads sters from disk, no GMM
+	include			"$dir/scripts/6_GrRC_NonAg_tables.do"
 * Run OLS & FE regressions (hukou)
 	include			"$dir/scripts/7_OLS_uGRC_hukou.do"
 * Run GRC regressions (hukou)
 	include			"$dir/scripts/8_GrRC_hukou.do"
+* Build LaTeX tables for GRC (hukou) --- reads sters from disk, no GMM
+	include			"$dir/scripts/8_GrRC_hukou_tables.do"
 * Run learning regressions
 	include			"$dir/scripts/9_learning.do"
 * Run GRC regressions (Urban, experience controls)

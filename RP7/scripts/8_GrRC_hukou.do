@@ -126,76 +126,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance unb
-local country CHN_hukou_rural_first
-local country_short CHN_rf_cuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-                     
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 2. Consumption | Urban | Balanced | GRC | rural hukou first
@@ -294,76 +228,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance bal
-local country CHN_hukou_rural_first
-local country_short CHN_rf_cub
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                    ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"  ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 3. Income | Urban | Unbalanced | GRC | rural hukou first
@@ -458,76 +326,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  income
-local balance unb
-local country CHN_hukou_rural_first
-local country_short CHN_rf_iuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 1. Consumption | Urban | Unbalanced | GRC | urban hukou first
@@ -626,76 +428,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance unb
-local country CHN_hukou_urban_first
-local country_short CHN_uf_cuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-                     
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 2. Consumption | Urban | Balanced | GRC | urban hukou first
@@ -794,76 +530,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance bal
-local country CHN_hukou_urban_first
-local country_short CHN_uf_cub
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                    ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"  ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 3. Income | Urban | Unbalanced | GRC | urban hukou first
@@ -958,75 +628,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  income
-local balance unb
-local country CHN_hukou_urban_first
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 1. Consumption | Urban | Unbalanced | GRC | only rural hukou
@@ -1125,76 +730,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance unb
-local country CHN_hukou_rural_only
-local country_short CHN_ro_cuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-                     
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 2. Consumption | Urban | Balanced | GRC | only rural hukou
@@ -1293,76 +832,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance bal
-local country CHN_hukou_rural_only
-local country_short CHN_ro_cub
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                    ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex"  ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 3. Income | Urban | Unbalanced | GRC | only rural hukou
@@ -1457,76 +930,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  income
-local balance unb
-local country CHN_hukou_rural_only
-local country_short CHN_ro_iuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 1. Consumption | Urban | Unbalanced | GRC | only urban hukou
@@ -1625,76 +1032,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance unb
-local country CHN_hukou_urban_only
-local country_short CHN_uo_cuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-                     
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex" ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 2. Consumption | Urban | Balanced | GRC | only urban hukou
@@ -1793,76 +1134,10 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
-* **********************************************************************
-
-* Choices
-local choice  urban
-local depvar  consumption
-local balance bal
-local country CHN_hukou_urban_only
-local country_short CHN_uo_cub
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-    estimates use "$dir/output/grc_`country_short'_`estname'"
-    estimates store grc_`country_short'_`estname'
-    estimates use "$dir/output/grc_`country_short'_`estname'_n"
-    estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_g"
-    estimates store grc_`country_short'_`estname'_g
-}
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                    ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex"  ///
-    , subdir(tables)
-}
 
 * **********************************************************************
 * 3. Income | Urban | Unbalanced | GRC | only urban hukou
@@ -1957,76 +1232,9 @@ run_grc_hukou, estname(grc_`country_short'_ca)                           ///
     iterate(`iterations') 
 
 * **********************************************************************
-* Add statistics and table markers
-* **********************************************************************
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-* Display a simple table of results
-di "`country', `depvar', `choice', `balance'"
-estimates table                                       ///
-    grc_`country_short'_c0 grc_`country_short'_ct     ///
-    grc_`country_short'_c1 grc_`country_short'_c2         ///
-    grc_`country_short'_ca                            ///
-    , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
-    stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
-
-* **********************************************************************
-* Make bootiful latex table
+* Tables for this section are produced by the sibling _tables.do file
+* (reads existing .ster files via grc_tex_table_trend's internal load).
+* Run that separately to refresh tables without re-running GMM.
 * **********************************************************************
 
-* Choices
-local choice  urban
-local depvar  income
-local balance unb
-local country CHN_hukou_urban_only
-local country_short CHN_uo_iuu
-
-* Make sure estimates are in memory
-foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country_short'_`estname'"
-        estimates store grc_`country_short'_`estname'
-        estimates use "$dir/output/grc_`country_short'_`estname'_n"
-        estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_g"
-        estimates store grc_`country_short'_`estname'_g
-}
-
-
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
-
-* Define variables to keep
-// local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
-local reportvars "phi:_cons"
-local varlab "$\phi$"
-
-* **********************************************************************
-* CHINA
-* **********************************************************************
-
-
-* Run program to create output table
-grc_tex_table_trend_hukou, columns(5)                         ///
-    country(`country_short')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )  
-
-* Copy table over to Overleaf folder
-if $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_r.tex" ///
-    , subdir(tables)
-}
-
-* **********************************************************************
 log close

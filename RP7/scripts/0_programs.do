@@ -2798,7 +2798,27 @@ program define grc_tex_table_trend
     local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Empty locals to store estimates
+    * Phase 1b.5b: load estimates from disk inside the program, so callers
+    * don't need to do `estimates use/store` boilerplate. This means a
+    * tables-only driver can re-emit the .tex from existing sters without
+    * any other setup.
+    * Skip-and-warn if a required ster is missing (e.g. running tables-only
+    * on a cell whose regression hasn't completed yet).
+    capture confirm file "$dir/output/grc_`country'_`spec'_c0.ster"
+    if _rc != 0 {
+        di as error "grc_tex_table_trend: SKIP `country'/`spec' (sters missing on disk)"
+        exit
+    }
+      foreach estname in c0 ct c1 c2 ca {
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
+        estimates store grc_`country'_`spec'_`estname'
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
+        estimates store grc_`country'_`spec'_`estname'_n
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
+        estimates store grc_`country'_`spec'_`estname'_g
+      }
+
+    * Empty locals to store estimate-name lists for esttab
     local ests_never = ""
 	local ests_avg = ""
     local ests = ""
@@ -2891,11 +2911,25 @@ program define grc_tex_table_trend_hukou
     local ests_avg = ""
     local ests = ""       
 		
-    * Generate the list of stored estimates for the current panel.
-    * Hukou caller passes country(`country_short') where country_short is
-    * already the M11-compressed `<CHN>_<rf|uf|ro|uo>_<spec3>` token, so
-    * the lookup grc_<country>_<covs2>{,_n,_g} resolves correctly without
-    * needing a separate spec() option here.
+    * Phase 1b.5b: load estimates from disk inside the program. Hukou
+    * caller passes country(`country_short') where country_short is the
+    * M11-compressed `<CHN>_<rf|uf|ro|uo>_<spec3>` token, so the lookup
+    * grc_<country>_<covs2>{,_n,_g} resolves correctly without needing
+    * a separate spec() option here.
+    capture confirm file "$dir/output/grc_`country'_c0.ster"
+    if _rc != 0 {
+        di as error "grc_tex_table_trend_hukou: SKIP `country' (sters missing on disk)"
+        exit
+    }
+      foreach estname in c0 ct c1 c2 ca {
+        estimates use "$dir/output/grc_`country'_`estname'"
+        estimates store grc_`country'_`estname'
+        estimates use "$dir/output/grc_`country'_`estname'_n"
+        estimates store grc_`country'_`estname'_n
+        estimates use "$dir/output/grc_`country'_`estname'_g"
+        estimates store grc_`country'_`estname'_g
+      }
+
       foreach estname in c0 ct c1 c2 ca {
         local ests_never = "`ests_never' grc_`country'_`estname'_n"
         local ests_avg   = "`ests_avg' grc_`country'_`estname'_g"
@@ -2987,9 +3021,22 @@ program define grc_tex_table_trend_exp
 	local ests_avg = ""
     local ests = ""
 
-    * Generate the list of stored estimates for the current panel.
-    * After M11, ster filenames and stored-estimate names use the same
-    * `grc_<country>_<spec>_<covs2>{,_n,_g}` shorthand.
+    * Phase 1b.5b: load estimates from disk inside the program.
+    * Experience family covs2 set is c1/c2/c3/ca (different from main).
+    capture confirm file "$dir/output/grc_`country'_`spec'_c1.ster"
+    if _rc != 0 {
+        di as error "grc_tex_table_trend_exp: SKIP `country'/`spec' (sters missing on disk)"
+        exit
+    }
+      foreach estname in c1 c2 c3 ca {
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
+        estimates store grc_`country'_`spec'_`estname'
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
+        estimates store grc_`country'_`spec'_`estname'_n
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
+        estimates store grc_`country'_`spec'_`estname'_g
+      }
+
       foreach estname in c1 c2 c3 ca {
         local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
         local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
@@ -3079,9 +3126,21 @@ program define grc_tex_table_trend_birth
 	local ests_avg = ""
     local ests = ""
 
-    * Generate the list of stored estimates for the current panel.
-    * After M11, ster filenames and stored-estimate names use the same
-    * `grc_<country>_<spec>_<covs2>{,_n,_g}` shorthand.
+    * Phase 1b.5b: load estimates from disk inside the program.
+    capture confirm file "$dir/output/grc_`country'_`spec'_c1.ster"
+    if _rc != 0 {
+        di as error "grc_tex_table_trend_birth: SKIP `country'/`spec' (sters missing on disk)"
+        exit
+    }
+      foreach estname in c1 c2 c3 ca {
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
+        estimates store grc_`country'_`spec'_`estname'
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
+        estimates store grc_`country'_`spec'_`estname'_n
+        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
+        estimates store grc_`country'_`spec'_`estname'_g
+      }
+
       foreach estname in c1 c2 c3 ca {
         local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
         local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
@@ -3155,8 +3214,16 @@ program define het_table_delta
     local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Stored estimates (heterogeneity tables are always urban-spec, M11
-    * spec3 = cuu, max-cov set = ca, Delta-per-trajectory suffix = d).
+    * Phase 1b.5b: load estimate from disk inside the program.
+    * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
+    * max-cov set = ca, Delta-per-trajectory suffix = d.
+    capture confirm file "$dir/output/grc_`country'_cuu_ca_d.ster"
+    if _rc != 0 {
+        di as error "het_table_delta: SKIP `country' (sters missing on disk)"
+        exit
+    }
+    estimates use "$dir/output/grc_`country'_cuu_ca_d"
+    estimates store grc_`country'_cuu_ca_d
     local ests_delta = "grc_`country'_cuu_ca_d"
 	
 	* Output Deltas and mus
@@ -3203,8 +3270,16 @@ program define het_table_mu
     local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Stored estimates (heterogeneity tables are always urban-spec, M11
-    * spec3 = cuu, max-cov set = ca; main fit has empty sfx1).
+    * Phase 1b.5b: load estimate from disk inside the program.
+    * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
+    * max-cov set = ca; main fit has empty sfx1.
+    capture confirm file "$dir/output/grc_`country'_cuu_ca.ster"
+    if _rc != 0 {
+        di as error "het_table_mu: SKIP `country' (sters missing on disk)"
+        exit
+    }
+    estimates use "$dir/output/grc_`country'_cuu_ca"
+    estimates store grc_`country'_cuu_ca
     local ests = "grc_`country'_cuu_ca"
 	
 	* Output Deltas and mus
