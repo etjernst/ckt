@@ -95,10 +95,15 @@
 capture program drop copyOverleaf
 program define copyOverleaf
 	syntax anything(name=fileName1), SUBdir(string asis)
+
+	* Skip silently if no Overleaf path was set for this user.
+	if ("$overleaf" == "") {
+		exit
+	}
+
 	* Make all slashes forward slashes
-	
 	local 	betterFileName1 = subinstr(`fileName1', "\", "/", .)
-	
+
 	local 	destDir = "$overleaf/`subdir'"
 
 * Make destination filepath

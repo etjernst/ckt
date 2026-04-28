@@ -554,27 +554,12 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-/*******************************************************************************
-Project: Returns to Migration
-Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Aug, 2024
-This code:
-	- Creates table of rGRC estimates
-*******************************************************************************/
+* **********************************************************************
+* Heterogeneity Delta and mu tables (per-country)
+* Reads sters from $output, writes hetdelta_<country>.tex and
+* hetmu_table_<country>.tex.
+* **********************************************************************
 
-* **********************************************************************
-* Preliminaries
-* **********************************************************************
-* Make sure to run section 0 of 0_master.do before running this script
-
-* **********************************************************************
-* Choices for the analysis				  
-* 		Countries: 			IDN / TZA / CHN
-* 		Choice variable: 	urban / nonag
-* 		Dependent variable:	consumption / income
-* 		Panel structure: 	bal / unb 
-* **********************************************************************
-				  
 * **********************************************************************
 * Consumption | Urban | Unbalanced | GRC | Heterogeneity Tables
 * **********************************************************************

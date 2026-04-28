@@ -16,12 +16,15 @@
 	qui: capture mkdir          "$output/figures"
 	qui: capture mkdir          "$dirdata/processed"
 	
-* Add global to overleaf repo IF user has not already set it
-	// Check if the global macro is empty
+* $overleaf is set per-user in 0_master.do user-specific blocks. If not set,
+* $copyOverleaf calls will be skipped (safer than silently copying to a
+* hardcoded path that doesn't exist on the current machine).
 	if ("$overleaf" == "") {
-		global overleaf 													///
-		"C:/Users/maand/Dropbox (Personal)/Apps/Overleaf/ReturnsToMigration-clean"
-	} 
-	di as text "Output will be copied to Overleaf repo $overleaf"
+		di as error "Note: \$overleaf is not set. copyOverleaf calls will be skipped."
+		di as error "Add 'global overleaf \"<path>\"' to your user block in 0_master.do to enable."
+	}
+	else {
+		di as text "Output will be copied to Overleaf repo $overleaf"
+	}
 	
 	

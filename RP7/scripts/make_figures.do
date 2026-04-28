@@ -166,7 +166,7 @@ This code:
   use 						"$dirdata/processed/`country'_`balance'.dta", clear
 
 * Create value label
-  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories = 1 if trajectory == 1
@@ -205,7 +205,7 @@ keep if pid_first_obs == 1 & mega_trajectories != .
   use 						"$dirdata/processed/`country'_`balance'.dta", clear
 
 * Create value label
-  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories = 1 if trajectory == 1
@@ -246,7 +246,7 @@ keep if pid_first_obs == 1 & mega_trajectories != .
   use 						"$dirdata/processed/`country'_`balance'.dta", clear
 
 * Create value label
-  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories = 1 if trajectory == 1
@@ -276,10 +276,11 @@ keep if pid_first_obs == 1 & mega_trajectories != .
 * Combine graphs	  
 * **********************************************************************
 
-  graph combine mega_IDN.gph mega_CHN.gph mega_TZA.gph, col(3) 
-	graph export "$output/figures/trajectories.pdf", replace	
+  graph combine mega_IDN.gph mega_CHN.gph mega_TZA.gph, col(3)
+	graph export "$output/figures/trajectories.pdf", replace
+	graph export "$output/figures/trajectories.png", replace as(png) width(3600)
     if $copyOverleaf == 1 {
-		copyOverleaf "$output/figures/trajectories.pdf", subdir(figures)	
+		copyOverleaf "$output/figures/trajectories.pdf", subdir(figures)
 	}
 
 * **********************************************************************
@@ -301,7 +302,7 @@ keep if pid_first_obs == 1 & mega_trajectories != .
   use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_2waves = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000" | trajectory_2waves == "00000"
@@ -340,7 +341,7 @@ keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_2waves != .
   use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_2waves = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000"
@@ -381,7 +382,7 @@ keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_2waves != .
   use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_2waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_2waves = 1 if trajectory_2waves == "00" | trajectory_2waves == "000"
@@ -411,10 +412,11 @@ keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_2waves != .
 * Combine graphs	  
 * **********************************************************************
 
-  graph combine mega_IDN_2waves.gph mega_CHN_2waves.gph mega_TZA_2waves.gph, col(3) 
-	graph export "$output/figures/trajectories_2waves.pdf", replace	
+  graph combine mega_IDN_2waves.gph mega_CHN_2waves.gph mega_TZA_2waves.gph, col(3)
+	graph export "$output/figures/trajectories_2waves.pdf", replace
+	graph export "$output/figures/trajectories_2waves.png", replace as(png) width(3600)
     if $copyOverleaf == 1 {
-		copyOverleaf "$output/figures/trajectories_2waves.pdf", subdir(figures)	
+		copyOverleaf "$output/figures/trajectories_2waves.pdf", subdir(figures)
 	}	
 	
 * **********************************************************************
@@ -436,7 +438,7 @@ keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_2waves != .
   use 						"$dirdata/processed/`country'_`balance'_3waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_3waves = 1 if trajectory_3waves == "000" | trajectory_3waves == "0000" | trajectory_3waves == "00000"
@@ -475,7 +477,7 @@ keep if pid_first_obs_3waves == 1 & pid_obs >= 3 & mega_trajectories_3waves != .
   use 						"$dirdata/processed/`country'_`balance'_3waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_3waves = 1 if trajectory_3waves == "000" | trajectory_3waves == "0000"
@@ -516,7 +518,7 @@ keep if pid_first_obs_3waves == 1 & pid_obs >= 3 & mega_trajectories_3waves != .
   use 						"$dirdata/processed/`country'_`balance'_3waves.dta", clear
 
 * Create value label
-  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban"
+  label define mega_trajectories_3waves 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
 
 * Generate trajectory grouping variable
   gen     mega_trajectories_3waves = 1 if trajectory_3waves == "000"
@@ -546,10 +548,11 @@ keep if pid_first_obs_3waves == 1 & pid_obs >= 3 & mega_trajectories_3waves != .
 * Combine graphs	  
 * **********************************************************************
 
-  graph combine mega_IDN_3waves.gph mega_CHN_3waves.gph mega_TZA_3waves.gph, col(3) 
-	graph export "$output/figures/trajectories_3waves.pdf", replace	
+  graph combine mega_IDN_3waves.gph mega_CHN_3waves.gph mega_TZA_3waves.gph, col(3)
+	graph export "$output/figures/trajectories_3waves.pdf", replace
+	graph export "$output/figures/trajectories_3waves.png", replace as(png) width(3600)
     if $copyOverleaf == 1 {
-		copyOverleaf "$output/figures/trajectories_3waves.pdf", subdir(figures)	
+		copyOverleaf "$output/figures/trajectories_3waves.pdf", subdir(figures)
 	}
 
 log close

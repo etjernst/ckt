@@ -9,6 +9,20 @@
 * **********************************************************************
 
 clear all
+version 17
+set more off
+
+* **********************************************************************
+* Project-wide globals (set ONCE here so individual programs don't
+* re-define magic numbers locally).
+*   grc_max_iter             --- GMM iterations cap; was a magic 100
+*                                hardcoded in 5/6/8/GRC_extras + make_tables
+*   grc_min_switchers_per_wave --- minimum N/T threshold in initial_values
+*                                  for a switcher trajectory to be eligible
+*                                  as the base; was a magic 5
+* **********************************************************************
+global grc_max_iter             100
+global grc_min_switchers_per_wave 5
 
 * **********************************************************************
 * Preliminaries
@@ -30,21 +44,26 @@ clear all
 if "`c(username)'"=="kleemans" {
 	global dir = "C:\Users\kleemans\Dropbox\Returns to migration\ReplicationPackage6"
 	global dir = "D:\Dropbox\Returns to migration\ReplicationPackage6"
+	* Set $overleaf to your local Overleaf-Dropbox path to enable copyOverleaf.
+	* global overleaf = "..."
 }
 
 *** David Buller's directories
 if "`c(username)'"=="David" {
 	global dir = "C:\Users\David\OneDrive - University of Illinois - Urbana\UIUC\Research\ReplicationPackage6"
+	* global overleaf = "..."
 }
 
 *** Eduardo Cenci's directories
 if inlist("`c(username)'", "ecenci", "educenci", "eduardocenci") {
 	global dir =  "~/Dropbox/__Research/Returns to migration/ReplicationPackage6"
+	* global overleaf = "..."
 }
 
 *** Emilia's git directory ***
 if "`c(username)'"=="etje0002" {
 	global dir = "C:/Users/etje0002/Desktop/git/ReturnsToMigration"
+	* global overleaf = "..."
 }
 if "`c(username)'"=="maand" {
 	* Path varies by worktree. Pick ONE --- uncomment the active line.
