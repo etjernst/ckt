@@ -2767,13 +2767,21 @@ cap program drop grc_tex_table_trend
 program define grc_tex_table_trend
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
 	* SPEC is the M11 spec3 token that identifies which depvar/choice/balance
 	* slice to read. Callers pass e.g. spec(cuu) (cons/urban/unb), spec(cub)
 	* (cons/urban/bal), spec(iuu) (income/urban/unb), spec(cnu) (cons/nonag/unb).
 	* The loop below reads grc_<country>_<spec>_<covs2>.ster.
+	*
+	* Phase 1b: produces a SLIM tabular-only output (no \begin{table}, no
+	* \caption, no \label, no \begin{tablenotes}, no \end{table}). The paper
+	* (preamble.tex \GRCtable / \GRCexptable / \GRChukoutable macros) wraps
+	* the \input with the table envelope, caption, label, and notes.
+	* Caller's POSTfoot now holds ONLY the indicator rows (e.g.
+	* "Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & ..."); the
+	* program adds \cmidrule prefix and \bottomrule\end{tabular} suffix.
 
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2785,13 +2793,10 @@ program define grc_tex_table_trend
     }
     local cmid = `columns' + 1
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Empty locals to store estimates
     local ests_never = ""
@@ -2861,9 +2866,11 @@ cap program drop grc_tex_table_trend_hukou
 program define grc_tex_table_trend_hukou
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper macro: \GRChukoutable.
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -2874,13 +2881,10 @@ program define grc_tex_table_trend_hukou
     }
     local cmid = `columns' + 1
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Empty locals to store estimates
     local ests_never = ""
@@ -2951,7 +2955,7 @@ cap program drop grc_tex_table_trend_exp
 program define grc_tex_table_trend_exp
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
 	* SPEC is the M11 spec3+family token (e.g. cuu_exp, cuu_maxexp, cuu_expsh,
@@ -2959,7 +2963,10 @@ program define grc_tex_table_trend_exp
 	* The experience-family covs2 set is c1/c2/c3/ca (different meaning from
 	* the c0/ct/c1/c2/ca set used in 5_GrRC.do; documented in the file
 	* header).
-	
+	*
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper macro: \GRCexptable.
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -2970,19 +2977,16 @@ program define grc_tex_table_trend_exp
     }
     local cmid = `columns' + 1
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Empty locals to store estimates
     local ests_never = ""
 	local ests_avg = ""
-    local ests = ""       
-		
+    local ests = ""
+
     * Generate the list of stored estimates for the current panel.
     * After M11, ster filenames and stored-estimate names use the same
     * `grc_<country>_<spec>_<covs2>{,_n,_g}` shorthand.
@@ -3045,11 +3049,15 @@ cap program drop grc_tex_table_trend_birth
 program define grc_tex_table_trend_birth
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
 	* SPEC is the M11 spec3+family token (e.g. cuu_birth, cub_birth).
 	* The only current caller is 15_GrRC_birth.do.
+	*
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper macro: \GRCexptable (birth
+	* uses the same paper-side macro as the experience family).
 
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -3061,13 +3069,10 @@ program define grc_tex_table_trend_birth
     }
     local cmid = `columns' + 1
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Empty locals to store estimates
     local ests_never = ""
@@ -3134,22 +3139,21 @@ end
 cap program drop het_table_delta
 program define het_table_delta
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper: \GRChetDeltatable (TBD).
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local ccc "c"		// one column
     local cmid = 2
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
 		local table_prefoot		"\addlinespace"
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Stored estimates (heterogeneity tables are always urban-spec, M11
     * spec3 = cuu, max-cov set = ca, Delta-per-trajectory suffix = d).
@@ -3183,22 +3187,21 @@ end
 cap program drop het_table_mu
 program define het_table_mu
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper: \GRChetMutable (TBD).
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local ccc "c"		// one column
     local cmid = 2
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
 		local table_prefoot		"\addlinespace"
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
     * Stored estimates (heterogeneity tables are always urban-spec, M11
     * spec3 = cuu, max-cov set = ca; main fit has empty sfx1).

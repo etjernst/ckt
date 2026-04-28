@@ -128,11 +128,7 @@ global copyOverleaf 0
     * --------------------------------------------------------------
     local reportvars "phi:_cons"
     local varlab "$\phi$"
-    local htb_str "htb!"
-    local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Indonesia (smoke test)} "'"
-    local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_smoke} "'"
-    local table_notes "Smoke-test artifact. Compare to the published `GRC_IDN_consumption_urban_unb.tex'."
-    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age\$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age\$^2$ & All \\
 
 grc_tex_table_trend, columns(5)                         ///
     spec(cuu)                                           ///
@@ -140,8 +136,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )

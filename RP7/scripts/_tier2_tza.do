@@ -114,11 +114,7 @@ global copyOverleaf 0
     * --------------------------------------------------------------
     local reportvars "phi:_cons"
     local varlab "$\phi$"
-    local htb_str "htbp"
-    local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Tanzania} "'"
-    local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
-    local table_notes "This table uses data from the National Panel Survey from Tanzania. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
     grc_tex_table_trend, columns(5)                         ///
         spec(cuu)                                           ///
@@ -126,8 +122,6 @@ global copyOverleaf 0
         filename(GRC_`country'_`depvar'_`choice'_`balance') ///
         keep(`reportvars')                                  ///
         varlabel(`varlab')                                  ///
-        htb(`htb_str')		                                ///
-        prehead(`table_caption' `table_label')              ///
         postfoot(`postfoot_str')                            ///
         coeflabels(choice "Urban")                          ///
         textdepvar( log(`depvar') )

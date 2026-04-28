@@ -325,31 +325,18 @@ foreach country in IDN CHN TZA {
 * INDONESIA
 * **********************************************************************
 local country IDN
-local htb_str "htb!"
-
 * Delta table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Delta Estimates of the Returns to Urban Location on log Consumption in Indonesia} "'"
 
-* Table label
-local table_label "`" \label{tab:hetDelta_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the Indonesia Family Life Survey. Please refer to Section \ref{sec:data} for further details on the data. The dependent variable is the log of total consumption per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the estimates of $\Delta$ for each switcher trajectory. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_delta, country(`country')                     ///
     filename(hetDelta_table_`country') 					///
     keep(``country'_keep_list_delta')                   ///
     coeflabels(``country'_coeflabs_delta')              ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )
 
@@ -362,27 +349,16 @@ if $copyOverleaf == 1 {
 
 * Mu table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Mu Estimates of the Returns to Urban Location on log Consumption in Indonesia} "'"
 
-* Table label
-local table_label "`" \label{tab:hetmu_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the Indonesia Family Life Survey. Please refer to Section \ref{sec:data} for further details on the data. The dependent variable is the log of total consumption per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the estimates of $\mu$ for each switcher trajectory. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_mu, country(`country')                        ///
     filename(hetmu_table_`country') 					///
     keep(``country'_keep_list_mu')	                    ///
     coeflabels(``country'_coeflabs_mu')                 ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )
 
@@ -397,31 +373,18 @@ if $copyOverleaf == 1 {
 * CHINA
 * **********************************************************************
 local country CHN
-local htb_str "htbp"
-
 * Delta table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Delta Estimates of the Returns to Urban Location on log Consumption in China} "'"
 
-* Table label
-local table_label "`" \label{tab:hetDelta_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:hetDelta_table_IDN} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_delta, country(`country')                     ///
     filename(hetDelta_table_`country') 					///
     keep(``country'_keep_list_delta')                   ///
     coeflabels(``country'_coeflabs_delta')              ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )
                      
@@ -434,27 +397,16 @@ if $copyOverleaf == 1 {
 
 * Mu table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Mu Estimates of the Returns to Urban Location on log Consumption in China} "'"
 
-* Table label
-local table_label "`" \label{tab:hetmu_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:hetmu_table_IDN} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_mu, country(`country')                        ///
     filename(hetmu_table_`country') 					///
     keep(``country'_keep_list_mu')	                    ///
     coeflabels(``country'_coeflabs_mu')                 ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )
 
@@ -469,31 +421,18 @@ if $copyOverleaf == 1 {
 * TANZANIA
 * **********************************************************************
 local country TZA
-local htb_str "htbp"
-
 * Delta table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Delta Estimates of the Returns to Urban Location on log Consumption in Tanzania} "'"
 
-* Table label
-local table_label "`" \label{tab:hetDelta_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the National Panel Survey from Tanzania. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:hetDelta_table_IDN} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_delta, country(`country')                     ///
     filename(hetDelta_table_`country') 					///
     keep(``country'_keep_list_delta')                   ///
     coeflabels(``country'_coeflabs_delta')              ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )   
                      
@@ -506,27 +445,16 @@ if $copyOverleaf == 1 {
 
 * Mu table
 
-* Table caption
-local table_caption "`" \caption{Heterogeneity in Restricted GRC Mu Estimates of the Returns to Urban Location on log Consumption in Tanzania} "'"
 
-* Table label
-local table_label "`" \label{tab:hetmu_table_`country'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the National Panel Survey from Tanzania. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:hetmu_table_IDN} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & Y \\ Covariates & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & Y \\ Covariates & All \\
 
 * Run program to create output table
 het_table_mu, country(`country')                        ///
     filename(hetmu_table_`country') 					///
     keep(``country'_keep_list_mu')	                    ///
     coeflabels(``country'_coeflabs_mu')                 ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     textdepvar( log(`depvar') )
 

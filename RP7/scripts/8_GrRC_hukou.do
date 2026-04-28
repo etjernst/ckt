@@ -175,19 +175,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Rural Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -195,7 +186,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -353,19 +343,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Balanced Panel, Rural Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses the balanced panel from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -373,7 +354,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -519,13 +499,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'_g
 }
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "The dependent variable is the log of income per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Define variables to keep
 // local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
@@ -535,11 +510,7 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, China, Rural Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -547,7 +518,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -705,19 +675,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Urban Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -725,7 +686,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -883,19 +843,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Balanced Panel, Urban Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses the balanced panel from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -903,7 +854,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1048,13 +998,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'_g
 }
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "The dependent variable is the log of income per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Define variables to keep
 // local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
@@ -1064,11 +1009,7 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, China, Urban Hukou First} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1076,7 +1017,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1234,19 +1174,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Only Rural Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1254,7 +1185,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1412,19 +1342,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Balanced Panel, Only Rural Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses the balanced panel from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1432,7 +1353,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1578,13 +1498,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'_g
 }
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "The dependent variable is the log of income per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Define variables to keep
 // local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
@@ -1594,11 +1509,7 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, China, Only Rural Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1606,7 +1517,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1764,19 +1674,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Only Urban Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1784,7 +1685,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1942,19 +1842,10 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Balanced Panel, Only Urban Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "This table uses the balanced panel from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -1962,7 +1853,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -2108,13 +1998,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'_g
 }
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "The dependent variable is the log of income per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Define variables to keep
 // local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
@@ -2124,11 +2009,7 @@ local varlab "$\phi$"
 * **********************************************************************
 * CHINA
 * **********************************************************************
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, China, Only Urban Hukou} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_r} "'"
 
 * Run program to create output table
 grc_tex_table_trend_hukou, columns(5)                         ///
@@ -2136,7 +2017,6 @@ grc_tex_table_trend_hukou, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  

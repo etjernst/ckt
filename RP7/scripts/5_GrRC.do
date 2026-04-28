@@ -340,21 +340,10 @@ local varlab "$\phi$"
 * INDONESIA
 * **********************************************************************
 local country IDN
-local htb_str "htb!"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Indonesia} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses data from the Indonesia Family Life Survey. Please refer to Section \ref{sec:data} for further details on the data. The dependent variable is the log of total consumption per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -363,8 +352,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )        
@@ -380,21 +367,10 @@ if $copyOverleaf == 1 {
 * CHINA
 * **********************************************************************
 local country CHN
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses data from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -403,8 +379,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )
@@ -420,21 +394,10 @@ if $copyOverleaf == 1 {
 * TANZANIA
 * **********************************************************************
 local country TZA
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Tanzania} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses data from the National Panel Survey from Tanzania. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -443,8 +406,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )    
@@ -765,21 +726,10 @@ local varlab "$\phi$"
 * INDONESIA
 * **********************************************************************
 local country IDN
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Indonesia, Balanced Panel} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses the balanced panel from the Indonesia Family Life Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -788,8 +738,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )       
@@ -805,21 +753,10 @@ if $copyOverleaf == 1 {
 * CHINA
 * **********************************************************************
 local country CHN
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in China, Balanced Panel} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses the balanced panel from the China Family Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -828,8 +765,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -845,21 +780,10 @@ if $copyOverleaf == 1 {
 * TANZANIA
 * **********************************************************************
 local country TZA
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Tanzania, Balanced Panel} "'"
 
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
-* Define prehead and postfoot strings
-
-* Table notes
-local table_notes "This table uses the balanced panel from the Tanzanian National Panel Survey. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -868,8 +792,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1165,13 +1087,8 @@ foreach country in IDN CHN TZA {
     }
 }
 
-* Define prehead and postfoot strings
 
-* Table notes
-local table_notes "The dependent variable is the log of income per capita. Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village. Individuals are assigned to trajectories based on their location history across the survey waves. This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data. Columns (2) to (5) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
-
-* Table footer
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
 
 * Define variables to keep
 // local reportvars "phi:_cons Delta_base:_cons kappa:_cons"
@@ -1182,13 +1099,7 @@ local varlab "$\phi$"
 * INDONESIA
 * **********************************************************************
 local country IDN
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, Indonesia} "'"
-
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -1197,8 +1108,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1214,13 +1123,7 @@ if $copyOverleaf == 1 {
 * CHINA
 * **********************************************************************
 local country CHN
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, China} "'"
-
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -1229,8 +1132,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
@@ -1246,13 +1147,7 @@ if $copyOverleaf == 1 {
 * TANZANIA
 * **********************************************************************
 local country TZA
-local htb_str "htbp"
 
-* Table caption
-local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Income, Tanzania} "'"
-
-* Table label
-local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
@@ -1261,8 +1156,6 @@ grc_tex_table_trend, columns(5)                         ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
     varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
     postfoot(`postfoot_str')                            ///
     coeflabels(choice "Urban")                          ///
     textdepvar( log(`depvar') )  
