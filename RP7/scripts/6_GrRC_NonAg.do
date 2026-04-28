@@ -90,34 +90,34 @@ local iterations 100
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc, estname(grc_`country'_nonag_covs_0)                             ///
+run_grc, estname(grc_`country'_cnu_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations')
 
 * Add time FE
-run_grc, estname(grc_`country'_nonag_covs_trend)                         ///
+run_grc, estname(grc_`country'_cnu_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc, estname(grc_`country'_nonag_covs_1)                             ///
+run_grc, estname(grc_`country'_cnu_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc, estname(grc_`country'_nonag_covs_2)                             ///
+run_grc, estname(grc_`country'_cnu_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc, estname(grc_`country'_nonag_covs_all)                           ///
+run_grc, estname(grc_`country'_cnu_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -127,13 +127,13 @@ run_grc, estname(grc_`country'_nonag_covs_all)                           ///
 * Add statistics and table markers
 * **********************************************************************
 foreach country in IDN {
-    foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        estimates use "$dir/output/grc_`country'_nonag_`estname'"
-        estimates store grc_`country'_n_`estname'
-        estimates use "$dir/output/grc_`country'_nonag_`estname'_never"
-        estimates store grc_`country'_n_`estname'_never
-        estimates use "$dir/output/grc_`country'_nonag_`estname'_avg"
-        estimates store grc_`country'_n_`estname'_avg
+    foreach estname in c0 ct c1 c2 ca {
+        estimates use "$dir/output/grc_`country'_cnu_`estname'"
+        estimates store grc_`country'_cnu_`estname'
+        estimates use "$dir/output/grc_`country'_cnu_`estname'_n"
+        estimates store grc_`country'_cnu_`estname'_n
+        estimates use "$dir/output/grc_`country'_cnu_`estname'_g"
+        estimates store grc_`country'_cnu_`estname'_g
     }
     }
 
@@ -141,9 +141,9 @@ foreach country in IDN {
 foreach country in IDN {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_n_covs_0 grc_`country'_n_covs_trend     ///
-    grc_`country'_n_covs_1 grc_`country'_n_covs_2         ///
-    grc_`country'_n_covs_all                            ///
+    grc_`country'_cnu_c0 grc_`country'_cnu_ct     ///
+    grc_`country'_cnu_c1 grc_`country'_cnu_c2         ///
+    grc_`country'_cnu_ca                            ///
     , star(.1 .05 .01) b(%7.2f) varlabel varwidth(35) ///
     stats(Delta_avg Jstat Jdf Jpval N N_clust converged)
 }
@@ -170,13 +170,13 @@ TEXTdepvar(string asis): Dependent variable as string
 
 * Make sure estimates are in memory
 foreach country in IDN {
-foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-    estimates use "$dir/output/grc_`country'_nonag_`estname'"
-    estimates store grc_`country'_n_`estname'
-    estimates use "$dir/output/grc_`country'_nonag_`estname'_never"
-    estimates store grc_`country'_n_`estname'_never
-    estimates use "$dir/output/grc_`country'_nonag_`estname'_avg"
-    estimates store grc_`country'_n_`estname'_avg
+foreach estname in c0 ct c1 c2 ca {
+    estimates use "$dir/output/grc_`country'_cnu_`estname'"
+    estimates store grc_`country'_cnu_`estname'
+    estimates use "$dir/output/grc_`country'_cnu_`estname'_n"
+    estimates store grc_`country'_cnu_`estname'_n
+    estimates use "$dir/output/grc_`country'_cnu_`estname'_g"
+    estimates store grc_`country'_cnu_`estname'_g
     }
 }
 
@@ -207,7 +207,7 @@ local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
 
 * Run program to create output table
 grc_tex_table_trend, columns(5)                         ///
-    spec(nonag)                                         ///
+    spec(cnu)                                         ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///

@@ -9,10 +9,14 @@ di as text "{hline 60}"
 di as text "M9 e(runtime) inspection"
 di as text "{hline 60}"
 
-foreach ster in grc_CHN_urban_covs_0 grc_CHN_urban_covs_trend ///
-                grc_CHN_urban_covs_1 grc_CHN_urban_covs_2 grc_CHN_urban_covs_all ///
-                grc_IDN_urban_covs_0 grc_IDN_urban_covs_all ///
-                grc_TZA_urban_covs_0 grc_TZA_urban_covs_all {
+* M11 shorthand: grc_<country>_<spec3>_<covs2>. Section 3 of smoke #9 was
+* income/urban/unb (spec3=iuu); the section-1 (cuu) and section-2 (cub)
+* sters were overwritten on disk before M11 landed. Adjust the spec3
+* token here when peeking at a different section.
+foreach ster in grc_CHN_iuu_c0 grc_CHN_iuu_ct ///
+                grc_CHN_iuu_c1 grc_CHN_iuu_c2 grc_CHN_iuu_ca ///
+                grc_IDN_iuu_c0 grc_IDN_iuu_ca ///
+                grc_TZA_iuu_c0 grc_TZA_iuu_ca {
     capture estimates use "`out'/`ster'"
     if _rc == 0 {
         di as text "{result:`ster'}: " ///

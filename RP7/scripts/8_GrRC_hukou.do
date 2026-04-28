@@ -38,7 +38,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_cuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -133,8 +133,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -155,7 +155,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_cuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -163,8 +163,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -216,7 +216,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_cub
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -311,8 +311,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -333,7 +333,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_cub
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -341,8 +341,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -394,7 +394,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_iuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -485,8 +485,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -507,7 +507,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_rural_first
-local country_short CHN_rural_first
+local country_short CHN_rf_iuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -515,8 +515,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Define prehead and postfoot strings
@@ -568,7 +568,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_urban_first
-local country_short CHN_urban_first
+local country_short CHN_uf_cuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -663,8 +663,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -685,7 +685,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_urban_first
-local country_short CHN_urban_first
+local country_short CHN_uf_cuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -693,8 +693,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -746,7 +746,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_urban_first
-local country_short CHN_urban_first
+local country_short CHN_uf_cub
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -841,8 +841,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -863,7 +863,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_urban_first
-local country_short CHN_urban_first
+local country_short CHN_uf_cub
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -871,8 +871,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -924,7 +924,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_urban_first
-local country_short CHN_urban_first
+local country_short CHN_uf_iuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1015,8 +1015,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1044,8 +1044,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Define prehead and postfoot strings
@@ -1097,7 +1097,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_cuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1192,8 +1192,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1214,7 +1214,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_cuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -1222,8 +1222,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -1275,7 +1275,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_cub
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1370,8 +1370,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1392,7 +1392,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_cub
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -1400,8 +1400,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -1453,7 +1453,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_iuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1544,8 +1544,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1566,7 +1566,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_rural_only
-local country_short CHN_rural_only
+local country_short CHN_ro_iuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -1574,8 +1574,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Define prehead and postfoot strings
@@ -1627,7 +1627,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_cuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1722,8 +1722,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1744,7 +1744,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_cuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -1752,8 +1752,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -1805,7 +1805,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_cub
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -1900,8 +1900,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -1922,7 +1922,7 @@ local choice  urban
 local depvar  consumption
 local balance bal
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_cub
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -1930,8 +1930,8 @@ foreach estname in c0 ct c1 c2 ca {
     estimates store grc_`country_short'_`estname'
     estimates use "$dir/output/grc_`country_short'_`estname'_n"
     estimates store grc_`country_short'_`estname'_n
-    estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-    estimates store grc_`country_short'_`estname'_avg
+    estimates use "$dir/output/grc_`country_short'_`estname'_g"
+    estimates store grc_`country_short'_`estname'_g
 }
 
 * Define variables to keep
@@ -1983,7 +1983,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_iuu
 
 * define GMM covariates (so they enter the first estimations)
 global covs_gmm     "female"
@@ -2074,8 +2074,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Display a simple table of results
@@ -2096,7 +2096,7 @@ local choice  urban
 local depvar  income
 local balance unb
 local country CHN_hukou_urban_only
-local country_short CHN_urban_only
+local country_short CHN_uo_iuu
 
 * Make sure estimates are in memory
 foreach estname in c0 ct c1 c2 ca {
@@ -2104,8 +2104,8 @@ foreach estname in c0 ct c1 c2 ca {
         estimates store grc_`country_short'_`estname'
         estimates use "$dir/output/grc_`country_short'_`estname'_n"
         estimates store grc_`country_short'_`estname'_n
-        estimates use "$dir/output/grc_`country_short'_`estname'_avg"
-        estimates store grc_`country_short'_`estname'_avg
+        estimates use "$dir/output/grc_`country_short'_`estname'_g"
+        estimates store grc_`country_short'_`estname'_g
 }
 
 * Define prehead and postfoot strings

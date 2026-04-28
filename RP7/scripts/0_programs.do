@@ -4,6 +4,69 @@
 * (not a problem for balanced specifications since unbalanced varis empty?)
 
 * **********************************************************************
+* Locked-in shorthand for GRC ster filenames and stored estimate names
+* ----------------------------------------------------------------------
+* Format:  grc_<country>_<spec3>_<covs2>_<sfx1>
+*
+* country: 3 chars  CHN | IDN | TZA
+*
+* spec3:   3-char positional triplet <depvar><choice><balance>
+*   cuu = consumption / urban / unbalanced  (5_GrRC.do section 1)
+*   cub = consumption / urban / balanced    (5_GrRC.do section 2)
+*   iuu = income      / urban / unbalanced  (5_GrRC.do section 3)
+*   cnu = consumption / nonag / unbalanced  (6_GrRC_NonAg.do; IDN-only)
+*
+* covs2:   2-char covariate-set abbreviation
+*   c0 = no covariates                            (was covs_0)
+*   ct = trend (time FE only)                     (was covs_trend)
+*   c1 = trend + female                           (was covs_1)
+*   c2 = trend + female + age^2                   (was covs_2)
+*   ca = trend + female + age^2 + edu + edu^2     (was covs_all)
+*   The experience-family suffixes c1/c2/c3/ca keep their meaning
+*   inside 10/11/12/13/14_*.do (different from c1/c2 in 5_GrRC.do).
+*
+* sfx1:    0--1 char post-estimation marker
+*   <empty> = main GMM result
+*   n       = Delta_never  extrapolation       (was _never)
+*   a       = Delta_always extrapolation       (was _always)
+*   d       = per-trajectory Deltas + joint    (was _delta)
+*   g       = population-weighted average      (was _avg)
+*
+* Hukou variant (8_GrRC_hukou.do):
+*   grc_<country>_<hukou>_<spec3>_<covs2>
+*   hukou:  rf | uf | ro | uo (rural_first, urban_first, rural_only,
+*                              urban_only). Compresses the prior
+*                              CHN_rural_first / CHN_urban_first form.
+*
+* Experience / birth families (10--15) include their family token:
+*   grc_<country>_<spec3>_<family>_<covs2>
+*   family: exp | maxexp | expsh | maxexpsh | birth | nonag_exp -> exp
+*           (14_GrRC_NonAg_experience.do uses cnu_exp; the 4 sections
+*            of file 14 collide on the same estname today, preserved
+*            in Phase 1a; disambiguation lands in Phase 1b's M1+M2.)
+*
+* Examples:
+*   grc_IDN_cuu_ca       = main fit, IDN cons/urban/unb, all covariates
+*   grc_IDN_cuu_ct_n     = Delta_never, IDN cons/urban/unb, trend-only
+*   grc_CHN_rf_cuu_c0_g  = Delta_avg, CHN rural-first hukou, cons/urban/unb, no covs
+*   grc_IDN_cuu_exp_ca_d = per-trajectory Deltas, IDN exp regressor
+*
+* Why this scheme:
+*   - Disk filenames and in-memory `estimates store` names use the
+*     same string. Drops the prior Option-B "long disk / short memory"
+*     bridge (`urban_` -> `u_`, `nonag_` -> `n_`).
+*   - Worst case: `_est_grc_CHN_uf_iuu_ca_n` = 24 chars + Stata's
+*     5-char `_est_` prefix = 29. Fits Stata's 32-char internal limit
+*     for stored-estimate matrix names.
+*   - Each section in 5_GrRC.do and 8_GrRC_hukou.do gets a unique
+*     spec3 token, so sections no longer overwrite each other on disk.
+*
+* Note: this scheme is for STER FILENAMES and STORED ESTIMATE NAMES
+* only. The .tex output filenames (e.g. GRC_IDN_consumption_urban_unb.tex)
+* keep their existing verbose form -- they are what the paper reads.
+* **********************************************************************
+
+* **********************************************************************
 * List of programs
     * copyOverleaf						copies files to Overleaf
 	* data_setup						combines below programs
@@ -1692,14 +1755,14 @@ program define run_grc
     syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     * Resume-on-interrupt. If ${skip_if_exists} == "1" and the last-written
-    * ster for this estname exists (the _avg subgroup, saved at the end of
+    * ster for this estname exists (the _g subgroup, saved at the end of
     * run_grc), skip the whole block. Lets an interrupted master pipeline
     * pick up from the next missing cell on relaunch. To force a fresh run,
     * either delete `$output/`estname'*.ster` or unset ${skip_if_exists}.
     if "${skip_if_exists}" == "1" {
-        capture confirm file "$output/`estname'_avg.ster"
+        capture confirm file "$output/`estname'_g.ster"
         if _rc == 0 {
-            di as text "run_grc: SKIP `estname' (`estname'_avg.ster present)"
+            di as text "run_grc: SKIP `estname' (`estname'_g.ster present)"
             exit
         }
     }
@@ -1789,14 +1852,14 @@ program define run_grc
 	  nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
       * Save results
-      estimates save "$dir/output/`estname'_never", replace
+      estimates save "$dir/output/`estname'_n", replace
            
       * Compute Delta_always (average Delta for always-urban)
       estimates restore `estname'   // make sure the results are in memory
       nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
       * Save results
-      estimates save "$dir/output/`estname'_always", replace
+      estimates save "$dir/output/`estname'_a", replace
       
       * Compute all switcher Deltas
 	  estimates restore `estname'   // make sure the results are in memory
@@ -1818,7 +1881,7 @@ program define run_grc
 	  estadd scalar joint_chi2 = r(chi2), replace
 	  estadd scalar joint_p    = r(p),    replace
       * Save results
-      estimates save "$dir/output/`estname'_delta", replace
+      estimates save "$dir/output/`estname'_d", replace
 	  
 	  * Compute Delta_avg (average Delta for all switchers)
 	  local first_loop = 1
@@ -1838,7 +1901,7 @@ program define run_grc
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
       * Save results
-      estimates save "$dir/output/`estname'_avg", replace
+      estimates save "$dir/output/`estname'_g", replace
 
 end
 
@@ -1930,12 +1993,12 @@ program define run_grc_onestep
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -1954,7 +2017,7 @@ program define run_grc_onestep
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -1972,7 +2035,7 @@ program define run_grc_onestep
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g", replace
 
 end
 
@@ -2073,7 +2136,7 @@ program define run_grc_hukou
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
       * Save results
-      estimates save "$dir/output/`estname'_avg", replace
+      estimates save "$dir/output/`estname'_g", replace
 
 end
 
@@ -2317,7 +2380,7 @@ program define run_grc_robust
     nlcom (Delta_never: `beta_agg_expr' + _b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base'])), post
     estadd scalar V_never_supp = `V_supp', replace
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n", replace
 
     * ----------------------------------------------------------------
     * Delta_always (baseline-cluster beta; proper aggregation in P2)
@@ -2325,7 +2388,7 @@ program define run_grc_robust
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a", replace
 
     * ----------------------------------------------------------------
     * Per-switcher Deltas (baseline-cluster beta) + joint test
@@ -2348,7 +2411,7 @@ program define run_grc_robust
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d", replace
 
     * ----------------------------------------------------------------
     * Delta_avg: trajectory-share-weighted average across switchers
@@ -2370,7 +2433,7 @@ program define run_grc_robust
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g", replace
 
 end
 
@@ -2561,12 +2624,12 @@ program define run_grc_robust_vv
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -2586,7 +2649,7 @@ program define run_grc_robust_vv
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -2604,13 +2667,17 @@ program define run_grc_robust_vv
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g", replace
 
 end
 
 * **********************************************************************
 * Create country-specific LaTeX table with GRC results
 * **********************************************************************
+* DEPRECATED: pre-trend variant of grc_tex_table. Not called by any
+* numbered .do file in the current pipeline; kept for reference only.
+* If you need this for new work, port the M11 shorthand the way
+* grc_tex_table_trend handles it.
 cap program drop grc_tex_table
 program define grc_tex_table
     syntax , COLumns(integer) FILEname(string asis) 	///
@@ -2703,11 +2770,11 @@ program define grc_tex_table_trend
 				htb(string) PREhead(string asis) POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
-	* SPEC is a required prefix that separates urban from nonag (or similar)
-	* estimate-name families. Callers pass e.g. spec(urban) or spec(nonag)
-	* so the loop below reads grc_<country>_<spec>_covs_<k>.ster rather
-	* than colliding on a shared grc_<country>_covs_<k>.ster name.
-	
+	* SPEC is the M11 spec3 token that identifies which depvar/choice/balance
+	* slice to read. Callers pass e.g. spec(cuu) (cons/urban/unb), spec(cub)
+	* (cons/urban/bal), spec(iuu) (income/urban/unb), spec(cnu) (cons/nonag/unb).
+	* The loop below reads grc_<country>_<spec>_<covs2>.ster.
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -2729,21 +2796,16 @@ program define grc_tex_table_trend
     * Empty locals to store estimates
     local ests_never = ""
 	local ests_avg = ""
-    local ests = ""       
-		
-    * Stata's `estimates store` creates an internal `_est_<name>` matrix
-    * that must fit in 32 chars; the verbose spec prefixes `urban_` / `nonag_`
-    * combined with `covs_<k>_<sub>` push past that limit, so use a one-letter
-    * short form (`u`/`n`) for stored-name construction. Disk file names keep
-    * the verbose form. Callers in 5_GrRC.do and 6_GrRC_NonAg.do follow the
-    * same convention when they `estimates store`.
-    local spec_short = cond("`spec'"=="urban", "u", cond("`spec'"=="nonag", "n", "`spec'"))
+    local ests = ""
 
-    * Generate the list of stored estimates for the current panel
-      foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        local ests_never     = "`ests_never' grc_`country'_`spec_short'_`estname'_never"
-        local ests_avg = "`ests_avg' grc_`country'_`spec_short'_`estname'_avg"
-        local ests           = "`ests' grc_`country'_`spec_short'_`estname'"
+    * Generate the list of stored estimates for the current panel.
+    * After M11, ster filenames and stored-estimate names use the same
+    * `grc_<country>_<spec3>_<covs2>{,_n,_a,_d,_g}` shorthand, so no
+    * Option-B "long disk / short memory" bridge is needed.
+      foreach estname in c0 ct c1 c2 ca {
+        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
+        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
+        local ests       = "`ests' grc_`country'_`spec'_`estname'"
       }
         
       * Output Delta-never row
@@ -2825,11 +2887,15 @@ program define grc_tex_table_trend_hukou
     local ests_avg = ""
     local ests = ""       
 		
-    * Generate the list of stored estimates for the current panel
+    * Generate the list of stored estimates for the current panel.
+    * Hukou caller passes country(`country_short') where country_short is
+    * already the M11-compressed `<CHN>_<rf|uf|ro|uo>_<spec3>` token, so
+    * the lookup grc_<country>_<covs2>{,_n,_g} resolves correctly without
+    * needing a separate spec() option here.
       foreach estname in c0 ct c1 c2 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_n"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
+        local ests_never = "`ests_never' grc_`country'_`estname'_n"
+        local ests_avg   = "`ests_avg' grc_`country'_`estname'_g"
+        local ests       = "`ests' grc_`country'_`estname'"
       }
         
       * Output Delta-never row
@@ -2888,10 +2954,11 @@ program define grc_tex_table_trend_exp
 				PREhead(string asis) POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
-	* SPEC selects which experience-family estimates to read. Callers pass
-	* spec(exp), spec(maxexp), spec(expsh), spec(maxexpsh), spec(nonag_exp)
-	* so the loop reads grc_<country>_<spec>_c<k>.ster and avoids the
-	* old c1/c2/c3/ca collision across scripts 10-14.
+	* SPEC is the M11 spec3+family token (e.g. cuu_exp, cuu_maxexp, cuu_expsh,
+	* cuu_maxexpsh, cnu_exp). Loop reads grc_<country>_<spec>_<covs2>.ster.
+	* The experience-family covs2 set is c1/c2/c3/ca (different meaning from
+	* the c0/ct/c1/c2/ca set used in 5_GrRC.do; documented in the file
+	* header).
 	
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2916,17 +2983,19 @@ program define grc_tex_table_trend_exp
 	local ests_avg = ""
     local ests = ""       
 		
-    * Generate the list of stored estimates for the current panel
+    * Generate the list of stored estimates for the current panel.
+    * After M11, ster filenames and stored-estimate names use the same
+    * `grc_<country>_<spec>_<covs2>{,_n,_g}` shorthand.
       foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`spec'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`spec'_`estname'"
+        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
+        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
+        local ests       = "`ests' grc_`country'_`spec'_`estname'"
       }
-        
+
       * Output Delta-never row
       esttab `ests_never'                    ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
@@ -2936,11 +3005,11 @@ program define grc_tex_table_trend_exp
       posthead(`table_posthead')             ///
       coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
       replace substitute(\_ _)
-        
+
       * Output Delta average row
       esttab `ests_avg'   		             ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
@@ -2948,11 +3017,11 @@ program define grc_tex_table_trend_exp
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "Average $\Delta$") ///
       append substitute(\_ _)
-    
+
     * Output other estimates
       esttab `ests'	                         ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       keep(`keep')                           ///
       varlabels(`keep' "`varlabel'")         ///
       eqlabels(none)				         ///
@@ -2965,11 +3034,11 @@ program define grc_tex_table_trend_exp
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
-   
+
 end
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results 
+* Create country-specific LaTeX table with GRC results
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
 cap program drop grc_tex_table_trend_birth
@@ -2979,9 +3048,9 @@ program define grc_tex_table_trend_birth
 				PREhead(string asis) POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis) ///
 				SPEC(string)
-	* SPEC is typically spec(birth); the only current caller is 15_GrRC_birth.do.
-	* See grc_tex_table_trend_exp for details.
-	
+	* SPEC is the M11 spec3+family token (e.g. cuu_birth, cub_birth).
+	* The only current caller is 15_GrRC_birth.do.
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -3003,13 +3072,15 @@ program define grc_tex_table_trend_birth
     * Empty locals to store estimates
     local ests_never = ""
 	local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
+    local ests = ""
+
+    * Generate the list of stored estimates for the current panel.
+    * After M11, ster filenames and stored-estimate names use the same
+    * `grc_<country>_<spec>_<covs2>{,_n,_g}` shorthand.
       foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`spec'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`spec'_`estname'"
+        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
+        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
+        local ests       = "`ests' grc_`country'_`spec'_`estname'"
       }
         
       * Output Delta-never row
@@ -3080,11 +3151,9 @@ program define het_table_delta
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates (heterogeneity tables are always urban-spec).
-    * Caller (16_heterogeneity_tables.do) stores under the Option-B short
-    * form `grc_<c>_u_covs_all{,_delta}` to fit Stata's 32-char limit on
-    * stored-estimate names, so reference the same short form here.
-    local ests_delta = "grc_`country'_u_covs_all_delta"
+    * Stored estimates (heterogeneity tables are always urban-spec, M11
+    * spec3 = cuu, max-cov set = ca, Delta-per-trajectory suffix = d).
+    local ests_delta = "grc_`country'_cuu_ca_d"
 	
 	* Output Deltas and mus
 	esttab `ests_delta'						 ///
@@ -3131,9 +3200,9 @@ program define het_table_mu
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
 		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 
-    * Stored estimates (heterogeneity tables are always urban-spec).
-    * Caller stores under the Option-B short form to fit the 32-char limit.
-    local ests = "grc_`country'_u_covs_all"
+    * Stored estimates (heterogeneity tables are always urban-spec, M11
+    * spec3 = cuu, max-cov set = ca; main fit has empty sfx1).
+    local ests = "grc_`country'_cuu_ca"
 	
 	* Output Deltas and mus
 	esttab `ests'							 ///

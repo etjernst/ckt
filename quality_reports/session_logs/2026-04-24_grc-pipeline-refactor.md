@@ -420,3 +420,68 @@ Phase 1 = M1 + M2 + M11 together. Sub-steps:
 - `e(runtime)` and `e(timer_slot)` survive in section-3 sters; sections 1 and 2 sters were overwritten (M11 pending).
 - CHN income (slots 42--44) converged=N; the matching published tables presumably did too.
 - Phase 0 committed and validated end-to-end via `tests/regression_test.py`.
+
+## Continuation 2026-04-28 (afternoon) --- Phase 1a (M11 rename) done
+
+### Plan finalized
+
+[docs/plans/2026-04-28-phase1-m1-m2-m11.md](../../docs/plans/2026-04-28-phase1-m1-m2-m11.md) covers Phase 1 split into 1a (M11 only) and 1b (M1+M2 collapse) with a Tier 2 gate between.
+
+User decisions logged on plan questions:
+1. Hukou compression in Phase 1a (not deferred).
+2. Skip hukou Tier 2 coverage; rely on Tier 3.
+3. IDN nonag-exp absorbed into `6_GrRC_NonAg.do` (Phase 1b).
+4. `extra_regressor(varname)` (general, not a dedicated `birth` flag).
+5. Dropbox RP6 GRC_*_exp*.tex etc. trustworthy as Phase 1b reference.
+6. Rename touches `.ster` filenames + stored estimate names ONLY; `.tex` output filenames unchanged.
+
+### M11 implementation
+
+**`0_programs.do`**:
+- Header doc block at top documenting the spec3 / covs2 / sfx1 / hukou-subgroup scheme.
+- Suffix swaps in 5 programs (run_grc, run_grc_onestep, run_grc_hukou, run_grc_robust, run_grc_robust_vv): `_never -> _n`, `_always -> _a`, `_delta -> _d`, `_avg -> _g`. Done via replace_all on `"$dir/output/`estname'_<sfx>"` literals (4 substitutions × 5 programs = 20 sites).
+- M10 resume guard updated: `_avg.ster` -> `_g.ster`.
+- `grc_tex_table_trend` foreach loop: rebuilt to use `c0/ct/c1/c2/ca`; dropped `spec_short` local; comment updated.
+- `grc_tex_table_trend_hukou` foreach loop: rebuilt to use the new `_n/_g` suffixes (caller passes already-compressed `country_short`).
+- `grc_tex_table_trend_exp`, `grc_tex_table_trend_birth` foreach loops: rebuilt; caller now passes `spec(<spec3>_<family>)` instead of `spec(<family>)`.
+- `het_table_delta`, `het_table_mu`: ester refs updated to `grc_<c>_cuu_ca[_d]`.
+- Dead `grc_tex_table` (no `_trend`): added deprecation comment; left foreach body as-is.
+
+**Numbered files** via `tools/rename_m11_phase1a.py` (one-shot helper, committed):
+- `5_GrRC.do`: 3 sections, 37 substitutions per section (urban -> cuu/cub/iuu).
+- `6_GrRC_NonAg.do`: single section, 25 subs (nonag -> cnu).
+- `8_GrRC_hukou.do`: 12 sub-sections (4 hukou subgroups × 3 spec3); per-section `local country_short CHN_<full>` -> `CHN_<hu>_<spec3>` (23 renames total, since urban_first §3 has only one country_short line); plus `_avg -> _g` swaps.
+- `10/11/12/13`: 93 subs each, prefix `cuu` added to existing `<family>_<covs2>` shape.
+- `14_GrRC_NonAg_experience.do`: 84 subs, prefix `cnu`. Preserves the prior 4-way collision (only §4's sters survive on disk; tex_table runs immediately after each section's fits, so produced .tex tables are bit-identical). Disambiguation lands in Phase 1b.
+- `15_GrRC_birth.do`: 84 subs, prefix `cuu` (both sections; preserves prior collision).
+- `16_heterogeneity_tables.do`: 10 subs, `urban_covs_all{,_delta}` -> `cuu_ca{,_d}`.
+
+**Helper smoke drivers**:
+- `_peek_runtime.do`: ster name list updated to `iuu` (smoke #9 income survivors); comment notes that section-1 (cuu) and section-2 (cub) sters were overwritten before M11 landed.
+- `_smoke_idn_only.do`: estname args updated to `cuu_<covs2>`; foreach loop updated to read/store under unified shorthand; `spec(urban) -> spec(cuu)`.
+
+**Tier 1 audit (grep)**:
+- Old patterns (`urban_covs_`, `nonag_covs_`, `_u_covs_`, `_n_covs_`, `spec_short`, `\`estname'_never|always|delta|avg`) all removed except inside the dead `grc_tex_table` program (intentionally left with deprecation note).
+- Hukou subgroup names (`grc_(IDN|CHN|TZA)_(rural|urban)_(first|only)`) all removed.
+- Worst-case stored-estimate name length: `_est_grc_CHN_cuu_maxexpsh_ca_n` = 30 chars. Fits Stata's 32-char limit with 2 chars headroom.
+
+**Tier 2 replay smoke**:
+- Driver: `_tier2_tza.do` (TZA cons/urban/unb only, 5 GMM fits + 1 LaTeX table).
+- Wall-clock: ~7 min from launch to table written (longer than the 1-min estimate from session log; possibly cold-start overhead or different from the smoke #9 run-time per fit).
+- Result: `RP7/output/tables/GRC_TZA_consumption_urban_unb.tex` BIT-IDENTICAL to `tests/reference/output/tables/GRC_TZA_consumption_urban_unb.tex`.
+- 25 sters written under M11 shorthand: `grc_TZA_cuu_<covs2>{,_n,_a,_d,_g}`. Confirms write path produces correct names; confirms read path picks them up; confirms the table builder produces the right bytes.
+- `python tests/regression_test.py` still passes (9/9 identical) after Tier 2.
+
+### Coauthor-facing README
+
+[RP7/scripts/STER_NAMING.md](../../RP7/scripts/STER_NAMING.md) documents the new naming convention for coauthors who don't use git.
+Covers: TL;DR, what changed/why, per-shape mapping tables (5_GrRC.do/6, 8_GrRC_hukou.do, 10--15), examples, where the locked-in convention lives in code, headroom for adding new specs, and a list of what the rename did NOT do (regressor lists, sample, .tex filenames).
+
+### Open next steps (Phase 1b)
+
+1. Pre-step: import 10--15 reference tables from Dropbox RP6 `output/tables/GRC_*_exp*.tex` etc. as `tests/reference/` baseline for Phase 1b.
+2. Extend `run_grc` with `exp_variant(none|exp|maxexp|expsh|maxexpsh)` and `extra_regressor(varname)` options.
+3. Expand `5_GrRC.do` loop over `exp_variant`; absorb 14 nonag-exp into `6_GrRC_NonAg.do`; absorb 15 birth via `extra_regressor(birth)`.
+4. Delete 10/11/12/13/14/15.
+5. Tier 1 audit + Tier 2 partial validation.
+6. Tier 3 full smoke (~30 hours), refresh `tests/reference/`.

@@ -1,13 +1,16 @@
 * **********************************************************************
-* Fast smoke driver: IDN consumption / urban / unbalanced ONLY.
-* ~5 GMM fits + 1 LaTeX table. Targets ~5 minutes wall-clock.
+* Tier 2 replay smoke (Phase 1a M11 verification): TZA cons/urban/unb only.
 *
-* No `capture noisily` wrap --- it appeared to interact badly with the
-* multi-line `gmm` calls in `run_grc` (110 min stall in one trial vs.
-* 30 min for the FULL pipeline without the wrap).
+* Runs ~5 GMM fits + 1 LaTeX table for TZA. TZA is the fastest country
+* in the smoke #9 reference (covs_0 = 6 sec, covs_all = 12 sec); whole
+* file should take ~1 minute.
 *
-* Use during bug-fix iteration. The full smoke (_smoke_5_GrRC.do) is the
-* end-to-end check; this is the inner-loop test.
+* On success, diff RP7/output/tables/GRC_TZA_consumption_urban_unb.tex
+* against tests/reference/output/tables/GRC_TZA_consumption_urban_unb.tex.
+* Bit-identical = M11 rename validated for the write+read path.
+*
+* Mirrors the structure of _smoke_idn_only.do (and inherits its no-wrap
+* convention --- see that file's header for why).
 * **********************************************************************
 
 clear all
@@ -17,32 +20,18 @@ if "`c(username)'" == "maand" {
 }
 
 include "$dir/scripts/0_path_config.do"
-* Skip 0_setup.do --- it has `window stopbox` calls that show real modal
-* dialogs in batch mode if any SSC package is flagged as missing (even
-* under `capture`). For a smoke test we assume packages are already
-* installed; failures will surface as command-not-found errors instead.
 include "$scripts/0_programs.do"
 
 global copyOverleaf 0
 
-* NOTE 2026-04-26: dropped the `capture noisily { }` wrap. Previous run
-* with the wrap stalled in Step 2 of GMM iteration --- 110 minutes into
-* a job that should take 5-10 minutes. Same code without the wrap ran
-* the FULL pipeline in 30 minutes. Suspected slow-path interaction
-* between `capture noisily` and multi-line `gmm`.
-* Trade-off: if the script errors, Stata's popup appears in batch mode.
-* Click through it; we'll add a cleaner error-handling shim later if
-* this becomes annoying.
-
 * --------------------------------------------------------------
-* Spec: IDN consumption urban unbalanced
+* Spec: TZA consumption urban unbalanced
 * --------------------------------------------------------------
     local choice  urban
     local depvar  consumption
     local balance unb
 
     * Globals normally set at the top of 5_GrRC.do (lines 42-51).
-    * Inlining here because the smoke skips that prelude.
     global covs_gmm     "female"
     global covs_gmm2    "$covs_gmm age2"
     global covs_gmm_all "$covs_gmm2 education_max education_max2"
@@ -54,11 +43,9 @@ global copyOverleaf 0
     global keepvars $keepvars always always_choice never switcher_*
 
     eststo clear
-    local country IDN
+    local country TZA
 
     use "$dirdata/processed/`country'_`balance'.dta", clear
-
-    * IDN-specific: log per-capita consumption normalized by household-size cube
     replace lndepvar = log(consumption/hhsize_cube)
 
     setup_grc_estimation
@@ -68,7 +55,7 @@ global copyOverleaf 0
     local periodFE "period_2 - period_`r(r)'"
 
     * --------------------------------------------------------------
-    * GMM fits: 5 covariate specs
+    * GMM fits: 5 covariate specs (M11 estname shorthand: cuu_<covs2>)
     * --------------------------------------------------------------
     initial_values lndepvar,        ///
         switchers($switchers)       ///
@@ -110,9 +97,7 @@ global copyOverleaf 0
         iterate(`iterations')
 
     * --------------------------------------------------------------
-    * Load the saved sters. After M11, ster filenames and stored
-    * estimate names use the same `grc_<country>_<spec3>_<covs2>`
-    * shorthand (no Option B bridge needed).
+    * Load saved sters (M11 unified shorthand: disk == memory)
     * --------------------------------------------------------------
     foreach estname in c0 ct c1 c2 ca {
         estimates use "$dir/output/grc_`country'_cuu_`estname'"
@@ -124,27 +109,30 @@ global copyOverleaf 0
     }
 
     * --------------------------------------------------------------
-    * LaTeX table: same call shape as 5_GrRC.do for IDN
+    * LaTeX table: same call shape as 5_GrRC.do for TZA, must produce
+    * the GRC_TZA_consumption_urban_unb.tex that tests/reference/ has.
     * --------------------------------------------------------------
     local reportvars "phi:_cons"
     local varlab "$\phi$"
-    local htb_str "htb!"
-    local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Indonesia (smoke test)} "'"
-    local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'_smoke} "'"
-    local table_notes "Smoke-test artifact. Compare to the published `GRC_IDN_consumption_urban_unb.tex'."
-    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age\$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+    local htb_str "htbp"
+    local table_caption "`" \caption{Restricted GRC Estimates of the Returns to Urban Location on log Consumption in Tanzania} "'"
+    local table_label "`" \label{tab:GRC_`country'_`depvar'_`choice'_`balance'} "'"
+    local table_notes "This table uses data from the National Panel Survey from Tanzania. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
+    local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 
-grc_tex_table_trend, columns(5)                         ///
-    spec(cuu)                                           ///
-    country(`country')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    htb(`htb_str')		                                ///
-    prehead(`table_caption' `table_label')              ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
+    grc_tex_table_trend, columns(5)                         ///
+        spec(cuu)                                           ///
+        country(`country')                                  ///
+        filename(GRC_`country'_`depvar'_`choice'_`balance') ///
+        keep(`reportvars')                                  ///
+        varlabel(`varlab')                                  ///
+        htb(`htb_str')		                                ///
+        prehead(`table_caption' `table_label')              ///
+        postfoot(`postfoot_str')                            ///
+        coeflabels(choice "Urban")                          ///
+        textdepvar( log(`depvar') )
 
-display as text "============ IDN smoke complete ============"
+    timer list
+
+display as text "============ Tier 2 TZA smoke complete ============"
 exit, STATA clear

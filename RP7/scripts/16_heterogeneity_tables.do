@@ -272,21 +272,21 @@ foreach s of numlist $switchers {
 * Add statistics and table markers
 * **********************************************************************
 foreach country in IDN CHN TZA {
-		estimates use "$dir/output/grc_`country'_urban_covs_all"
-        estimates store grc_`country'_u_covs_all
-		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
-        estimates store grc_`country'_u_covs_all_delta
+		estimates use "$dir/output/grc_`country'_cuu_ca"
+        estimates store grc_`country'_cuu_ca
+		estimates use "$dir/output/grc_`country'_cuu_ca_d"
+        estimates store grc_`country'_cuu_ca_d
     }
 
 * Display a simple table of results
 foreach country in IDN CHN TZA {
 di "`country', `depvar', `choice', `balance'"
 estimates table                                       ///
-    grc_`country'_u_covs_all	                  ///
+    grc_`country'_cuu_ca	                  ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 estimates table                                       ///
-    grc_`country'_u_covs_all_delta                ///
+    grc_`country'_cuu_ca_d                ///
     , star(.1 .05 .01) b(%7.3f) varlabel varwidth(35) ///
     stats(joint_chi2 joint_p)
 }
@@ -315,10 +315,10 @@ TEXTdepvar(string asis): Dependent variable as string
 
 * Make sure estimates are in memory
 foreach country in IDN CHN TZA {
-		estimates use "$dir/output/grc_`country'_urban_covs_all"
-        estimates store grc_`country'_u_covs_all
-		estimates use "$dir/output/grc_`country'_urban_covs_all_delta"
-        estimates store grc_`country'_u_covs_all_delta
+		estimates use "$dir/output/grc_`country'_cuu_ca"
+        estimates store grc_`country'_cuu_ca
+		estimates use "$dir/output/grc_`country'_cuu_ca_d"
+        estimates store grc_`country'_cuu_ca_d
     }
 
 * **********************************************************************
