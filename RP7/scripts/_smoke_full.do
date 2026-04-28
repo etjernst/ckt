@@ -5,8 +5,10 @@
 * on Overleaf is unaffected during the run.
 *
 * GMM scripts run, in order:
-*   5_GrRC.do, 6_GrRC_NonAg.do, 8_GrRC_hukou.do,
-*   10/11/12/13_GrRC_*experience*.do,
+*   5_GrRC.do, 6_GrRC_NonAg.do, 8_GrRC_hukou.do, GRC_extras.do
+* GRC_extras.do (Phase 1b.6) replaces the deleted files
+*   10_GrRC_experience.do, 11_GrRC_max_experience.do,
+*   12_GrRC_experience_share.do, 13_GrRC_max_experience_share.do,
 *   14_GrRC_NonAg_experience.do, 15_GrRC_birth.do
 *
 * NOT included this run:
@@ -50,12 +52,7 @@ global skip_if_exists 1
 include "$dir/scripts/5_GrRC.do"
 include "$dir/scripts/6_GrRC_NonAg.do"
 include "$dir/scripts/8_GrRC_hukou.do"
-include "$dir/scripts/10_GrRC_experience.do"
-include "$dir/scripts/11_GrRC_max_experience.do"
-include "$dir/scripts/12_GrRC_experience_share.do"
-include "$dir/scripts/13_GrRC_max_experience_share.do"
-include "$dir/scripts/14_GrRC_NonAg_experience.do"
-include "$dir/scripts/15_GrRC_birth.do"
+include "$dir/scripts/GRC_extras.do"
 
 * Table builders skipped --- run make_tables.do separately AFTER this
 * completes (then redo the paper macro swap in Overleaf).

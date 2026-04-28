@@ -88,18 +88,8 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/8_GrRC_hukou.do"
 * Run learning regressions
 	include			"$dir/scripts/9_learning.do"
-* Run GRC regressions (Urban, experience controls)
-	include			"$dir/scripts/10_GrRC_experience.do"
-* Run GRC regressions (Urban, max experience controls)
-	include			"$dir/scripts/11_GrRC_max_experience.do"
-* Run GRC regressions (Urban, experience share controls)
-	include			"$dir/scripts/12_GrRC_experience_share.do"
-* Run GRC regressions (Urban, max experience share controls)
-	include			"$dir/scripts/13_GrRC_max_experience_share.do"
-* Run GRC regressions (Non-Ag, experience controls)
-	include			"$dir/scripts/14_GrRC_NonAg_experience.do"
-* Run GRC regressions (IDN urban birth controls)
-	include			"$dir/scripts/15_GrRC_birth.do"
+* Run GRC regressions (extras: experience-family + IDN birth; 44 stems)
+	include			"$dir/scripts/GRC_extras.do"
 * Build all GRC LaTeX tables (5/6/8 + heterogeneity) from saved .ster files
 	include			"$dir/scripts/make_tables.do"
 * Make all GRC figures (heterogeneity plots + trajectory bar graphs)
