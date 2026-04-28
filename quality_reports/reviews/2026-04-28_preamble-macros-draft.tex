@@ -1,0 +1,275 @@
+% =====================================================================
+% DRAFT: GRC table macros for preamble.tex
+%
+% Phase 1b.2 of the GRC pipeline refactor (spec at
+% quality_reports/specs/2026-04-24_grc-pipeline-refactor.md).
+%
+% This is a STAGING file. After user sign-off, the contents here will
+% be appended to:
+%   C:\Users\maand\Monash Uni Enterprise Dropbox\Emilia Tjernstrom\
+%       Apps\Overleaf\ReturnsToMigration-clean\preamble.tex
+%
+% Cell catalog at:
+%   quality_reports/reviews/2026-04-28_paper-table-text-extraction.md
+% =====================================================================
+
+% ---------------------------------------------------------------------
+% Reused phrases --- one per atomic concept, used inside macros below.
+% ---------------------------------------------------------------------
+
+% Standard error footer (always the same for individual-clustered SEs)
+\newcommand{\seclusterind}{We report robust standard errors, clustered at the individual level, in parentheses.}
+
+% Significance stars (always the same)
+\newcommand{\sigstars}{Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.}
+
+% Cross-reference to the data section (used in Templates A and B)
+\newcommand{\refdatasec}{Please refer to Section~\ref{sec:data} for further details on the data}
+
+% Cross-reference to the IDN canonical table for variable definitions
+\newcommand{\refIDNcanon}{and to the notes of Table~\ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables}
+
+% Cross-reference to the IDN heterogeneity tables (used by 16's Templates D/E)
+\newcommand{\refIDNhetDelta}{and to the notes of Table~\ref{tab:hetDelta_table_IDN} for additional information on the variables}
+\newcommand{\refIDNhetMu}{and to the notes of Table~\ref{tab:hetmu_table_IDN} for additional information on the variables}
+
+% ---------------------------------------------------------------------
+% Country-specific data source phrases.
+% Two variants per country: unbalanced ("uses data from") and balanced
+% ("uses the balanced panel from"). Note the TZA balanced uses "Tanzanian
+% National Panel Survey" (different word order from TZA unbalanced
+% "National Panel Survey from Tanzania") --- preserved per current source.
+% ---------------------------------------------------------------------
+\newcommand{\datasourceIDNunb}{This table uses data from the Indonesia Family Life Survey.}
+\newcommand{\datasourceIDNbal}{This table uses the balanced panel from the Indonesia Family Life Survey.}
+\newcommand{\datasourceCHNunb}{This table uses data from the China Family Panel Survey.}
+\newcommand{\datasourceCHNbal}{This table uses the balanced panel from the China Family Panel Survey.}
+\newcommand{\datasourceTZAunb}{This table uses data from the National Panel Survey from Tanzania.}
+\newcommand{\datasourceTZAbal}{This table uses the balanced panel from the Tanzanian National Panel Survey.}
+
+% Country-name-only macros (used inside captions)
+\newcommand{\countrynameIDN}{Indonesia}
+\newcommand{\countrynameCHN}{China}
+\newcommand{\countrynameTZA}{Tanzania}
+
+% Treatment-name macros (used inside captions)
+\newcommand{\treatmentUrban}{Urban Location}
+\newcommand{\treatmentNonag}{Non-Agricultural Sector}
+
+% Depvar-prose macros (used inside captions)
+\newcommand{\depvarConsumption}{Consumption}
+\newcommand{\depvarIncome}{Income}
+
+% ---------------------------------------------------------------------
+% Notes assembly: dispatch by datasource + cross-ref pattern.
+% Each macro emits the FULL notes paragraph including \seclusterind and
+% \sigstars at the end.
+% ---------------------------------------------------------------------
+
+% Template B: standard cross-ref-to-IDN-canonical notes.
+% Args: #1 = country code (IDN|CHN|TZA), #2 = balance (unb|bal)
+% Used by all main GRC tables EXCEPT the IDN cons/urban/unb canonical
+% (which uses Template A) and EXCEPT the income tables (which use C).
+\NewDocumentCommand{\GRCnotesxref}{m m}{%
+  \csname datasource#1#2\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+}
+
+% Template A: IDN cons/urban/unb canonical (long-form variable explanations).
+% No args; this is used in exactly ONE place. The "extrapolated returns"
+% paragraph and column-by-column explanation live here.
+\newcommand{\GRCnotesIDNcanonical}{%
+  \datasourceIDNunb{} \refdatasec.
+  The dependent variable is the log of total consumption per capita.
+  Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village.
+  Individuals are assigned to trajectories based on their location history across the survey waves.
+  This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data.
+  Columns~(2) to~(5) include time (survey wave) fixed effects, column~(3) adds a female indicator, column~(4) adds age squared, and column~(5) adds education (years of schooling, maximum across periods) and its square.
+  \seclusterind{} \sigstars
+}
+
+% Template C: income canonical (shared across IDN/CHN/TZA income tables).
+% No args; preserves current bit-identical behavior --- one notes block
+% used for all 3 income tables, no per-country datasource line.
+% (Open question: whether to align with B's per-country datasource.)
+\newcommand{\GRCnotesIncomeShared}{%
+  The dependent variable is the log of income per capita.
+  Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village.
+  Individuals are assigned to trajectories based on their location history across the survey waves.
+  This table reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data.
+  Columns~(2) to~(5) include time (survey wave) fixed effects, column~(3) adds a female indicator, column~(4) adds age squared, and column~(5) adds education (years of schooling, maximum across periods) and its square.
+  \seclusterind{} \sigstars
+}
+
+% Template D / E: heterogeneity tables (16). To draft once we read the
+% canonical IDN heterogeneity notes block; placeholder for now:
+% \newcommand{\GRChetDeltaNotesIDN}{...}
+% \NewDocumentCommand{\GRChetnotesxref}{m m}{...}
+
+% ---------------------------------------------------------------------
+% Main table macros: one per table family.
+% ---------------------------------------------------------------------
+
+% \GRCtable: main 5_GrRC.do tables (5 columns, c0/ct/c1/c2/ca).
+%
+%   Args: #1 = country code (IDN|CHN|TZA)
+%         #2 = depvar (consumption|income)
+%         #3 = choice (urban|nonag)
+%         #4 = balance (unb|bal)
+%         #5 = OPTIONAL notes-prefix override, default empty.
+%               When set, the entire notes block is REPLACED by this string
+%               (use the canonical macro: e.g. [\GRCnotesIDNcanonical] or
+%                [\GRCnotesIncomeShared]).
+%               When unset, defaults to Template B (\GRCnotesxref{#1}{#4}).
+%
+% Caption template:  "Restricted GRC Estimates of the Returns to <Treatment>
+%   on log <Depvar> {in <CountryName> | , <CountryName>}[, Balanced Panel]"
+% where the connector (in / ,) depends on depvar (in for cons, , for income).
+% Treatment derived from #3 (urban→\treatmentUrban, nonag→\treatmentNonag).
+% Depvar from #2 (consumption→Consumption, income→Income).
+% Balance modifier appended only if #4 == bal.
+\NewDocumentCommand{\GRCtable}{m m m m O{}}{%
+  % Resolve the variable parts.
+  \def\GRCthistreatment{\csname treatment\GRCtreatmentcase{#3}\endcsname}%
+  \def\GRCthisdepvar{\csname depvar\GRCdepvarcase{#2}\endcsname}%
+  \def\GRCthiscountry{\csname countryname#1\endcsname}%
+  \def\GRCthisconnector{\GRCdepvarconnector{#2}}%
+  \def\GRCthisbalmod{\GRCbalmodifier{#4}}%
+  % Resolve notes: if #5 nonempty use it; else default to Template B.
+  \def\GRCthisnotes{#5}%
+  \ifx\GRCthisnotes\@empty
+    \def\GRCthisnotes{\GRCnotesxref{#1}{#4}}%
+  \fi
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to \GRCthistreatment{} on log \GRCthisdepvar{} \GRCthisconnector{} \GRCthiscountry\GRCthisbalmod}%
+  \label{tab:GRC_#1_#2_#3_#4}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_#2_#3_#4}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \GRCthisnotes
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+% Helpers: case-translation from arg lowercase to macro suffix CamelCase.
+\newcommand{\GRCtreatmentcase}[1]{%
+  \ifstrequal{#1}{urban}{Urban}{%
+  \ifstrequal{#1}{nonag}{Nonag}{%
+  ERROR-bad-treatment}}%
+}
+\newcommand{\GRCdepvarcase}[1]{%
+  \ifstrequal{#1}{consumption}{Consumption}{%
+  \ifstrequal{#1}{income}{Income}{%
+  ERROR-bad-depvar}}%
+}
+\newcommand{\GRCdepvarconnector}[1]{%
+  \ifstrequal{#1}{consumption}{in}{%
+  \ifstrequal{#1}{income}{,}{%
+  ERROR-bad-depvar}}%
+}
+\newcommand{\GRCbalmodifier}[1]{%
+  \ifstrequal{#1}{bal}{, Balanced Panel}{}%
+}
+% NOTE: \ifstrequal comes from etoolbox; if not loaded, add \usepackage{etoolbox}.
+
+% ---------------------------------------------------------------------
+% \GRCexptable: experience and birth family tables (4 cols).
+%   Args: #1=country, #2=depvar, #3=choice, #4=balance, #5=variant
+%         where variant in {exp, exp_max, exp_sh, exp_m_sh, birth}
+%
+% Caption: "Restricted GRC Estimates of the Returns to <Treatment>
+%   on log <Depvar> {in|,} <CountryName>[, Balanced Panel], <VariantName> Controls"
+%
+% Notes: cross-references the corresponding NON-variant table
+%   (e.g. variant=exp on IDN cons urban unb cross-refs to
+%   Table \ref{tab:GRC_IDN_consumption_urban_unb}).
+% ---------------------------------------------------------------------
+\NewDocumentCommand{\GRCexptable}{m m m m m}{%
+  \def\GRCthistreatment{\csname treatment\GRCtreatmentcase{#3}\endcsname}%
+  \def\GRCthisdepvar{\csname depvar\GRCdepvarcase{#2}\endcsname}%
+  \def\GRCthiscountry{\csname countryname#1\endcsname}%
+  \def\GRCthisconnector{\GRCdepvarconnector{#2}}%
+  \def\GRCthisbalmod{\GRCbalmodifier{#4}}%
+  \def\GRCthisvariant{\GRCvariantname{#5}}%
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to \GRCthistreatment{} on log \GRCthisdepvar{} \GRCthisconnector{} \GRCthiscountry\GRCthisbalmod, \GRCthisvariant{} Controls}%
+  \label{tab:GRC_#1_#2_#3_#4_#5}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_#2_#3_#4_#5}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \csname datasource#1#4\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+% Variant token to caption-prose mapping.
+\newcommand{\GRCvariantname}[1]{%
+  \ifstrequal{#1}{exp}{Experience}{%
+  \ifstrequal{#1}{exp_max}{Max Experience}{%
+  \ifstrequal{#1}{exp_sh}{Experience Share}{%
+  \ifstrequal{#1}{exp_m_sh}{Max Experience Share}{%
+  \ifstrequal{#1}{birth}{Urban Birth}{%
+  ERROR-bad-variant}}}}}%
+}
+
+% ---------------------------------------------------------------------
+% \GRChukoutable: hukou-subgroup tables from 8_GrRC_hukou.do.
+%   Args: #1=country (always CHN), #2=depvar, #3=choice, #4=balance,
+%         #5=hukou subgroup (rural_first|urban_first|rural_only|urban_only)
+%
+% Caption: "Restricted GRC Estimates of the Returns to Urban Location
+%   on log <Depvar> {in|,} China[, Balanced Panel], <HukouProse>"
+% ---------------------------------------------------------------------
+\NewDocumentCommand{\GRChukoutable}{m m m m m}{%
+  \def\GRCthisdepvar{\csname depvar\GRCdepvarcase{#2}\endcsname}%
+  \def\GRCthiscountry{\csname countryname#1\endcsname}%
+  \def\GRCthisconnector{\GRCdepvarconnector{#2}}%
+  \def\GRCthisbalmod{\GRCbalmodifier{#4}}%
+  \def\GRCthishukou{\GRChukouname{#5}}%
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to Urban Location on log \GRCthisdepvar{} \GRCthisconnector{} \GRCthiscountry\GRCthisbalmod, \GRCthishukou}%
+  \label{tab:GRC_#1_hukou_#5_#2_#3_#4}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_hukou_#5_#2_#3_#4}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \csname datasource#1#4\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+\newcommand{\GRChukouname}[1]{%
+  \ifstrequal{#1}{rural_first}{Rural Hukou First}{%
+  \ifstrequal{#1}{urban_first}{Urban Hukou First}{%
+  \ifstrequal{#1}{rural_only}{Only Rural Hukou}{%
+  \ifstrequal{#1}{urban_only}{Only Urban Hukou}{%
+  ERROR-bad-hukou}}}}%
+}
+
+% ---------------------------------------------------------------------
+% Usage examples (for reference; not part of the preamble):
+% ---------------------------------------------------------------------
+%
+% % IDN canonical table --- pass the long-form notes via optional arg:
+% \GRCtable{IDN}{consumption}{urban}{unb}[\GRCnotesIDNcanonical]
+%
+% % CHN cons urban unb (uses default Template B cross-ref notes):
+% \GRCtable{CHN}{consumption}{urban}{unb}
+%
+% % IDN income urban unb (override notes to shared income block):
+% \GRCtable{IDN}{income}{urban}{unb}[\GRCnotesIncomeShared]
+% \GRCtable{CHN}{income}{urban}{unb}[\GRCnotesIncomeShared]
+% \GRCtable{TZA}{income}{urban}{unb}[\GRCnotesIncomeShared]
+%
+% % Experience family:
+% \GRCexptable{IDN}{consumption}{urban}{unb}{exp}
+% \GRCexptable{IDN}{consumption}{urban}{bal}{exp_max}
+% \GRCexptable{TZA}{income}{urban}{unb}{exp_sh}
+%
+% % Hukou:
+% \GRChukoutable{CHN}{consumption}{urban}{unb}{rural_first}
+% \GRChukoutable{CHN}{consumption}{urban}{bal}{urban_first}
+%
+% % Heterogeneity (Template D/E) macros TBD --- to be added once
+% % 16_heterogeneity_tables.do source is read in detail.
