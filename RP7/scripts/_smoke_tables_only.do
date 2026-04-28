@@ -22,9 +22,7 @@ include "$scripts/0_programs.do"
 
 global copyOverleaf 1
 
-include "$scripts/5_GrRC_tables.do"
-include "$scripts/6_GrRC_NonAg_tables.do"
-include "$scripts/8_GrRC_hukou_tables.do"
+include "$scripts/make_tables.do"
 
 display as text "============ tables-only smoke complete ============"
 exit, STATA clear

@@ -78,24 +78,14 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/1_summaryStats.do"
 * Run OLS & FE regressions
 	include			"$dir/scripts/2_OLS_uGRC.do"
-* Generate heterogeneity graphs
-	include			"$dir/scripts/3_heterogeneity_plots.do"
-* Generate motivating figure
-    include 		"$dir/scripts/4_trajectory_bar_graph.do"
 * Run GRC regressions (Urban)
 	include			"$dir/scripts/5_GrRC.do"
-* Build LaTeX tables for GRC (Urban) --- reads sters from disk, no GMM
-	include			"$dir/scripts/5_GrRC_tables.do"
 * Run GRC regressions (Non-Ag)
 	include			"$dir/scripts/6_GrRC_NonAg.do"
-* Build LaTeX tables for GRC (Non-Ag) --- reads sters from disk, no GMM
-	include			"$dir/scripts/6_GrRC_NonAg_tables.do"
 * Run OLS & FE regressions (hukou)
 	include			"$dir/scripts/7_OLS_uGRC_hukou.do"
 * Run GRC regressions (hukou)
 	include			"$dir/scripts/8_GrRC_hukou.do"
-* Build LaTeX tables for GRC (hukou) --- reads sters from disk, no GMM
-	include			"$dir/scripts/8_GrRC_hukou_tables.do"
 * Run learning regressions
 	include			"$dir/scripts/9_learning.do"
 * Run GRC regressions (Urban, experience controls)
@@ -110,5 +100,7 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/14_GrRC_NonAg_experience.do"
 * Run GRC regressions (IDN urban birth controls)
 	include			"$dir/scripts/15_GrRC_birth.do"
-* Generate heterogeneity tables
-	include			"$dir/scripts/16_heterogeneity_tables.do"
+* Build all GRC LaTeX tables (5/6/8 + heterogeneity) from saved .ster files
+	include			"$dir/scripts/make_tables.do"
+* Make all GRC figures (heterogeneity plots + trajectory bar graphs)
+	include			"$dir/scripts/make_figures.do"
