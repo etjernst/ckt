@@ -802,3 +802,49 @@ Lean: separate `GRC_extras.do` for discoverability (the extras concept is one un
 - Phase 1b.5b/5c included `_smoke_tables_only.do` for fast tables-only iteration.
 - Memory feedback files cover: no loops, captions/notes split, Overleaf paths, no "observer" word in prose.
 - 2/7/9 OLS / learning files have similar caption/notes patterns but use direct esttab calls (not GRC programs); migration to paper-side macros deferred indefinitely (separate macro design needed).
+
+---
+
+## Resumption checkpoint 2026-04-28 (later)
+
+Session resumed with "pick back up where we left off". Health checks:
+
+- `git log --oneline -5`: HEAD at `32f4416` (Tier 3 launch attempt + Phase 1b.6 design), matches end of prior session.
+- `ls RP7/scripts/*.do | wc -l` → 27 (not 16 as the log earlier estimated). Actual breakdown: 19 pipeline + 6 smoke/tier drivers + 2 misc (`_peek_runtime`, `0_setup`). The "16" figure in the log was loose; nothing to fix.
+- `python tests/regression_test.py`: 8 identical, 1 differs (`GRC_TZA_consumption_urban_unb.tex` — slim vs old, expected from Phase 1b.5), 44 missing (Phase 1b.1 imported references that haven't been regenerated yet, expected). State matches expectations.
+
+Decision pending from user: Option B (kick off `_smoke_full.do` ~20-30h background) vs Option A (Phase 1b.6 program-extraction, foreground, no compute slot needed). Awaiting green light before launching the long-running Stata job (rule: expensive commands always ask).
+
+### Tier 3 launch (bosgo168d) → killed → discovery → Phase 1b.6 implementation
+
+User authorized Tier 3 launch. Job `bosgo168d` ran briefly (one new ster: `grc_IDN_cuu_c0_g.ster`) before being killed via `--Break--`. Re-launched as `bbrryiled`.
+
+Mid-run discovery while building the Phase 1b.6 spec: M11's commit message (ddb3886) explicitly documented that 10/11/12/13/14/15 retain pre-existing **cross-section ster collisions**. The `cuu` (or `cnu_exp` / `cuu_birth`) token is hardcoded in every section of those files, so sections 2/3/4 silently overwrite section 1's sters; only the LAST section's data survives on disk. M11 punted disambiguation to Phase 1b.
+
+Tier 3's verification path (byte-diff new vs Tier 3 sters) was **wrong**: Tier 3 produces collided sters under a different naming scheme than the new GRC_extras.do disambiguated sters. User killed Tier 3 (`bbrryiled`) and directed: "all tables should be separated from regressions ... make sure the disambiguation is complete before running tier 3, no? So let's do that first then re-launch."
+
+Phase 1b.6 implementation done in this session:
+
+- **6a (`47ff260`):** `run_grc_with_extra_regressor` added to `0_programs.do`. Args: `country, spec3, regressor`. Internal lookup: regressor → fam_token (`exp_max` → `maxexp`, etc.). Spec3 dispatches choice/depvar/balance + dataset path (`<country>_<balance>.dta` for cuu/cub, `<country>_<balance>_income.dta` for iuu, `<country>_<balance>_<choice>.dta` for cnu). Optional `data_path_override` preserves the file-15-sec-4 idiosyncrasy (cnu × birth used the urban dataset historically; faithfully replicated). Writes sters under disambiguated names `grc_<country>_<spec3>_<fam>_{c1,c2,c3,ca}` × `{,_n,_g}`.
+- **6b (`47ff260`):** `GRC_extras.do` created. 44 explicit per-cell calls, no loops. Coverage: 36 (4 fams × 3 spec3 × 3 countries) + 4 (IDN cnu × 4 fams) + 4 (IDN × 4 spec3 × birth).
+- **6c (`47ff260`):** `extras_tex_table` helper added to `0_programs.do`. Same arg signature (country, spec3, regressor) so per-cell call sites in make_tables.do stay one-line. 44 cells appended to `make_tables.do`.
+- **6d (`ef1af74`):** Smoke debugging caught two bugs:
+  1. `regressor(varname)` failed because syntax parsing happens before data is loaded; switched to `regressor(name)`.
+  2. Stata's default delimiter mode does NOT treat `;` as a statement terminator; multi-statement-per-line via semicolons silently misbehaves. Split each `local` to its own line. (Saved as memory `feedback_stata_semicolons.md`.)
+- **6d verification:** Three dispatch paths verified end-to-end with TZA smokes:
+  - TZA cuu × exp: 20 sters + GRC_TZA_consumption_urban_unb_exp.tex; tabular body bit-identical to reference.
+  - TZA cub × exp_max: 20 sters + GRC_TZA_consumption_urban_bal_exp_max.tex; tabular body bit-identical.
+  - TZA iuu × exp_share: 20 sters + GRC_TZA_income_urban_unb_exp_sh.tex; tabular body bit-identical.
+  Reference tables differ only in OLD-format envelope (table+threeparttable+caption+label+tablenotes), which is the expected Phase 1b.3 slim-vs-old delta. cnu dispatch + override path NOT smoked; will be exercised by Tier 3.
+- **6e (just now):** `0_master.do` and `_smoke_full.do` swapped (6 includes → 1 of `GRC_extras.do`). 10/11/12/13/14/15 deleted. Do-file count: 27 → 24 (22 pipeline + 2 session smoke drivers).
+
+Net for Phase 1b.6: 4 commits (47ff260, ef1af74, [pending session-log update], [the master-swap commit]).
+
+### Tier 3 ready to re-launch (post-disambiguation)
+
+- All disambiguated ster names land at distinct disk paths.
+- Skip-if-exists guard in `run_grc` means safe to relaunch after kill.
+- `${copyOverleaf} == 0` in `_smoke_full.do` so the run won't touch the Overleaf folder.
+- Wall clock estimate: 20-30h.
+
+Awaiting user OK before kicking off the next 30h compute slot.
