@@ -2371,7 +2371,23 @@ program define run_grc_robust_vv
 
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -1) ///
+         ONEstep TWOstep]
+
+    * ----------------------------------------------------------------
+    * Resolve onestep vs twostep (default: onestep, matching VV's setting)
+    * ----------------------------------------------------------------
+    if "`onestep'" != "" & "`twostep'" != "" {
+        di as error "run_grc_robust_vv: cannot specify both onestep and twostep"
+        exit 198
+    }
+    if "`twostep'" != "" {
+        local stepopt "twostep"
+    }
+    else {
+        local stepopt "onestep"
+    }
+    di as text "run_grc_robust_vv: GMM step option = `stepopt'"
 
     * ----------------------------------------------------------------
     * Build vfirst + drop missing-vfirst obs
@@ -2480,7 +2496,7 @@ program define run_grc_robust_vv
                            )                                                        ///
                              vce(cluster vfirst)                                    ///
                              winitial(unadjusted, independent)                      ///
-                             onestep                                                ///
+                             `stepopt'                                              ///
                              from(`initial')                                        ///
                              quickderivatives nolog                                 ///
                              iterate(`iterate')
@@ -2507,7 +2523,7 @@ program define run_grc_robust_vv
         estadd sca Jpval = r(J_p),  replace : `estname'
     }
     else {
-        di as text "run_grc_robust_vv: estat overid unavailable (onestep GMM) -- Jstat not computed"
+        di as text "run_grc_robust_vv: estat overid unavailable (`stepopt' GMM) -- Jstat not computed"
     }
     local converged_str = cond(e(converged)==1, "Y", "N")
     estadd local converged_str "`converged_str'", replace : `estname'
@@ -2664,8 +2680,14 @@ program define grc_tex_table_trend
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
 				htb(string) PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+				COEFLABels(string asis) TEXTdepvar(string asis) ///
+				[ESTPrefix(string)]
+
+    * Default ester prefix matches the main GRC pipeline.
+    * Pass estprefix(grc_robust_vv_) (or similar) to point at robust-version
+    * ester files saved under a different prefix without colliding with main.
+    if "`estprefix'" == "" local estprefix "grc_"
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -2687,13 +2709,13 @@ program define grc_tex_table_trend
     * Empty locals to store estimates
     local ests_never = ""
 	local ests_avg = ""
-    local ests = ""       
-		
+    local ests = ""
+
     * Generate the list of stored estimates for the current panel
       foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        local ests_never     = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests           = "`ests' grc_`country'_`estname'"
+        local ests_never     = "`ests_never' `estprefix'`country'_`estname'_never"
+        local ests_avg = "`ests_avg' `estprefix'`country'_`estname'_avg"
+        local ests           = "`ests' `estprefix'`country'_`estname'"
       }
         
       * Output Delta-never row
