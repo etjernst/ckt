@@ -11,14 +11,14 @@ Status legend: NOW = do this session; POST-T3 = do after Tier 3 finishes; TODO =
 | C2 ($lnsize undefined) | Kill it everywhere | POST-T3 | Already in cleanup queue |
 | M1 (no version 17) | Add to 0_master.do | NOW | Single line, top of master |
 | M2 (set more off) | Add to 0_master.do; master-log idea retracted | NOW | Already in TODO; master log dropped |
-| M3 (merge nogen) | Write `assert_merge_clean` helper, drop `nogen`, use it; helper prints diagnostic and drops `_merge` | NOW | New program in 0_programs.do; usage retrofit later |
-| M4 (doubled mu loop) | Investigate: write a test on simulated data to check whether it actually doubles the string or overwrites | NOW | Write a Stata test script |
+| M3 (merge nogen) | Write `assert_merge_clean` helper, drop `nogen`, use it; helper prints diagnostic and drops `_merge` | DONE 2026-04-29 | Helper in 0_programs.do (commit f2f392c); retrofit at all 3 trajectory-group merge sites with `allow(1 3)` (commit ac8f3f6) |
+| M4 (doubled mu loop) | Investigate: write a test on simulated data to check whether it actually doubles the string or overwrites | DONE 2026-04-29 | Test ran; macro doubles 1.88x, gmm fits identical with same-value duplicates. Cleanup of second loop deferred to Implementation-mode commit |
 | M5 (run_grc_hukou no phistart) | Add `phistart` option | TODO | Mirror `run_grc` syntax |
 | M6 (summary_stats CSV in cwd) | CSV is one-trip iebaltab intermediate. Fix: save to a logical repo path AND erase via Stata after import delimited. Potential rewrite of country_summary_stats* programs deferred. | NOW (path + erase) + TODO (rewrite) | iebaltab is CSV-only; no clean way around the round-trip without a different package |
 | M7 (ugrc_regressions shadow eststo) | Very very important, fix it | NOW | Two fix options to surface (A: rename first eststo; B: also add `if regression_sample` to col-7) |
 | M8 (initial_values in make_tables) | Keep---needed for freestanding `make_tables.do` (in case ster results exist but we haven't run setup) | SKIP | User clarified: this is intentional |
 | m1 (cd "$logs" everywhere) | Fix everywhere; should always be `log using "$logs/..."` | NOW (partial) | Tier 3 still uses 5/6/8/GRC_extras---defer those until run finishes |
-| m2 (cap vs capture) | Genuinely minor; convert all to `capture` | TODO | One bulk pass |
+| m2 (cap vs capture) | Genuinely minor; convert all to `capture` | DONE 2026-04-29 | Bulk pass over 0_programs.do; 34 occurrences (commit ac8f3f6) |
 | m3 (magic 5) | Set as a global in master (set once) | NOW | `global grc_min_switchers_per_wave 5` in 0_master.do |
 | m4 (magic 100 iterations) | Set as a global in master (always set once) | NOW | `global grc_max_iter 100` in 0_master.do |
 | m5 (deprecated grc_tex_table) | Get rid of it | NOW | Delete ~80 lines from 0_programs.do |

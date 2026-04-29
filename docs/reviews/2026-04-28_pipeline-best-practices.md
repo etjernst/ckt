@@ -104,6 +104,13 @@ The same doubled-loop pattern appears verbatim in `initial_values_robust` lines 
 
 Lens: reproducibility / MAJOR / MEDIUM (Confidence MEDIUM because `gmm from()` last-wins semantics means results are numerically identical; it's waste, not wrong inference.)
 
+**RESOLVED (2026-04-29):** the test [tests/test_gmm_from_duplicate.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/test_gmm_from_duplicate.do) ran today; full output in [tests/test_gmm_from_duplicate.log](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/test_gmm_from_duplicate.log).
+The doubled mu-loop produces a macro string of 203 chars vs 108 chars for a single loop (1.88x), so Stata's local accumulator does not deduplicate.
+gmm with same-value duplicates (`from(a 1 b 2 a 1 b 2)`) returns the baseline fit bit-identically.
+gmm with different-value duplicates (`from(a 1 b 2 a 50 b -50)`) also matches the baseline (caveat: the test model is exactly identified, so OLS regardless of `from()`; the test does not discriminate first-wins from last-wins).
+Verdict: the doubled mu-loop wastes about 2x macro space but is harmless to gmm correctness because the duplicated `mu_<s>` scalars carry the same value.
+Cleanup of the second `foreach` is deferred to a separate Implementation-mode commit since it touches estimation code.
+
 ### M5 --- `run_grc_hukou` does not expose `phistart` option
 
 [0_programs.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/0_programs.do) lines 2227, 2255

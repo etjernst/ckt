@@ -263,3 +263,74 @@ User: come back to data-construction findings (DC-M1 through DC-M5, DC-m1 throug
 
 - m13 (`data_path_override` expansion explained): probably TRIVIA / SKIP. Confirm with user.
 - m6 (2waves/3waves variants): confirmed not vestigial; possible future TODO to unify under `handle_trajectory_groups_window(n_waves)`.
+
+## Continuation: afternoon work (2026-04-29)
+
+User picked up the cleanup queue: M4 + m6 retrofit + m2 in parallel, then Tier 3 relaunch.
+
+### M4 test (RESOLVED)
+
+Ran [tests/test_gmm_from_duplicate.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/test_gmm_from_duplicate.do) (~1 sec wall).
+Macro string: 108 chars (one mu-loop) vs 203 chars (two mu-loops); ratio 1.88x.
+Stata's local accumulator does not deduplicate.
+gmm with same-value duplicates returns the baseline fit bit-identically; with different-value duplicates also matches (caveat: the test model is exactly identified, so OLS regardless of `from()`).
+Verdict: doubled mu-loop wastes about 2x macro space but is harmless because the duplicated `mu_<s>` scalars carry the same value.
+Cleanup of the second `foreach` is deferred to a separate Implementation-mode commit since it touches estimation code.
+
+### m6 retrofit `assert_merge_clean`
+
+Replaced `nogen` with `assert_merge_clean, allow(1 3)` at all three trajectory-group merge sites:
+`handle_trajectory_groups` (L368), `handle_trajectory_groups_2waves` (L427), `handle_trajectory_groups_3waves` (L485).
+All three accept `allow(1 3)` because `using` is built as a strict subset of master pids (balanced subset / `pid_obs >= 2` / `pid_obs >= 3`), so `_merge==2` should never appear.
+Adds a per-merge diagnostic line; no rows dropped; no behavioral change.
+
+### m2 cap to capture pass
+
+Bulk replaced `\bcap\b` with `capture` in `0_programs.do` (Python regex; 34 occurrences, all `cap program drop ...`).
+Pure stylistic; no behavioral change.
+
+### Two crash bugs surfaced on Tier 3 relaunch
+
+The first relaunch hit the new m12 path-config code and crashed at `r(198)` on a `di` statement.
+The line `di as error "Add 'global overleaf \"<path>\"' ..."` used `\"` to embed a literal `"`, but Stata's plain double-quoted strings do not recognize backslash escapes.
+The parser saw `"Add 'global overleaf \"`, closed the string, and then tried to read `<path>\"...` as a name.
+Fix: drop the literal-quote requirement and use SMCL italic markup `{it:global overleaf <path>}` instead.
+
+The second relaunch cleared the path-config block but crashed inside `initial_values` on `if N_\`s' / T > $grc_min_switchers_per_wave {`.
+Root cause: the project globals (`$grc_max_iter`, `$grc_min_switchers_per_wave`) were set in `0_master.do` (audit batch 1, commit 73588da), but `_smoke_full.do` bypasses `0_master.do` (it sets only `$dir` for the current user, then includes `0_path_config.do`, `0_setup.do`, `0_programs.do` directly).
+Both globals expanded to empty strings under the smoke driver; `if N_2 / T >  {` raised `r(198) "invalid name"`.
+Yesterday's overnight Tier 3 launch (2026-04-28 ~22:38) did not crash because audit batch 1 was committed AFTER that launch; the run used the older code with hardcoded local literals 100 and 5.
+
+Fix: move both globals from `0_master.do` to `0_path_config.do`, which all entry points include unconditionally.
+They are project-wide constants, not per-user, so `0_path_config.do` is the right home anyway.
+Verified by grep: seven smoke and tier drivers (`_smoke_5_GrRC.do`, `_smoke_extras_dispatch.do`, `_smoke_extras_one.do`, `_smoke_full.do`, `_smoke_idn_only.do`, `_smoke_tables_only.do`, `_tier2_tza.do`) plus `0_master.do` all include `0_path_config.do`.
+
+Lesson worth carrying forward: any future project-wide global belongs in `0_path_config.do`, not `0_master.do`.
+The latter is a per-user driver with `$dir`/`$overleaf` blocks, and several debug entry points deliberately skip it.
+
+### Tier 3 third launch (in progress as of writing)
+
+Background task `box05upsf`; skip-if-exists=1 preserves the 60 sters from yesterday.
+Resumes at IDN cnu_c2 in `6_GrRC_NonAg.do`.
+Monitor armed for `r(...);`, `invalid name`, `matrix not positive`, `conformability error`, and the `overnight smoke complete` end marker.
+
+### Commits this continuation
+
+| Hash | Description |
+|------|-------------|
+| `ac8f3f6` | Audit batch 4: m2 cap to capture + m6 assert_merge_clean retrofit + M4 verdict |
+| `3959874` | Fix `\"<path>\"` escape in 0_path_config.do overleaf hint message |
+| `cc94d3e` | Move project globals to 0_path_config.do (fixes Tier 3 smoke crash) |
+
+### How to pick this up next session if Tier 3 finishes overnight
+
+```bash
+cd C:/git/ckt/.claude/worktrees/grc-pipeline-refactor
+git log --oneline -10
+ls RP7/output/grc_*_*_g.ster | wc -l
+python tests/compare_tabular_bodies.py
+```
+
+Expect the ster count to grow well past 60 if Tier 3 cleared `6_GrRC_NonAg.do` and entered `8_GrRC_hukou.do` and `GRC_extras.do`.
+After Tier 3 completes, run `make_tables.do` and `make_figures.do` for the final tables + figures.
+Then re-run `tests/compare_tabular_bodies.py` and expect 53 matched / 0 differed.
