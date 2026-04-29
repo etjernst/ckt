@@ -334,3 +334,141 @@ python tests/compare_tabular_bodies.py
 Expect the ster count to grow well past 60 if Tier 3 cleared `6_GrRC_NonAg.do` and entered `8_GrRC_hukou.do` and `GRC_extras.do`.
 After Tier 3 completes, run `make_tables.do` and `make_figures.do` for the final tables + figures.
 Then re-run `tests/compare_tabular_bodies.py` and expect 53 matched / 0 differed.
+
+## Continuation: M4 cleanup decision and commit
+
+While Tier 3 ran in the background, the user pushed back on the M4 framing.
+Three issues clarified.
+
+### Untangling "duplicate" claims
+
+The user thought the duplication was BETWEEN `initial_values` and `initial_values_robust`; I had been describing duplication WITHIN each program.
+Both are real but distinct.
+
+`initial_values_robust` is a separate program that extends `initial_values` for the Verdier (2020) Section F robust spec; it also has its own internal doubled mu-loop.
+The audit doc had conflated these.
+
+### Where each program is actually used
+
+`initial_values` is the workhorse: ~30 call sites across `5_GrRC.do` (9), `6_GrRC_NonAg.do` (1), `8_GrRC_hukou.do` (12), `make_tables.do` (3+), smoke and tier drivers, plus indirect calls through `run_grc_with_extra_regressor` (which serves `GRC_extras.do`).
+
+`initial_values_robust` is dormant: defined in `0_programs.do` but never called from any production .do file.
+Verbatim grep confirms zero non-comment, non-self-references outside `0_programs.do`.
+It is only referenced by `run_grc_robust` and `run_grc_robust_vv`, which are also defined but unwired.
+The robust suite is for the Verdier exploration on the `lca-inversion` and `verdier-p1` branches, not Tier 3.
+
+### Hypotheses considered for the doubled mu-loop
+
+I worked through six hypotheses for why the duplication might be intentional rather than a bug.
+Hypothesis 4 (placeholder for an unfinished Delta refactor) is the most plausible because:
+- The pre-existing structure between the two mu-loops is `mu-loop, [commented-out Delta loop with note "Tricky to do with the potentially-changing Delta_base"], kappa append, mu-loop again`.
+- Both mu-loops carry the IDENTICAL leading comment `* Accumulate mu-coeffs for initial values`.
+- The "Tricky to do" comment reads as the author wrestling with the Delta block, giving up, and leaving copy-paste debris.
+
+What M4 does NOT settle:
+- First-wins vs last-wins gmm `from()` semantics under truly different starting values.
+The exactly-identified test model (Test 4) converges to OLS regardless, so cannot discriminate.
+- Whether the optimizer for the real overidentified pipeline GMM (~30 switchers + kappa, igmm two-step) makes any subtle numerical difference under the doubled `from()` string.
+No specific reason to believe it does, but the M4 test is too small to rule it out empirically.
+
+### Decision: delete the second mu-loop in both programs
+
+Decision: delete the second `foreach s of numlist $switchers { local initial ... mu_<s> }` block in both `initial_values` (lines 1633-1636) and `initial_values_robust` (lines 1759-1761).
+Why: user authorized the cleanup after agreeing hypothesis 4 is most likely; M4 test confirmed gmm produces identical fits with the duplicate; removing dead code is cheap, easily revertable, and improves readability.
+
+Decision: leave the commented-out Delta loop and the "Tricky to do with the potentially-changing Delta_base" note in place.
+Why: those comments are useful historical context that explains the intended design and where the doubled mu-loop came from; deleting them would erase the only on-file evidence of the unfinished refactor.
+
+Decision: do NOT update the audit doc to mark M4 fully closed yet.
+Why: the user pointed out (correctly) that "RESOLVED with verdict + cleanup committed" is not the same as "verified bit-identical."
+Until a real pipeline cell is re-run on the cleaned code and its ster compared against a current ster from the doubled-loop code, we cannot promise zero numerical change.
+Audit doc stays at "RESOLVED" with the M4 verdict; promotion to "CLOSED" waits on the post-Tier-3 verification.
+
+### Tier 3 in flight is unaffected by the cleanup
+
+`_smoke_full.do` includes `0_programs.do` once at startup; Stata caches program definitions in memory after that.
+On-disk edits to `0_programs.do` do not propagate to the running batch process.
+The cleanup commit takes effect on the next launch only.
+Confirmed by checking the `_smoke_full.do` structure.
+
+### Commits in this continuation
+
+| Hash | Description |
+|------|-------------|
+| `d2b0c73` | Delete duplicate mu-loop in initial_values + initial_values_robust (M4) |
+
+### Tier 3 status as of wrap-up (2026-04-29 14:55)
+
+Background task `box05upsf` still running.
+Ster count: 66 (was 60 at the third launch start at 12:50).
+Log size 321+ KB, currently mid-GMM iteration on some cell in `6_GrRC_NonAg.do`.
+No errors since the third launch.
+Stata process responding (CPU ~84 minutes over 2 hours wall, multi-threaded).
+
+A second StataMP-64 process (PID 42164) appeared at 13:35 with no clear origin (not from any background task I started).
+Could be a stray from one of the failed earlier launches that did not fully clean up, or a manually-opened interactive session.
+Not interfering with the smoke driver as far as I can tell from the log; flagging here in case it matters next session.
+
+Three monitor instances on the smoke log timed out over the morning and afternoon (1-hour limits each).
+Re-arming on each timeout caught no errors.
+Tier 3 is grinding through the post-resume cells slowly; some are taking 60+ minutes per fit, consistent with yesterday's IDN cnu_c1 timing of 43 minutes.
+
+### How to pick up next session
+
+If Tier 3 has finished by the next session:
+1. `git log --oneline -15`---expect 4 new commits since `974ec5d` (audit batch 4, escape fix, globals relocation, doc updates, mu-loop cleanup).
+2. `ls RP7/output/grc_*_*_g.ster | wc -l`---expect a substantial increase from 60 (full GRC_extras + 8_GrRC_hukou would push past 200; just 6_GrRC_NonAg completion would be in the 80--90 range).
+3. Run the final tables+figures: `cd RP7/scripts && stata-mp -b do _smoke_tables_only.do` (or run `make_tables.do` directly through 0_master.do).
+4. Re-run `python tests/compare_tabular_bodies.py`---expect 53 matched / 0 differed if everything cleared.
+
+If Tier 3 is still running, leave it alone, re-arm a monitor, and work on something else.
+
+If Tier 3 crashed, the smoke log tail will show the error.
+Common likely causes given history: another `\"` escape somewhere I missed, another global expected from `0_master.do` that the smoke driver does not load, or a genuine numerical issue in 8_GrRC_hukou (the first time the new C1 timer fix gets exercised end-to-end).
+
+The M4 verification step (post-Tier 3): pick one cell from `5_GrRC.do`---e.g., the IDN cuu_c2 cell---and re-run with `skip_if_exists 0` against the cleaned `0_programs.do`.
+Compare the new ster bit-for-bit against the existing ster (which was created with the duplicate mu-loop in place).
+If they match, mark M4 fully CLOSED in `docs/plans/2026-04-29-audit-action-plan.md` and `docs/reviews/2026-04-28_pipeline-best-practices.md`.
+If they diverge, the doubled `from()` string was numerically meaningful after all and we revert `d2b0c73` and reopen the audit finding.
+
+### Lessons worth carrying forward
+
+Two crash bugs today both came from `_smoke_full.do` bypassing `0_master.do`:
+- The `\"` escape sequence does not work in plain Stata double-quoted strings.
+- Project globals set in `0_master.do` are invisible to alternate entry points.
+
+Lesson: any future project-wide global or always-needed setup belongs in `0_path_config.do`, which all entry points include.
+`0_master.do` is per-user (sets `$dir`, `$overleaf` per `c(username)`); several debug drivers deliberately skip it.
+
+When introducing a `display` statement that quotes user-facing syntax, prefer SMCL markup (`{it:...}`) over backslash escapes, since plain `"..."` strings in Stata do not honor `\"` and the failure mode is `r(198) "invalid name"` at runtime.
+
+### Why does make_tables.do call initial_values? (resolved, no follow-up needed)
+
+User flagged this question while reviewing the M4 cleanup risk surface.
+Inspected all three `initial_values` call sites in `make_tables.do` (lines 607, 683, 759, one per country block).
+Same pattern at each: call `initial_values`, capture `r(base)` into `local base` and `scalar base_<country>`, capture `r(initial)` into `local initial`.
+
+The `local initial` capture is dead code: assigned but never referenced downstream within `make_tables.do` (verified by grep over the post-assignment lines).
+Pure copy-paste leftover from when these blocks were lifted from `5_GrRC.do`, where `initial` is the `from()` argument fed to `gmm`.
+The comment block at lines 621-624 of `make_tables.do` explicitly states: "GMM estimate is read from 5_GrRC.do's output rather than re-run here ... The estimates are loaded below via `estimates use`."
+So no re-fitting; no use of `from()`; nothing in the table machinery depends on the structure of `r(initial)`.
+
+What `make_tables.do` actually needs from `initial_values`:
+- `r(base)` for the data-driven base-trajectory selection (highest-t-stat switcher with N/T > 5), used to label the baseline trajectory in the Delta tables.
+- The `mu_<s>` and `Delta_<s>` scalars set in loop A of `initial_values` (the OLS coefficient extraction at L1606-1610), used in `scalar()` references during table assembly.
+- Side effect: `eststo initial_<country>` saves the OLS regression set in case downstream `esttab` calls reference it.
+
+Net implication for the M4 cleanup (commit `d2b0c73`):
+the doubled mu-loop only affected `r(initial)`, which `make_tables` captures into a dead local.
+The base selection and the OLS-derived scalars are identical before and after.
+Post-Tier-3 `make_tables` should produce bit-identical `.tex` tables on the cleaned code.
+No additional verification needed at table-build time; the M4 verification gate (compare a fresh ster against an existing one) is sufficient.
+
+Future micro-cleanup (not urgent): drop the three dead `local initial "\`r(initial)'"` assignments at L613/689/765 of `make_tables.do`.
+Pure m-tier hygiene; no functional change.
+
+If you resume: read [quality_reports/session_logs/2026-04-29_audit-and-fixes.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-04-29_audit-and-fixes.md) end-to-end (this file).
+Open thread: M4 verification (run one cell on cleaned code, compare ster bit-identically against existing).
+Next concrete action: check whether Tier 3 task `box05upsf` has completed; if yes, run `python tests/compare_tabular_bodies.py` and inspect new sters.
+State to know: voice.md and manuscript-writing.md were Read this session, so the prose-rules-enforcer flag is set; will reset on next session.
+The duplicate-mu-loop cleanup commit (`d2b0c73`) is on disk but its effect is NOT in the running Tier 3.
