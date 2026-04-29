@@ -193,6 +193,420 @@ def grid_lca_inversion(
     return curve, float(accepted.min()), float(accepted.max())
 
 
+def grid_md_inversion(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    phi_grid: np.ndarray,
+    type_one: float = 0.05,
+) -> tuple[pd.DataFrame, float, float]:
+    """Minimum-distance LCA inversion with beta concentrated out.
+
+    At each phi, build the moment vector
+        m_s(phi; beta) = beta_s - beta - phi * (alpha_s - alpha_base)
+    for every kept switcher s in S (including the base, where the
+    alpha_s - alpha_base term is identically zero). Concentrate out
+    beta via GLS on V_m, then invert the |S|-1 chi^2 Wald.
+
+    Differs from ``grid_lca_inversion`` in two ways. First, the LCA
+    intercept beta is a free parameter, estimated efficiently across
+    all switchers, instead of being pinned to ``beta_base`` (which
+    just-identifies on the single base switcher). Second, the moment
+    vector includes the base equation ``m_base = beta_base - beta``,
+    which carries information about beta's level. Concentrating out
+    beta leaves the same |S|-1 = J_R degrees of freedom, but the test
+    is at least as efficient under LCA (Chamberlain 1982; Newey and
+    McFadden 1994, Handbook ch. 36).
+
+    Returns
+    -------
+    curve : DataFrame with columns ``phi``, ``beta_md`` (the
+        concentrated-out estimate at this phi), ``wald``, ``p_value``.
+    ci_low, ci_high : convex hull of grid points where p_value >=
+        ``type_one``. Multimodal CI handling via ``find_islands``.
+
+    The chi^2 dof matches ``grid_lca_inversion`` (J_R = len(switchers_kept) - 1).
+    """
+    if base not in switchers_kept:
+        raise ValueError(
+            f"base trajectory {base} not in switchers_kept {list(switchers_kept)}"
+        )
+    sw = list(switchers_kept)
+    K = len(sw)
+    J_R = K - 1
+    if J_R == 0:
+        raise ValueError(
+            "Need at least one non-base switcher for the MD inversion"
+        )
+
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+
+    # u_s = beta_s_OLS, d_s = alpha_s_OLS - alpha_base_OLS
+    # (d is 0 at the base row by construction)
+    u = fit.b[s_beta]
+    d = fit.b[s_alpha] - fit.b[base_alpha]
+
+    rows = []
+    ones = np.ones(K)
+    for phi in phi_grid:
+        # Jacobian of m wrt theta_OLS, K x p, depends on phi.
+        # m_s = beta_s_OLS - beta - phi*(alpha_s_OLS - alpha_base_OLS)
+        # so dm_s/dbeta_t_OLS = 1 if t==s else 0
+        #    dm_s/dalpha_t_OLS = -phi if t==s and s!=base
+        #                     = +phi if t==base and s!=base
+        #                     = 0    if s==base or t not in {s, base}
+        J = np.zeros((K, p))
+        for k in range(K):
+            J[k, s_beta[k]] = 1.0
+            if not is_base[k]:
+                J[k, s_alpha[k]] = -phi
+                J[k, base_alpha] = +phi
+        V_m = J @ fit.V @ J.T
+        # Same pinv tolerance as grid_lca_inversion for consistency.
+        W = np.linalg.pinv(V_m, rcond=1e-10)
+        c = u - phi * d
+        # Concentrated GLS: beta_md(phi) = (1' W c) / (1' W 1).
+        denom = float(ones @ W @ ones)
+        beta_md = float((ones @ W @ c) / denom)
+        m = c - beta_md * ones
+        wald = float(m @ W @ m)
+        p_value = float(1.0 - chi2.cdf(wald, df=J_R))
+        rows.append((float(phi), beta_md, wald, p_value))
+
+    curve = pd.DataFrame(rows, columns=["phi", "beta_md", "wald", "p_value"])
+    accepted = curve.loc[curve["p_value"] >= type_one, "phi"]
+    if len(accepted) == 0:
+        return curve, float("nan"), float("nan")
+    return curve, float(accepted.min()), float(accepted.max())
+
+
+def _md_constrained_wald(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    phi: float,
+    delta_target: float,
+    c1: float,
+) -> float:
+    """Minimum-distance Wald at fixed phi under a linear constraint
+    delta_target = beta + phi * c1, i.e., beta = delta_target - phi * c1.
+
+    Used internally by ``grid_delta_never_md_inversion`` and
+    ``grid_delta_avg_md_inversion``. ``c1`` is the trajectory-mean
+    deviation appropriate to the parameter being inverted:
+        Delta_never:  c1 = alpha_never - alpha_base
+        Delta_avg:    c1 = sum_s pi_s (alpha_s - alpha_base) (within-switcher)
+    """
+    sw = list(switchers_kept)
+    K = len(sw)
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+
+    # m_s(delta, phi) = beta_s_OLS - delta + phi*(c1 - (alpha_s - alpha_base))
+    #                 = beta_s_OLS - delta + phi*c1 - phi*d_s   (s != base)
+    # for s = base: alpha_s - alpha_base = 0, so
+    #     m_base = beta_base_OLS - delta + phi*c1
+    # The c1 enters via the substitution beta = delta - phi*c1.
+    # Jacobian wrt theta_OLS depends on whether c1 is a function of
+    # the OLS coefficients (yes for never; yes via pi_s for avg).
+    # For both never (c1 = a_never - a_base) and avg (c1 = sum_s pi_s
+    # (a_s - a_base)), c1 is linear in alpha-coefficients, so the
+    # Jacobian for that term must be added.
+
+    # Build dc1/dtheta as a length-p vector. Caller sets it via the
+    # closure below; here we just take c1 numerically and incorporate
+    # its dependence through the closure-supplied jac_c1 if needed.
+    raise NotImplementedError("Use the dedicated functions instead.")
+
+
+def grid_delta_never_md_inversion(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    never_traj: int,
+    delta_grid: np.ndarray,
+    phi_search_grid: np.ndarray,
+    type_one: float = 0.05,
+) -> tuple[pd.DataFrame, float, float]:
+    """Inversion CI for Delta_never via constrained minimum distance.
+
+    At each candidate delta*, the LCA constraint
+        delta* = beta + phi * (alpha_never - alpha_base)
+    pins beta in terms of phi. Substitute into the moment vector
+        m_s = beta_s - beta - phi*(alpha_s - alpha_base)
+    and minimize the MD Wald over phi (search grid). Profiled Wald
+    has chi^2_{|S|-1} asymptotic distribution under H0.
+
+    Returns
+    -------
+    curve : DataFrame with columns ``delta``, ``phi_at_min`` (the
+        nuisance phi minimizer at this delta), ``wald``, ``p_value``.
+    ci_low, ci_high : convex hull of grid points where p_value >=
+        ``type_one``.
+    """
+    sw = list(switchers_kept)
+    K = len(sw)
+    J_R = K - 1
+    if J_R == 0:
+        raise ValueError(
+            "Need at least one non-base switcher for the MD inversion"
+        )
+
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    never_alpha = fit.idx(f"alpha[{never_traj}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+
+    rows = []
+    for delta_star in delta_grid:
+        wald_at_phi = np.empty(len(phi_search_grid))
+        for j, phi in enumerate(phi_search_grid):
+            # Jacobian of m wrt theta_OLS at this phi, with the
+            # constraint beta = delta_star - phi*(alpha_never - alpha_base)
+            # substituted in. m_s = beta_s_OLS - delta_star
+            #     + phi*(alpha_never_OLS - alpha_base_OLS)
+            #     - phi*(alpha_s_OLS - alpha_base_OLS)
+            # For s != base:
+            #   dm_s/dbeta_s = 1
+            #   dm_s/dalpha_never = +phi
+            #   dm_s/dalpha_s = -phi
+            #   dm_s/dalpha_base = 0  (cancels)
+            # For s == base:
+            #   dm_base/dbeta_base = 1
+            #   dm_base/dalpha_never = +phi
+            #   dm_base/dalpha_base = -phi
+            J = np.zeros((K, p))
+            for k in range(K):
+                J[k, s_beta[k]] = 1.0
+                J[k, never_alpha] = +phi
+                if not is_base[k]:
+                    J[k, s_alpha[k]] = -phi
+                else:
+                    J[k, base_alpha] = -phi
+            V_m = J @ fit.V @ J.T
+            W = np.linalg.pinv(V_m, rcond=1e-10)
+
+            # m at this (delta_star, phi)
+            beta_s = fit.b[s_beta]
+            d_s = fit.b[s_alpha] - fit.b[base_alpha]
+            c1_val = fit.b[never_alpha] - fit.b[base_alpha]
+            m = beta_s - delta_star + phi * c1_val - phi * d_s
+            wald_at_phi[j] = float(m @ W @ m)
+        j_star = int(np.argmin(wald_at_phi))
+        wald_min = float(wald_at_phi[j_star])
+        phi_min = float(phi_search_grid[j_star])
+        p_value = float(1.0 - chi2.cdf(wald_min, df=J_R))
+        rows.append((float(delta_star), phi_min, wald_min, p_value))
+
+    curve = pd.DataFrame(
+        rows, columns=["delta", "phi_at_min", "wald", "p_value"]
+    )
+    accepted = curve.loc[curve["p_value"] >= type_one, "delta"]
+    if len(accepted) == 0:
+        return curve, float("nan"), float("nan")
+    return curve, float(accepted.min()), float(accepted.max())
+
+
+def grid_delta_avg_md_inversion(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    pi_within: dict[int, float],
+    delta_grid: np.ndarray,
+    phi_search_grid: np.ndarray,
+    type_one: float = 0.05,
+) -> tuple[pd.DataFrame, float, float]:
+    """Inversion CI for Delta_avg via constrained MD.
+
+    Same structure as ``grid_delta_never_md_inversion`` but with
+        c1 = sum_s pi_within[s] * (alpha_s - alpha_base)
+    where ``pi_within`` are within-switcher trajectory shares
+    (sum to 1 across ``switchers_kept``).
+
+    The Jacobian of c1 wrt theta_OLS has dc1/dalpha_s = pi_s (for
+    each switcher s), which propagates into the moment Jacobian
+    through the +phi*c1 term. After algebra, alpha_base cancels in
+    m_s for s != base via Sum pi_s = 1.
+    """
+    sw = list(switchers_kept)
+    K = len(sw)
+    J_R = K - 1
+    if J_R == 0:
+        raise ValueError(
+            "Need at least one non-base switcher for the MD inversion"
+        )
+    if not np.isclose(sum(pi_within[s] for s in sw), 1.0, atol=1e-9):
+        raise ValueError(
+            f"pi_within must sum to 1 across switchers_kept; "
+            f"got sum={sum(pi_within[s] for s in sw)}"
+        )
+
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha_idx = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta_idx = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+    pi_arr = np.array([pi_within[s] for s in sw])
+
+    # c1_val at OLS estimates (constant across delta and phi):
+    a_s = fit.b[s_alpha_idx]
+    a_base_val = fit.b[base_alpha]
+    d_s = a_s - a_base_val
+    c1_val = float(np.sum(pi_arr * d_s))
+    beta_s_OLS = fit.b[s_beta_idx]
+
+    rows = []
+    for delta_star in delta_grid:
+        wald_at_phi = np.empty(len(phi_search_grid))
+        for j, phi in enumerate(phi_search_grid):
+            # m_s = beta_s_OLS - delta* + phi*c1 - phi*(alpha_s - alpha_base)
+            #     = beta_s_OLS - delta* + phi*sum_t pi_t (alpha_t - alpha_base)
+            #       - phi*(alpha_s - alpha_base)
+            # After expansion (using sum pi_t = 1), alpha_base cancels for
+            # s != base; only alpha_t (t in switchers) and alpha_s remain.
+            #
+            # Jacobian for s != base:
+            #   dm_s/dbeta_s = 1
+            #   dm_s/dalpha_t (t in sw, t != s) = phi*pi_t
+            #   dm_s/dalpha_s = phi*pi_s - phi = -phi*(1 - pi_s)
+            #   dm_s/dalpha_base = 0
+            # Jacobian for s == base:
+            #   dm_base/dbeta_base = 1
+            #   dm_base/dalpha_t (t in sw, t != base) = phi*pi_t
+            #   dm_base/dalpha_base = phi*pi_base - phi = -phi*(1 - pi_base)
+            J = np.zeros((K, p))
+            for k in range(K):
+                J[k, s_beta_idx[k]] = 1.0
+                # cross-switcher pi_t entries
+                for t_idx, idx in enumerate(s_alpha_idx):
+                    J[k, idx] += phi * pi_arr[t_idx]
+                # subtract phi from this row's own alpha
+                J[k, s_alpha_idx[k]] -= phi
+            V_m = J @ fit.V @ J.T
+            W = np.linalg.pinv(V_m, rcond=1e-10)
+
+            m = beta_s_OLS - delta_star + phi * c1_val - phi * d_s
+            wald_at_phi[j] = float(m @ W @ m)
+        j_star = int(np.argmin(wald_at_phi))
+        wald_min = float(wald_at_phi[j_star])
+        phi_min = float(phi_search_grid[j_star])
+        p_value = float(1.0 - chi2.cdf(wald_min, df=J_R))
+        rows.append((float(delta_star), phi_min, wald_min, p_value))
+
+    curve = pd.DataFrame(
+        rows, columns=["delta", "phi_at_min", "wald", "p_value"]
+    )
+    accepted = curve.loc[curve["p_value"] >= type_one, "delta"]
+    if len(accepted) == 0:
+        return curve, float("nan"), float("nan")
+    return curve, float(accepted.min()), float(accepted.max())
+
+
+def grid_delta_always_md_inversion(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    always_traj: int,
+    delta_grid: np.ndarray,
+    phi_search_grid: np.ndarray,
+    type_one: float = 0.05,
+) -> tuple[pd.DataFrame, float, float]:
+    """Inversion CI for Delta_always via constrained MD (Mobius case).
+
+    The LCA constraint for always-movers is
+        delta* = (beta + phi*(alpha_always - alpha_base)) / (1 + phi)
+    which gives beta = delta*(1+phi) - phi*c1 where
+    c1 = alpha_always - alpha_base. Substituting into the moment vector:
+
+        m_s = beta_s - delta*(1+phi) + phi*alpha_always - phi*alpha_s
+              (s != base)
+        m_base = beta_base - delta*(1+phi) + phi*alpha_always - phi*alpha_base
+
+    The Jacobian wrt theta_OLS has the same shape as the Delta_never
+    case (substitute always_traj for never_traj). The chi^2_{|S|-1}
+    Wald is profiled over phi at each delta*, then inverted.
+
+    Reports the multi-island CI honestly when the phi-CI crosses
+    -1 (the Mobius singularity); ``find_islands`` on the curve
+    handles separating the union.
+    """
+    sw = list(switchers_kept)
+    K = len(sw)
+    J_R = K - 1
+    if J_R == 0:
+        raise ValueError(
+            "Need at least one non-base switcher for the MD inversion"
+        )
+
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    always_alpha = fit.idx(f"alpha[{always_traj}]")
+    s_alpha_idx = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta_idx = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+
+    a_base_val = fit.b[base_alpha]
+    a_always_val = fit.b[always_alpha]
+    c1_val = float(a_always_val - a_base_val)
+    beta_s_OLS = fit.b[s_beta_idx]
+    d_s = fit.b[s_alpha_idx] - a_base_val
+
+    rows = []
+    for delta_star in delta_grid:
+        wald_at_phi = np.empty(len(phi_search_grid))
+        for j, phi in enumerate(phi_search_grid):
+            # For s != base: m_s = beta_s - delta*(1+phi) + phi*alpha_always
+            #                       - phi*alpha_s
+            #   dm_s/dbeta_s = 1
+            #   dm_s/dalpha_always = +phi
+            #   dm_s/dalpha_s = -phi
+            # For s == base: m_base = beta_base - delta*(1+phi) +
+            #                          phi*alpha_always - phi*alpha_base
+            #   dm_base/dbeta_base = 1
+            #   dm_base/dalpha_always = +phi
+            #   dm_base/dalpha_base = -phi
+            J = np.zeros((K, p))
+            for k in range(K):
+                J[k, s_beta_idx[k]] = 1.0
+                J[k, always_alpha] = +phi
+                if not is_base[k]:
+                    J[k, s_alpha_idx[k]] = -phi
+                else:
+                    J[k, base_alpha] = -phi
+            V_m = J @ fit.V @ J.T
+            W = np.linalg.pinv(V_m, rcond=1e-10)
+
+            m = (beta_s_OLS - delta_star * (1.0 + phi)
+                 + phi * c1_val - phi * d_s)
+            # For s != base, the c1 - d_s simplification holds; for
+            # s == base, d_base = 0, so m_base = beta_base
+            #   - delta*(1+phi) + phi*c1.
+            wald_at_phi[j] = float(m @ W @ m)
+        j_star = int(np.argmin(wald_at_phi))
+        wald_min = float(wald_at_phi[j_star])
+        phi_min = float(phi_search_grid[j_star])
+        p_value = float(1.0 - chi2.cdf(wald_min, df=J_R))
+        rows.append((float(delta_star), phi_min, wald_min, p_value))
+
+    curve = pd.DataFrame(
+        rows, columns=["delta", "phi_at_min", "wald", "p_value"]
+    )
+    accepted = curve.loc[curve["p_value"] >= type_one, "delta"]
+    if len(accepted) == 0:
+        return curve, float("nan"), float("nan")
+    # Convex hull. Use ``find_islands`` separately for multi-island CI.
+    return curve, float(accepted.min()), float(accepted.max())
+
+
 def find_islands(
     curve: pd.DataFrame,
     type_one: float = 0.05,

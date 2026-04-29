@@ -29,7 +29,11 @@ import numpy as np
 import pandas as pd
 
 from data_loader import load_consumption_unb, period_fe_columns
-from lca_inversion import drop_sparse_switchers, fit_auxiliary_ols
+from lca_inversion import (
+    drop_sparse_switchers,
+    fit_auxiliary_ols,
+    grid_md_inversion,
+)
 from run_all_countries_inversion import _spec_controls
 
 HERE = Path(__file__).resolve().parent
@@ -139,9 +143,22 @@ def _python_deltas(
         for s in kept
     )
 
+    # Compute MD's beta_md at phi_hat. This pools beta across all
+    # switchers via GLS rather than pinning it to beta_base_OLS, so
+    # the resulting Delta_X values should match Stata's GMM nlcom to
+    # fractions of a percent (vs the 1-7 pp OLS-vs-GMM gap when using
+    # b_base directly).
+    md_curve, _, _ = grid_md_inversion(
+        fit, switchers_kept=kept, base=base,
+        phi_grid=np.array([phi_hat]),
+    )
+    b_md = float(md_curve["beta_md"].iloc[0])
+
     delta_never = b_base + phi_hat * (a_never - a_base)
+    delta_never_md = b_md + phi_hat * (a_never - a_base)
     # Spec's eq (3'): within-switcher shares.
     delta_avg_within = b_base + phi_hat * weighted_dev_within
+    delta_avg_within_md = b_md + phi_hat * weighted_dev_within
     # Stata's actual formula: over-all shares times the whole bracket,
     # i.e. sw_frac * Delta_base + phi * sum_s pi_overall_s * (a_s - a_base).
     delta_avg_overall = (
@@ -150,20 +167,26 @@ def _python_deltas(
     one_plus_phi = 1.0 + phi_hat
     if abs(one_plus_phi) < 1e-8:
         delta_always = float("nan")
+        delta_always_md = float("nan")
         note = f"phi_hat ~ -1 (1+phi={one_plus_phi:.2e}); always undefined"
     else:
         delta_always = (b_base + phi_hat * (a_always - a_base)) / one_plus_phi
+        delta_always_md = (b_md + phi_hat * (a_always - a_base)) / one_plus_phi
         note = ""
 
     return {
         "delta_never": float(delta_never),
+        "delta_never_md": float(delta_never_md),
         "delta_avg": float(delta_avg_within),
+        "delta_avg_md": float(delta_avg_within_md),
         "delta_avg_overall": float(delta_avg_overall),
         "delta_always": float(delta_always),
+        "delta_always_md": float(delta_always_md),
         "alpha_base": float(a_base),
         "alpha_never": float(a_never),
         "alpha_always": float(a_always),
         "beta_base_ols": float(b_base),
+        "beta_md": float(b_md),
         "n_obs": int(fit.n_obs),
         "n_switchers": n_sw,
         "switcher_frac": float(sw_frac),
@@ -221,14 +244,26 @@ def main():
 
             for delta_name, py_key in [
                 ("never", "delta_never"),
+                ("never_md", "delta_never_md"),
                 ("avg", "delta_avg"),
+                ("avg_md", "delta_avg_md"),
                 ("avg_overall", "delta_avg_overall"),
                 ("always", "delta_always"),
+                ("always_md", "delta_always_md"),
             ]:
+                # Map MD/overall variants back to the published delta key.
+                pub_delta_key = (
+                    delta_name.split("_")[0]
+                    if delta_name in {
+                        "never_md", "avg_md", "always_md",
+                        "avg_overall",
+                    }
+                    else delta_name
+                )
                 stata_row = pub[
                     (pub["country"] == country)
                     & (pub["spec"] == spec)
-                    & (pub["delta"] == delta_name)
+                    & (pub["delta"] == pub_delta_key)
                 ]
                 if stata_row.empty:
                     continue

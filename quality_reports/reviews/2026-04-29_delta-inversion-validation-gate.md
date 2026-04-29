@@ -170,3 +170,37 @@ Cost estimate: roughly half a day, mostly debugging the $V_m$ Jacobian.
 Issue 1: fix the Stata bug now.
 The cost is small because the GMM optimization need not rerun, only the `nlcom` step.
 Issue 2: implement MD inversion as derived above; that becomes the spec's preferred validation gate (Python's MD-derived $\Delta_X(\hat\phi_{\text{MD}})$ should reproduce the corrected Stata `nlcom` to fractions of a percent).
+
+## Resolution and three-country validation (2026-04-30)
+
+Issue 1 resolved: `0_programs.do` patched in five sibling code paths; full GMM reruns via `rerun_{idn,chn,tza}_5gr_fixed.do` regenerated all 15 `_avg.ster` cells with the within-switcher formula.
+Stata segfaulted (exit 139) on IDN's post-success CSV-write loop but completed all GMM optimizations and saves; the CHN and TZA reruns dropped that block and finished cleanly.
+
+Issue 2 implemented: `grid_md_inversion`, `grid_delta_never_md_inversion`, `grid_delta_avg_md_inversion`, and `grid_delta_always_md_inversion` are in [`lca_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py).
+The two smoke scripts ([`smoke_md_vs_just_id.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/smoke_md_vs_just_id.py), [`smoke_delta_never_md.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/smoke_delta_never_md.py)) confirm that MD's $\hat\beta(\phi)$ closes 86--97% of the OLS-vs-GMM $\hat\beta$ gap, and that the inversion CIs bracket Stata's `nlcom` $\pm 1.96 \cdot$SE band on well-identified specs.
+
+Three-country validation gate, MD-implied $\Delta_X(\hat\phi_{\text{GMM}}, \hat\beta_{\text{md}})$ vs Stata's corrected `nlcom`:
+
+| Country | Δ | covs_trend | covs_1 | covs_2 | covs_all |
+|---|---|---:|---:|---:|---:|
+| IDN | never | $-4.7\%$ | $-4.7\%$ | $-4.7\%$ | $-4.5\%$ |
+| IDN | avg | $-8.4\%$ | $-8.4\%$ | $-8.0\%$ | $-4.3\%$ |
+| IDN | always | $-11.2\%$ | $-11.2\%$ | $-12.0\%$ | $-7.2\%$ |
+| CHN | never | $-6.6\%$ | $-6.5\%$ | $-4.5\%$ | $-3.4\%$ |
+| CHN | avg | $-7.7\%$ | $-7.7\%$ | $-6.0\%$ | $-4.4\%$ |
+| CHN | always | $-10.8\%$ | $-10.8\%$ | $-17.7\%$ | $-12.9\%$ |
+| TZA | never | $-1.5\%$ | $-1.5\%$ | $-1.5\%$ | $+2.5\%$ |
+| TZA | avg | $-2.7\%$ | $-2.8\%$ | $-3.1\%$ | $+5.0\%$ |
+| TZA | always | $-3.4\%$ | $-3.4\%$ | $-3.4\%$ | $+3.7\%$ |
+
+The MD framework reduces the Python-vs-Stata gap on well-identified specs from 30--2700% (before any fix) to 1.5--18% (after fix + MD).
+TZA matches to 1.5--5%, IDN to 4--12%, CHN to 3--18%.
+covs_0 (the weakly-identified spec, $J_p < 0.001$ in IDN and CHN) keeps a wider gap because GMM uses additional moments (the always-mover and unbalanced moments) that the auxiliary OLS does not.
+For weak-ID-robust inversion, that residual is acceptable: coverage matters more than point-estimate parity, and the inversion CI bounds (not the point) are what gets reported.
+
+Open items:
+
+- $\Delta_{d_T}$ multi-island handling: when the $\phi$-CI crosses $-1$ (Mobius singularity), `grid_delta_always_md_inversion` should report a union of intervals via `find_islands` rather than the convex hull.
+The grid bounds need to expand for that case (IDN covs_all currently hits $\pm 1.5$).
+- `run_all_countries_inversion.py` extension to compute and report all four CI rows ($\phi$, $\Delta_{d_N}$, $\Delta_{\text{avg}}$, $\Delta_{d_T}$) per cell.
+- Coverage check on the T=2 synthesizer to verify nominal coverage at $R = 100$ replications.
