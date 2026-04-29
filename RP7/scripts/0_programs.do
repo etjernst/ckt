@@ -1876,9 +1876,19 @@ program define run_grc
     * sequential timer slot (1, 2, 3, ...) so all per-fit times survive
     * for `timer list` at the end of the session, in addition to being
     * stashed into the ster as a custom scalar `runtime` via `estadd`.
+    *
+    * Stata's `timer` only accepts slot numbers 1-100. Pipelines with
+    * more than 100 fits in one Stata session (e.g. full Tier 3 has
+    * ~200 fits) hit `r(198) invalid syntax` at slot 101. Wrap the
+    * counter back to 1 after 100. Each fit's runtime is read via
+    * r(t<n>) and saved to the ster via estadd BEFORE the next fit
+    * touches the slot, so reuse is safe. The session-end `timer list`
+    * loses pre-wrap timings but the per-fit ster scalars retain them.
     if "${grc_timer_slot}" == "" global grc_timer_slot 0
     global grc_timer_slot = ${grc_timer_slot} + 1
+    if ${grc_timer_slot} > 100 global grc_timer_slot 1
     local _tslot = ${grc_timer_slot}
+    timer clear `_tslot'
     timer on `_tslot'
 
     * Run the GMM estimation
@@ -2191,10 +2201,15 @@ program define run_grc_onestep
     di as text "run_grc_onestep: phi initial value = `phistart'"
 
     * M9: same sequential-slot timer scheme as run_grc; all slots survive
-    * for `timer list` at the end of the session.
+    * for `timer list` at the end of the session. Wrap at 100 because
+    * Stata's timer only accepts slots 1-100; runtime is saved to the
+    * ster before the slot is reused, so wrapping is safe. (See run_grc
+    * for the full rationale.)
     if "${grc_timer_slot}" == "" global grc_timer_slot 0
     global grc_timer_slot = ${grc_timer_slot} + 1
+    if ${grc_timer_slot} > 100 global grc_timer_slot 1
     local _tslot = ${grc_timer_slot}
+    timer clear `_tslot'
     timer on `_tslot'
 
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                    ///
@@ -2329,9 +2344,14 @@ program define run_grc_hukou
     * Audit-2026-04-28 C1: timer-slot init was missing from run_grc_hukou.
     * The 'timer off `_tslot'' line below would have crashed with empty
     * `_tslot'. Mirror run_grc's pattern (lines ~1798-1801).
+    *
+    * Wrap at 100 because Stata's timer only accepts slots 1-100; runtime
+    * is saved to the ster before the slot is reused, so wrapping is safe.
     if "${grc_timer_slot}" == "" global grc_timer_slot 0
     global grc_timer_slot = ${grc_timer_slot} + 1
+    if ${grc_timer_slot} > 100 global grc_timer_slot 1
     local _tslot = ${grc_timer_slot}
+    timer clear `_tslot'
     timer on `_tslot'
 
     * Run the GMM estimation
