@@ -12,17 +12,9 @@ clear all
 version 17
 set more off
 
-* **********************************************************************
-* Project-wide globals (set ONCE here so individual programs don't
-* re-define magic numbers locally).
-*   grc_max_iter             --- GMM iterations cap; was a magic 100
-*                                hardcoded in 5/6/8/GRC_extras + make_tables
-*   grc_min_switchers_per_wave --- minimum N/T threshold in initial_values
-*                                  for a switcher trajectory to be eligible
-*                                  as the base; was a magic 5
-* **********************************************************************
-global grc_max_iter             100
-global grc_min_switchers_per_wave 5
+* Project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave) are
+* set in 0_path_config.do (included below) so that alternate entry points
+* (e.g. _smoke_full.do) which bypass this file still see them.
 
 * **********************************************************************
 * Preliminaries
