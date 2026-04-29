@@ -18,10 +18,10 @@
 *   1_processData.do, 0_CHN_hukou_restrictions.do --- would `save`
 *     back to the Dropbox junction; processed .dta files already exist.
 *
-* M10 resume-on-interrupt guard enabled (global skip_if_exists 1):
-* if killed and re-launched, run_grc skips any spec whose _g.ster
-* file is already present (Phase 1a renamed the sentinel from _avg
-* to _g). Force a fresh run by deleting all .ster files in $output.
+* skip_if_exists toggle (set below): 0 = fresh verification (overwrite
+* every cell); 1 = resume-on-interrupt (preserve completed cells from a
+* prior killed run). Default is 0 so that running this driver on changed
+* code always recomputes; flip to 1 only when explicitly recovering.
 *
 * M9 timer is on --- each call to run_grc stashes elapsed seconds
 * into its main ster as a custom scalar runtime (via estadd).
@@ -44,9 +44,13 @@ include "$scripts/0_programs.do"
 
 global copyOverleaf 0
 
-* M10: enable resume-on-interrupt. Re-launching this driver after a kill
-* will skip any spec whose <estname>_avg.ster already exists.
-global skip_if_exists 1
+* skip_if_exists controls whether run_grc reuses on-disk sters:
+*   0 = OVERWRITE every cell (fresh end-to-end verification of changed
+*       scripts; reproduces results from scratch).
+*   1 = RESUME-ON-INTERRUPT (recovery from a killed run; preserves
+*       any cell whose <estname>_g.ster is already on disk).
+* Set this BEFORE every launch to match the run's purpose.
+global skip_if_exists 0
 
 * GMM scripts (write 5 sters per fit; M10 guard active).
 include "$dir/scripts/5_GrRC.do"
