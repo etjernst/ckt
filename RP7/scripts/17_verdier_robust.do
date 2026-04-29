@@ -9,15 +9,23 @@
 *          Uses urban as treatment, log per-capita consumption as outcome,
 *          unbalanced panel, for IDN/TZA/CHN.
 * Input:   $dirdata/processed/{IDN,TZA,CHN}_unb.dta
-* Output:  $output/{country}/grc_robust_vv_{country}_{step}_covs_*.ster
-*          $output/tables/verdier_robust_{step}_{country}_consumption_urban_unb.tex
-*          quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md
+* Output:  $output/vv_{country}_{os|ts}_covs_*.ster (5 covariate specs x 2 step variants x 3 countries)
+*          $output/tables/verdier_robust_{onestep|twostep}_{country}_consumption_urban_unb.tex (6 paper tables)
+*          quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md (decision-aid markdown)
 * ============================================================
 
 * Set log file
 cd "$logs"
 capture log close
 log using 17_verdier_robust.log, replace
+
+* ============================================================
+* Wrap the body in capture noisily so any error is caught and
+* the script always reaches `exit, STATA clear`. Without this
+* wrapper, Windows pops the modal "Stata finished" dialog on
+* batch-mode errors.
+* ============================================================
+capture noisily {
 
 * **********************************************************************
 * Choices for the analysis
@@ -31,8 +39,10 @@ global covs_gmm     "female"
 global covs_gmm2    "$covs_gmm age2"
 global covs_gmm_all "$covs_gmm2 education_max education_max2"
 
-* Keep only relevant variables (speeds up estimation); add vidx per country below
-global keepvars_base lndepvar trajectory choice pid
+* Keep only relevant variables (speeds up estimation); add vidx per country below.
+* `year` is required because gen_vfirst (called inside run_grc_robust_vv) uses
+* `bysort pid (year)` to identify the first-wave value of the cluster index.
+global keepvars_base lndepvar trajectory choice pid year
 global keepvars_base $keepvars_base period unbalanced* switcher non_switcher
 global keepvars_base $keepvars_base female age age2
 global keepvars_base $keepvars_base education_max education_max2 trend
@@ -70,23 +80,29 @@ foreach country in IDN TZA CHN {
     local base `r(base)'
     local initial "`r(initial)'"
 
-    * Loop over GMM step option (onestep | twostep)
+    * Loop over GMM step option (onestep | twostep).
+    * Use a short estname tag (os/ts) so the eststo internal name `_est_<...>`
+    * stays under Stata's 32-char limit. The full word (onestep/twostep) is
+    * still passed as a syntax flag to run_grc_robust_vv.
     foreach step in onestep twostep {
 
+        if "`step'" == "onestep" local stepshort os
+        else                     local stepshort ts
+
         di as txt "================================================================"
-        di as txt "run_grc_robust_vv: country=`country' step=`step'"
+        di as txt "run_grc_robust_vv: country=`country' step=`step' (tag=`stepshort')"
         di as txt "================================================================"
 
         * No covariates
         run_grc_robust_vv,                                              ///
-            estname(grc_robust_vv_`country'_`step'_covs_0)              ///
+            estname(vv_`country'_`stepshort'_covs_0)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             iterate(`iterations') `step'
 
         * Add time FE
         run_grc_robust_vv,                                              ///
-            estname(grc_robust_vv_`country'_`step'_covs_trend)          ///
+            estname(vv_`country'_`stepshort'_covs_trend)           ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE')                                          ///
@@ -94,7 +110,7 @@ foreach country in IDN TZA CHN {
 
         * Add female
         run_grc_robust_vv,                                              ///
-            estname(grc_robust_vv_`country'_`step'_covs_1)              ///
+            estname(vv_`country'_`stepshort'_covs_1)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm)                                ///
@@ -102,7 +118,7 @@ foreach country in IDN TZA CHN {
 
         * Add age^2
         run_grc_robust_vv,                                              ///
-            estname(grc_robust_vv_`country'_`step'_covs_2)              ///
+            estname(vv_`country'_`stepshort'_covs_2)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm2)                               ///
@@ -110,7 +126,7 @@ foreach country in IDN TZA CHN {
 
         * Add education + education^2
         run_grc_robust_vv,                                              ///
-            estname(grc_robust_vv_`country'_`step'_covs_all)            ///
+            estname(vv_`country'_`stepshort'_covs_all)             ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm_all)                            ///
@@ -123,8 +139,10 @@ foreach country in IDN TZA CHN {
 * **********************************************************************
 foreach country in IDN TZA CHN {
     foreach step in onestep twostep {
+        if "`step'" == "onestep" local stepshort os
+        else                     local stepshort ts
         foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-            local stem grc_robust_vv_`country'_`step'_`estname'
+            local stem vv_`country'_`stepshort'_`estname'
             estimates use "$dir/output/`stem'"
             estimates store `stem'
             estimates use "$dir/output/`stem'_never"
@@ -143,10 +161,11 @@ local varlab "$\phi$"
 
 foreach step in onestep twostep {
 
-    * Build a fake "country" string that injects the step into the country slot
-    * so grc_tex_table_trend reads grc_robust_vv_{country}_{step}_covs_X.
-    * (We pass estprefix(grc_robust_vv_) and country(`country'_`step').)
+    if "`step'" == "onestep" local stepshort os
+    else                     local stepshort ts
 
+    * Inject the short step tag into the country slot so grc_tex_table_trend
+    * reads vv_{country}_{stepshort}_covs_X via estprefix(vv_).
     foreach country in IDN TZA CHN {
 
         local htb_str "htbp"
@@ -162,8 +181,8 @@ foreach step in onestep twostep {
         local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 
         grc_tex_table_trend, columns(5)                                                    ///
-            country(`country'_`step')                                                      ///
-            estprefix(grc_robust_vv_)                                                      ///
+            country(`country'_`stepshort')                                                 ///
+            estprefix(vv_)                                                            ///
             filename(verdier_robust_`step'_`country'_`depvar'_`choice'_`balance')          ///
             keep(`reportvars')                                                             ///
             varlabel(`varlab')                                                             ///
@@ -206,7 +225,9 @@ foreach country in IDN TZA CHN {
 
     foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
         foreach step in onestep twostep {
-            local stem grc_robust_vv_`country'_`step'_`estname'
+            if "`step'" == "onestep" local stepshort os
+            else                     local stepshort ts
+            local stem vv_`country'_`stepshort'_`estname'
 
             * phi from main ster
             capture estimates restore `stem'
@@ -272,6 +293,11 @@ file write mdh "- Pick the version per country (or across the board) and replace
 file close mdh
 di as text "Comparison markdown written to: `mdpath'"
 
+}
+local saved_rc = _rc
+capture log close
+if `saved_rc' != 0 {
+    di as error ">>> 17_verdier_robust FAILED with rc=`saved_rc'"
+}
 * Suppress the Windows batch-mode "Stata finished" popup.
-log close
 exit, STATA clear

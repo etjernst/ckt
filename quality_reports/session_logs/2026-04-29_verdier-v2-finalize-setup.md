@@ -175,6 +175,81 @@ The previous bash session drifted into the verdier subfolder mid-session.
 > 4. `gen_vfirst` is defined in `0_programs.do` at L391; `run_grc_robust_vv` depends on it.
 > 5. Memory entries on VV terminology and one-thing-at-a-time robustness are loaded for future sessions; CLAUDE.md is unchanged.
 
+## Afternoon update (post-spec-approval)
+
+### Spec sign-off, audit, fixes applied
+
+User signed off on the spec with revisions:
+- M3 dropped the side-by-side comparison; the paper now gets three per-country tables in main-results format showing only the robust results.
+References the new Overleaf table format from `main-sections.tex`.
+- M4 dropped the automatic decision rule (within one onestep SE).
+The driver runs both onestep and twostep, writes a comparison markdown, and the user picks after seeing the numbers.
+- M7 softened from "stop on convergence failure" to "report `e(converged)` (Y/N) in the table and iterate later."
+
+Audit at [quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md) flagged three rough edges; user approved fixes:
+- A1: added `[ONEstep TWOstep]` syntax option to `run_grc_robust_vv` (was hardcoded onestep).
+- A2: added `[ESTPrefix(string)]` option to `grc_tex_table_trend` (was hardcoded `grc_` prefix).
+- A3: updated `0_master.do` `$dir` from the `lca-inversion` worktree path to `verdier-wrap-up`.
+
+### Driver written
+
+[RP7/scripts/17_verdier_robust.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) runs the 5×2×3 grid (covariate specs × step variants × countries), saves esters, generates 6 paper tables, and writes the onestep-vs-twostep comparison markdown for human pick. Hooked into `0_master.do` after `16_heterogeneity_tables.do`.
+
+Committed at `a77963b`.
+
+### Smoke testing on TZA
+
+Created [RP7/scripts/smoke_17_TZA.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/smoke_17_TZA.do) for TZA-only smoke (5 specs × 2 steps = 10 estimations) before the full 30-estimation run.
+Required first creating [RP7/data/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/data/) directory junction (worktree was missing it; main RP7 also lacks it but lca-inversion worktree had it as a template).
+
+Three failed smoke runs, each surfacing a different issue:
+
+1. **Run 1**: `variable year not found`.
+`gen_vfirst` (called inside `run_grc_robust_vv`) uses `bysort pid (year)` but `year` was missing from `$keepvars`.
+Fix: added `year` to `$keepvars_base` in both smoke and full driver.
+
+2. **Run 2**: `_est_grc_robust_vv_TZA_onestep_covs_0 invalid name` (r(7)).
+Stata's `eststo` stores results under internal name `_est_<estname>` with a 32-char limit on the full internal name.
+Our estname `grc_robust_vv_TZA_onestep_covs_0` was 32 chars itself; `_est_` prefix pushed it to 37.
+Fix attempt 1: shortened to `grc_rvv_<country>_<os|ts>_<covs_X>`.
+
+3. **Run 3**: same r(7) but in the restore block.
+`estimates store grc_rvv_TZA_os_covs_trend_never` = 31 chars + `_est_` = 36, still too long.
+The `_never`/`_avg` suffixes on stored estimates push past the limit even with `grc_rvv_` prefix.
+Fix attempt 2: dropped to plain `vv_<country>_<step>_<covs_X>` (worst case `vv_TZA_os_covs_trend_never` = 26 chars + `_est_` = 31, fits).
+
+### Popup hardening
+
+User flagged that the modal "Stata finished" Windows popup on the failed run 1 was "not sustainable."
+Root cause: `exit, STATA clear` (the rule from `stata-conventions.md` that suppresses the popup) only runs on the success path.
+On `r(N);` errors, Stata aborts before reaching it.
+
+Fix: wrapped the body of both smoke and full driver in `capture noisily { ... }`, so any internal error is caught locally, `_rc` recorded, and `exit, STATA clear` always reaches.
+Future error paths will not pop the modal regardless of what fails inside.
+
+### Two zombie Stata processes
+
+Failed runs 1 and 2 left Stata processes (PIDs 41912 and 42164) stuck on modal dialogs that can't be dismissed without user interaction (user is not at their computer).
+Did not kill them per `command-safety.md`.
+The new wrapper means run 4 won't add a third zombie even if it errors.
+
+### Convergence note from run 3
+
+Run 3 reached the GMM phase and produced numbers before erroring on the table generation block.
+Recorded for the actual numerical content:
+- 8 of 10 estimations converged cleanly (all four cov specs except `covs_0`, for both onestep and twostep).
+- `covs_0` (no covariates at all) failed convergence in both onestep and twostep.
+The smoke restart will re-confirm and produce the markdown comparison.
+
+### Memory updates this afternoon
+
+- [feedback_no_writes_to_data_junctions.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_writes_to_data_junctions.md) added; user emphasized the data junctions must never be written to.
+
+### Smoke run 4 status (in flight at log update time)
+
+Background task `btidwwpj0` running with the `vv_*` rename and capture-noisily wrapper.
+Expected: 10 estimations converge as in run 3 (with `covs_0` showing `Converged=N`), then 2 smoke tables are generated cleanly.
+
 ## Files referenced
 
 - [.claude/worktrees/verdier-wrap-up/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/)---new worktree
