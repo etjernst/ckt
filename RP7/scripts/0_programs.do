@@ -110,7 +110,7 @@
 *
 * Always drops _merge at the end so callers don't have to remember.
 * **********************************************************************
-cap program drop assert_merge_clean
+capture program drop assert_merge_clean
 program define assert_merge_clean
     syntax , [allow(numlist integer min=1 max=3) label(string asis) ///
               drop_unmatched(string)]
@@ -269,7 +269,7 @@ end
 * **********************************************************************
 * Open data
 * **********************************************************************
-cap program drop use_data
+capture program drop use_data
 program define use_data
     args country
     use "$dirdata/countries/`country'", clear
@@ -278,7 +278,7 @@ end
 * **********************************************************************
 * Set choice variable
 * **********************************************************************
-cap program drop handle_choice
+capture program drop handle_choice
 program define handle_choice
     args choice
     clonevar choice = `choice'
@@ -291,7 +291,7 @@ end
 * **********************************************************************
 * Set dependent variable
 * **********************************************************************
-cap program drop handle_depvar
+capture program drop handle_depvar
 program define handle_depvar
     args depvar
     clonevar depvar = `depvar'
@@ -309,7 +309,7 @@ end
 * **********************************************************************
 * Declare panel, impose balance if balance = bal
 * **********************************************************************
-cap program drop handle_balance
+capture program drop handle_balance
 program define handle_balance
     args balance
     xtset pid period
@@ -328,7 +328,7 @@ end
 * **********************************************************************
 * Handle trajectory groups
 * **********************************************************************
-cap program drop handle_trajectory_groups
+capture program drop handle_trajectory_groups
 program define handle_trajectory_groups
   preserve
 	* Keep relevant observations and variables
@@ -365,7 +365,8 @@ program define handle_trajectory_groups
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj trajectory
@@ -390,7 +391,7 @@ end
 * **********************************************************************
 * Handle trajectory groups with at least 2 waves
 * **********************************************************************
-cap program drop handle_trajectory_groups_2waves
+capture program drop handle_trajectory_groups_2waves
 program define handle_trajectory_groups_2waves
   preserve
 	* Keep relevant observations and variables
@@ -424,7 +425,8 @@ program define handle_trajectory_groups_2waves
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups_2waves")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj_2waves trajectory_2waves
@@ -448,7 +450,7 @@ end
 * **********************************************************************
 * Handle trajectory groups with at least 3 waves
 * **********************************************************************
-cap program drop handle_trajectory_groups_3waves
+capture program drop handle_trajectory_groups_3waves
 program define handle_trajectory_groups_3waves
   preserve
 	* Keep relevant observations and variables
@@ -482,7 +484,8 @@ program define handle_trajectory_groups_3waves
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups_3waves")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj_3waves trajectory_3waves
@@ -505,7 +508,7 @@ end
 * **********************************************************************
 * Time trend
 * **********************************************************************
-cap program drop gen_time_trend
+capture program drop gen_time_trend
 program define gen_time_trend
     sum year if period == 1
     gen trend = year - r(min)
@@ -539,7 +542,7 @@ end
 * Covariate management
 * **********************************************************************
 
-cap program drop set_covariates
+capture program drop set_covariates
 program define set_covariates
   args 			depvar country
 	gen 			loghhsize = log(hhsize)	
@@ -594,7 +597,7 @@ end
 * **********************************************************************
 * Variable labels
 * **********************************************************************
-cap program drop 	fix_varlabels
+capture program drop 	fix_varlabels
 program define 		fix_varlabels
 	lab variable          baseline_age 		"Age at baseline (years)"
 	lab variable          baseline_age2 	"Age at baseline (years) squared"
@@ -611,7 +614,7 @@ end
 * Custom LaTeX table (for summary stats by country)
 * **********************************************************************
 * Create a custom LaTeX table
-cap program 		drop sumstats_table
+capture program 		drop sumstats_table
 program 				define sumstats_table
 	syntax, TABle_notes(string asis) COUNTRY(string asis) OUTputdir(string asis) FILEname(string asis) BALance(string asis)
 	
@@ -685,7 +688,7 @@ end
 * **********************************************************************
 * Summary stats table prep
 * **********************************************************************
-cap program drop		country_summary_stats
+capture program drop		country_summary_stats
 program define			country_summary_stats
 args								country choice depvar balance
 	
@@ -754,7 +757,7 @@ end
 * **********************************************************************
 * Summary stats table prep - at least 2 waves
 * **********************************************************************
-cap program drop		country_summary_stats_2waves
+capture program drop		country_summary_stats_2waves
 program define			country_summary_stats_2waves
 args								country choice depvar balance
 	
@@ -824,7 +827,7 @@ end
 * **********************************************************************
 * Summary stats table prep - at least 3 waves
 * **********************************************************************
-cap program drop		country_summary_stats_3waves
+capture program drop		country_summary_stats_3waves
 program define			country_summary_stats_3waves
 args								country choice depvar balance
 	
@@ -895,7 +898,7 @@ end
 * Summary stats table prep for ag/nonag 
 *   - should instead make the main one more robust but no time
 * **********************************************************************
-cap program drop		country_summary_stats_nonag
+capture program drop		country_summary_stats_nonag
 program define			country_summary_stats_nonag
 args								country choice depvar balance
 	
@@ -981,7 +984,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table
 * **********************************************************************
-cap program drop create_panel_tex_table
+capture program drop create_panel_tex_table
 program define create_panel_tex_table
     syntax , 	Panels(integer) COLumns(integer) FILEname(string asis) 	///
 				COUNTRIES(string asis) Keep(varlist) 	///
@@ -1065,7 +1068,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table - learning IDN
 * **********************************************************************
-cap program drop create_panel_tex_table_learn_IDN
+capture program drop create_panel_tex_table_learn_IDN
 program define create_panel_tex_table_learn_IDN
     syntax , 	COLumns(integer) FILEname(string asis) 	///
 				Keep(varlist) 	///
@@ -1119,7 +1122,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table - learning CHN
 * **********************************************************************
-cap program drop create_panel_tex_table_learn_CHN
+capture program drop create_panel_tex_table_learn_CHN
 program define create_panel_tex_table_learn_CHN
     syntax , 	COLumns(integer) FILEname(string asis) 	///
 				Keep(varlist) 	///
@@ -1173,7 +1176,7 @@ end
 * **********************************************************************
 * OLS regressions
 * **********************************************************************
-cap program drop reghdfe_regressions
+capture program drop reghdfe_regressions
 program define reghdfe_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
@@ -1200,7 +1203,7 @@ end
 * **********************************************************************
 * OLS regressions (learning)
 * **********************************************************************
-cap program drop reghdfe_regressions_learn_IDN
+capture program drop reghdfe_regressions_learn_IDN
 program define reghdfe_regressions_learn_IDN
     args country depvar balance
     * OLS / FE regressions using reghdfe
@@ -1288,7 +1291,7 @@ program define reghdfe_regressions_learn_IDN
 		
 end
 
-cap program drop reghdfe_regressions_learn_CHN
+capture program drop reghdfe_regressions_learn_CHN
 program define reghdfe_regressions_learn_CHN
     args country depvar balance
     * OLS / FE regressions using reghdfe
@@ -1364,7 +1367,7 @@ end
 * Get ready for GRC
 * **********************************************************************
 
-cap program drop setup_grc_estimation
+capture program drop setup_grc_estimation
 program define setup_grc_estimation
     global 		never 1
     qui: tab 			trajectory
@@ -1395,7 +1398,7 @@ end
 * **********************************************************************
 * Make heterogeneity figures
 * **********************************************************************
-cap program drop heterogeneity_plots
+capture program drop heterogeneity_plots
 program define heterogeneity_plots
 	args country choice depvar balance
 	if "`country'" == "IDN" {
@@ -1538,7 +1541,7 @@ end
 * **********************************************************************
 * uGRC regressions
 * **********************************************************************
-cap program drop ugrc_regressions
+capture program drop ugrc_regressions
 program define ugrc_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
@@ -2037,7 +2040,7 @@ end
 * historical behavior; pass data_path_override("...IDN_unb.dta") when
 * needed.
 * **********************************************************************
-cap program drop run_grc_with_extra_regressor
+capture program drop run_grc_with_extra_regressor
 program define run_grc_with_extra_regressor
     syntax , country(string) spec3(string) regressor(name)            ///
         [ iterate(integer 100) data_path_override(string) ]
@@ -2944,13 +2947,13 @@ end
 * variant; not called by any numbered .do file. Use grc_tex_table_trend
 * instead. Old definition preserved in git history.)
 * **********************************************************************
-cap program drop grc_tex_table
+capture program drop grc_tex_table
 
 * **********************************************************************
 * Create country-specific LaTeX table with GRC results 
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
-cap program drop grc_tex_table_trend
+capture program drop grc_tex_table_trend
 program define grc_tex_table_trend
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
@@ -3069,7 +3072,7 @@ end
 * Create country-specific LaTeX table with GRC results 
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
-cap program drop grc_tex_table_trend_hukou
+capture program drop grc_tex_table_trend_hukou
 program define grc_tex_table_trend_hukou
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
@@ -3172,7 +3175,7 @@ end
 * Create country-specific LaTeX table with GRC results 
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
-cap program drop grc_tex_table_trend_exp
+capture program drop grc_tex_table_trend_exp
 program define grc_tex_table_trend_exp
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
@@ -3279,7 +3282,7 @@ end
 * Create country-specific LaTeX table with GRC results
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
-cap program drop grc_tex_table_trend_birth
+capture program drop grc_tex_table_trend_birth
 program define grc_tex_table_trend_birth
     syntax , COLumns(integer) FILEname(string asis) 	///
 				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
@@ -3393,7 +3396,7 @@ end
 *   spec3(cuu|cub|iuu|cnu)
 *   regressor(varname)
 * **********************************************************************
-cap program drop extras_tex_table
+capture program drop extras_tex_table
 program define extras_tex_table
     syntax , country(string) spec3(string) regressor(name)
 
@@ -3505,7 +3508,7 @@ end
 * **********************************************************************
 * Make heterogeneity tables for Delta estimates
 * **********************************************************************
-cap program drop het_table_delta
+capture program drop het_table_delta
 program define het_table_delta
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
 				POSTfoot(string asis) ///
@@ -3561,7 +3564,7 @@ end
 * **********************************************************************
 * Make heterogeneity tables for mu estimates
 * **********************************************************************
-cap program drop het_table_mu
+capture program drop het_table_mu
 program define het_table_mu
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
 				POSTfoot(string asis) ///
