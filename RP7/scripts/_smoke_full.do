@@ -49,8 +49,12 @@ global copyOverleaf 0
 *       scripts; reproduces results from scratch).
 *   1 = RESUME-ON-INTERRUPT (recovery from a killed run; preserves
 *       any cell whose <estname>_g.ster is already on disk).
-* Set this BEFORE every launch to match the run's purpose.
-global skip_if_exists 0
+* Set this BEFORE every launch to match the run's purpose. Currently
+* set to 1 because the 60 sters on disk (5_GrRC.do + partial
+* 6_GrRC_NonAg.do as of 2026-04-29) have been verified bit-identical
+* to RP6 via tests/compare_tabular_bodies.py; reusing them avoids
+* ~10 hrs of redundant compute on the next relaunch.
+global skip_if_exists 1
 
 * GMM scripts (write 5 sters per fit; M10 guard active).
 include "$dir/scripts/5_GrRC.do"
