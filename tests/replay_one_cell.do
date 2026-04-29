@@ -39,8 +39,16 @@ include "$scripts/0_programs.do"
 * Don't write to Overleaf during troubleshooting.
 global copyOverleaf 0
 
-* Always re-run the cell when troubleshooting (override any stale ster).
-global skip_if_exists 0
+* Skip cells whose _g.ster already exists. Important for run_grc_with_
+* extra_regressor calls because each call runs FOUR fits (c1/c2/c3/ca);
+* with skip_if_exists 0 the replay re-fits cells that already succeeded
+* in batch, wasting time. With 1, only the missing cells (the failing
+* one and any after it) actually run.
+*
+* If you want to force a fresh re-fit of a cell that already has a ster,
+* delete that ster manually first, e.g.:
+*   rm $output/grc_CHN_cuu_maxexp_c3*.ster
+global skip_if_exists 1
 
 * **********************************************************************
 * CONFIGURE: which cell to replay
