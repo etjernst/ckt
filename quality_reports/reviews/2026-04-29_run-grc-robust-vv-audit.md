@@ -132,3 +132,33 @@ That's an Overleaf edit and belongs to a separate session per spec.
 3. Comfortable with A3 ($dir update for `verdier-wrap-up` worktree, local edit, do not commit)?
 4. M4 comparison-summary scope: just one focal column (`covs_all`), or the full 5-column grid for both versions?
 The latter is more thorough but also more numbers to scan.
+
+## Post-hoc findings (surfaced during smoke testing)
+
+These three issues bit during smoke runs of the driver; not anticipated by the static audit pass.
+All fixed; logged here for traceability.
+
+**B1. Stata's 32-char eststo internal name limit.**
+`eststo NAME` and `estimates store NAME` both prepend `_est_` to the name and cap the result at 32 characters.
+Original estname `grc_robust_vv_TZA_onestep_covs_trend` (34 chars) overflowed.
+After shortening to `grc_rvv_TZA_os_covs_trend` (25 chars), the downstream `estimates store NAME_never` (`grc_rvv_TZA_os_covs_trend_never` = 31 chars + `_est_` = 36) still overflowed.
+Final fix: dropped to `vv_<country>_<os|ts>_<covs_X>` (worst case `vv_TZA_os_covs_trend_never` = 26 chars + `_est_` = 31, fits).
+The full word `onestep`/`twostep` is still passed to `run_grc_robust_vv` as a syntax flag; only the estname tag is shortened.
+
+**B2. `year` must be in `keepvars` for the robust estimator.**
+`gen_vfirst` (called inside `run_grc_robust_vv`) uses `bysort pid (year)` to identify the first-wave value of the cluster index.
+The main GRC pipeline's `keep $keepvars` does not include `year` (because `run_grc` uses `vce(cluster pid)` and never sorts within pid).
+Fix: added `year` to `$keepvars_base` in [`17_verdier_robust.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) and the smoke driver.
+
+**B3. Modal popup on batch-mode error.**
+`exit, STATA clear` only suppresses the Windows "Stata finished" popup on the success path.
+On any `r(N);` error, Stata aborts before reaching `exit, STATA clear`, the popup fires, and a stale Stata process holds the dialog.
+Fix: wrapped the body of both drivers in `capture noisily { ... }`, so internal errors are caught locally, `_rc` is recorded, log is closed, and `exit, STATA clear` always runs.
+
+**B4. Standalone-vs-include ambiguity.**
+[`17_verdier_robust.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) was originally written assuming inclusion from `0_master.do` (which sets `$dir`, `$logs`, programs).
+Running standalone via `stata-mp -b do 17_verdier_robust.do` left `$dir` unset, and the script aborted at `cd "$logs"` before the log even opened.
+Fix: added a defensive prelude that bootstraps path globals + program includes only when `$dir` is empty.
+Calling from master is unaffected (the prelude is skipped).
+
+These post-hoc findings now live as memory for future Stata work in this project at [feedback_stata_gotchas.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_stata_gotchas.md), and the 32-char limit + capture-noisily wrapper are added to the global `stata-conventions.md` rule.

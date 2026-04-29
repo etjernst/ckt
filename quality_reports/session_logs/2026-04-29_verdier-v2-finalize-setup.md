@@ -250,6 +250,47 @@ The smoke restart will re-confirm and produce the markdown comparison.
 Background task `btidwwpj0` running with the `vv_*` rename and capture-noisily wrapper.
 Expected: 10 estimations converge as in run 3 (with `covs_0` showing `Converged=N`), then 2 smoke tables are generated cleanly.
 
+## Post-run cleanup checklist
+
+Once `b9ppl7jfn` (the IDN+CHN full driver run) completes successfully, work through these in order:
+
+1. **Verify outputs.** 100 ster files total (50 from TZA smoke + 50 from IDN+CHN run), 6 paper tables in `RP7/output/tables/`, comparison markdown at [`quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md).
+
+2. **Read the comparison markdown** with the user and pick a step variant per country.
+Working hypothesis: twostep wins everywhere ($J$ available, tighter SEs, point estimates close to baseline on TZA).
+Confirm by checking convergence and $J$ p-values for IDN and CHN.
+If twostep does not converge for any country, fall back to onestep for that country and footnote.
+
+3. **Revert the IDN+CHN-only skip in 17_verdier_robust.do.**
+Change line 53-ish back from `foreach country in IDN CHN {` to `foreach country in IDN TZA CHN {`, and drop the explanatory comment.
+
+4. **Replace the placeholder Overleaf table.**
+[`tables/verdier_robust_consumption_unb.tex`](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/tables/verdier_robust_consumption_unb.tex) is the placeholder.
+Either delete it (since `sec_robustness.tex` no longer `\input`s it) or repurpose for archive.
+The new tables `verdier_robust_twostep_{IDN,CHN,TZA}_consumption_urban_unb.tex` need to be copied from `RP7/output/tables/` to the Overleaf-Dropbox `tables/` folder.
+
+5. **Fill in the interpretation paragraph in `sec_robustness.tex`.**
+The TODO comment marker is just before the three `\input` lines.
+Compare $\hat\phi^{\mathrm{rob}}$ to baseline $\hat\phi$ for each country; comment on $J$-statistic; flag any country where the gap is material.
+
+6. **Compile main-sections.tex on Overleaf.**
+Verify all three new table labels resolve, the placeholder reference is gone, and the prose reads cleanly.
+
+7. **Decide whether to keep the `_twostep` qualifier in the table file names and labels.**
+If twostep won everywhere unambiguously, the qualifier is redundant; rename to `verdier_robust_<country>_consumption_urban_unb.tex` to match the baseline's naming convention.
+If onestep won for some country, keep the qualifier so both versions can coexist.
+
+8. **Commit final results** as one or more atomic commits.
+Suggest: one commit for the driver revert + final ster files + final tables, one for the Overleaf prose update (if mirrored locally).
+
+9. **Decide on smoke driver retention.**
+The header in [`smoke_17_TZA.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/smoke_17_TZA.do) says "Delete after smoke passes."
+Options: delete (clean), keep as a reusable smoke harness for future edits to `run_grc_robust_vv` (useful), or move to `RP7/scripts/dev_tools/` (compromise).
+
+10. **Wrap up the worktree.**
+Squash-merge or fast-forward to `main`, depending on whether the commit history is worth preserving.
+Spec, audit, and session log all live under `quality_reports/` and will come along.
+
 ## Files referenced
 
 - [.claude/worktrees/verdier-wrap-up/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/)---new worktree

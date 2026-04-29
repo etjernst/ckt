@@ -14,6 +14,23 @@
 *          quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md (decision-aid markdown)
 * ============================================================
 
+* ============================================================
+* Defensive prelude: when this file is run standalone via
+* `stata-mp -b do 17_verdier_robust.do`, $dir is not set, and
+* path globals + programs need bootstrapping. When invoked via
+* `include` from 0_master.do, $dir is already set and we skip.
+* ============================================================
+if "$dir" == "" {
+    clear all
+    if "`c(username)'" == "maand" {
+        global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
+    }
+    include "$dir/scripts/0_path_config.do"
+    include "$dir/scripts/0_setup.do"
+    include "$dir/scripts/0_programs.do"
+    global copyOverleaf 0
+}
+
 * Set log file
 cd "$logs"
 capture log close
