@@ -17,12 +17,6 @@ Append dated entries. Move completed items to the bottom with a strike-through o
 
 ---
 
-### Island detection and reporting in LCA inversion CI
-**Added:** 2026-04-23
-**Context:** The grid inversion for $\phi$ in the LCA test (`docs/plans/2026-04-23-lca-inversion-ci-ckt.md`) takes the outermost `min` and `max` of the non-rejected grid as the CI endpoints. Under regime heterogeneity (likely in CHN given the hukou-split J-rejection) the (phi, p) curve may be multimodal --- two or more disconnected non-rejected regions. Reporting only the outer min/max hides the gap and overstates CI coverage.
-**Action:** After the grid run, walk the (phi, p_value) curve and flag disconnected non-rejected regions. Report each as `[low_k, high_k]`. If multiple islands, the paper should say so explicitly --- it is informative about identification.
-**Estimated cost:** ~30 min of code (numpy diff on the indicator vector + group consecutive runs). Add to the inversion runner once the basic implementation works.
-
 ### Port rcond fix into Python `_robust_inv`
 **Added:** 2026-04-23
 **Context:** The 2.8x SE($\phi$) divergence between Python's iterated GMM and Stata's twostep was traced to Python's `np.linalg.pinv(S, rcond=1e-10)` keeping a near-zero singular value associated with rank-deficient moments at sparse switcher trajectories (e.g., `switcher_11` in IDN has 1 cluster contributing). Stata uses a generalized inverse with a stricter tolerance that drops the rank-deficient direction --- this is its documented behavior for singular S. Python should match.
@@ -34,5 +28,7 @@ Append dated entries. Move completed items to the bottom with a strike-through o
 ---
 
 ## Completed
+
+- **Island detection in LCA inversion CI.** Done 2026-04-29. Added `find_islands` and `summary_curve_stats` to `explorations/python-grc/lca_inversion.py`; post-processing pass `explorations/python-grc/postprocess_islands.py` reads the saved `(phi, p_value)` parquets and writes `results/lca_inversion_islands.md` + `results/lca_inversion_islands_summary.csv`. Two findings: (1) no multimodality at 95% or 90% in any country/spec, so the convex-hull CIs in `lca_inversion_three_countries.md` are honest; (2) CHN's max p across the entire `[-3, 1]` grid is 0.017 at covs_all, so the empty CIs are not borderline---pooled CHN LCA is rejected at 5% for every grid phi, strengthening the case that hukou splits are necessary.
 
 - **Confirm trajectory-labeling convention for unbalanced observers.** Verified 2026-04-22, with correction. First reading looked at `_2waves` / `_3waves` variants and was wrong about their role. The main estimation uses `handle_trajectory_groups`, which executes `keep if !unbalanced` (`scripts/0_programs.do:199`): only balanced observers get a trajectory. Unbalanced observers are pooled to `trajectory = 999` (line 1217) --- one cell, not a set of partial-trajectory cells --- with the $U_i$ dummy and $U_i \times \text{choice}$ interaction carrying their contribution. The FWL orthogonality premise in `explorations/unbalanced_proposition.tex` holds; the proof's cell structure is simpler than the first draft suggested.

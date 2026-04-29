@@ -191,3 +191,45 @@ def grid_lca_inversion(
     if len(accepted) == 0:
         return curve, float("nan"), float("nan")
     return curve, float(accepted.min()), float(accepted.max())
+
+
+def find_islands(
+    curve: pd.DataFrame,
+    type_one: float = 0.05,
+) -> list[tuple[float, float]]:
+    """Walk the (phi, p_value) grid and return non-rejected regions as a list
+    of ``(phi_lo, phi_hi)`` intervals.
+
+    With one island the result matches the convex-hull CI from
+    ``grid_lca_inversion``. With multiple islands the convex hull would
+    overstate coverage, so the paper should report each island separately.
+
+    Returns an empty list if no grid point is accepted at level ``type_one``.
+    """
+    df = curve.sort_values("phi").reset_index(drop=True)
+    accept = (df["p_value"].values >= type_one).astype(int)
+    if not accept.any():
+        return []
+    # Pad with zeros at both ends so np.diff catches edge runs.
+    diffs = np.diff(np.concatenate([[0], accept, [0]]))
+    starts = np.where(diffs == 1)[0]
+    ends = np.where(diffs == -1)[0] - 1
+    return [(float(df["phi"].iloc[s]), float(df["phi"].iloc[e]))
+            for s, e in zip(starts, ends)]
+
+
+def summary_curve_stats(curve: pd.DataFrame) -> dict:
+    """Diagnostics for an (phi, wald, p_value) curve. Useful when the CI is
+    empty: max_p tells how close to non-rejection the data come, and
+    phi_at_max_p locates the best-fitting LCA slope under the joint test.
+    """
+    df = curve.sort_values("phi").reset_index(drop=True)
+    i_max = int(df["p_value"].idxmax())
+    i_wald_min = int(df["wald"].idxmin())
+    return {
+        "max_p": float(df["p_value"].iloc[i_max]),
+        "phi_at_max_p": float(df["phi"].iloc[i_max]),
+        "min_wald": float(df["wald"].iloc[i_wald_min]),
+        "phi_at_min_wald": float(df["phi"].iloc[i_wald_min]),
+        "n_grid": int(len(df)),
+    }
