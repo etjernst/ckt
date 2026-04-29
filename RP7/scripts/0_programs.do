@@ -1907,18 +1907,29 @@ program define run_grc
 											from(`initial') 																	///
 											iterate(`iterate')
       
-      * Joint test for mus
-	  local mu_test ""
-	  local s0 : word 1 of $switchers
-	  local mu_test "[mu]switcher_`s0'"
-	  foreach s of numlist $switchers {
-		if `s' != `s0'{
-			local mu_test "`mu_test' = [mu]switcher_`s'"
-		}
+      * Joint test for mus.
+      * Wrapped in capture-noisily so small subsamples (e.g. CHN hukou
+      * splits) where the mu equality test is rank-deficient don't
+      * crash run_grc; the joint_chi2/joint_p scalars are simply not
+      * stored when the test fails. Audit-2026-04-30 (run_grc_hukou
+      * merge: hukou cells previously skipped this block entirely).
+	  capture noisily {
+	      local mu_test ""
+	      local s0 : word 1 of $switchers
+	      local mu_test "[mu]switcher_`s0'"
+	      foreach s of numlist $switchers {
+		      if `s' != `s0'{
+			      local mu_test "`mu_test' = [mu]switcher_`s'"
+		      }
+	      }
+	      test `mu_test'
+	      estadd scalar joint_chi2 = r(chi2), replace   : `estname'
+	      estadd scalar joint_p    = r(p),    replace   : `estname'
 	  }
-	  test `mu_test'
-	  estadd scalar joint_chi2 = r(chi2), replace   : `estname' 
-	  estadd scalar joint_p    = r(p),    replace   : `estname' 
+	  if _rc != 0 {
+	      di as text "run_grc: joint mu test failed for `estname' (rc=" _rc ")"
+	      di as text "         joint_chi2 / joint_p NOT stored on main ster"
+	  }
 	  
 	  * Add J-stat estimates from Hansen's J-test  
       estat overid 
@@ -1952,27 +1963,39 @@ program define run_grc
       * Save results
       estimates save "$dir/output/`estname'_a", replace
       
-      * Compute all switcher Deltas
-	  estimates restore `estname'   // make sure the results are in memory
-	  local nlcom_expr ""
-	  foreach s of numlist $switchers {
-	  	local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
-      }
-	  nlcom `nlcom_expr', post
-	  * Joint test for Deltas
-	  local d_test ""
-	  local s0 : word 1 of $switchers
-	  local d_test "Delta_`s0'"
-	  foreach s of numlist $switchers {
-		if `s' != `s0'{
-			local d_test "`d_test' = Delta_`s'"
-		}
+      * Compute all switcher Deltas.
+      * Wrapped in capture-noisily so small subsamples (hukou splits,
+      * sparse switcher trajectories) that can't compute every per-
+      * trajectory Delta don't crash run_grc; the main / _n / _a / _g
+      * sters are saved regardless. If this block fails the _d.ster is
+      * simply not written. Audit-2026-04-30 (run_grc_hukou merge:
+      * hukou cells previously skipped this entire block).
+	  capture noisily {
+	      estimates restore `estname'
+	      local nlcom_expr ""
+	      foreach s of numlist $switchers {
+	  	      local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+          }
+	      nlcom `nlcom_expr', post
+	      * Joint test for Deltas
+	      local d_test ""
+	      local s0 : word 1 of $switchers
+	      local d_test "Delta_`s0'"
+	      foreach s of numlist $switchers {
+		      if `s' != `s0'{
+			      local d_test "`d_test' = Delta_`s'"
+		      }
+	      }
+	      test `d_test'
+	      estadd scalar joint_chi2 = r(chi2), replace
+	      estadd scalar joint_p    = r(p),    replace
+          * Save results
+          estimates save "$dir/output/`estname'_d", replace
 	  }
-	  test `d_test'
-	  estadd scalar joint_chi2 = r(chi2), replace
-	  estadd scalar joint_p    = r(p),    replace
-      * Save results
-      estimates save "$dir/output/`estname'_d", replace
+	  if _rc != 0 {
+	      di as text "run_grc: per-trajectory Delta_d block failed for `estname' (rc=" _rc ")"
+	      di as text "         _d.ster NOT saved (typical cause: small subsample with empty switchers)"
+	  }
 	  
 	  * Compute Delta_avg (average Delta for all switchers)
 	  local first_loop = 1
@@ -2305,123 +2328,21 @@ program define run_grc_onestep
 end
 
 * **********************************************************************
-* GMM regression
+* run_grc_hukou (DELETED 2026-04-30)
 * **********************************************************************
-capture program drop run_grc_hukou
-program define run_grc_hukou
-
-    * Syntax to accept user-specified covariates and estname.
-    * Audit-2026-04-28 M5: phistart option added (mirrors run_grc /
-    * run_grc_onestep) so callers can override the default phi initial
-    * value without editing this program.
-    syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
-
-    * Construct the covariates string for the regression and instruments
-		if "`balance'" == "unb" {
-			local covarlist "`covars' unbalanced unbalanced_choice"
-		}
-		else {
-			capture drop covar_cons
-			gen covar_cons = 0
-			local covarlist "`covars' covar_cons"
-		}
-
-		* Initialize a local to hold switcher variables
-		local switcher_traj
-
-		* Loop through switchers and add them to local
-		foreach s of numlist `switchers' {
-			local switcher_traj "`switcher_traj' switcher_`s'"
-		}
-
-		* Build switcherpars internally --- guarantees same base everywhere
-		define_switcherpars, switchers(`switchers') base(`base')
-		local switcherpars `r(switcherpars)'
-		di as text "run_grc: base trajectory = `base'"
-		di as text "run_grc: phi initial value = `phistart'"
-
-    * Audit-2026-04-28 C1: timer-slot init was missing from run_grc_hukou.
-    * The 'timer off `_tslot'' line below would have crashed with empty
-    * `_tslot'. Mirror run_grc's pattern (lines ~1798-1801).
-    *
-    * Wrap at 100 because Stata's timer only accepts slots 1-100; runtime
-    * is saved to the ster before the slot is reused, so wrapping is safe.
-    if "${grc_timer_slot}" == "" global grc_timer_slot 0
-    global grc_timer_slot = ${grc_timer_slot} + 1
-    if ${grc_timer_slot} > 100 global grc_timer_slot 1
-    local _tslot = ${grc_timer_slot}
-    timer clear `_tslot'
-    timer on `_tslot'
-
-    * Run the GMM estimation
-    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
-									- {Delta_base}*choice  																///
-									- {phi=`phistart'}*(`switcherpars')				 										///
-									- ({kappa}+{phi}*({kappa} 										        ///
-									- {mu: switcher_`base'}))*(always#1.choice)           ///
-									- {xb: `covarlist'})  																///
-									, instruments(  																			///
-									`covarlist'  																					///
-									never `switcher_traj' choice 													///
-									always_choice switcher_*_choice, nocons								///
-									) 																										///
-                      vce(cluster pid) 																	///
-											from(`initial') 																	///
-											iterate(`iterate')
-      
-      * Add J-stat estimates from Hansen's J-test  
-      estat overid 
-      estadd sca Jstat    = r(J)      , replace   : `estname' 
-      estadd sca Jdf      = r(J_df)   , replace   : `estname'  
-      estadd sca Jpval    = r(J_p)    , replace   : `estname'  
-	  local converged_str = cond(e(converged)==1, "Y", "N")
-	  estadd local converged_str "`converged_str'", replace : `estname'
-
-	  * M9: stop timer; record GMM-fit wall-clock seconds in e(runtime).
-	  timer off `_tslot'
-	  qui timer list `_tslot'
-	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
-	  estadd scalar timer_slot = `_tslot', replace : `estname'
-	  di as text "run_grc: `estname' fit in " %7.2f r(t`_tslot') " sec  (timer slot `_tslot')"
-
-	  * Save results
-      estimates save "$dir/output/`estname'", replace
-      
-      * Compute Delta_never
-      nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
-            (_b[mu:never] - _b[mu:switcher_`base']))), post
-      * Save results
-      estimates save "$dir/output/`estname'_n", replace
-           
-      * Compute Delta_always (average Delta for always-urban)
-      estimates restore `estname'   // make sure the results are in memory
-      nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
-            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
-      * Save results
-      estimates save "$dir/output/`estname'_a", replace
-	  
-	  * Compute Delta_avg (average Delta for all switchers)
-	  local first_loop = 1
-	  local Delta_avg_nlcom ""
-	  foreach s of numlist $switchers {
-	  	estimates restore `estname'   // make sure the results are in memory
-        sum 1.switcher_`s' if e(sample)
-        local num_`s' = r(mean)   // proportion of sample in this trajectory
-		if `first_loop' == 0 {
-			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-		}
-		else if `first_loop' == 1 {
-			local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-			local first_loop = 0
-		}
-      }
-	  estimates restore `estname'   // make sure the results are in memory
-	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
-      * Save results
-      estimates save "$dir/output/`estname'_g", replace
-
-end
+* run_grc_hukou was a near-duplicate of run_grc, missing only:
+*   1. The skip_if_exists guard.
+*   2. The joint test for mu coefficients.
+*   3. The per-trajectory Delta_d block (and the _d.ster).
+* The gmm equation, post-estimation Delta_never/Delta_always/Delta_avg
+* logic, and timer scheme were byte-identical to run_grc.
+*
+* Folded into run_grc on 2026-04-30 by wrapping the per-trajectory
+* Delta_d block and the joint mu test in capture-noisily so small
+* hukou subsamples (the original reason for the separate program)
+* dont crash run_grc; the _d.ster simply isnt written when the block
+* fails. 8_GrRC_hukou.do callers now invoke run_grc directly.
+* **********************************************************************
 
 * **********************************************************************
 * run_grc_robust: Verdier (2020) Section F robust extrapolation

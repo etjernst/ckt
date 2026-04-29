@@ -91,34 +91,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -193,34 +193,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2    
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -291,34 +291,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -393,34 +393,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -495,34 +495,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2    
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -593,34 +593,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -695,34 +695,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -797,34 +797,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2    
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -895,34 +895,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -997,34 +997,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -1099,34 +1099,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2    
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///
@@ -1197,34 +1197,34 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
-run_grc_hukou, estname(grc_`country_short'_c0)                             ///
+run_grc, estname(grc_`country_short'_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     iterate(`iterations') 
 
 * Add time FE
-run_grc_hukou, estname(grc_`country_short'_ct)                         ///
+run_grc, estname(grc_`country_short'_ct)                         ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE')                                             ///
     iterate(`iterations') 
 
 * Add female
-run_grc_hukou, estname(grc_`country_short'_c1)                             ///
+run_grc, estname(grc_`country_short'_c1)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm)                                   ///
     iterate(`iterations') 
 
 * Add age2
-run_grc_hukou, estname(grc_`country_short'_c2)                             ///
+run_grc, estname(grc_`country_short'_c2)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm2)                                  ///
     iterate(`iterations') 
 
 * Add education & education2
-run_grc_hukou, estname(grc_`country_short'_ca)                           ///
+run_grc, estname(grc_`country_short'_ca)                           ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
     covars(`periodFE' $covs_gmm_all)                               ///

@@ -2,7 +2,7 @@
 * Interactive replay of a single GRC cell for troubleshooting.
 *
 * Use this to investigate any cell that crashed in batch mode. Runs ONE
-* run_grc_with_extra_regressor call (or a manual run_grc / run_grc_hukou
+* run_grc_with_extra_regressor call (or a manual run_grc
 * call) so the error fires in your face with full context, instead of
 * being buried in a 1.8 MB smoke log.
 *
