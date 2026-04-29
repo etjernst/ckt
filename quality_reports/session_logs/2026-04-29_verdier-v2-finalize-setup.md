@@ -291,6 +291,22 @@ Options: delete (clean), keep as a reusable smoke harness for future edits to `r
 Squash-merge or fast-forward to `main`, depending on whether the commit history is worth preserving.
 Spec, audit, and session log all live under `quality_reports/` and will come along.
 
+## Hand-off pointer (end of 2026-04-29 session)
+
+> **If you resume on a fresh session:**
+> The full driver run [`b9ppl7jfn`](file:///C:/Users/maand/AppData/Local/Temp/claude/C--git-ckt--claude-worktrees-verdier-wrap-up/4a54f2dd-3c0a-4134-b226-3a14d74fcb68/tasks/b9ppl7jfn.output) was launched in the background near the end of the session (re-run with the defensive prelude after the standalone-mode bootstrap fix).
+> The session ended before the notification fired.
+> First action on resume: check whether `17_verdier_robust.log` exists at [`RP7/scripts/logs/`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/logs/), whether [`output/tables/verdier_robust_*_consumption_urban_unb.tex`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/output/tables/) has the 6 expected paper tables, and whether [`quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md) was generated.
+> If yes, work the [Post-run cleanup checklist](#post-run-cleanup-checklist) above starting at step 1.
+> If the run failed, check the log for the error path; the `capture noisily` wrapper means `exit, STATA clear` always ran so the popup did not fire, but the script-level exit code is 0 either way (verify by log).
+>
+> Three commits made this session: `a77963b` (programs + driver + spec/audit), `76489d6` (smoke fixes: year, name length, popup safety), `b5aad07` (defensive prelude + audit/session log updates).
+> The committed version of [`17_verdier_robust.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) is the clean fresh-run version (IDN+TZA+CHN); the temporary IDN+CHN-only skip used for the just-launched run was reverted before commit.
+>
+> Overleaf-Dropbox prose update at [`sections/sec_robustness.tex`](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/sections/sec_robustness.tex) is done, pending the interpretation paragraph that fills in once the comparison numbers land.
+>
+> User-global memory and rule files updated outside the worktree git: [feedback_stata_gotchas.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_stata_gotchas.md), [feedback_no_writes_to_data_junctions.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_writes_to_data_junctions.md), and [rules/stata-conventions.md](file:///C:/Users/maand/.claude/rules/stata-conventions.md).
+
 ## Files referenced
 
 - [.claude/worktrees/verdier-wrap-up/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/)---new worktree
