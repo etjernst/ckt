@@ -21,7 +21,7 @@
 * hardcoded path that doesn't exist on the current machine).
 	if ("$overleaf" == "") {
 		di as error "Note: \$overleaf is not set. copyOverleaf calls will be skipped."
-		di as error "Add 'global overleaf \"<path>\"' to your user block in 0_master.do to enable."
+		di as error "Add a {it:global overleaf <path>} line to your user block in 0_master.do to enable."
 	}
 	else {
 		di as text "Output will be copied to Overleaf repo $overleaf"
