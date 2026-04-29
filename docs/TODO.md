@@ -82,6 +82,20 @@ Verify the renamed `.ster` files (commit `ff9a665`) don't collide and produce th
 Send.
 **Estimated cost:** ~10 min once decided.
 
+### Rename `kappa` to `mu_dT` everywhere in the Stata GMM code
+**Added:** 2026-04-29.
+**Status:** **Low priority. Gated on the pipeline refactor branch (`worktree-grc-pipeline-refactor`) landing first**---do not attempt mid-refactor.
+**Context:** Stata's `_b[kappa]` in `0_programs.do` (and matching parameter names in `e(b)` outputs and the `nlcom` formulas for `Delta_always`) actually represents $\mu_{d_T}$, the unobserved rural counterfactual mean for always-movers.
+The paper's eq.\ at `paper/main.tex:376` reserves $\kappa_{d_T}$ for the observed urban mean $\mu_{d_T} + \Delta_{d_T}$, which is a different object.
+The math in the code is correct (the `Delta_always` `nlcom` formula correctly computes the return $\Delta_{d_T} = \Delta_{\text{base}} + \phi(\mu_{d_T} - \mu_{d_0})$); the variable name is what's misleading.
+**Action:** rename the GMM parameter from `kappa` to `mu_dT` (or `mu_always`) in `run_grc`, `run_grc_onestep`, `run_grc_robust_vv`, `run_grc_robust_vv_onestep`, `initial_values`, and any `nlcom` / table builder that references `_b[kappa]`.
+Update `e(b)` consumers (`grc_tex_table*`, `heterogeneity_plots`, etc.) and the Python port's [`grc_gmm.py`](file:///C:/git/ckt/explorations/python-grc/grc_gmm.py) to match.
+Decide whether `kappa_dT` (paper notation, observed urban mean) needs an explicit symbol anywhere in the code; probably not, since the GMM never reports it directly.
+**Why low priority:** the misnaming has not caused any computational error---the LCA arithmetic that produces `Delta_always` is right.
+The cost is a wide refactor of variable names across the .do files and several scripts.
+Do this only after the pipeline refactor lands, so we don't compound merge churn.
+**Estimated cost:** half a day, mostly mechanical, plus a smoke test to verify estimates are unchanged.
+
 ### Archive `grc_weak_id_inference.ado`
 **Added:** 2026-04-29.
 **Context:** Comparison on 2026-04-29 confirmed `grc_weak_id_inference.ado` (250 lines) is the legacy CI .ado from a prior paper.
