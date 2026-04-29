@@ -1629,12 +1629,7 @@ program define initial_values, rclass
     
     * Add kappa-coeff for initial values
 		local initial "`initial' kappa: kappa"
-    
-    * Accumulate mu-coeffs for initial values
-    foreach s of numlist $switchers {
-			local initial "`initial' mu:switcher_`s' mu_`s'"
-		}	
-    
+
 		return local initial "`initial'"
 		
 		* If print option is specified, display the scalars in formatted output
@@ -1756,9 +1751,6 @@ program define initial_values_robust, rclass
         local initial "`initial' mu:switcher_`s' mu_`s'"
     }
     local initial "`initial' kappa: kappa"
-    foreach s of numlist $switchers {
-        local initial "`initial' mu:switcher_`s' mu_`s'"
-    }
 
     * Append beta_dev initial values, one per non-baseline cluster.
     * Guard against unidentified coefficients (e.g., collinear vchoice_v
