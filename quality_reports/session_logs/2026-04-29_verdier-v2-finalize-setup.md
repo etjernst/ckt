@@ -307,6 +307,54 @@ Spec, audit, and session log all live under `quality_reports/` and will come alo
 >
 > User-global memory and rule files updated outside the worktree git: [feedback_stata_gotchas.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_stata_gotchas.md), [feedback_no_writes_to_data_junctions.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_writes_to_data_junctions.md), and [rules/stata-conventions.md](file:///C:/Users/maand/.claude/rules/stata-conventions.md).
 
+## Late-session addendum (after the four worktree commits + push)
+
+### Branch pushed
+
+`worktree-verdier-wrap-up` pushed to `origin/worktree-verdier-wrap-up` at `1fae607`---first push, set upstream tracking.
+
+### Slide deck work on `main` (separate from worktree scope)
+
+The user noticed bibtex was complaining about an empty `.aux` when compiling [paper/slides/verdier-modification.tex](file:///C:/git/ckt/paper/slides/verdier-modification.tex) in VS Code.
+The deck has six citations in prose ("Suri (2011)", "Bryan & Morten (2019)", etc.) but no bibliography setup.
+
+First attempt: VS Code magic comments (`% !TEX program = xelatex`, `% !BIB program = none`) at the top of the file.
+The user reported this fails reliably in their VS Code + MiKTeX setup with `Recipe terminated with fatal error: spawn none ENOENT`.
+Saved [feedback_no_vscode_magic_comments.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_no_vscode_magic_comments.md) so we don't try this again, indexed in MEMORY.md.
+
+Real fix: added `\usepackage[authoryear,round]{natbib}`, replaced six prose mentions with `\citet{}` against entries in [paper/CKT.bib](file:///C:/git/ckt/paper/CKT.bib), and added an `[allowframebreaks]{References}` frame at the end.
+
+Two flags surfaced for the author:
+- `tjernstromCommentSuri2011` is dated `year = {2026}` in the bib (working paper) but the deck originally said "Tjernström (2023)". Natbib renders the bib's year, so the citation now reads "(2026)". Reconcile when convenient.
+- The deck said "Chamberlain (1992) projection" but only `chamberlain1984panel` exists in CKT.bib. I dropped the year from the prose and left "Chamberlain projection" as plain text pending the right reference.
+
+The user then trimmed the deck (removed the diagnostic-results and open-questions frames, reframed the trade-off slide as Pros/Cons, sundry tightening).
+After that I tightened the "thinner identification" bullet (the original wording said "only switcher variation contributes"---but that's true of CKT simple too; the robust-specific cost is losing the *between-province* component) and cited Verdier on slide 10 (where his procedure is described but he wasn't cited in the body).
+
+Slide deck commits on `main` (in order):
+- `614229d`---magic comments (later reverted)
+- `3ab625f`---natbib + citations + references frame
+- `606ba59`---user's trim, properly attributed
+- `91d7998`---bullet tightening + Verdier citet on slide 10
+
+The first attempt at attribution bundled the user's trim into my commit; we then split via `git reset --soft HEAD~1` and reverse-applied my edits to get clean separation.
+
+### Slide deck duplicates audit (informational)
+
+The user asked about duplicate slide files.
+Same git-tracked file (`paper/slides/verdier-modification.tex`) at six worktree paths.
+Latest blob `4ab410f5` lives on `main` and `worktree-verdier-wrap-up`.
+Stale blob `72048f3a` on `worktree-grc-pipeline-refactor` and `worktree-unbalanced-panel-proof-review` (2 days behind).
+File untracked on `worktree-lca-inversion` and `worktree-simulations`.
+
+### In-flight run state at end of second session
+
+Stata run [`b9ppl7jfn`](file:///C:/Users/maand/AppData/Local/Temp/claude/C--git-ckt--claude-worktrees-verdier-wrap-up/4a54f2dd-3c0a-4134-b226-3a14d74fcb68/tasks/b9ppl7jfn.output) is still running, currently mid-CHN GMM (per log tail).
+50 ster files exist (TZA from the smoke); IDN and CHN ster files have not yet appeared.
+Comparison markdown not yet generated.
+Two Stata processes in tasklist; the user killed the original zombie earlier but a new one (PID 41912) reappeared---unclear cause.
+Next session: check whether the run completed, then work the post-run cleanup checklist.
+
 ## Files referenced
 
 - [.claude/worktrees/verdier-wrap-up/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/)---new worktree
