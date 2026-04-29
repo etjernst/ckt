@@ -68,7 +68,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{Our current estimator is Verdier's ``simple'' extrapolation}
+\begin{frame}{Our current estimator is Verdier's simple extrapolation}
 
   We currently follow \citet{suriSelectionComparativeAdvantage2011} and \citet{tjernstromCommentSuri2011}:
   \begin{itemize}
@@ -78,7 +78,7 @@
   \end{itemize}
 
   \vspace{0.8em}
-  \citet{verdierAverageTreatmentEffects2020a} calls our approach the \emph{simple extrapolation} \& proposes a \emph{robust} alternative
+  \citet{verdierAverageTreatmentEffects2020a} calls CKT the ``simple extrapolation'' \& proposes a robust alternative
 
 \end{frame}
 
@@ -108,9 +108,9 @@
   \vspace{0.6em}
   \begin{itemize}
     \item \citet{bryanAggregateProductivityEffects2019}: structural model of Indonesian internal migration estimates large bilateral migration costs
-    \item \citet{lagakosMigrationCostsObservational2020}: migration cost estimates differ substantially across developing countries
+    \item \citet{lagakosMigrationCostsObservational2020}: migration cost estimates differ across developing countries
     \item \citet{pulidoBarriersMobilitySorting2021}: cross-sector barriers in Indonesia explain a large share of within-country income gaps
-    \item \textbf{China:} hukou is an institutional source of region-specific migration barriers
+    \item China: hukou is an institutional source of region-specific migration barriers
   \end{itemize}
 
   \vspace{0.6em}
@@ -139,31 +139,31 @@
 
   \vspace{0.6em}
   \begin{alertblock}{Why this is weaker}
-    A2 required \emph{unconditional} independence \\
-    A2$'$ requires only \emph{within-province} independence
+    A2 (our assumption) requires \emph{unconditional} independence \\
+    A2$'$ (VV's assumption) requires only \emph{within-province} independence
   \end{alertblock}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{The LCA gets a province-specific intercept}
+\begin{frame}{In practice: the LCA gets a province-specific intercept}
 
-  Slope stays common; intercept varies
+  Slope stays common but the intercept varies
 
   \vspace{0.4em}
-  Simple:
+  \textbf{Simple:}
   \[
     \Deltai \;=\; \beta \;+\; \phicoef\, \thetai
   \]
 
-  Robust:
+  \textbf{Robust:}
   \[
     \Deltai \;=\; \beta(\vii) \;+\; \phicoef\, \thetai
   \]
 
   \vspace{0.6em}
   \begin{itemize}
-    \item slope $\phicoef$ remains common---this is still the LCA restriction
+    \item slope $\phicoef$ remains common, this is still the LCA restriction
     \item intercept $\beta(\vii)$ absorbs province-level $m_l(\vii)$ heterogeneity
     \item $\phicoef$ identifies off within-province switcher variation
     \item extrapolation to non-migrants happens province-by-province, then averaged
@@ -261,8 +261,8 @@
 
   \vspace{0.5em}
   \begin{itemize}
-    \item Identification: SUR over-identifies the structural parameters; $\phicoef$ pinned by the across-equation cross-restrictions
-    \item Implemented in our \texttt{randcoef.ado}, which exactly replicates Suri's published results
+    \item Identification: SUR over-identifies the structural parameters; $\phicoef$ gets pinned by the across-equation cross-restrictions
+    \item Implemented in our \texttt{randcoef.ado}, which replicates Suri's estimation approach
   \end{itemize}
 
 \end{frame}
@@ -334,7 +334,7 @@
     \;=\; \alpha_0 \;+\; \alpha_1 \,E[b_i \mid \underline{d}_i = s]
   \]
 
-  Under trajectory pooling (A3), worker types are indistinguishable across clusters within trajectory:
+  Under trajectory pooling (A3), can't separate worker types across clusters within trajectory:
   \[
     E[a_i \mid \underline{d}_i = s] = \mud, \qquad E[b_i \mid \underline{d}_i = s] = \Deltad
   \]
@@ -345,7 +345,7 @@
   which is exactly CKT's trajectory-level LCA $\Deltad = \beta + \phicoef\,(\mud - \mu_{\underline{d}_0})$ with $\alpha_1 = \phicoef$
 
   \vspace{0.5em}
-  Same population $\phicoef$. Different aggregation level
+  Same population $\phicoef$, just a different aggregation level
 
 \end{frame}
 
@@ -365,39 +365,16 @@
   \begin{itemize}
     \item Same population parameter, different sample aggregations
     \item Asymptotic variances differ; both achieve $\sqrt{V}$-rate under cluster asymptotics
-    \item When A3 fails, VV stays consistent; CKT picks up an alpha-pooling bias proportional to $\mathrm{Cov}_s(\bar\beta(s), \mud - \mu_{\underline{d}_0})$
+    \item When A3 fails, VV is consistent; CKT could pick up a bias proportional to $\mathrm{Cov}_s(\bar\beta(s), \mud - \mu_{\underline{d}_0})$
   \end{itemize}
 
-  \vspace{0.3em}
-  Full proof: \texttt{docs/reviews/2026-04-25\_robust-vv-equivalence-proof.md}
+  % \vspace{0.3em}
+  % Full proof: \texttt{docs/reviews/2026-04-25\_robust-vv-equivalence-proof.md}
 
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{Our first robust implementation hit a finite-sample wall}
-
-  \texttt{run\_grc\_robust v1}: add $|V|-1$ cluster$\times$choice interactions as \emph{parameters}
-  \[
-    \Delta_{\underline{d}_0} \D_{it} \;\longrightarrow\; \sum_v \beta(v)\,\mathbbm{1}\{\vii = v\}\, \D_{it}
-  \]
-  Asymptotically equivalent to VV's instrument-demeaning approach
-
-  \vspace{0.6em}
-  \textbf{Empirical reality}: $G \in \{22, 26, 29\}$ clusters, $\sim 47$ moments
-  \begin{itemize}
-    \item cluster-robust weighting matrix is rank-deficient
-    \item GMM objective is nearly flat in $\phicoef$ along a cluster-FE ridge
-    \item TZA: two local minima---$\phicoef = -1.00$ vs $\phicoef = +1.25$ depending on initial value
-    \item CHN: hung $>70$ minutes on the first fit
-  \end{itemize}
-
-  \vspace{0.4em}
-  v1 retired
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{Our v2 implementation moves cluster structure to the instruments}
+\begin{frame}{Our implementation moves cluster structure to the instruments}
 
   \texttt{run\_grc\_robust\_vv}: keep CKT's parameters, swap the instruments
   \begin{itemize}
@@ -408,140 +385,20 @@
   \vspace{0.4em}
   Same parameter set as the simple GRC ($\mud$, $\Delta_{\underline{d}_0}$, $\kappa$, $\gamma$); no $\beta(v)$ parameters
 
-  \vspace{0.6em}
-  \begin{alertblock}{Why this works where v1 failed}
-    No extra cluster-FE parameters $\Rightarrow$ no rank-deficient weighting matrix \\
-    Cluster structure enters only through which moments contribute to identification
-  \end{alertblock}
-
-  \vspace{0.4em}
-  Stable across initial values; degenerate-$v$ test matches simple onestep to 6 decimals
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{We still want to check trajectory pooling empirically}
-
-  Trajectory pooling collapses individual workers to one $\mud$ per trajectory
-
-  \vspace{0.4em}
-  GMM moments weight clusters by
-  \[
-    w(s, v) \;=\; n_{s,v} \cdot \mathrm{Var}(\D \mid s, v)
-  \]
-  Different switchers $\Rightarrow$ different cluster weights $\Rightarrow$ if $\beta(v)$ varies, the pooled $\phicoef$ inherits a tilt
-
-  \vspace{0.6em}
-  Mean total-variation distance between switchers' weight profiles:
-
-  \begin{center}
-    \begin{tabular}{lrr}
-      \toprule
-      Country & mean TV & Verdier shift from simple \\
-      \midrule
-      IDN & $0.258$ & $37\%$ \\
-      CHN & $0.038$ & $24\%$ \\
-      TZA & $0.014$ & $4\%$ \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
-
-  \vspace{0.4em}
-  Suggestive: rankings match. IDN may have residual pooling bias
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{The diagnostic: rebuild VV's worker-level estimator on CKT data}
-
-  Port [firststage\_projection.do, robust.do] verbatim:
-  \begin{enumerate}
-    \item Chamberlain projection in CKT: absorb $(\text{pid}, \D)$ fixed effects in OLS of $y$ on covariates
-    \item Extract worker-level $a_i$ and $a_i + b_i$ from the cell means
-    \item 2SLS at worker level: $a_i$ on $b_i$, instrumented by village-demeaned period-treatment indicators
-  \end{enumerate}
-
-  \vspace{0.5em}
-  Compare $\hat\phi^{\text{VV}}$ (worker-level) to $\hat\phi^{\text{robust\_vv}}$ (trajectory-pooled)
-
-  \vspace{0.6em}
-  \begin{itemize}
-    \item \textbf{Agreement} $\Rightarrow$ trajectory pooling adds no bias; \texttt{run\_grc\_robust\_vv} stands as primary
-    \item \textbf{Divergence} $\Rightarrow$ trajectory pooling matters; report Verdier with caveat \& VV as sensitivity
-  \end{itemize}
-
-  \vspace{0.4em}
-  Diagnostic only---we do not propose VV's worker-level approach as the paper's main estimator
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{Diagnostic results: TZA agrees, IDN diverges, CHN uninformative}
-
-  \begin{center}
-    \footnotesize
-    \begin{tabular}{lrrr}
-      \toprule
-      Country & $\hat\phi^{\text{simple}}$ & $\hat\phi^{\text{robust\_vv}}$ & $\hat\phi^{\text{VV-worker}}$ \\
-      \midrule
-      IDN & $-0.526$ ($0.10$) & $-0.334$ ($0.15$) & $\mathbf{-1.691}$ ($0.57$) \\
-      CHN & $-0.205$ ($0.13$) & $-0.155$ ($0.23$) & $\mathbf{-0.598}$ ($0.90$) \\
-      TZA & $-0.719$ ($0.12$) & $-0.690$ ($0.09$) & $\mathbf{-0.634}$ ($0.36$) \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
-
-  \vspace{0.4em}
-  \begin{itemize}
-    \item \textbf{TZA}: full agreement, as predicted by mean TV
-    \item \textbf{CHN}: VV's SE ($0.90$) so wide that CIs broadly overlap---uninformative
-    \item \textbf{IDN}: VV says $\phicoef \approx -1.7$, far more negative than $-0.33$. CIs barely overlap
-  \end{itemize}
-
-  \vspace{0.4em}
-  Pro-poor sign holds under all three approaches in all three countries
-
-\end{frame}
-
-% ---------------------------------------------------------------
-\begin{frame}{What we learn---and what is still open}
-
-  \textbf{Confirmed}
-  \begin{itemize}
-    \item TZA: trajectory pooling adds no detectable bias
-    \item All approaches agree on the sign and broad magnitude of $\phicoef < 0$ everywhere
-  \end{itemize}
-
-  \vspace{0.5em}
-  \textbf{Open}
-  \begin{itemize}
-    \item IDN VV-worker SE is $4\times$ Verdier's. Genuine weak ID? Or trajectory-pooling bias?
-    \item Multi-switch trajectories may add noise to the worker-level Chamberlain projection
-    \item First-stage $F$ for VV-worker not yet checked
-  \end{itemize}
-
-  \vspace{0.5em}
-  \textbf{Provisional decision}
-  \begin{itemize}
-    \item \texttt{run\_grc\_robust\_vv} as primary across all three countries
-    \item Add VV-worker as a sensitivity column in the main table
-    \item Methods note: trajectory pooling is consistent under standard assumptions; the IDN flag is unresolved
-  \end{itemize}
-
 \end{frame}
 
 % ---------------------------------------------------------------
 \begin{frame}{The move buys a weaker assumption at tractable cost}
 
-  We gain:
+  Pros:
   \begin{itemize}
     \item A2$'$ matches what the migration literature documents
-    \item the CHN hukou split becomes a principled special case ($\vii = $ hukou) rather than an ad hoc fix
+    \item the CHN hukou split acts as a principled special case ($\vii = $ hukou) \\ rather than an ad hoc fix (unless VV ``fixes'' without needing to bring in hukou)
     \item stayer ATE estimates defensible against Verdier's concern in Suri's data
   \end{itemize}
 
   \vspace{0.4em}
-  We give up:
+  Cons:
   \begin{itemize}
     \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population
     \item thinner identification of $\phicoef$: only within-province switcher variation contributes
@@ -551,7 +408,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{An observed shifter $w_i$ provides a separate falsification test}
+\begin{frame}{An observed shifter $w_i$ provides a separate falsification test (pending)}
 
   Regress estimated $\thetai^{*}$ on $\Deltai$ and an observed shifter $w_i$:
   \[
