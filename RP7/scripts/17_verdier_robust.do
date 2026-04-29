@@ -31,6 +31,10 @@ if "$dir" == "" {
     global copyOverleaf 0
 }
 
+* Resume-on-interrupt: skip cells whose final .ster (_avg) already exists.
+* Set to 0 to force every cell to re-estimate.
+global skip_if_exists 1
+
 * Set log file
 cd "$logs"
 capture log close
@@ -68,7 +72,7 @@ global keepvars_base $keepvars_base always always_choice never switcher_*
 * **********************************************************************
 * Country loop: estimate onestep + twostep × 5 covariate specs each
 * **********************************************************************
-local iterations 500
+local iterations 100
 
 foreach country in IDN TZA CHN {
 

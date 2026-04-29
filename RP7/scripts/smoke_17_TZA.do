@@ -63,7 +63,7 @@ initial_values lndepvar,        ///
 local base `r(base)'
 local initial "`r(initial)'"
 
-local iterations 500
+local iterations 100
 
 foreach step in onestep twostep {
 
