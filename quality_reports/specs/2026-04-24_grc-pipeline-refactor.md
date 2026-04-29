@@ -549,11 +549,29 @@ Proposed phase order, each with its own PR-sized commit set:
 1. **Phase 0**: M8 (smoke-test ster-rename on IDN) + M10 (resume-on-interrupt guard; one three-line insert in `run_grc`) + M7 (regression-test scaffolding) + M6 Phase 0 (run master pipeline once, freeze reference outputs under `tests/reference/`) + M9 (add `e(runtime)` to `run_grc`; no numeric impact, slot it in here before the reference is frozen so runtime columns are populated from the start). The master run is the ~40 h step --- everything else is fast; M10 makes the master run restartable. Unlocks everything.
    **Status as of 2026-04-28: Phase 0 is DONE.** Smoke #9 completed 2026-04-27 ~17:56 (~20.5 h, not 40), produced all 9 5_GrRC.do tables bit-identical to RP6 2026-04-22 reference; M9 timer captures per-fit runtime; M10 guard in place; tests/reference/ frozen with the 9 tables; tests/regression_test.py passes.
 2. **Phase 1**: M1 + M2 (extend `run_grc` with `exp_variant` and `extra_regressor`; expand `5_GrRC.do`'s loop; delete 10--15). Diff against frozen reference.
+   **Status as of 2026-04-29: PARTIAL.** M11 (unique ster filenames) landed via the disambiguated naming scheme; sters now follow `grc_<country>_<spec3>_<covs2>[_<sfx1>]` everywhere.
+   Phase 1b.6 spec ([2026-04-28-phase1b6-extras-program.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-28-phase1b6-extras-program.md)) implemented `run_grc_with_extra_regressor` in `0_programs.do` and `GRC_extras.do` with 44 explicit per-cell calls; `_smoke_full.do` calls `GRC_extras.do` directly.
+   What remains for Phase 1 close-out: commit 6e from the Phase 1b.6 spec---delete `10/11/12/13/14/15_*.do` and collapse `0_master.do` includes from 6 lines to 1.
+   This is gated on Tier 3 producing a complete ster set under M11 names; Tier 3 is currently running (background task `box05upsf`, ~150+ sters at last check, expected to finish unattended).
 3. **Phase 2**: M3 (unify `grc_tex_table_trend*`) + S3 step 1 (map program callers, no deletions yet).
+   **Status as of 2026-04-29: NOT STARTED.**
 4. ~~Phase 3 (M5 enumerated-block collapse): deferred per user 2026-04-25; not in this refactor.~~
 5. **Phase 4**: M4 (values() switch at `0_path_config.do`). Diff nominal against reference; confirm real-values path reproduces existing real-folder results.
+   **Status as of 2026-04-29: NOT STARTED.** Note: `0_path_config.do` is now also the canonical home for project-wide globals (`grc_max_iter`, `grc_min_switchers_per_wave`) per the 2026-04-29 fix; `values()` would slot in alongside.
 6. **Phase 5**: S1 (standalone `.ster` scraper) + S1b (coefplot overview figure) + S2 (file rename pass).
+   **Status as of 2026-04-29: NOT STARTED.**
 7. **Phase 6**: decide on any deletions informed by Phase 2's program-caller map.
+   **Status as of 2026-04-29: NOT STARTED.**
+
+### S1c. Add $\Delta_{\text{always}}$ row to main GRC LaTeX tables (Section 3 SHOULD).
+**Status as of 2026-04-29: NOT STARTED.** One-line edit in `grc_tex_table_trend`; gated by the regression test.
+
+### Audit-driven side workstream (separate from this spec).
+The 2026-04-28 best-practices audit ([docs/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/reviews/2026-04-28_pipeline-best-practices.md)) and its action plan ([docs/plans/2026-04-29-audit-action-plan.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-04-29-audit-action-plan.md)) drove the cleanup work in the 2026-04-29 session.
+Status: nearly closed.
+Pending: `m8` (graph-save in cwd), `m13` (`data_path_override`---likely TRIVIA / SKIP), `m14` (schemepack install bug), `m16` (hardcoded panel headers).
+Plus the data-creation findings (`DC-M1` through `DC-m7`) deferred by the user to a later session.
+M4 mu-loop cleanup landed at commit `d2b0c73` but stays at "RESOLVED" not "CLOSED" until post-Tier-3 ster-comparison verification.
 
 ## 8. Open questions for user approval
 

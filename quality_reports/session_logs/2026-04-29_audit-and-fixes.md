@@ -467,6 +467,70 @@ No additional verification needed at table-build time; the M4 verification gate 
 Future micro-cleanup (not urgent): drop the three dead `local initial "\`r(initial)'"` assignments at L613/689/765 of `make_tables.do`.
 Pure m-tier hygiene; no functional change.
 
+### Bigger picture: Workstream A (the original 2026-04-24 refactor spec)
+
+User flagged at the end of the 2026-04-29 session that the audit-driven cleanups (Workstream B) are NOT the same as the original refactor spec, and we need to make sure the refactor work is not forgotten while the audit closes out.
+Authoritative source: [quality_reports/specs/2026-04-24_grc-pipeline-refactor.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-24_grc-pipeline-refactor.md), now updated with per-phase status notes (commit `5b2cabe` or whichever commit lands these doc updates).
+
+Current Workstream A status:
+
+| Phase | Items | Status |
+|-------|-------|--------|
+| Phase 0 | M6, M7, M8, M9, M10---reference build, regression test, smoke, runtime, resume guard | DONE per 2026-04-28 status note |
+| Phase 1 | M1, M2, M11---collapse experience family, collapse 14/15, unique ster names | PARTIAL: M11 landed; Phase 1b.6 spec implemented (`run_grc_with_extra_regressor` + `GRC_extras.do`); commit 6e (delete 10/11/12/13/14/15 + collapse master includes) NOT YET LANDED, gated on Tier 3 |
+| Phase 2 | M3 (unify `grc_tex_table_trend*`) + S3 step 1 (program-caller map) | NOT STARTED |
+| Phase 4 | M4 (`values(nominal\|real)` switch at `0_path_config.do`) | NOT STARTED |
+| Phase 5 | S1 (overview scraper) + S1b (coefplot figure) + S2 (file rename) | NOT STARTED |
+| Phase 6 | Decisions on remaining deletions | gated on Phase 2 caller map |
+| S1c | Add $\Delta_{\text{always}}$ row to main GRC tables | NOT STARTED |
+
+Workstream B (the 2026-04-28 audit + 2026-04-29 action plan) is nearly closed; remaining items are low-priority `m`-tier (`m8`, `m13`, `m14`, `m16`) plus the deferred data-creation findings (`DC-M1` through `DC-m7`).
+
+### Concrete next steps in Workstream A, ordered
+
+1. **Wait for Tier 3 to finish.**
+Background task `box05upsf` is running; ster count was 132 at 20:28.
+The smoke driver writes `_smoke_full.log`; check with `tail -3 RP7/scripts/_smoke_full.log` and `ls RP7/output/grc_*_*_g.ster | wc -l`.
+
+2. **Run the M4 verification gate** (closes Workstream B's last open MAJOR finding).
+Pick one cell, e.g. IDN cuu c2.
+Re-run with the cleaned `initial_values` (commit `d2b0c73`) under `skip_if_exists 0` so the fit produces a fresh ster.
+Compare bit-for-bit against the existing IDN cuu c2 ster on disk (which was created by the doubled-loop version).
+If identical, mark M4 CLOSED in the audit doc and action plan.
+If different, revert `d2b0c73` and reopen M4.
+
+3. **Run `make_tables.do` against the full Tier 3 ster set.**
+Use `_smoke_tables_only.do` (already wired, sets `$dir` for maand and includes path-config + programs + 0_setup).
+Confirm `tests/regression_test.py` (or `tests/compare_tabular_bodies.py`) passes against the frozen reference.
+This proves Workstream B's cleanups (m6, m2, the two crash bug fixes, the mu-loop cleanup) did not shift any published numbers.
+
+4. **Phase 1 close-out: commit 6e.**
+Delete `10/11/12/13/14/15_*.do` from `RP7/scripts/`.
+Update `0_master.do` to drop the six numbered includes and add one `include "$dir/scripts/GRC_extras.do"` line.
+Update `_smoke_full.do` similarly if not already done (it currently calls `GRC_extras.do` directly per the inspection, so probably no change needed).
+Re-run regression test to confirm bit-identity.
+This closes Phase 1.
+
+5. **Phase 2: unify `grc_tex_table_trend*` family.**
+Currently four near-identical programs (`grc_tex_table_trend`, `grc_tex_table_trend_exp`, `grc_tex_table_trend_birth`, `grc_tex_table_trend_hukou`).
+The ster-rename commit cherry-picked from `lca-inversion` already added a `spec()` option to three of them.
+Collapse into one program with options `spec(string)`, `est_schedule(string)`, `est_prefix(string)` plus hukou-specific controls.
+`grc_tex_table_trend_birth` is byte-identical to `grc_tex_table_trend_exp` per the programs audit---delete it outright and redirect callers.
+Plus S3 step 1: produce a definitive map of which programs in `0_programs.do` are actually called and from where (no deletions yet).
+
+6. **Phase 4: `values(nominal|real)` switch at `0_path_config.do`.**
+Implement `global values "nominal"` as default; `global dirdata` resolves to the appropriate folder.
+Append `_${values}` to `.ster` prefix, CSV output, and LaTeX table filenames so nominal and real results coexist.
+No in-pipeline deflation code added; deflation lives upstream.
+Note: `0_path_config.do` is already the canonical home for project-wide globals after the 2026-04-29 fix, so the values switch slots in cleanly there.
+
+7. **Phase 5: overview layer.**
+S1 (Python `.ster` scraper writing `RP7/output/overview/grc_runs.csv`), S1b (coefplot/specification-curve figure), S2 (rename numbered files for legibility: target file count 13).
+
+8. **S1c.** Add $\Delta_{\text{always}}$ row to the main GRC LaTeX tables. One-line edit in `grc_tex_table_trend`; gated by regression test.
+
+9. **Phase 6.** Decide on any further deletions in `0_programs.do` informed by Phase 2's caller map.
+
 If you resume: read [quality_reports/session_logs/2026-04-29_audit-and-fixes.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-04-29_audit-and-fixes.md) end-to-end (this file).
 Open thread: M4 verification (run one cell on cleaned code, compare ster bit-identically against existing).
 Next concrete action: check whether Tier 3 task `box05upsf` has completed; if yes, run `python tests/compare_tabular_bodies.py` and inspect new sters.
