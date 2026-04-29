@@ -20,6 +20,12 @@ RP7/output/**/*.log
 RP7/output/*.gph
 RP7/output/**/*.gph
 
+# rerun_workdir is a local Stata working directory: track the .do
+# scripts and the small .csv summaries (already covered by general
+# rules), but skip the heavy estimation binaries.
+explorations/python-grc/rerun_workdir/output/
+explorations/python-grc/rerun_workdir/logs/
+
 # Stata artifacts
 *.log
 *.smcl

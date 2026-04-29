@@ -1691,6 +1691,20 @@ program define run_grc
     * Syntax to accept user-specified covariates and estname
     syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
 
+    * Resume-on-interrupt. If ${skip_if_exists} == "1" and the last-written
+    * .ster for this estname (`estname'_avg.ster, saved at the end of run_grc)
+    * exists, skip the whole block. This lets a script that errored or got
+    * interrupted mid-run resume from the next missing cell on the next
+    * launch. To force a fresh run, delete `$output/`estname'*.ster' or unset
+    * ${skip_if_exists}.
+    if "${skip_if_exists}" == "1" {
+        capture confirm file "$output/`estname'_avg.ster"
+        if _rc == 0 {
+            di as text "run_grc: SKIP `estname' (`estname'_avg.ster present)"
+            exit
+        }
+    }
+
     * Construct the covariates string for the regression and instruments
 		if "`balance'" == "unb" {
 			local covarlist "`covars' unbalanced unbalanced_choice"
@@ -1797,7 +1811,14 @@ program define run_grc
 	  local Delta_avg_nlcom ""
 	  foreach s of numlist $switchers {
 	  	estimates restore `estname'   // make sure the results are in memory
-        sum 1.switcher_`s' if e(sample)
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
+        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
+        sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)   // proportion of sample in this trajectory
 		if `first_loop' == 0 {
 			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
@@ -1926,7 +1947,14 @@ program define run_grc_onestep
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        sum 1.switcher_`s' if e(sample)
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
+        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
+        sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
             local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
@@ -2020,7 +2048,14 @@ program define run_grc_hukou
 	  local Delta_avg_nlcom ""
 	  foreach s of numlist $switchers {
 	  	estimates restore `estname'   // make sure the results are in memory
-        sum 1.switcher_`s' if e(sample)
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
+        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
+        sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)   // proportion of sample in this trajectory
 		if `first_loop' == 0 {
 			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
@@ -2320,7 +2355,14 @@ program define run_grc_robust
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        sum 1.switcher_`s' if e(sample)
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
+        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
+        sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
             local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
@@ -2555,7 +2597,14 @@ program define run_grc_robust_vv
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        sum 1.switcher_`s' if e(sample)
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
+        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
+        sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
             local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
