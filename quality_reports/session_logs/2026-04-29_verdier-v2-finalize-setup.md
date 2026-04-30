@@ -355,6 +355,110 @@ Comparison markdown not yet generated.
 Two Stata processes in tasklist; the user killed the original zombie earlier but a new one (PID 41912) reappeared---unclear cause.
 Next session: check whether the run completed, then work the post-run cleanup checklist.
 
+## 2026-04-30 morning continuation
+
+### Resolution of the runaway IDN twostep covs_all GMM
+
+The b9ppl7jfn run that was launched the night before got stuck on a single GMM fit (IDN twostep covs_all, the worst-case spec: 31 trajectory means + period FE + female + age² + education + education² + Delta_base + phi + kappa) for 1h40m+ before the user flagged it.
+Process was killed at PID 10876 via `taskkill //F //PID 10876`.
+At kill time: 9 of 10 IDN .ster cells saved, all 5 of 5 TZA cells saved (from the smoke), 0 CHN cells saved.
+
+User correction: project convention is `iterate(100)`, not 500.
+500 just lets non-converging fits eat hours of CPU before bailing.
+Fixed in [`17_verdier_robust.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) and [`smoke_17_TZA.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/smoke_17_TZA.do).
+Saved as memory at [`feedback_iterate_100_default.md`](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_iterate_100_default.md).
+
+### Skip-if-exists guard ported from `grc-pipeline-refactor`
+
+Per user, the `grc-pipeline-refactor` branch's `run_grc` (lines 1838--1849) has a resume-on-interrupt guard: if `${skip_if_exists} == "1"` and the last-written .ster (`<estname>_g.ster` in that branch) exists, the program exits silently before re-doing the GMM.
+Ported the pattern into [`run_grc_robust_vv`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do) at the top of the program.
+Adapted the suffix from `_g` to `_avg` to match this branch's longer suffix scheme (`_never`, `_always`, `_delta`, `_avg`).
+The guard checks `_avg.ster` because that file is written last by run_grc_robust_vv; if it exists, all five .ster files for the cell are present.
+
+`global skip_if_exists 1` set in `17_verdier_robust.do` so the relaunched run skipped the 95 already-saved .ster files (50 TZA + 45 IDN) and only worked through the 1 remaining IDN cell + 50 CHN cells.
+
+### Run completed; all 150 .ster files saved; 6 paper tables generated
+
+Relaunch `bn5wpbl8e` ran from ~10:00 to completion.
+Final state: 50 .ster files per country × 3 countries = 150.
+6 paper tables in `RP7/output/tables/`:
+- [`verdier_robust_onestep_{IDN,CHN,TZA}_consumption_urban_unb.tex`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/output/tables/)
+- [`verdier_robust_twostep_{IDN,CHN,TZA}_consumption_urban_unb.tex`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/output/tables/)
+
+The 6 .tex tables look complete; not yet visually inspected by the user.
+
+### Open bug: comparison markdown truncates at exactly 512 bytes
+
+The driver also writes a markdown comparison file at [`quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md) for the user to pick onestep vs twostep per country.
+This file is consistently truncating at exactly **512 bytes** across multiple driver re-runs, regardless of content.
+
+**What we tried:**
+
+1. Original strings with raw `$J$` and `$\hat\phi$` etc.
+Stata's `file write` macro-expanded `$J` (empty global) and `$\hat` (whatever, breaks things), producing garbled header.
+Cut off at 512 bytes after just the introductory paragraphs.
+
+2. Escaped `\$` to suppress macro expansion.
+Macros render correctly in the resulting file (saw `$J$` and `$\hat\phi^{\mathrm{rob}}$` rendered properly).
+Still truncates at 512 bytes.
+
+3. Plain-text labels (no `$`, no `\`) in the long header.
+Header writes through cleanly.
+File now reaches the per-country block and writes "## Indonesia (IDN)" + table headers.
+Still truncates at 512 bytes, mid-line in the column header `| Spec | Step | phi | S` (before `SE(phi)`).
+
+**Log evidence:**
+
+The Stata log shows `r(111);` (variable not found) inside the country foreach block after the IDN row writes start.
+Hard to pinpoint which variable; `capture noisily` swallows the immediate error and lets the rest of the script run as silent no-ops (so all subsequent file writes echo to log but don't actually write).
+
+**Hypotheses for next session:**
+
+- The 512-byte boundary is one disk sector.
+This is *too* round for a coincidence.
+Could be:
+  (a) Stata's batch-mode `file write` flushes at 512 bytes and a subsequent write fails on the relative path `$dir/../quality_reports/...` because of how Cygwin junction paths resolve `..`.
+  (b) Some Windows file-locking quirk with junctions.
+  (c) Antivirus / Defender blocking writes after the first flush.
+  (d) Real-Time Protection or a Dropbox-adjacent indexer touching the file.
+- The `r(111)` could be a real variable-not-found in the markdown row write (bad local reference?), unrelated to the 512-byte limit.
+The two issues might be coincident or causal in either direction.
+
+**Workarounds to try in next session:**
+
+1. Write the markdown to `$dir/output/comparison.md` (a path with no `..`).
+If that succeeds, the issue is path-specific.
+2. Generate the comparison table via Python or a simple shell script that reads the .ster files via `pystata` or via Stata one-liners and dumps the result.
+Bypass `file write` entirely.
+3. Replace the `file write` block with `sysuse`-style commands that write a .csv from a frame, then convert .csv → .md externally.
+4. Add explicit `file flush mdh` calls between writes to see if the failure mode shifts.
+
+The data is fine; the .ster files are all on disk.
+The comparison markdown is a presentation artifact and can be regenerated cleanly once we figure out the truncation.
+
+### Files changed today
+
+- [`RP7/scripts/0_programs.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do): added skip-if-exists guard at the top of `run_grc_robust_vv`.
+- [`RP7/scripts/17_verdier_robust.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do): `iterate 100` not 500, `global skip_if_exists 1`, plain-text labels in the comparison-markdown header.
+- [`RP7/scripts/smoke_17_TZA.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/smoke_17_TZA.do): `iterate 100` not 500.
+- [`feedback_ster_terminology.md`](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_ster_terminology.md): new memory.
+- [`feedback_iterate_100_default.md`](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/feedback_iterate_100_default.md): new memory.
+- [`MEMORY.md`](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/MEMORY.md): indexed both new entries.
+
+### Hand-off for next session
+
+> **First action on resume:**
+> The 6 paper tables and 150 .ster files are saved and good.
+> The comparison markdown is broken (truncated at 512 bytes).
+> Try the workarounds above in this order: (a) change the write path from `$dir/../quality_reports/...` to `$dir/output/comparison.md`, re-run with skip guard active (instant), inspect.
+> If that works, copy or symlink to the desired location.
+> If not, drop `file write` and generate the comparison via a small Python script that reads the .ster file directory and renders a markdown table.
+>
+> Once the comparison is readable, work the post-run cleanup checklist (above).
+> Specifically: read the comparison numbers, pick onestep vs twostep per country, confirm the working hypothesis that twostep wins everywhere (per the TZA smoke data: $J$ non-rejecting, tighter SEs, point estimates close to baseline), then proceed with the Overleaf table replacement.
+>
+> Useful diagnostic: in the latest session's log file at [`RP7/scripts/logs/17_verdier_robust.log`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/logs/17_verdier_robust.log), search for `r(111)` to see exactly where the file-write error happened.
+
 ## Files referenced
 
 - [.claude/worktrees/verdier-wrap-up/](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/)---new worktree
