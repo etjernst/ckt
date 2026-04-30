@@ -2,12 +2,15 @@
 
 ## What $J_R$ refers to
 
-$J_R$ is the number of degrees of freedom of the chi-squared distribution we are inverting at each grid point.
-Concretely, with $K$ kept switcher trajectories the LCA imposes $K - 1$ linear restrictions across switcher-specific returns:
+$J_R$ is the number of over-identifying restrictions of the GMM model we test, equivalently the degrees of freedom of the chi-squared distribution we are inverting.
+The general GMM setup with $m$ moments and $p$ parameters has $J_R = m - p$ over-identifying restrictions; under $H_0$ the J-statistic has an asymptotic $\chi^2_{J_R}$ distribution.
 
-$$r_s(\beta, \phi) \equiv (\beta_s - \beta_{\text{base}}) - \phi (\mu_s - \mu_{\text{base}}) = 0, \quad s \in \mathcal{S} \setminus \{\text{base}\}.$$
+In our paper, the LCA assumption $\Delta_d = \beta + \phi (\mu_d - \mu_{\text{base}})$ delivers the over-identifying restrictions: the auxiliary OLS gives $K$ switcher-specific $\widehat{\beta}_s$ as moments, the LCA fits two parameters ($\beta$, $\phi$), leaving $K - 2$ restrictions for the joint test $\phi$ alone (since $\beta$ is concentrated out as a nuisance).
+With $K - 1$ non-base switchers entering the just-identified inversion's restriction vector $r_s(\beta, \phi)$ and $\beta$ pinned to $\beta_{\text{base}}$ by the base equation, the just-identified inversion has $J_R = K - 1$.
+For the constrained MD inversions (`grid_delta_*_md_inversion`), the same $K - 1$ effective restrictions remain after profiling $\phi$ out.
 
-So $J_R = K - 1$ for both the just-identified $\phi$ inversion (`grid_lca_inversion`) and the constrained MD delta inversions (`grid_delta_*_md_inversion`), where $\phi$ profiles out and leaves the same $K - 1$ effective restrictions.
+So $J_R = K - 1$ for the inversions we run, where $K$ is the number of kept switchers.
+The chi-squared finite-sample bias documented in the literature applies to GMM J-tests with any over-identifying structure; our LCA setup is one specific instance.
 
 By country, with the threshold-5 sparse-switcher drop:
 
@@ -45,29 +48,35 @@ When the asymptotic critical value puts too little mass beyond the cutoff, the i
 
 ## Citations and adjustments
 
-The classical reference is Hansen, Heaton, and Yaron (1996), "Finite-Sample Properties of Some Alternative GMM Estimators," *Journal of Business and Economic Statistics* 14, 262--280.
-They document via Monte Carlo that the J-test over-rejects in moderate samples, especially with many moments, and that the bias scales with $J_R$.
+The classical reference is Hansen, L., Heaton, J., and Yaron, A. (1996), "Finite-Sample Properties of Some Alternative GMM Estimators," *Journal of Business and Economic Statistics* 14(3), 262--280.
+They document via Monte Carlo that the GMM J-test over-rejects in moderate samples, especially with many moments, and that the bias scales with the number of over-identifying restrictions.
 This is the canonical citation.
 
-Newey and McFadden (1994), Handbook of Econometrics chapter 36, derive the asymptotic distribution of the minimum-distance test (the basis of our `grid_md_inversion`) and discuss finite-sample issues in §7.
+Newey, W. K., and McFadden, D. (1994), "Large Sample Estimation and Hypothesis Testing," in R. F. Engle and D. L. McFadden (eds.), *Handbook of Econometrics*, Vol. 4, Ch. 36, North-Holland, pp. 2111--2245, derive the asymptotic distribution of the minimum-distance test (the basis of our `grid_md_inversion`) and discuss finite-sample issues in §7.
 
 For corrections, the literature offers four broad strategies:
 
 1. Bartlett-style multiplicative corrections to the test statistic.
-For likelihood ratio tests in regular models this is well-developed (Lawley 1956, Cribari-Neto and Cordeiro 1996).
-For GMM, Imbens, Spady, and Johnson (1998) and Newey and Smith (2004) develop empirical-likelihood-based corrections that share the spirit but require a different estimating equation.
-Implementing this on our MD setup is non-trivial and we have not done it.
-2. F-distribution corrections.
-In linear models the exact distribution of the Wald is $F(J_R, N - K)$; using the F critical value instead of chi-squared/$J_R$ introduces a small-sample correction.
-For GMM with cluster-robust covariance, Imbens and Kolesar (2016), "Robust Standard Errors in Small Samples," *Review of Economics and Statistics* 98, 701--712, propose a Bell-McCaffrey adjustment plus an F-distribution with degrees of freedom estimated by Satterthwaite.
-This is the most pragmatic adjustment we could apply: replace the $\chi^2_{J_R}$ critical value in `grid_lca_inversion` and `grid_md_inversion` with $J_R \cdot F(J_R, \widehat{\nu})$ where $\widehat{\nu}$ is the Bell-McCaffrey-Satterthwaite degrees-of-freedom estimate.
-3. Bootstrap calibration of the test.
-Hall and Horowitz (1996), "Bootstrap Critical Values for Tests Based on Generalized-Method-of-Moments Estimators," *Econometrica* 64, 891--916, show that bootstrap critical values for GMM tests can have asymptotic refinements over the chi-squared.
+For likelihood ratio tests in regular models this is well-developed: Lawley, D. N. (1956), "A General Method for Approximating to the Distribution of Likelihood Ratio Criteria," *Biometrika* 43(3), 295--303; Cribari-Neto, F., and Cordeiro, G. M. (1996), "On Bartlett and Bartlett-Type Corrections," *Econometric Reviews* 15(4), 339--367.
+For GMM, see Imbens, G. W., Spady, R. H., and Johnson, P. (1998), "Information Theoretic Approaches to Inference in Moment Condition Models," *Econometrica* 66(2), 333--357; and Newey, W. K., and Smith, R. J. (2004), "Higher Order Properties of GMM and Generalized Empirical Likelihood Estimators," *Econometrica* 72(1), 219--255.
+These develop empirical-likelihood-based corrections that share the Bartlett spirit but require a different estimating equation; implementing them on our MD setup is non-trivial.
+
+2. F-distribution corrections (cheap, principled, recommended as the first robustness pass).
+In linear models the exact distribution of the Wald is $F(J_R, N - K)$ rather than $\chi^2_{J_R} / J_R$; using the F critical value introduces a small-sample correction.
+For GMM with cluster-robust covariance the canonical reference is Imbens, G. W., and Kolesár, M. (2016), "Robust Standard Errors in Small Samples: Some Practical Advice," *Review of Economics and Statistics* 98(4), 701--712.
+They propose a Bell-McCaffrey adjustment to the variance estimator (named after Bell, R. M., and McCaffrey, D. F. (2002), "Bias Reduction in Standard Errors for Linear Regression with Multi-Stage Samples," *Survey Methodology* 28(2), 169--181), combined with an F-distribution whose denominator degrees of freedom $\widehat{\nu}$ is estimated by a Satterthwaite-type formula.
+The adjustment replaces $\chi^2_{J_R, 0.95}$ in `grid_lca_inversion` and the MD inversions with $J_R \cdot F_{0.95}(J_R, \widehat{\nu})$.
+For typical cluster counts in our data this shifts the critical value upward by a few percent and widens the inversion CI accordingly.
+
+3. Bootstrap calibration of the test (more expensive, more powerful).
+Hall, P., and Horowitz, J. L. (1996), "Bootstrap Critical Values for Tests Based on Generalized-Method-of-Moments Estimators," *Econometrica* 64(4), 891--916, show that bootstrap critical values for GMM tests have asymptotic refinements over the chi-squared.
 For our LCA inversion, this would mean: at each grid $\phi$, recompute the Wald on $B$ bootstrap resamples of individuals, and use the empirical 95th percentile of the bootstrap Walds in place of $\chi^2_{J_R, 0.95}$.
 This corrects both the chi-squared bias and the cluster-robust covariance approximation in one move.
-The cost is $B \times$ (grid size) Wald computations per cell.
+The cost is $B \times$ (grid size) Wald computations per cell, parallelizable across grid points.
+
 4. Higher-order asymptotic expansions.
-Edgeworth expansions of the J-statistic (e.g., Andrews 2002, "Higher-Order Improvements of a Computationally Attractive k-Step Bootstrap for Extremum Estimators," *Econometrica* 70, 119--162) characterize the bias analytically and could be inverted to a corrected critical value.
+Edgeworth expansions of the J-statistic characterize the bias analytically and could be inverted to a corrected critical value.
+See Andrews, D. W. K. (2002), "Higher-Order Improvements of a Computationally Attractive k-Step Bootstrap for Extremum Estimators," *Econometrica* 70(1), 119--162.
 This is the most principled but the least off-the-shelf.
 
 We have not applied any of these.

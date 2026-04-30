@@ -63,6 +63,43 @@ If only one basin, the divergence between Python and Stata is something other th
 If multiple basins, the basin-switching framing is supported.
 **Estimated cost:** $50 \times 12$ min $\approx 10$ hours of Python compute (parallelizable).
 
+### Empirically calibrated coverage test for the inversion CI
+**Added:** 2026-04-30.
+**Branch:** lca-inversion (or simulations).
+**Context:** The current synth_overid Monte Carlos at $T = 3$ ($K = 6$, $J_R = 5$) and $T = 4$ ($K = 14$, $J_R = 13$) approximate the empirical CKT setting but differ in several dimensions: trajectory shares are uniform across switchers (vs uneven empirically), there are no unbalanced observations (vs $\sim 75\%$ in CKT), there are no controls (vs period FE / age² / education in covs_trend through covs_all), and the trajectory mean spread is set to a uniform 0.1 log units (vs uneven empirical spreads).
+The $T = 4$ run shows mild persistent under-coverage ($\Delta_{\text{avg}}$ at 0.84 vs nominal 0.95) that is consistent with the chi-squared finite-sample bias documented in [`docs/notes/2026-04-30_chi-squared-finite-sample.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_chi-squared-finite-sample.md), but we cannot say from the synth alone how much under-coverage to expect at the IDN $K = 27$ scale specifically.
+**Action:** synthesize panels using empirical trajectory shares (drawn from each country's data), the empirical share of unbalanced observations, and realistic controls.
+For each country (TZA, CHN, IDN), generate $R \geq 100$ panels under an LCA-true DGP calibrated to the empirical $\hat\phi$ and $\hat\beta$, run the full inversion pipeline (including the same `drop_sparse_switchers`, the same controls per spec, and the same cluster-robust SE), and report empirical coverage of all four parameters per (country, spec).
+This gives a country-spec-specific calibration of the inversion CI that the current generic synth cannot.
+**Estimated cost:** moderate. The synthesizer extension is ~half a day of code; running $R = 100$ per country is a few hours.
+**Why it matters:** the paper claims weak-ID-robust inference via the inversion CI; an empirically calibrated coverage check is the cleanest defense against a referee asking "is your CI actually 95%?"
+
+### Imbens-Kolesár (2016) Bell-McCaffrey-Satterthwaite F adjustment as a robustness row
+**Added:** 2026-04-30.
+**Branch:** lca-inversion.
+**Context:** The chi-squared finite-sample bias documented in [`docs/notes/2026-04-30_chi-squared-finite-sample.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_chi-squared-finite-sample.md) over-rejects $H_0$ at $T = 4$, $K = 14$ ($J_R = 13$) by about 2.5 pct.
+Imbens, G. W., and Kolesár, M. (2016), "Robust Standard Errors in Small Samples: Some Practical Advice," *Review of Economics and Statistics* 98(4), 701--712, propose a Bell-McCaffrey adjustment to the cluster-robust variance plus an $F(J_R, \hat\nu)$ critical value with $\hat\nu$ set by a Satterthwaite-type formula.
+**Action:** apply the Bell-McCaffrey-Satterthwaite F adjustment to the chi-squared cutoff in [`grid_lca_inversion`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py) and the three MD delta inversions.
+Re-run the synth_overid coverage at $T = 4$, $R = 200$ to verify that the under-coverage gap closes.
+Re-run the empirical three-country inversion to produce the F-adjusted CI for each cell.
+**Reporting:** present the F-adjusted CI as an additional row beneath the inversion CI in each table cell (same column, two rows: chi-squared inversion above, F-adjusted inversion below).
+No new column needed.
+**Estimated cost:** modest. The adjustment is a one-line replacement of the critical value plus a $\hat\nu$ computation per grid point; coverage rerun is automated.
+
+### Bootstrap-calibrated inversion CI as a third robustness row (optional)
+**Added:** 2026-04-30.
+**Branch:** lca-inversion (or simulations).
+**Context:** Hall, P., and Horowitz, J. L. (1996), "Bootstrap Critical Values for Tests Based on Generalized-Method-of-Moments Estimators," *Econometrica* 64(4), 891--916, show that bootstrap critical values for GMM tests have asymptotic refinements over the chi-squared.
+For our setting this means: at each grid $\phi$, recompute the LCA Wald statistic on $B$ bootstrap resamples of individuals (preserving within-individual waves), tabulate the bootstrap distribution of the Wald *under $H_0$ at that grid point*, and use its empirical 95th percentile in place of $\chi^2_{J_R, 0.95}$.
+This is the "best of both worlds": preserves weak-ID robustness of the inversion CI while correcting the chi-squared finite-sample bias.
+**Action:** implement bootstrap calibration in `grid_lca_inversion` and the MD delta inversions, with $B \approx 500$ resamples.
+Run on the IDN $K = 27$ specs first (where the chi-squared bias is largest).
+**Reporting:** present alongside the chi-squared inversion CI and the F-adjusted CI as a third row in each table cell.
+**Status:** lower priority than the F adjustment and the empirical coverage calibration above.
+Escalate to this if the F adjustment alone does not close the gap.
+**Estimated cost:** $B \times$ (grid size) Wald computations per cell, parallelizable.
+At IDN scale, expect a few CPU-hours per spec.
+
 ### Add panel bootstrap CIs for $\hat\Delta_{d_N}$, $\hat\Delta_{\text{avg}}$, and $\hat\Delta_{d_T}$ in main tables
 **Added:** 2026-04-22 (scope narrowed 2026-04-29; expanded 2026-04-30 to include $\Delta_{\text{avg}}$).
 **Branch:** TBD (depends on whether bootstrap is computed on Stream B or Stream A).
