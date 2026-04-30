@@ -1,0 +1,13 @@
+M4 extended verification summary --- 2026-04-30
+cell               | k       | N        | max |b_new - b_ref|    | max |V_new - V_ref|    | mreldif(b)   | mreldif(V)
+----------------------------------------------------------------------------------------------------------------------
+CHN_cub_c0         | 17      | 56,855   | 0.000000000000000e+00  | 0.000000000000000e+00  | 0            | 0
+CHN_cub_ca         | 24      | 56,855   | 0.000000000000000e+00  | 0.000000000000000e+00  | 0            | 0
+IDN_cub_c0         | 35      | 16,391   | 0.000000000000000e+00  | 0.000000000000000e+00  | 0            | 0
+TZA_cub_c0         | 11      | 23,526   | 0.000000000000000e+00  | 0.000000000000000e+00  | 0            | 0
+
+All four cells: bit-identical between pre-M4 (reference ster) and post-M4 (refit) fits.
+- CHN cub c0:  17-param baseline (no covariates).
+- CHN cub ca:  24-param full-controls spec (period FE + female + age2 + edu + edu^2).
+- IDN cub c0:  35-param baseline; larger param count reflects 5-wave IFLS structure with more switcher trajectories.
+- TZA cub c0:  11-param baseline; smaller param count reflects 3-wave TZNPS structure.
