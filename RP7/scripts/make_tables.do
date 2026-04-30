@@ -6,7 +6,7 @@ Version: Apr 2026
 make_tables.do --- regenerate ALL LaTeX tables produced by the GRC
 pipeline (main 5_GrRC + 6_NonAg + 8_hukou + 16_heterogeneity) without
 re-running any GMM. Reads existing .ster files from $dir/output/ and
-emits .tex via grc_tex_table_trend / _hukou / het_table_*.
+emits .tex via grc_tex_table_trend / het_table_*.
 
 Replaces:
   5_GrRC_tables.do          (9 cells, cuu/cub/iuu × IDN/CHN/TZA)
@@ -262,7 +262,8 @@ if _rc == 0 & $copyOverleaf == 1 {
 /*******************************************************************************
 8_GrRC_hukou_tables.do --- LaTeX tables for the 12 hukou-subgroup cells
 (4 hukou subgroups × 3 spec3) without re-running GMM. Reads existing
-.ster files; emits via grc_tex_table_trend_hukou.
+.ster files; emits via grc_tex_table_trend (M3-unified, no spec passed
+since country_short already encodes the disambiguator).
 
 Sibling to 8_GrRC_hukou.do.
 
@@ -293,7 +294,7 @@ local country_short CHN_rf_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -314,7 +315,7 @@ local country_short CHN_rf_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -335,7 +336,7 @@ local country_short CHN_rf_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -360,7 +361,7 @@ local country_short CHN_uf_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -381,7 +382,7 @@ local country_short CHN_uf_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -402,7 +403,7 @@ local country_short CHN_uf_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -427,7 +428,7 @@ local country_short CHN_ro_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -448,7 +449,7 @@ local country_short CHN_ro_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -469,7 +470,7 @@ local country_short CHN_ro_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -494,7 +495,7 @@ local country_short CHN_uo_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -515,7 +516,7 @@ local country_short CHN_uo_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -536,7 +537,7 @@ local country_short CHN_uo_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend_hukou, columns(5)                   ///
+grc_tex_table_trend, columns(5)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///

@@ -2883,28 +2883,54 @@ end
 capture program drop grc_tex_table
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
+* grc_tex_table_trend (Phase 2 / M3-unified)
+*
+* Builds the standard country-level GRC LaTeX table (3 coefficient rows:
+* Delta_never, Delta_avg, phi/extra-regressor) by reading 5 sters per
+* covs2 column (main, _n, _g) from $dir/output/.
+*
+* Phase 1b: produces a SLIM tabular-only output (no \begin{table},
+* \caption, \label, or tablenotes). The paper-side macros (\GRCtable /
+* \GRCexptable / \GRChukoutable in preamble.tex) wrap the \input with
+* the table envelope, caption, label, and notes. Caller's POSTfoot now
+* holds ONLY the indicator rows; the program adds \cmidrule prefix and
+* \bottomrule\end{tabular} suffix.
+*
+* Phase 2 / M3 collapse: replaces three former program variants
+* (grc_tex_table_trend_hukou, grc_tex_table_trend_exp,
+* grc_tex_table_trend_birth) by parameterizing the two axes that
+* differed across them:
+*   spec      --- when supplied, ster lookup is grc_<country>_<spec>_<c>;
+*                 when empty, lookup is grc_<country>_<c> (the former
+*                 hukou path, where country_short already encodes the
+*                 disambiguator, e.g. CHN_rf).
+*   covs2_set --- space-separated list of covs2 column suffixes
+*                 (default: "c0 ct c1 c2 ca", the 5_GrRC.do family).
+*                 Pass "c1 c2 c3 ca" for the experience/birth family
+*                 (was: grc_tex_table_trend_exp, _birth).
 * **********************************************************************
 capture program drop grc_tex_table_trend
 program define grc_tex_table_trend
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis) ///
-				SPEC(string)
-	* SPEC is the M11 spec3 token that identifies which depvar/choice/balance
-	* slice to read. Callers pass e.g. spec(cuu) (cons/urban/unb), spec(cub)
-	* (cons/urban/bal), spec(iuu) (income/urban/unb), spec(cnu) (cons/nonag/unb).
-	* The loop below reads grc_<country>_<spec>_<covs2>.ster.
-	*
-	* Phase 1b: produces a SLIM tabular-only output (no \begin{table}, no
-	* \caption, no \label, no \begin{tablenotes}, no \end{table}). The paper
-	* (preamble.tex \GRCtable / \GRCexptable / \GRChukoutable macros) wraps
-	* the \input with the table envelope, caption, label, and notes.
-	* Caller's POSTfoot now holds ONLY the indicator rows (e.g.
-	* "Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & ..."); the
-	* program adds \cmidrule prefix and \bottomrule\end{tabular} suffix.
+    syntax , COLumns(integer) FILEname(string asis)            ///
+             COUNTRY(string asis) KEEP(string) varlabel(string) ///
+             POSTfoot(string asis)                              ///
+             COEFLABels(string asis) TEXTdepvar(string asis)    ///
+             [SPEC(string) COVS2set(string)]
+
+    if "`covs2set'" == "" {
+        local covs2set "c0 ct c1 c2 ca"
+    }
+
+    * Build ster path stem and stored-name stem. Diverges based on whether
+    * the spec disambiguator is supplied (hukou path leaves it empty).
+    if "`spec'" != "" {
+        local _stem "grc_`country'_`spec'"
+        local _label "`country'/`spec'"
+    }
+    else {
+        local _stem "grc_`country'"
+        local _label "`country'"
+    }
 
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2927,18 +2953,19 @@ program define grc_tex_table_trend
     * any other setup.
     * Skip-and-warn if a required ster is missing (e.g. running tables-only
     * on a cell whose regression hasn't completed yet).
-    capture confirm file "$dir/output/grc_`country'_`spec'_c0.ster"
+    local first_covs : word 1 of `covs2set'
+    capture confirm file "$dir/output/`_stem'_`first_covs'.ster"
     if _rc != 0 {
-        di as error "grc_tex_table_trend: SKIP `country'/`spec' (sters missing on disk)"
+        di as error "grc_tex_table_trend: SKIP `_label' (sters missing on disk)"
         exit
     }
-      foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
-        estimates store grc_`country'_`spec'_`estname'
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
-        estimates store grc_`country'_`spec'_`estname'_n
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
-        estimates store grc_`country'_`spec'_`estname'_g
+      foreach estname in `covs2set' {
+        estimates use "$dir/output/`_stem'_`estname'"
+        estimates store `_stem'_`estname'
+        estimates use "$dir/output/`_stem'_`estname'_n"
+        estimates store `_stem'_`estname'_n
+        estimates use "$dir/output/`_stem'_`estname'_g"
+        estimates store `_stem'_`estname'_g
       }
 
     * Empty locals to store estimate-name lists for esttab
@@ -2950,220 +2977,10 @@ program define grc_tex_table_trend
     * After M11, ster filenames and stored-estimate names use the same
     * `grc_<country>_<spec3>_<covs2>{,_n,_a,_d,_g}` shorthand, so no
     * Option-B "long disk / short memory" bridge is needed.
-      foreach estname in c0 ct c1 c2 ca {
-        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
-        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
-        local ests       = "`ests' grc_`country'_`spec'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-   
-end
-
-* **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-capture program drop grc_tex_table_trend_hukou
-program define grc_tex_table_trend_hukou
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
-	* comment for details. Paper-side wrapper macro: \GRChukoutable.
-
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
-    }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
-
-    * Empty locals to store estimates
-    local ests_never = ""
-    local ests_avg = ""
-    local ests = ""       
-		
-    * Phase 1b.5b: load estimates from disk inside the program. Hukou
-    * caller passes country(`country_short') where country_short is the
-    * M11-compressed `<CHN>_<rf|uf|ro|uo>_<spec3>` token, so the lookup
-    * grc_<country>_<covs2>{,_n,_g} resolves correctly without needing
-    * a separate spec() option here.
-    capture confirm file "$dir/output/grc_`country'_c0.ster"
-    if _rc != 0 {
-        di as error "grc_tex_table_trend_hukou: SKIP `country' (sters missing on disk)"
-        exit
-    }
-      foreach estname in c0 ct c1 c2 ca {
-        estimates use "$dir/output/grc_`country'_`estname'"
-        estimates store grc_`country'_`estname'
-        estimates use "$dir/output/grc_`country'_`estname'_n"
-        estimates store grc_`country'_`estname'_n
-        estimates use "$dir/output/grc_`country'_`estname'_g"
-        estimates store grc_`country'_`estname'_g
-      }
-
-      foreach estname in c0 ct c1 c2 ca {
-        local ests_never = "`ests_never' grc_`country'_`estname'_n"
-        local ests_avg   = "`ests_avg' grc_`country'_`estname'_g"
-        local ests       = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-   
-end
-
-* **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-capture program drop grc_tex_table_trend_exp
-program define grc_tex_table_trend_exp
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis) ///
-				SPEC(string)
-	* SPEC is the M11 spec3+family token (e.g. cuu_exp, cuu_maxexp, cuu_expsh,
-	* cuu_maxexpsh, cnu_exp). Loop reads grc_<country>_<spec>_<covs2>.ster.
-	* The experience-family covs2 set is c1/c2/c3/ca (different meaning from
-	* the c0/ct/c1/c2/ca set used in 5_GrRC.do; documented in the file
-	* header).
-	*
-	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
-	* comment for details. Paper-side wrapper macro: \GRCexptable.
-
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
-    }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
-
-    * Empty locals to store estimates
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""
-
-    * Phase 1b.5b: load estimates from disk inside the program.
-    * Experience family covs2 set is c1/c2/c3/ca (different from main).
-    capture confirm file "$dir/output/grc_`country'_`spec'_c1.ster"
-    if _rc != 0 {
-        di as error "grc_tex_table_trend_exp: SKIP `country'/`spec' (sters missing on disk)"
-        exit
-    }
-      foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
-        estimates store grc_`country'_`spec'_`estname'
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
-        estimates store grc_`country'_`spec'_`estname'_n
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
-        estimates store grc_`country'_`spec'_`estname'_g
-      }
-
-      foreach estname in c1 c2 c3 ca {
-        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
-        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
-        local ests       = "`ests' grc_`country'_`spec'_`estname'"
+      foreach estname in `covs2set' {
+        local ests_never = "`ests_never' `_stem'_`estname'_n"
+        local ests_avg   = "`ests_avg' `_stem'_`estname'_g"
+        local ests       = "`ests' `_stem'_`estname'"
       }
 
       * Output Delta-never row
@@ -3196,110 +3013,6 @@ program define grc_tex_table_trend_exp
       esttab `ests'	                         ///
       using "$output/tables/`filename'.tex", ///
 	  se b(%8.3f)                            ///
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-
-end
-
-* **********************************************************************
-* Create country-specific LaTeX table with GRC results
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-capture program drop grc_tex_table_trend_birth
-program define grc_tex_table_trend_birth
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis) ///
-				SPEC(string)
-	* SPEC is the M11 spec3+family token (e.g. cuu_birth, cub_birth).
-	* The only current caller is 15_GrRC_birth.do.
-	*
-	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
-	* comment for details. Paper-side wrapper macro: \GRCexptable (birth
-	* uses the same paper-side macro as the experience family).
-
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
-    }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
-
-    * Empty locals to store estimates
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""
-
-    * Phase 1b.5b: load estimates from disk inside the program.
-    capture confirm file "$dir/output/grc_`country'_`spec'_c1.ster"
-    if _rc != 0 {
-        di as error "grc_tex_table_trend_birth: SKIP `country'/`spec' (sters missing on disk)"
-        exit
-    }
-      foreach estname in c1 c2 c3 ca {
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'"
-        estimates store grc_`country'_`spec'_`estname'
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_n"
-        estimates store grc_`country'_`spec'_`estname'_n
-        estimates use "$dir/output/grc_`country'_`spec'_`estname'_g"
-        estimates store grc_`country'_`spec'_`estname'_g
-      }
-
-      foreach estname in c1 c2 c3 ca {
-        local ests_never = "`ests_never' grc_`country'_`spec'_`estname'_n"
-        local ests_avg   = "`ests_avg' grc_`country'_`spec'_`estname'_g"
-        local ests       = "`ests' grc_`country'_`spec'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
       keep(`keep')                           ///
       varlabels(`keep' "`varlabel'")         ///
       eqlabels(none)				         ///
@@ -3402,31 +3115,20 @@ program define extras_tex_table
     * "Time FE Y Y Y Y" indicator + family covariate labels (per 10-15 convention)
     local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & `fam_label' & \& Female & \& Age$^2$ & All \\
 
-    * Dispatch to the right table builder. The birth family has its own
-    * builder to allow potential layout differences; everything else uses
-    * grc_tex_table_trend_exp.
-    if "`regressor'" == "urbanbirth" {
-        grc_tex_table_trend_birth, columns(4)                                       ///
-            spec(`spec3'_`fam')                                                      ///
-            country(`country')                                                       ///
-            filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
-            keep(`reportvars')                                                       ///
-            varlabel(`varlab')                                                       ///
-            postfoot(`postfoot_str')                                                 ///
-            coeflabels(choice "Urban")                                               ///
-            textdepvar( log(`depvar') )
-    }
-    else {
-        grc_tex_table_trend_exp, columns(4)                                         ///
-            spec(`spec3'_`fam')                                                      ///
-            country(`country')                                                       ///
-            filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
-            keep(`reportvars')                                                       ///
-            varlabel(`varlab')                                                       ///
-            postfoot(`postfoot_str')                                                 ///
-            coeflabels(choice "Urban")                                               ///
-            textdepvar( log(`depvar') )
-    }
+    * M3 (Phase 2) collapse: birth and experience families now share the
+    * unified grc_tex_table_trend, parameterized by covs2_set. The birth
+    * variant was byte-identical to _exp; both used the c1/c2/c3/ca
+    * covs2 set distinct from the main 5_GrRC.do family.
+    grc_tex_table_trend, columns(4)                                             ///
+        spec(`spec3'_`fam')                                                      ///
+        covs2set(c1 c2 c3 ca)                                                    ///
+        country(`country')                                                       ///
+        filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
+        keep(`reportvars')                                                       ///
+        varlabel(`varlab')                                                       ///
+        postfoot(`postfoot_str')                                                 ///
+        coeflabels(choice "Urban")                                               ///
+        textdepvar( log(`depvar') )
 
     if $copyOverleaf == 1 {
         capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix'.tex"
