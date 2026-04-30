@@ -487,3 +487,67 @@ Remaining:
 - Step 5: end-to-end run and verify all 60 mainline `.ster` files carry the inversion scalars; rebuild the IDN/CHN/TZA consumption table.
 
 Test do-files (`test_esttab_string_stats.do`, `test_inline_python*.do`, `test_attach_inversion_ci.do`) and their generated `.tex`/`.log`/`.smcl` outputs live in `explorations/python-grc/` and should be cleaned up or moved to a `tests/` subdirectory before commit.
+
+## Steps 3-5 complete; refactor for 4x speedup; commits
+
+### What landed
+
+[`RP7/scripts/5b_inversion.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/5b_inversion.do) is the standalone batch driver: loops country $\times$ spec for the urban/cons/unb mainline of `5_GrRC.do`, with the `${skip_if_exists}` guard checking `e(inv_phi_ci95_lo)` on the parent ster.
+[`RP7/scripts/test_5b_and_table.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/test_5b_and_table.do) inlines the same body into a wrapper that also re-stores all 60 sters under their disk names and tries `grc_tex_table_trend` against the staging copies.
+
+[`grc_tex_table_trend`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/0_programs.do) extended with esttab `stats()` clauses that consume `e(inv_*_ci90_str)` and `e(inv_*_ci95_str)` macros.
+The Delta_never / Delta_always block reads `inv_dN_*` and `inv_dT_*` from `_never.ster` files; the Delta_avg block reads `inv_davg_*` from `_avg.ster`; the parent block reads `inv_phi_*` from the unsuffixed ster, alongside the existing N / J-stat / converged diagnostics.
+A single global Möbius footnote rides at the bottom of the parent block; appears once per table.
+
+### The refactor that made the run tractable
+
+The first end-to-end run (with the original per-ster `attach_inversion_ci` API) clocked at ~8 minutes per ster, projecting to ~8 hours total.
+Diagnosed the bottleneck: `attach_inversion_ci` was called four times per (country, spec) cell, once per ster suffix, and each call repeated the same Python compute (data pull, auxiliary OLS, four inversions over the phi $\times$ delta grid).
+The four sters share the same underlying GMM fit, so the inversion math is identical across them.
+The refactor changes `attach_inversion_ci`'s API from `estname(<single suffix>)` to `estbase(<cell base>)`; one Python compute per cell, then four cheap `estimates use $\to$ ereturn $\to$ estimates save` cycles.
+After the refactor, the same end-to-end run finished in ~1 hour ($\sim 4$ min/cell), 4-8x speedup as expected.
+
+[`5b_inversion.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/5b_inversion.do) and [`test_5b_and_table.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/test_5b_and_table.do) were updated to the new API.
+[`test_attach_inversion_ci.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_attach_inversion_ci.do) still uses the old `estname()` API and is now stale (left as-is for historical reference; would error if rerun without updating).
+
+### Step 5 verification: 15/15 cells, table render blocked separately
+
+The refactored end-to-end run completed cleanly: 15/15 cells (3 countries $\times$ 5 specs) had inversion CI scalars and macros attached to all four sters per cell.
+Spot-check on IDN/covs_all matched the published markdown table exactly (phi point $-0.60$ with CI $[-1.230, -0.010]$; $\Delta_{d_T}$ multi-island $[-\infty, +0.040] \cup [+0.660, +\infty]$).
+
+The trailing table-render in `test_5b_and_table.do` failed at the in-memory `estimates store` step with `r(7) invalid name`.
+Diagnosis: `grc_IDN_urban_covs_trend_never` is 30 chars, plus the `_est_` prefix Stata stores it under is 35 chars, over the 32-char `_est_<NAME>` limit.
+This is a pre-existing 5_GrRC.do issue: that script's `* Make sure estimates are in memory` block uses short names (`grc_<country>_<spec>`, no `_urban_`) but `grc_tex_table_trend` is called with `spec(urban)` and constructs the long names internally.
+The names diverge.
+Tracked at [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md) under "Resolve `_est_<name>` 32-char overflow".
+
+The CI scalars and macros are correctly attached; only the rendering step is blocked.
+
+### Stata-Python integration gotchas memo (machine-local)
+
+The two parser/scope issues discovered during the architectural verification (the `python: ... end` parser collision inside `program define` and the `__name__ == "builtins"` namespace isolation) are documented at `~/.claude/rules/stata-conventions.md` under "Stata-Python integration via SFI: two parser/scope gotchas".
+Includes the workaround patterns and the `repr(float("nan")) == "nan"` $\to$ `r(111)` corollary.
+Note: `~/.claude` is not a git repo, so this file persists only on this machine; future-Claude on a fresh checkout will not have it without a manual sync.
+
+### Commits this sub-session
+
+- `2b24344` Wire LCA inversion CIs into the GRC pipeline (17 files, +1585 / -18).
+- `0ac929b` TODO: track `_est_<name>` 32-char overflow in 5_GrRC.do table-build.
+
+Working tree is clean except for `.claude/scheduled_tasks.lock` and `.claude/settings.local.json`.
+Both look like local-state files (lockfile from a running poll process; per-machine Claude Code settings), but neither is gitignored.
+Worth deciding whether to gitignore them next session.
+
+### Picking back up
+
+Three concrete next moves, ranked:
+
+1. **Resolve the 32-char `_est_<name>` issue** so the table render works end-to-end on the staged sters.
+Probably means refactoring `grc_tex_table_trend` to take a `estname_pattern()` argument that lets callers supply a short naming scheme without touching the table builder.
+Tracked in [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md).
+Half a day.
+2. **Run `5b_inversion.do` against fresh `5_GrRC.do` output** in `RP7/output/` (rather than the staged copies of the rerun sters).
+This requires re-running 5_GrRC.do first, which is ~30 min for the urban/cons/unb mainline.
+Once both are done, the production pipeline is ready for the table render.
+3. **Pick the next robustness path** from the chi-squared finite-sample memo: F adjustment first (cheap), then bootstrap-calibrated inversion if F doesn't close the gap, plus the empirically calibrated coverage test.
+All three are unblocked and decoupled from the table-render issue.
