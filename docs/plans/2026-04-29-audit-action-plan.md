@@ -34,6 +34,16 @@ Status legend: NOW = do this session; POST-T3 = do after Tier 3 finishes; TODO =
 | m16 (panel headers hardcoded) | Add to TODO list | TODO |  |
 | m17 (Kleemans dual `global dir`) | Her problem not mine | SKIP | She probably comments one out |
 
+## Out-of-scope cleanups landed during the audit close-out
+
+These came up while working through the audit findings, were either bug fixes or refactor opportunities, and got committed alongside the audit work even though they were not on the original audit list.
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Two `_smoke_full.do` crash bugs (escape sequence, globals scope) | DONE 2026-04-29 | `\"<path>\"` escape in 0_path_config.do; `$grc_max_iter` / `$grc_min_switchers_per_wave` set in 0_master.do but smoke driver bypasses master. Both fixed in commits `3959874` and `cc94d3e`. |
+| Stata timer slot 1-100 limit hit at slot 101 (Tier 3 #3 crash) | DONE 2026-04-30 | Wrap counter at 100 in `run_grc` / `run_grc_onestep` / `run_grc_hukou`; `timer clear` before reuse since `timer on` accumulates. Commit `5c21224`. |
+| `run_grc_hukou` merged into `run_grc` | DONE 2026-04-30 | Folded the four-ster duplicate program into `run_grc` with `capture noisily` wrappers around the joint mu test and Δ_d block (Option B per user). Commit `5c3308b`. Verified end-to-end via `_smoke_hukou_only.do` on 30 ro+uo cells: 150 sters, zero capture fires, 50 min wall. |
+
 ## Data-creation findings (Dropbox)
 
 User: come back to the pipeline review for the sections on data construction since I don't have time now.

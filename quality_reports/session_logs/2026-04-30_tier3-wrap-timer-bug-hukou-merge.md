@@ -132,6 +132,15 @@ Cannot start until Tier 3 actually finishes cleanly so we have a complete substr
 The 16 hukou sters that survived from Tier 3 were created with the old `run_grc_hukou` (no `_d.ster` siblings).
 ro and uo deletion sets up the verification, but it doesn't actually run until someone launches `8_GrRC_hukou.do` (or the full smoke driver).
 
+**RESOLVED 2026-04-30:** ran [_smoke_hukou_only.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/_smoke_hukou_only.do) (commit `bdc3bf1`) end-to-end while the user was away.
+50 minutes wall clock (08:14--09:04), 30 ro+uo cells refit, 150 new sters produced.
+Every single ro/uo cell wrote 5 sters: main, `_n`, `_a`, `_g`, plus the new `_d`.
+The skip_if_exists guard correctly skipped all 30 rf+uf cells (their `_g.ster` files were preserved from the 2026-04-30 Tier 3).
+**Zero capture-noisily fires** on either the joint mu test or the per-trajectory Δ_d block, even on the smallest hukou subgroup (uo, urban_only).
+The RA's hypothesized concern about Δ_d failures on small subsamples does not actually materialize for these subgroups; the original `run_grc_hukou` simplification was unnecessary even on its own terms.
+
+Cell-level fit time on hukou cells: ~1.7 min average, much faster than I had feared on the small subsamples.
+
 ## Picking back up
 
 **If you resume**: read this file end-to-end first, then [quality_reports/session_logs/2026-04-29_audit-and-fixes.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-04-29_audit-and-fixes.md) for context on what we did yesterday.
@@ -167,3 +176,42 @@ The `run_grc_hukou` merge done today is a nice bonus that also closes a chunk of
 M4 awaiting verification gate.
 Pending m-tier items: m8 (graph-save in cwd), m13 (`data_path_override`---likely SKIP), m14 (schemepack install bug), m16 (hardcoded panel headers).
 Plus deferred data-creation review (DC-M1 through DC-m7).
+
+## To-do for next session
+
+In rough priority order:
+
+1. **Confirm the interactive replay finished cleanly** (CHN cuu maxexp on Scenario A).
+The user is away from the machine; will check on return.
+If c3 succeeded with a clean timer slot, the timer-overflow root cause is verified.
+If c3 failed, run the forensics list: `age2` collinearity and missingness checks, switcher-trajectory population for CHN, OLS scalar populated by `initial_values`, c2 convergence flag.
+
+2. **Relaunch Tier 3** to fill in the missing ~50 cells.
+Command: `cd RP7/scripts && stata-mp -b do _smoke_full.do`.
+With `skip_if_exists=1`, the 160 existing sters are skipped; the merged `run_grc` will refit ro+uo hukou cells (already done as of 2026-04-30 09:04), the rest of `GRC_extras.do` (maxexp c3+/expsh/maxexpsh/birth/cnu extras), and any other gaps.
+Expected wall time: ~5-10 hours.
+
+3. **Phase 1 close-out (commit 6e)**: delete `10/11/12/13/14/15_*.do` and collapse `0_master.do` includes from 6 lines to 1.
+Gated on Tier 3 finishing cleanly and producing the full ster set under M11 names.
+
+4. **M4 verification**: pick one 5_GrRC.do cell, refit on the cleaned `initial_values`, bit-compare against an existing ster.
+Caveat: the 60 sters preserved at the start of Tier 3 #3 are from BEFORE the d2b0c73 mu-loop cleanup; the 100 new sters from this run are AFTER.
+So we can compare a preserved ster (OLD code) against a freshly-refit ster on the same cell (NEW code).
+If bit-identical, mark M4 CLOSED in the audit doc.
+
+5. **Set up a Stata MCP server** so that future interactive diagnostic work doesn't require the user to be at their machine.
+The user proposed this 2026-04-30 after we hit the c3 crash and needed an interactive replay to diagnose.
+Candidates to evaluate: any existing Stata-MCP project on GitHub; otherwise build a minimal one that wraps `pystata` or `stata` CLI.
+Concerns to address: license seat contention if multiple Stata sessions run, state management (which Stata is the MCP attached to), security of running arbitrary commands.
+
+6. **Workstream A Phase 2** (M3 + S3 step 1): unify `grc_tex_table_trend*` family, produce program-caller map for `0_programs.do`.
+
+7. **Workstream A Phase 4** (M4 values switch): `values(nominal|real)` at `0_path_config.do`.
+
+8. **Workstream A Phase 5**: S1 (overview scraper) + S1b (coefplot figure) + S2 (file rename).
+
+9. **S1c**: Δ_always row in main GRC tables.
+
+10. **Audit Workstream B leftovers**: m8, m14, m16 (low priority); `m13` likely SKIP after a brief look.
+
+11. **Data-creation review** (DC-M1 through DC-m7): deferred from 2026-04-29 by user.
