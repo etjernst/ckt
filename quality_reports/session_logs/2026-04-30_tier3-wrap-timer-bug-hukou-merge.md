@@ -181,10 +181,13 @@ Plus deferred data-creation review (DC-M1 through DC-m7).
 
 In rough priority order:
 
-1. **Confirm the interactive replay finished cleanly** (CHN cuu maxexp on Scenario A).
-The user is away from the machine; will check on return.
-If c3 succeeded with a clean timer slot, the timer-overflow root cause is verified.
-If c3 failed, run the forensics list: `age2` collinearity and missingness checks, switcher-trajectory population for CHN, OLS scalar populated by `initial_values`, c2 convergence flag.
+1. ~~Confirm the interactive replay finished cleanly~~ **DONE 2026-04-30**.
+All four fits in `run_grc_with_extra_regressor` for CHN cuu maxexp completed end-to-end on Scenario A.
+Wall times: c1 08:03, c2 08:11, c3 08:20, ca 08:30 (8--10 min/cell).
+Each fit produced 5 sters (main, `_n`, `_a`, `_g`, plus the new `_d`).
+**The c3 cell is NOT broken on its own merits**---it fits cleanly when the timer slot starts fresh.
+Combined with the original Tier 3 crash being at slot 101+, this confirms the timer overflow was the ONLY cause; the timer-wrap fix in commit `5c21224` addresses the root cause.
+Caveat: Scenario A's 4 fits don't cross slot 100, so the wrap code itself wasn't directly exercised. The next Tier 3 relaunch (200+ fits) is the stronger test.
 
 2. **Relaunch Tier 3** to fill in the missing ~50 cells.
 Command: `cd RP7/scripts && stata-mp -b do _smoke_full.do`.
