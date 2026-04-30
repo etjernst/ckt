@@ -59,7 +59,7 @@ matrix V_pre_main = e(V)
 scalar N_pre = e(N)
 
 estimates use "$output/grc_IDN_cub_c0_g.ster"
-scalar Delta_avg_pre = _b[Delta_avg:_cons]
+scalar Delta_avg_pre = _b[Delta_avg]
 
 di as text "Pre-M4 reference stashed:"
 di "  N_pre              = " N_pre
@@ -124,12 +124,12 @@ keep $keepvars
 quietly tab period, gen(period_)
 local periodFE "period_2 - period_`r(r)'"
 
-initial_values lndepvar, switchers($switchers) balance(`balance') estname(initial_real_`country')
+quietly initial_values lndepvar, switchers($switchers) balance(`balance') estname(initial_real_`country')
 local base `r(base)'
 local initial "`r(initial)'"
 local iterations $grc_max_iter
 
-run_grc, estname(verify_M4_values_real_`country'_cub_c0)              ///
+quietly run_grc, estname(verify_M4_values_real_`country'_cub_c0)      ///
     switchers($switchers) base(`base') initial(`initial')             ///
     balance(`balance') iterate(`iterations')
 
@@ -140,7 +140,7 @@ matrix b_real_main = e(b)
 matrix V_real_main = e(V)
 scalar N_real = e(N)
 quietly estimates use "$output/verify_M4_values_real_IDN_cub_c0_g_r.ster"
-scalar Delta_avg_real = _b[Delta_avg:_cons]
+scalar Delta_avg_real = _b[Delta_avg]
 
 di "  N_real             = " N_real
 di "  Delta_avg_real     = " %20.16e Delta_avg_real
@@ -171,11 +171,11 @@ keep $keepvars
 quietly tab period, gen(period_)
 local periodFE "period_2 - period_`r(r)'"
 
-initial_values lndepvar, switchers($switchers) balance(`balance') estname(initial_nominal_`country')
+quietly initial_values lndepvar, switchers($switchers) balance(`balance') estname(initial_nominal_`country')
 local base `r(base)'
 local initial "`r(initial)'"
 
-run_grc, estname(verify_M4_values_nominal_`country'_cub_c0)            ///
+quietly run_grc, estname(verify_M4_values_nominal_`country'_cub_c0)    ///
     switchers($switchers) base(`base') initial(`initial')              ///
     balance(`balance') iterate(`iterations')
 
@@ -184,7 +184,7 @@ matrix b_nom_main = e(b)
 matrix V_nom_main = e(V)
 scalar N_nom = e(N)
 quietly estimates use "$output/verify_M4_values_nominal_IDN_cub_c0_g.ster"
-scalar Delta_avg_nom = _b[Delta_avg:_cons]
+scalar Delta_avg_nom = _b[Delta_avg]
 
 di "  N_nom              = " N_nom
 di "  Delta_avg_nom      = " %20.16e Delta_avg_nom
