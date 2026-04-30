@@ -395,3 +395,95 @@ Conditional on a non-empty CI, $\Delta_{\text{avg}}$ covers 0.908.
 Two cells are multi-island Delta_always: IDN/covs_all and TZA/covs_all (both phi-CIs cross $\phi = -1$, the Möbius singularity).
 - Working tree is clean except for `.claude/scheduled_tasks.lock` and `.claude/settings.local.json` (both gitignored).
 - The `prose-rules-enforcer` hook fires once per session; was triggered earlier today, so the next session will trigger it again on the first prose edit.
+
+## Sub-session: pipeline integration of weak-ID-robust inversion CIs
+
+User asked how to integrate the inversion CIs neatly into the main pipeline.
+After discussion landed on: separate program (no bloat to the slow `run_grc`), light-touch extension to `grc_tex_table_trend`, esttab-native string-macro consumption (no `file write`), both 90% and 95% CIs displayed, single global tablenote pointing at the Möbius memo, CI rows below the SE row.
+
+### Spec and plan
+
+- Spec at [`quality_reports/specs/2026-04-30-inversion-ci-pipeline-integration.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/specs/2026-04-30-inversion-ci-pipeline-integration.md).
+- Plan at [`quality_reports/plans/2026-04-30-inversion-ci-pipeline-integration.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-04-30-inversion-ci-pipeline-integration.md).
+Both updated to reflect resolved design choices (90%+95%, esttab-native via pre-formatted bracket strings, CI rows below SE).
+
+### Three-step verification before production wiring
+
+The user pushed for empirical verification of architectural assumptions before the full implementation, which surfaced two real Stata-Python integration gotchas that the plan's first draft would have hit blind.
+
+First, the esttab string-macro question.
+Test do-file at [`explorations/python-grc/test_esttab_string_stats.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_esttab_string_stats.do) confirmed esttab's `stats()` clause accepts `e()`-stored macros, renders them verbatim, and preserves LaTeX escapes (`$\cup$`, `$-\infty$`).
+One wrinkle: bare `_` in row labels gets auto-escaped to `\_`; the existing `grc_tex_table_trend` already uses `substitute(\_ _)` to undo that, so production wiring is fine.
+Output fragments at [`test_esttab_macros.tex`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_esttab_macros.tex), [`test_esttab_mixed.tex`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_esttab_mixed.tex), [`test_esttab_minimal.tex`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_esttab_minimal.tex).
+
+Second, the inline-`python:`-inside-`program-define` parser issue.
+The 2026-04 comment in the existing `lca_inversion_ci.ado` warned about it; tests [`test_inline_python.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_inline_python.do) and [`test_inline_python_v2.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_inline_python_v2.do) confirmed Stata 19 still trips on it.
+The bare `end` that closes a multi-line `python:` block gets interpreted as the end of `program define`, splitting the program prematurely.
+
+Test [`test_inline_python_v3.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_inline_python_v3.do) probed deeper: file-level `python:` blocks run in `__name__ == "__main__"`, but in-program `python:` calls run in `__name__ == "builtins"`, so functions defined at file level are not visible inside a program.
+Test [`test_inline_python_v4.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_inline_python_v4.do) found the workaround: install the helper as a module on `sys.path`, then `import` it from inside the program.
+The single-line `python:` invocation has no `end` token, so the program parser stays happy.
+
+### Implementation
+
+Two pieces of code landed.
+
+First, [`lca_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py) gained `compute_all_inversion_cis` (single-call entry point that runs all four inversions and returns formatted bracket strings via `format_islands_tex`), `format_islands_tex` (LaTeX variant of `format_islands` with `$\cup$` and `$\pm\infty$`), `_hull` (convex-hull helper for islands lists), and `attach_inversion_for_stata` (the SFI-bridge wrapper that pulls data via `Data.getAsDict`, runs the inversions, and writes results back as Stata locals).
+
+Second, [`RP7/scripts/0_programs.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/0_programs.do) gained a file-level `python:` block that adds `explorations/python-grc` to `sys.path`, plus the `attach_inversion_ci, eclass` program (inserted right after `run_grc`).
+The program restores the saved estimate, fv-expands controls, calls `python: import lca_inversion as _li; _li.attach_inversion_for_stata(...)` as a single line, promotes Python-set locals to `e()` scalars and macros via `ereturn`, and re-saves the `.ster`.
+
+### Validation against published numbers
+
+Smoke test [`smoke_compute_all_inversion_cis.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/smoke_compute_all_inversion_cis.py) runs `compute_all_inversion_cis` on IDN/covs_all via the pure-Python `data_loader` path and confirms output matches [`results/delta_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/delta_inversion_three_countries.md) exactly.
+
+Stata-bridge test [`test_attach_inversion_ci.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/test_attach_inversion_ci.do) calls `attach_inversion_ci` on `grc_IDN_covs_all_avg.ster`, verifies the four CIs and string macros, reloads the `.ster`, and checks scalar persistence.
+
+First run: passed Stata-prep'd data with `J_R=27` (one extra trajectory) producing wrong $\Delta_{\text{avg}}$ and $\Delta_{\text{always}}$ (collapsed to grid edges, empty CIs).
+Diagnosis: `setup_grc_estimation` recodes `trajectory == .` to `999` for unbalanced observers; the helper enumerated `999` as the largest trajectory, treated it as "always", and added an unwanted `alpha[999]` dummy to the auxiliary OLS.
+Fix at the helper level: `df.loc[df[trajectory] == 999, trajectory] = float("nan")` immediately after `Data.getAsDict`.
+Reverses the Stata-side recoding so the helper enumerates only real trajectories, matching the Python `data_loader` path.
+
+After the fix, the Stata-bridge test produces:
+
+| Param | Point | 95% CI |
+|---|---|---|
+| $\phi$ | $-0.60$ | $[-1.230, -0.010]$ |
+| $\Delta_{d_N}$ | $+0.07$ | $[+0.010, +0.150]$ |
+| $\Delta_{\text{avg}}$ | $+0.04$ | $[-0.020, +0.090]$ |
+| $\Delta_{d_T}$ | $-0.14$ | $[-\infty, +0.040] \cup [+0.660, +\infty]$ |
+
+All four match the published markdown table exactly.
+$J_R = 26$, kept switchers $= 27$ (matches Python `data_loader` path).
+After `estimates use grc_IDN_covs_all_avg`, `e(inv_dT_island_count95) = 2` and `e(inv_dT_ci95_str)` carries the LaTeX-ready union string.
+
+### Decisions, with the why
+
+Decision: install the inversion helper as a Python module on `sys.path` rather than as a Stata-side helper script.
+Why: Stata's in-program `python:` runs in `builtins` namespace, isolated from file-level `__main__`.
+Module imports survive that isolation; file-level `def` does not.
+The user preferred inline-only originally; this is the cleanest workaround that preserves the spirit (single inline call site, no separate `.py` helper file with hand-rolled SFI plumbing).
+
+Decision: filter `trajectory == 999` to NaN inside `attach_inversion_for_stata` rather than asking the driver to pre-clean the data.
+Why: the driver script will mirror the existing `5_GrRC.do` pattern of running `setup_grc_estimation` once per country, which produces the 999 recoding by design.
+Filtering in the helper keeps the driver script simple and avoids divergence from the existing pipeline data prep.
+The unbalanced indicators (`unbalanced`, `unbalanced_choice`) carry the unbalanced-observer information into the auxiliary OLS even after the trajectory recoding is reversed, so this is a non-destructive fix.
+
+Decision: translate Python `nan` to Stata `.` literal in `_stata_float`.
+Why: `repr(float("nan")) == "nan"`, and Stata's parser interprets `nan` as a variable name, producing `r(111)` "variable not found".
+The fix is a one-line helper inside `attach_inversion_for_stata`.
+
+Decision: deviate from the spec's "single inline `python:` block (no helper script)" wording and use the `import lca_inversion as _li` pattern instead.
+Why: the documented inline-block approach does not work in Stata 19 due to the program-define parser issue.
+The import-from-module pattern still avoids a separate `.py` helper file specific to the Stata bridge---all the Python logic lives in `lca_inversion.py`, which the project already maintains.
+
+### Open items going into Step 3
+
+Steps 1 and 2 of the seven-step plan are done.
+Remaining:
+
+- Step 3: write `RP7/scripts/5b_inversion.do` as a standalone batch driver that loops country $\times$ spec for the urban/cons/unb mainline and calls `attach_inversion_ci` on each of the four `.ster` outputs.
+- Step 4: extend `grc_tex_table_trend` with esttab `stats()` rows that consume `e(inv_*_ci90_str)` and `e(inv_*_ci95_str)`, plus a single global tablenote.
+- Step 5: end-to-end run and verify all 60 mainline `.ster` files carry the inversion scalars; rebuild the IDN/CHN/TZA consumption table.
+
+Test do-files (`test_esttab_string_stats.do`, `test_inline_python*.do`, `test_attach_inversion_ci.do`) and their generated `.tex`/`.log`/`.smcl` outputs live in `explorations/python-grc/` and should be cleaned up or moved to a `tests/` subdirectory before commit.

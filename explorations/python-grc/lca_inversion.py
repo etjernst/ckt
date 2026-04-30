@@ -643,7 +643,7 @@ def format_islands(
     grid_bounds: tuple[float, float] | None = None,
     fmt: str = "+.3f",
 ) -> str:
-    """Pretty-print a list of islands as a union of intervals.
+    r"""Pretty-print a list of islands as a union of intervals.
 
     If ``grid_bounds`` is supplied and an island touches the lower
     (resp.\ upper) bound, the endpoint is annotated as ``-inf``
@@ -667,6 +667,266 @@ def format_islands(
             hi_str = "+inf"
         parts.append(f"[{lo_str}, {hi_str}]")
     return " U ".join(parts)
+
+
+def format_islands_tex(
+    islands: list[tuple[float, float]],
+    grid_bounds: tuple[float, float] | None = None,
+    fmt: str = "+.3f",
+) -> str:
+    """LaTeX-friendly variant of ``format_islands``.
+
+    Renders endpoints touching the grid as ``$-\\infty$``/``$+\\infty$``
+    and joins multi-island unions with ``$\\cup$``. Returned strings are
+    safe to embed inside an ``esttab`` ``stats()`` macro that lands in a
+    ``.tex`` table cell. Empty CIs render as ``empty``.
+    """
+    if not islands:
+        return "empty"
+    parts = []
+    lo_bound = hi_bound = None
+    if grid_bounds is not None:
+        lo_bound, hi_bound = grid_bounds
+    for lo, hi in islands:
+        lo_str = f"{lo:{fmt}}"
+        hi_str = f"{hi:{fmt}}"
+        if lo_bound is not None and np.isclose(lo, lo_bound):
+            lo_str = r"$-\infty$"
+        if hi_bound is not None and np.isclose(hi, hi_bound):
+            hi_str = r"$+\infty$"
+        parts.append(f"[{lo_str}, {hi_str}]")
+    return r" $\cup$ ".join(parts)
+
+
+def _hull(islands: list[tuple[float, float]]) -> tuple[float, float]:
+    """Convex hull of a list of (lo, hi) island tuples.
+
+    Returns ``(nan, nan)`` if the list is empty.
+    """
+    if not islands:
+        return float("nan"), float("nan")
+    los = [lo for lo, _ in islands]
+    his = [hi for _, hi in islands]
+    return float(min(los)), float(max(his))
+
+
+def compute_all_inversion_cis(
+    df: pd.DataFrame,
+    outcome: str = "lndepvar",
+    trajectory: str = "trajectory",
+    choice: str = "choice",
+    hhid: str = "pid",
+    base: int | None = None,
+    controls: Sequence[str] | None = None,
+    threshold: int = 5,
+    phi_grid: np.ndarray | None = None,
+    delta_grid_nv: np.ndarray | None = None,
+    delta_grid_al: np.ndarray | None = None,
+    unbalanced_col: str = "unbalanced",
+    unbalanced_choice_col: str = "unbalanced_choice",
+) -> dict:
+    """Compute phi and three delta inversion CIs at 90% and 95% in one call.
+
+    Wraps ``drop_sparse_switchers``, ``fit_auxiliary_ols``,
+    ``grid_lca_inversion``, ``grid_delta_never_md_inversion``,
+    ``grid_delta_avg_md_inversion``, and ``grid_delta_always_md_inversion``
+    so the Stata-side ``attach_inversion_ci`` wrapper makes a single
+    Python call per (country, spec) cell rather than four.
+
+    Parameters mirror the existing helpers. ``base=None`` auto-selects
+    base = 2 if it survives the sparse-switcher pre-drop, else the
+    smallest kept switcher (matches ``run_all_countries_inversion.py``).
+    Default grids match that runner: phi in ``[-3, 1]`` step 0.01;
+    Delta_never / Delta_avg in ``[-1.5, 1.5]`` step 0.01; Delta_always
+    in ``[-5, 5]`` step 0.02 (wider for the Mobius case).
+
+    Returns a nested dict keyed by ``phi``, ``delta_never``, ``delta_avg``,
+    ``delta_always``. Each leaf carries:
+
+    - ``point``: phi or delta at the Wald minimum.
+    - ``ci90``, ``ci95``: convex-hull CI as ``(lo, hi)`` tuple
+      (``(nan, nan)`` if empty).
+    - ``islands90``, ``islands95``: list of ``(lo, hi)`` accept-region
+      intervals at the 10% and 5% type-I error levels.
+    - ``ci90_str``, ``ci95_str``: LaTeX-formatted bracketed strings,
+      ready for ``esttab`` ``stats()`` consumption.
+    - ``grid_bounds``: ``(lo, hi)`` of the grid for that parameter.
+    - ``J_R``: degrees of freedom of the joint chi-squared test.
+    - ``n_kept``: number of switchers kept after threshold filtering.
+    """
+    if phi_grid is None:
+        phi_grid = np.arange(-3.0, 1.0001, 0.01)
+    if delta_grid_nv is None:
+        delta_grid_nv = np.arange(-1.5, 1.5001, 0.01)
+    if delta_grid_al is None:
+        delta_grid_al = np.arange(-5.0, 5.0001, 0.02)
+
+    cols_needed = [outcome, choice, trajectory, hhid,
+                   unbalanced_col, unbalanced_choice_col]
+    if controls:
+        cols_needed = cols_needed + list(controls)
+    sub = df.dropna(subset=[c for c in cols_needed if c != trajectory]).copy()
+
+    kept, _counts = drop_sparse_switchers(
+        sub, trajectory, choice, hhid, threshold=threshold
+    )
+    if base is None:
+        base = 2 if 2 in kept else (kept[0] if kept else None)
+    if base is None or base not in kept:
+        raise ValueError(
+            f"base {base} not in switchers_kept {kept} after threshold {threshold}"
+        )
+
+    trajectories = sorted(int(t) for t in sub[trajectory].dropna().unique())
+    never_traj, always_traj = trajectories[0], trajectories[-1]
+
+    fit = fit_auxiliary_ols(
+        sub, outcome=outcome, trajectory=trajectory,
+        choice=choice, hhid=hhid,
+        switchers_kept=kept, controls=controls,
+        unbalanced_col=unbalanced_col,
+        unbalanced_choice_col=unbalanced_choice_col,
+    )
+
+    J_R = len(kept) - 1
+    n_kept = len(kept)
+    phi_bounds = (float(phi_grid[0]), float(phi_grid[-1]))
+    nv_bounds = (float(delta_grid_nv[0]), float(delta_grid_nv[-1]))
+    al_bounds = (float(delta_grid_al[0]), float(delta_grid_al[-1]))
+
+    # Run each curve once at type_one=0.05; derive 90% via find_islands at 0.10.
+    curve_phi, _ph95_lo, _ph95_hi = grid_lca_inversion(
+        fit, kept, base, phi_grid, type_one=0.05
+    )
+    n_curve, _n95_lo, _n95_hi = grid_delta_never_md_inversion(
+        fit, kept, base, never_traj, delta_grid_nv, phi_grid, type_one=0.05
+    )
+
+    n_sw = int(sub[trajectory].isin(kept).sum())
+    pi_within = {s: float((sub[trajectory] == s).sum()) / n_sw for s in kept}
+    a_curve, _a95_lo, _a95_hi = grid_delta_avg_md_inversion(
+        fit, kept, base, pi_within, delta_grid_nv, phi_grid, type_one=0.05
+    )
+    t_curve, _t95_lo, _t95_hi = grid_delta_always_md_inversion(
+        fit, kept, base, always_traj, delta_grid_al, phi_grid, type_one=0.05
+    )
+
+    def _summarize(curve, x, bounds):
+        islands95 = find_islands(curve, type_one=0.05, x=x)
+        islands90 = find_islands(curve, type_one=0.10, x=x)
+        ci95 = _hull(islands95)
+        ci90 = _hull(islands90)
+        i_min = int(curve["wald"].idxmin())
+        point = float(curve[x].iloc[i_min])
+        wald_min = float(curve["wald"].iloc[i_min])
+        return {
+            "point": point,
+            "wald_min": wald_min,
+            "ci90": ci90,
+            "ci95": ci95,
+            "islands90": islands90,
+            "islands95": islands95,
+            "grid_bounds": bounds,
+            "ci90_str": format_islands_tex(islands90, grid_bounds=bounds),
+            "ci95_str": format_islands_tex(islands95, grid_bounds=bounds),
+            "J_R": J_R,
+            "n_kept": n_kept,
+        }
+
+    return {
+        "phi":          _summarize(curve_phi, "phi",   phi_bounds),
+        "delta_never":  _summarize(n_curve,   "delta", nv_bounds),
+        "delta_avg":    _summarize(a_curve,   "delta", nv_bounds),
+        "delta_always": _summarize(t_curve,   "delta", al_bounds),
+    }
+
+
+def attach_inversion_for_stata(
+    outcome: str,
+    trajectory: str,
+    choice: str,
+    hhid: str,
+    base: int,
+    controls: Sequence[str],
+    threshold: int = 5,
+    unbalanced_col: str = "unbalanced",
+    unbalanced_choice_col: str = "unbalanced_choice",
+) -> None:
+    """Bridge between Stata's in-program ``python:`` call and
+    ``compute_all_inversion_cis``.
+
+    Pulls the in-memory Stata dataset via ``sfi.Data.getAsDict`` (limited
+    to columns the inversion needs), runs the four inversions, and
+    writes results back as Stata locals via ``sfi.Macro.setLocal``.
+
+    The calling Stata program (``attach_inversion_ci`` in
+    ``0_programs.do``) reads those locals and turns them into ``e()``
+    scalars and macros via ``ereturn scalar`` / ``ereturn local``.
+
+    This wrapper exists because Stata's in-program ``python:`` runs in
+    the ``builtins`` namespace, isolated from file-level ``__main__``,
+    so functions defined at the top of the do-file are not visible
+    inside a program. Importing ``lca_inversion`` as a module circumvents
+    that isolation.
+    """
+    from sfi import Data, Macro, SFIToolkit
+
+    cols = [outcome, trajectory, choice, hhid,
+            unbalanced_col, unbalanced_choice_col]
+    cols = cols + [c for c in controls if c not in cols]
+    seen: set[str] = set()
+    cols = [c for c in cols if not (c in seen or seen.add(c))]
+
+    raw = Data.getAsDict(cols, missingval=float("nan"))
+    df = pd.DataFrame(raw)
+
+    # setup_grc_estimation in 0_programs.do recodes trajectory==. to 999
+    # for unbalanced observers (so the GMM's switcher_d dummies sum cleanly
+    # over balanced rows only). Reverse that so the helper enumerates only
+    # real trajectories and matches the Python data_loader path.
+    df.loc[df[trajectory] == 999, trajectory] = float("nan")
+
+    out = compute_all_inversion_cis(
+        df=df,
+        outcome=outcome, trajectory=trajectory,
+        choice=choice, hhid=hhid,
+        base=base, controls=list(controls),
+        threshold=threshold,
+        unbalanced_col=unbalanced_col,
+        unbalanced_choice_col=unbalanced_choice_col,
+    )
+
+    SFIToolkit.displayln(
+        f"  attach_inversion_for_stata: J_R={out['phi']['J_R']}, "
+        f"n_kept={out['phi']['n_kept']}"
+    )
+
+    import math
+
+    def _stata_float(x: float) -> str:
+        # Stata's missing-value literal is . (period), not "nan"; otherwise
+        # `ereturn scalar foo = nan` errors with r(111) because the parser
+        # treats "nan" as a variable name.
+        return "." if math.isnan(float(x)) else repr(float(x))
+
+    for key, prefix in [("phi", "inv_phi"),
+                         ("delta_never", "inv_dN"),
+                         ("delta_avg", "inv_davg"),
+                         ("delta_always", "inv_dT")]:
+        d = out[key]
+        Macro.setLocal(f"{prefix}_at_waldmin", _stata_float(d["point"]))
+        Macro.setLocal(f"{prefix}_wald_min",   _stata_float(d["wald_min"]))
+        Macro.setLocal(f"{prefix}_J_R",        str(int(d["J_R"])))
+        Macro.setLocal(f"{prefix}_n_kept",     str(int(d["n_kept"])))
+        for level in (90, 95):
+            lo, hi = d[f"ci{level}"]
+            Macro.setLocal(f"{prefix}_ci{level}_lo", _stata_float(lo))
+            Macro.setLocal(f"{prefix}_ci{level}_hi", _stata_float(hi))
+            Macro.setLocal(f"{prefix}_ci{level}_str", d[f"ci{level}_str"])
+        Macro.setLocal(f"{prefix}_island_count95",
+                       str(int(len(d["islands95"]))))
+        Macro.setLocal(f"{prefix}_island_count90",
+                       str(int(len(d["islands90"]))))
 
 
 def summary_curve_stats(curve: pd.DataFrame) -> dict:

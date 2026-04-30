@@ -1836,6 +1836,112 @@ program define run_grc
 end
 
 * **********************************************************************
+* attach_inversion_ci: weak-ID-robust LCA inversion CIs for phi and the
+* three trajectory-specific deltas (never, avg, always), attached to a
+* saved GRC estimate.
+*
+* Calls into Python via lca_inversion.compute_all_inversion_cis. Stores
+* point estimates, 90% and 95% convex-hull CIs as e()-scalars, plus
+* pre-formatted bracketed LaTeX strings as e()-macros so that
+* grc_tex_table_trend can consume them via esttab's stats() clause.
+* Re-saves the .ster so the scalars persist.
+*
+* Decoupled from run_grc: callers run the GMM pipeline first (writes
+* _avg/_never/_always sters), then call attach_inversion_ci on each
+* saved ster. This keeps the (slow) GMM step independent of the
+* inversion pass, so the latter can be re-run on its own when the
+* inference machinery changes (F adjustment, bootstrap calibration,
+* etc.) without redoing the GMM.
+* **********************************************************************
+
+* file-level python: set sys.path so subsequent imports find lca_inversion.
+* Runs once per do-of-this-file; idempotent against repeats.
+python:
+import sys, os
+from sfi import Macro
+_DIR = Macro.getGlobal("dir")
+if _DIR:
+    _EXPLOR = os.path.normpath(
+        os.path.join(_DIR, "..", "explorations", "python-grc")
+    )
+    if _EXPLOR not in sys.path:
+        sys.path.insert(0, _EXPLOR)
+del _DIR
+end
+
+capture program drop attach_inversion_ci
+program define attach_inversion_ci, eclass
+    syntax , ESTbase(string)                                     ///
+             OUTcome(string) TRAJ(string) CHOICE(string)         ///
+             HHID(string) BASE(integer)                          ///
+             [CONTrols(varlist fv)]                              ///
+             [STERdir(string asis)]                              ///
+             [THReshold(integer 5)]
+
+    * estbase is the (country, spec) cell base name without suffix,
+    * e.g. "grc_IDN_urban_covs_all". The program looks for and updates
+    * the four sters {estbase}.ster, {estbase}_never.ster, {estbase}_avg.ster,
+    * {estbase}_always.ster --- attaching the same inversion macros
+    * to each via a single python compute, since the inversion math is
+    * identical across suffixes (the four sters all rest on the same
+    * underlying GMM fit).
+
+    * 1. fv-expand controls so the python helper sees plain variable names
+    local ctrl_list `controls'
+    if "`controls'" != "" {
+        fvexpand `controls'
+        local ctrl_list = r(varlist)
+    }
+
+    * 2. ONE python call computes all four inversions for this cell.
+    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"))
+
+    * 3. iterate over the four suffixes, ereturn-ing the macros and
+    * re-saving each ster. Skips suffixes whose .ster does not exist.
+    local n_attached = 0
+    foreach suffix in "" "_never" "_avg" "_always" {
+        local target "`sterdir'/`estbase'`suffix'.ster"
+        capture confirm file "`target'"
+        if _rc != 0 {
+            di as text "  attach_inversion_ci: SKIP `estbase'`suffix' (no ster)"
+            continue
+        }
+        estimates use "`target'"
+
+        foreach prefix in inv_phi inv_dN inv_davg inv_dT {
+            ereturn scalar `prefix'_at_waldmin     = ``prefix'_at_waldmin'
+            ereturn scalar `prefix'_wald_min       = ``prefix'_wald_min'
+            ereturn scalar `prefix'_J_R            = ``prefix'_J_R'
+            ereturn scalar `prefix'_n_kept         = ``prefix'_n_kept'
+            ereturn scalar `prefix'_ci90_lo        = ``prefix'_ci90_lo'
+            ereturn scalar `prefix'_ci90_hi        = ``prefix'_ci90_hi'
+            ereturn scalar `prefix'_ci95_lo        = ``prefix'_ci95_lo'
+            ereturn scalar `prefix'_ci95_hi        = ``prefix'_ci95_hi'
+            ereturn scalar `prefix'_island_count95 = ``prefix'_island_count95'
+            ereturn scalar `prefix'_island_count90 = ``prefix'_island_count90'
+            ereturn local  `prefix'_ci90_str       `"``prefix'_ci90_str'"'
+            ereturn local  `prefix'_ci95_str       `"``prefix'_ci95_str'"'
+        }
+
+        estimates save "`target'", replace
+        local ++n_attached
+    }
+
+    * 4. pretty print summary (once per cell, not once per suffix)
+    di as text "{hline 72}"
+    di as text "Inversion CIs attached to " as result "`estbase'"   ///
+        as text "  (`n_attached' of 4 sters updated)"
+    di as text "{hline 72}"
+    di as text "  J_R = " as result `inv_phi_J_R'                ///
+        as text ",  switchers kept = " as result `inv_phi_n_kept'
+    foreach prefix in inv_phi inv_dN inv_davg inv_dT {
+        di as text "  `prefix' point = " as result %9.4f ``prefix'_at_waldmin'
+        di as text "    95% CI: " as result `"``prefix'_ci95_str'"'
+        di as text "    90% CI: " as result `"``prefix'_ci90_str'"'
+    }
+end
+
+* **********************************************************************
 * run_grc_onestep: simple spec with VV's onestep GMM settings
 * **********************************************************************
 * Identical to run_grc except for winitial(unadjusted, independent) +
@@ -2719,7 +2825,7 @@ program define grc_tex_table_trend
 	* estimate-name families. Callers pass e.g. spec(urban) or spec(nonag)
 	* so the loop below reads grc_<country>_<spec>_covs_<k>.ster rather
 	* than colliding on a shared grc_<country>_covs_<k>.ster name.
-	
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local num_panels `panels'
@@ -2731,68 +2837,92 @@ program define grc_tex_table_trend
     local cmid = `columns' + 1
 		local colnumbers ""
 		local table_prehead 	""
-		local table_postfoot 	""
 		local posthead 			""
     local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
     local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
     local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    * Postfoot carries (1) the user-supplied postfoot, and (2) a global
+    * tablenote pointing at the Möbius singularity memo for any cell whose
+    * Delta_always inversion CI renders as a multi-island union with
+    * ±∞ endpoints. Lives in the third esttab block so it appears once
+    * per table, not once per panel.
+    local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (those with one endpoint reported as $\pm\infty$) reflect the M\""obius singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$; see derivation in the project notes.}"
+    local table_postfoot "\cmidrule{2-`cmid'} `mobius_note' `postfoot'"
 
     * Empty locals to store estimates
     local ests_never = ""
 	local ests_avg = ""
-    local ests = ""       
-		
+    local ests = ""
+
     * Generate the list of stored estimates for the current panel
       foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
         local ests_never     = "`ests_never' grc_`country'_`spec'_`estname'_never"
         local ests_avg = "`ests_avg' grc_`country'_`spec'_`estname'_avg"
         local ests           = "`ests' grc_`country'_`spec'_`estname'"
       }
-        
-      * Output Delta-never row
+
+      * Output Delta-never and Delta-always rows, plus their LCA inversion
+      * CI rows (90% and 95%) appended via stats(). The CI rows consume
+      * pre-formatted bracketed string macros set on each _never.ster by
+      * attach_inversion_ci.
       esttab `ests_never'                    ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      stats(inv_dN_ci90_str inv_dN_ci95_str  ///
+            inv_dT_ci90_str inv_dT_ci95_str, ///
+            labels("90\% LCA inv. CI ($\Delta_{\text{never}}$)"   ///
+                   "95\% LCA inv. CI ($\Delta_{\text{never}}$)"   ///
+                   "90\% LCA inv. CI ($\Delta_{\text{always}}$)"  ///
+                   "95\% LCA inv. CI ($\Delta_{\text{always}}$)")) ///
       varwidth(20) 	                         ///
       nolines nomtitles `colnumbers'         ///
       prehead(`table_prehead')               ///
       posthead(`table_posthead')             ///
       coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
       replace substitute(\_ _)
-        
-      * Output Delta average row
+
+      * Output Delta-average row plus its LCA inversion CI rows.
       esttab `ests_avg'   		             ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      stats(inv_davg_ci90_str inv_davg_ci95_str, ///
+            labels("90\% LCA inv. CI (avg $\Delta$)"      ///
+                   "95\% LCA inv. CI (avg $\Delta$)"))    ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "Average $\Delta$") ///
       append substitute(\_ _)
-    
-    * Output other estimates
+
+    * Output other estimates plus phi inversion CI rows and existing
+    * diagnostics (N, J-stat, etc.). The phi CI rows ride on the parent
+    * (unsuffixed) ster.
       esttab `ests'	                         ///
       using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+	  se b(%8.3f)                            ///
       keep(`keep')                           ///
       varlabels(`keep' "`varlabel'")         ///
       eqlabels(none)				         ///
       fragment booktabs                      ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      s(inv_phi_ci90_str inv_phi_ci95_str    ///
+        N_clust N Jstat Jpval converged_str, ///
+        label("90\% LCA inv. CI ($\phi$)"    ///
+              "95\% LCA inv. CI ($\phi$)"    ///
+              "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+        fmt(s s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc)) ///
       varwidth(20)                           ///
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
-   
+
 end
 
 * **********************************************************************
