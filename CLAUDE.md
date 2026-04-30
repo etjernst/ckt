@@ -48,9 +48,10 @@ scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # READ-ONLY view into coa
 data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/ (gitignored)
 output/  -> Dropbox/.../ReplicationPackage6/output/     # coauthor's .ster, tables/, figures/ (gitignored)
 
-RP7/                # local working copy (tracked in git) --- edit here, not in the junctions
+RP7/                # local working copy (tracked in git); edit here, not in the junctions
   scripts/          # real copy of RP6 scripts as of 2026-04-24. Our edits live here.
-  data/ -> Dropbox/.../ReplicationPackage6/data/   # junctioned; raw data stays shared (immutable)
+  data/      -> Dropbox/.../ReplicationPackage6/data/                # junctioned; nominal-values data
+  data_real/ -> Dropbox/.../ReplicationPackage6 - real values/data/  # junctioned; deflated-values data (M4)
   output/           # fresh empty dir; our reruns land here. tables/ and figures/ tracked; .ster ignored.
 
 docs/               # specs, plans, session_logs, reviews
