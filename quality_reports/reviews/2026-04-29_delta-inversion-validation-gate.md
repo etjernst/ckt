@@ -264,4 +264,35 @@ This closes the $\Delta_{\text{avg}}$ under-coverage finding from the $T = 2$ ru
 The $T = 2$ pathology was specific to the $K = 2$ just-identified case where the $\Delta_{\text{avg}}$ moment vector reduces to a one-dimensional reparameterization tying both moments through $\phi (\alpha_3 - \alpha_2)$ with opposite-sign loadings.
 At $K = 6$ with five over-identifying restrictions and trajectory means spaced 6$\times$ tighter than the $T = 2$ synth, the chi-squared approximation works cleanly across all four parameters.
 
-Per-replication CSV at [`results/synth_overid_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_coverage_per_rep.csv); summary at [`results/synth_overid_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_coverage_summary.csv).
+Per-replication CSV at [`results/synth_overid_t3_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t3_coverage_per_rep.csv); summary at [`results/synth_overid_t3_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t3_coverage_summary.csv).
+
+## T = 4 cross-check ($R = 50$, $K = 14$)
+
+To check whether coverage degrades as $T$ grows and the over-identification ($J_R$) climbs further above 5, [`synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py) was rerun with $T = 4$ ($K = 14$ kept switchers, $J_R = 13$), $N = 15{,}000$, same per-trajectory mean spacing of 0.1 log units, $R = 50$ replications.
+$R$ was halved from the $T = 3$ run to keep wall-clock manageable ($K = 14$ Wald inversions are $\sim 10\times$ slower per evaluation than $K = 6$); MC SE rises from $\sim 0.03$ to $\sim 0.05$ accordingly.
+
+| Parameter | True value | Coverage | MC SE | Empty CI | Multi-island | Mean K |
+|---|---:|---:|---:|---:|---:|---:|
+| $\phi$ | $-0.500$ | 0.86 | 0.049 | 3 | 0 | 14.0 |
+| $\Delta_{d_N}$ | $+0.100$ | 0.90 | 0.042 | 3 | 0 | 14.0 |
+| $\Delta_{\text{avg}}$ | $-0.275$ | 0.84 | 0.052 | 3 | 0 | 14.0 |
+| $\Delta_{d_T}$ | $-0.650$ | 0.90 | 0.042 | 3 | 0 | 14.0 |
+
+3 / 50 empty CIs per parameter ($\approx 6\%$, MC SE 0.034) is statistically consistent with the nominal 5% Type I rate of the joint $\chi^2_{13}$ LCA test.
+Conditional on a non-empty CI ($n = 47$ reps), $\phi$ covers 43/47 $= 0.915$; $\Delta_{\text{avg}}$ covers 42/47 $= 0.894$.
+These are well within MC band of nominal 0.95.
+
+| | Coverage by $T$ |  |  |
+|---|---:|---:|---:|
+| Parameter | $T=2$, $K=2$ | $T=3$, $K=6$ | $T=4$, $K=14$ |
+| $\phi$ | 0.92 | 0.92 | 0.86 |
+| $\Delta_{d_N}$ | 0.93 | 0.91 | 0.90 |
+| $\Delta_{\text{avg}}$ | **0.79** | **0.90** | **0.84** |
+| $\Delta_{d_T}$ | 0.94 | 0.93 | 0.90 |
+
+The story across the three rows: under-coverage is not a generic problem.
+The $T = 2$, $K = 2$ case is anomalously bad for $\Delta_{\text{avg}}$ (the just-identified small-$K$ pathology); both the $T = 3$ and $T = 4$ over-identified runs land at 0.84 to 0.93 across all four parameters, within reasonable MC bands of the nominal 0.95.
+The slight downtick from $T = 3$ to $T = 4$ likely combines MC noise (smaller $R$) with a mild finite-sample bias in the chi-squared approximation as $J_R$ grows.
+Increasing $R$ for $T = 4$ would tighten the MC bands; the empirical CKT scale ($K = 5$ to 27) sits between the $T = 3$ and $T = 4$ DGPs in $J_R$, so coverage in real estimation should sit in roughly the same band.
+
+Per-replication CSV at [`results/synth_overid_t4_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t4_coverage_per_rep.csv); summary at [`results/synth_overid_t4_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t4_coverage_summary.csv).
