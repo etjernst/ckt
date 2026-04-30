@@ -2881,7 +2881,7 @@ program define grc_tex_table_trend_robust
     fragment booktabs                      ///
     collabels("")                          ///
     starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-    s(n_indiv N_clust N Jstat Jpval converged_str, label( "Individuals" "Locations" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+    s(n_indiv N N_clust Jstat Jpval converged_str, label( "Individuals" "Observations" "Locations" "J-stat" "J-stat (p-value)" "Converged") ///
     fmt(%9.0fc %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
     varwidth(20)                           ///
     nolines nomtitles nonum                ///
