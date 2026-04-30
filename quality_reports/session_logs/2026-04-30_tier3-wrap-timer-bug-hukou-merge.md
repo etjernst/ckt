@@ -202,7 +202,15 @@ If bit-identical, mark M4 CLOSED in the audit doc.
 5. **Set up a Stata MCP server** so that future interactive diagnostic work doesn't require the user to be at their machine.
 The user proposed this 2026-04-30 after we hit the c3 crash and needed an interactive replay to diagnose.
 Candidates to evaluate: any existing Stata-MCP project on GitHub; otherwise build a minimal one that wraps `pystata` or `stata` CLI.
-Concerns to address: license seat contention if multiple Stata sessions run, state management (which Stata is the MCP attached to), security of running arbitrary commands.
+Concerns to address (in order of relevance, after our 2026-04-30 discussion):
+- State management: long-lived Stata session (continuity but fragile state) vs spawn-per-query (isolated but no continuity).
+Pick a model first.
+- Concurrent-write conflicts at the file level: if I run an MCP query while a batch run is in flight, both could write to the same `.ster` file.
+Need a coordination convention.
+- License seat contention: NOT a real concern for the user's personal Stata MP license; we already had two sessions running in parallel today (interactive replay + hukou smoke) without issue.
+Would matter for institutional / FlexNet network licenses but not here.
+- Security blast radius: arbitrary Stata commands have full file-system access (`shell`, `save`, `file write`).
+Mostly equivalent to existing Bash access, but worth noting.
 
 6. **Workstream A Phase 2** (M3 + S3 step 1): unify `grc_tex_table_trend*` family, produce program-caller map for `0_programs.do`.
 
@@ -215,3 +223,24 @@ Concerns to address: license seat contention if multiple Stata sessions run, sta
 10. **Audit Workstream B leftovers**: m8, m14, m16 (low priority); `m13` likely SKIP after a brief look.
 
 11. **Data-creation review** (DC-M1 through DC-m7): deferred from 2026-04-29 by user.
+
+## Session state at `/wrap-up` (2026-04-30)
+
+Everything committed; working tree clean.
+Branch `worktree-grc-pipeline-refactor` pushed to origin through commit `8897864`.
+
+Commits landed this session:
+- `5c21224`: timer-slot wrap fix at run_grc / run_grc_onestep / run_grc_hukou.
+- `9982005`: tests/replay_one_cell.do interactive harness.
+- `5c3308b`: run_grc_hukou merge into run_grc with capture-noisily wrappers.
+- `93fede9`: session log + replay harness skip_if_exists default flip.
+- `bdc3bf1`: _smoke_hukou_only.do verification driver.
+- `8897864`: doc updates with verification result + Stata MCP to-do.
+
+Plus disk-only changes: 120 hukou ster files deleted (ro and uo subgroups).
+
+Background tasks at /wrap-up:
+- User's interactive Stata replay (Scenario A on CHN cuu maxexp): in flight; user is away from machine.
+- All other background tasks completed.
+
+Where to look on resumption: the to-do list above (sections 1--11), starting with confirming the interactive replay finished cleanly (item 1), then relaunching Tier 3 (item 2).
