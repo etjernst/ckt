@@ -500,6 +500,12 @@ This pattern applies to every later phase too: Tier 1 + 2 inside the phase, Tier
 - Coauthor-side fixes from the TZA email draft.
 - `consfood` / `consnonfood` nominal-in-real-file mislabeling in IDN, CHN, TZA files.
 - M5 (collapse enumerated blocks): revisit after the refactor is settled and the regression test is trusted.
+- $\Delta_{\text{avg}}$ row notation in GRC tables.
+The current label is "Average $\Delta$", which is inconsistent with the $\Delta_{\text{never}}$ / $\Delta_{\text{always}}$ subscript form used in the same tables.
+Pick one of: (a) match the subscript form (e.g. $\Delta_{\text{avg}}$), or (b) switch to $\bar{\Delta}$ to make the averaging explicit.
+Either way, add a sentence to the Table 6 notes explaining how the population-weighted average is computed.
+Touches `grc_tex_table_trend` in `0_programs.do` (the `coeflabels(Delta_avg "Average $\Delta$")` line) and the paper-side Table 6 caption / tablenotes.
+Could be folded into M3 since M3 is touching `grc_tex_table_trend` anyway, or left for a separate notation pass.
 
 ## 5. Target program API (concrete)
 

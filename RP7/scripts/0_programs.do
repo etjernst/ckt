@@ -3006,7 +3006,7 @@ program define grc_tex_table_trend
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
+      coeflabels(Delta_avg "$\bar{\Delta}$") ///
       append substitute(\_ _)
 
     * Output other estimates
