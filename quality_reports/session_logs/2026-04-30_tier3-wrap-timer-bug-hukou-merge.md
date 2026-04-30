@@ -348,3 +348,230 @@ If they do, you can use them for interactive Stata diagnostics without batch-mod
 - `~/.claude/settings.json` was modified out-of-band (5 new permission rules). Same applies.
 - The pystata PyPI warning lives in user-scope memory, so it is available across all projects, not just CKT.
 - Working tree on `worktree-grc-pipeline-refactor` is still clean at `2a4c68d`. No project-repo commits this session.
+
+## Stata MCP smoke test (post-restart)
+
+After session restart, the user invoked the Stata MCP tools to confirm they were live.
+First-pass attempts were noisy.
+
+1. Created session `ckt`, then ran `display "MCP says hello..." c(stata_version)`. The `run_command` call hung for 574s and was user-cancelled.
+The session went to `status: error, pid: null`.
+2. The user reported a popup reading "invalid properties in file properties".
+I leapt to a "Stata saved-properties corruption blocking pystata's `init`" diagnosis and proposed wiping `HKEY_CURRENT_USER\Software\StataCorp` or relaunching the GUI to self-heal.
+The user pushed back: they had never actually seen anything launch, so the popup story was speculation built on speculation.
+I withdrew it.
+3. Verified ground truth instead by reading the MCP server stderr at `C:/Users/maand/AppData/Local/claude-cli-nodejs/Cache/C--git-ckt--claude-worktrees-grc-pipeline-refactor/mcp-logs-mcp-stata/2026-04-30T02-31-28-092Z.jsonl`.
+The log showed a clean Stata 19.5 banner, license recognition, `stata_setup.config` success, and `pystata warmed up successfully`.
+So the MCP server itself was healthy from the start.
+4. Confirmed Stata GUI launches cleanly outside the MCP via `"/c/Program Files/StataNow19/StataMP-64.exe"`, with quotes needed because of the space in the path.
+No popup, banner clean.
+That ruled out a Stata-side init problem entirely.
+5. Retried the smoke test on the pre-existing `default` session, which the log showed had a real `pid: 17924`.
+`di 1+1` returned `2` cleanly.
+The full smoke test (`display c(stata_version)`, `c(pwd)`, `c(username)`) returned `Stata 19.5`, the worktree path, and `maand`, all rc=0.
+
+What's actually broken: creating new named sessions (`ckt`, `ckt2`) both went to `status: error, pid: null` immediately.
+The pre-existing `default` session works fine.
+I did not investigate further; the workaround is to just use `default`.
+
+Surprise finding that turned out to be a false alarm: `c(flavor)` returns `IC`, but every other capability indicator says MP.
+Followup diagnostic on `default` produced `c(MP)=1`, `c(SE)=1`, `c(processors)=2`, `c(processors_max)=2`, `c(processors_lic)=2`, `c(maxvar)=5000`, and `about` reporting "StataNow/MP 19.5 for Windows (64-bit x86-64)".
+Maxvar=5000 alone rules out true IC, whose hard ceiling is 2,047.
+Most likely cause: pystata's in-process init reports `c(flavor)` from the pre-license-activation channel and never re-reads after StataNow/MP licensing kicks in.
+
+Operational consequence: GRC GMM gets the 2-core MP speedup through the MCP.
+The MCP is usable for real estimation work, not just diagnostics, and we don't have to fall back to `stata-mp` batch mode for performance reasons.
+
+## M4 verification (CLOSED)
+
+Used the MCP to verify the M4 mu-loop cleanup (commit `d2b0c73`) on a real production cell.
+
+Cell: `grc_CHN_cub_c0` (CHN, consumption, urban, balanced, no covariates).
+Reference ster: [RP7/output/grc_CHN_cub_c0.ster](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/grc_CHN_cub_c0.ster), mtime 2026-04-29 03:47 +1000, well before M4 landed at 14:40.
+The reference `e(cmdline)` clearly shows the duplicate mu entries in `from()` (`mu:switcher_2 mu_2 ... mu:switcher_13 mu_13 kappa: kappa mu:switcher_2 mu_2 ...`), confirming the cell was estimated with the OLD (pre-M4) `initial_values` code.
+
+Refit driver: set `$dir`, included `0_path_config.do` and `0_programs.do` (with the M4 cleanup applied), mirrored the cub-section pre-amble from `5_GrRC.do` L284--299, ran the CHN block from L450--493 with `estname(verify_M4_CHN_cub_c0)`.
+N obs: 56,855 (matches reference exactly).
+Wall time: ~2 min for the full block (initial_values + run_grc, all 5 sters written).
+
+Result: bit-identical.
+- `max |b_new - b_ref| = 0.000000000000000e+00`
+- `max |V_new - V_ref| = 0.000000000000000e+00`
+- `mreldif(b_new, b_ref_M4) = 0`
+- `mreldif(V_new, V_ref_M4) = 0`
+
+The 17 parameters and the 17×17 VCV match to machine precision.
+The M4 commit message's claim that GMM treats same-value duplicate `from()` entries as bit-identical to the deduplicated form is now verified on the production CHN cub c0 cell, not just the synthetic `tests/test_gmm_from_duplicate.do` test.
+
+**M4 promoted from RESOLVED to CLOSED.**
+Workstream B status update: M4 verification gate cleared.
+
+Verification sters at [RP7/output/verify_M4_CHN_cub_c0*.ster](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/) (5 files, ~120 KB total) can be deleted now that the comparison is recorded.
+
+[LEARN:mcp-stata] Output-size traps when using the MCP for estimation:
+1. `include "$dir/scripts/0_programs.do"` echoes the entire 92 KB programs file unless wrapped in `quietly { ... }`.
+2. `gmm` iteration trace can produce 60 KB+ of stdout per fit, which exceeds the MCP's response token cap.
+3. `do "<file>.do"` echoes the whole script too---a four-cell driver hit 100 KB.
+The clean fix (per user 2026-04-30): open a Stata log inside the .do file (`log using "$logs/<name>.smcl", replace`); then ALL output goes to disk instead of the MCP response. The MCP only sees what's printed AFTER the log opens, or nothing if you stay quiet. Treat the .do file as if it were a batch-mode script.
+Fallbacks if you can't open a log: re-load the ster after the fit and query `e(b)` / `e(V)` directly, or wrap the fit in `quietly`.
+
+## M4 extended verification (caveats closed)
+
+User asked to do all three caveats from the M4 memo to strengthen the result.
+Two of the three (covariate spec, sample variation) needed actual refits; one (`_robust` path) was closed by code-symmetry argument.
+
+**Plan adjustments after reconnaissance:**
+- 2a covariate cell---`grc_CHN_cub_ca` (full controls: period FE + female + age2 + edu + edu^2). Pre-M4 mtime confirmed.
+- 2b `_robust` path---ZERO `*robust*` sters exist anywhere in `RP7/output/`, meaning Tier 3 never ran the robust path. Explicit test would require a git-revert dance (revert `d2b0c73`, fit a robust cell, restore, refit, compare). Heavy. User noted that `initial_values_robust` was written by copying `initial_values` AFTER the duplicate was already in it, so the two share a common origin and M4's symmetric edit (verified by `git show d2b0c73`) has identical effect on both. Closed by code-symmetry argument; no explicit refit.
+- 2c hukou caveat---pivoted away from hukou cells (rf+uf cells were fit during Tier 3 with old `run_grc_hukou` which has since been merged into `run_grc`, so a hukou bit-compare would conflate M4 with the merge). Substituted `grc_IDN_cub_c0` and `grc_TZA_cub_c0` to test "different sample sizes / different number of switchers" without conflation. Both cells pre-M4 mtime confirmed.
+
+**Driver:** [tests/verify_M4_extended.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/verify_M4_extended.do).
+First execution had two bugs: forgot to `fclose` the summary file's header handle (mata write left summary empty), and tried to stash `e(b)` after `run_grc` (which writes derived sters `_a`/`_g`/`_n`/`_d` so the post-call `e(b)` reflects the LAST one, not the main fit).
+Both fixed; comparison loop now reloads each ster from disk before comparing.
+Driver also opens a Stata log inside the .do via `log using` so the MCP response stays small (this came from a user tip mid-session).
+
+**Result---four cells, all bit-identical:**
+
+| Cell | k | N | max \|dB\| | max \|dV\| | mreldif b | mreldif V |
+|---|---:|---:|---:|---:|---:|---:|
+| CHN cub c0 | 17 | 56,855 | 0 | 0 | 0 | 0 |
+| CHN cub ca | 24 | 56,855 | 0 | 0 | 0 | 0 |
+| IDN cub c0 | 35 | 16,391 | 0 | 0 | 0 | 0 |
+| TZA cub c0 | 11 | 23,526 | 0 | 0 | 0 | 0 |
+
+Total wall time across all four fits: ~13 min (CHN c0 14:56, CHN ca 15:01, IDN c0 15:09, TZA c0 15:09; IDN and TZA were fast).
+Memo updated at [quality_reports/reviews/2026-04-30_M4-verification.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-30_M4-verification.md) with the extended table replacing the previous "single cell" caveat.
+Summary text file at [RP7/output/verify_M4_extended_summary.txt](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/verify_M4_extended_summary.txt).
+
+**[LEARN:stata] `run_grc` clobbers `e(b)` between calls.** It writes derived sters (`_a`, `_g`, `_n`, `_d`) inside the program, so on return `e(b)` is the LAST estimate, not the main fit. Don't try to stash `matrix b_new = e(b)` after `run_grc`; reload the main ster from disk if you need the parameters.
+
+**[LEARN:diagnosis] Pre-M4 ster availability matters for caveat tests.** Doing a "spot-check on dimension X" requires that pre-M4 cells exist on disk under that dimension. The robust path failed this gate (no robust sters anywhere). Worth checking `ls output/*<keyword>*.ster` early when planning a verification sweep, before committing to a test design.
+
+[LEARN:diagnosis] When a hypothesis depends on a user observation I can't independently verify (e.g., "the popup said X"), do not stack further speculation on top of it.
+Read the actual server log first.
+The mcp-stata stderr lives at `%LOCALAPPDATA%/claude-cli-nodejs/Cache/<project-key>/mcp-logs-mcp-stata/*.jsonl` and contains the Stata banner and pystata init trace.
+That single file would have killed the popup hypothesis before I wrote it.
+
+## End-of-session wrap-up (afternoon, 2026-04-30)
+
+### What changed in this session
+
+Stata MCP went from "registered but untested" to "fully validated for diagnostics, dataset inspection, single-cell refits, and bit-compare verification".
+M4 (Workstream B) went from RESOLVED to CLOSED with strong evidence: four production cells across three countries, all bit-identical to machine precision.
+Three artifact-discipline rules added at user level (cross-project), one as path-scoped.
+
+### Files written or modified this session (afternoon)
+
+- [tests/verify_M4_mu_loop.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/verify_M4_mu_loop.do) NEW.
+Single-cell M4 driver (CHN cub c0).
+- [tests/verify_M4_extended.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/verify_M4_extended.do) NEW.
+Four-cell driver with `log using` discipline; comparison loop reloads sters from disk to dodge `run_grc`'s `e(b)` clobber.
+- [quality_reports/reviews/2026-04-30_M4-verification.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-30_M4-verification.md) NEW.
+The M4 memo, with a 17-row precision table and the four-cell extended caveat closure.
+- [RP7/output/verify_M4_b_compare.txt](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/verify_M4_b_compare.txt) NEW.
+Param-by-param dump at machine precision for CHN cub c0.
+- [RP7/output/verify_M4_extended_summary.txt](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/verify_M4_extended_summary.txt) NEW.
+Four-cell summary table.
+- [RP7/output/verify_M4_*.ster](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/) NEW.
+Four cells × 5 sters each = 20 files, the refit results.
+Gitignored.
+- [~/.claude/rules/mcp-stata-conventions.md](file:///C:/Users/maand/.claude/rules/mcp-stata-conventions.md) NEW.
+Five MCP gotchas including the `log using` recommendation; path-scoped to `**/*.do` and `**/*.ado`.
+- [~/.claude/rules/stata-mcp-work.md](file:///C:/Users/maand/.claude/rules/stata-mcp-work.md) NEW.
+The four-item persistence checklist for Stata MCP work; path-scoped to `**/*.do` and `**/*.ado`.
+- [~/.claude/memory/feedback_save_stata_mcp_artifacts.md](file:///C:/Users/maand/.claude/memory/feedback_save_stata_mcp_artifacts.md) NEW.
+User-level memory feedback referencing the rule above.
+- [~/.claude/MEMORY.md](file:///C:/Users/maand/.claude/MEMORY.md) updated.
+Added "Workflow" section indexing the three feedback files in `memory/`.
+
+### Decisions and the why
+
+**Decision:** use the `default` MCP session, never create named sessions.
+**Why:** every named session (`ckt`, `ckt2`) immediately enters `status: error, pid: null` and hangs `run_command` calls indefinitely.
+The pre-existing `default` session works fine.
+This was the actual root cause of the original 574s "popup" hang from the morning, not a Stata-side dialog as I initially claimed.
+
+**Decision:** trust `c(MP)`, `c(processors)`, `c(maxvar)` for runtime-flavor checks; do NOT trust `c(flavor)`.
+**Why:** on this StataNow MP install, `c(flavor)` returns "IC" while every other indicator says MP and `about` confirms "StataNow/MP".
+Most likely cause: pystata reads `c(flavor)` from the pre-license-activation channel and never re-reads.
+Confirmed via the diagnostic that `c(MP)=1`, `c(processors)=2`, `c(maxvar)=5000`, all of which are impossible in true IC.
+
+**Decision:** close the M4 `_robust` caveat by code-symmetry instead of explicit refit.
+**Why:** zero `*robust*` sters exist anywhere in `RP7/output/`, so an explicit pre-M4 reference does not exist.
+An explicit test would require git-reverting d2b0c73, fitting a robust cell, restoring, and refitting---four heavy steps with confusion risk.
+The diff (verified via `git show d2b0c73`) is structurally identical between `initial_values` and `initial_values_robust`, and the robust function was written by copying `initial_values` AFTER the duplicate was already in it.
+Same surgery on a copy-with-the-same-bug = same result by construction.
+The user reasoned this point unprompted ("we wrote that AFTER the initial values duplication was introduced"), and I dropped the explicit test.
+
+**Decision:** swap the hukou caveat for IDN/TZA cells.
+**Why:** the surviving rf+uf hukou sters were fit by the now-deleted `run_grc_hukou`, so a hukou bit-compare would conflate M4 with the program merge (commit `5c3308b`, earlier today).
+A clean M4-only test needs cells fit through `run_grc` only.
+IDN and TZA bring the same caveat dimension (different sample sizes, different switcher counts) without the conflation.
+
+**Decision:** open a Stata log inside the .do file (`log using "$logs/<name>.smcl"`) for any non-trivial MCP-driven Stata work.
+**Why:** user pointed this out mid-session.
+The MCP's response token cap is hit easily by `do`-file echoes (100 KB on a four-cell driver) and by `gmm` iteration traces (60 KB per fit).
+A log routes everything to disk; the MCP only sees what's printed after the log opens.
+This is the right pattern, not a workaround.
+Encoded as the leading recommendation in the user-level rule file.
+
+**Decision:** put the artifact-persistence rule at user-level + path-scope it to `.do`/`.ado`, rather than project-level only.
+**Why:** the user explicitly asked.
+The rule generalizes beyond CKT (any project doing Stata MCP work benefits), but only fires when Stata code is in scope, so it doesn't load for non-Stata sessions.
+Renamed the rule from `interactive-work-artifacts` to `stata-mcp-work` because the value calculus is sharpest for Stata MCP specifically.
+
+### Approaches rejected and the reason
+
+**Spawned new named MCP sessions to retry after the initial hang.**
+Rejected after `ckt` AND `ckt2` both went to error.
+The `default` session was healthy the whole time; the named-session bug was masking that.
+
+**Stashing `matrix b_new = e(b)` after `run_grc` returns.**
+Tried in the first version of `verify_M4_extended.do`.
+Failed because `run_grc` writes derived `_a`/`_g`/`_n`/`_d` sters inside the program, so post-call `e(b)` reflects the LAST one (1×1 scalar), not the main fit.
+Refactored the comparison loop to reload each main ster from disk.
+
+**Wiping `HKEY_CURRENT_USER\Software\StataCorp` to fix the popup.**
+Proposed early in the session as a fix for a popup the user said they never saw.
+Withdrawn after reading the actual mcp-stata server stderr and finding Stata had initialized cleanly.
+Speculation built on speculation; should have read the log first.
+
+**Saving the M4 verification artifacts only as MCP-session matrices.**
+Rejected after the user pointed out artifacts must persist even when work is interactive.
+Drove the artifact-persistence rule into user-level rules and memory.
+
+### Open items going into the next session
+
+**Tier 3 #4 still pending.**
+Command: `cd RP7/scripts && stata-mp -b do _smoke_full.do`.
+Expected wall time ~5--10 hours.
+Unblocks Phase 1 close-out (`commit 6e`: delete `10/11/12/13/14/15_*.do`, collapse master includes).
+Doesn't compete with the MCP `default` session; can run in parallel.
+
+**Phase 1 close-out (commit 6e)** still gated on Tier 3.
+
+**Workstream A Phase 2** still NOT STARTED.
+Unify `grc_tex_table_trend*` family + program-caller map for `0_programs.do`.
+Pure code/doc work, no MCP needed.
+
+**Verification ster cleanup.**
+20 `verify_M4_*.ster` files in `RP7/output/` (~600 KB total, gitignored).
+The audit trail is in the txt files.
+User asked early in the session that they would handle deletes; not done yet.
+
+**Working tree dirty.**
+A bunch of new files this session (driver scripts, memo, summary txts, ster files), none committed yet.
+The session log update itself is also uncommitted.
+
+### Picking back up
+
+**If you resume this branch:** read this file end-to-end first.
+The afternoon's MCP work and M4 verification details are inline above; the four-cell results closed the M4 memo's caveat section.
+**Open thread:** decide whether to launch Tier 3 #4 in batch background and start Workstream A Phase 2 in parallel, or just commit the current work and move to Tier 3.
+**Next concrete action:** likely `git add tests/verify_M4_*.do quality_reports/reviews/2026-04-30_M4-verification.md quality_reports/session_logs/2026-04-30_tier3-wrap-timer-bug-hukou-merge.md RP7/output/verify_M4_*.txt` plus a single commit, then launch Tier 3.
+**State to know:**
+- The `default` MCP session is alive and healthy with `0_programs.do` already loaded; named sessions all errored and should be ignored.
+- prose-rules-enforcer flag is set this session; resets next session.
+- voice.md and manuscript-writing.md were Read.
+- User-level rule and memory files were modified out-of-band (`~/.claude/rules/{stata-mcp-work,mcp-stata-conventions}.md`, `~/.claude/memory/feedback_save_stata_mcp_artifacts.md`, `~/.claude/MEMORY.md`).
+- Branch `worktree-grc-pipeline-refactor` has uncommitted afternoon work; last commit is still `7a553bb`.
