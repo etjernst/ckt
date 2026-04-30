@@ -315,3 +315,83 @@ The reasonable next move (not done this session) is a panel bootstrap CI on $\De
 This is in the existing TODO entry for "Add panel bootstrap CIs for $\hat\Delta_{d_N}$ and $\hat\Delta_{d_T}$ in main tables", which should be extended to include $\Delta_{\text{avg}}$.
 
 Validation gate memo updated with $T = 4$ $R = 200$ findings and the calibration discussion.
+
+## Wrap-up: chi-squared finite-sample memo and three robustness TODOs
+
+### Goals (this sub-session)
+
+After the $T = 4$, $R = 200$ run confirmed mild persistent under-coverage of the inversion CI, the user asked four follow-up questions:
+
+1. What is $J_R$ exactly?
+2. Are there standard adjustments for the finite-sample chi-squared bias?
+3. What are the literature citations (with full paper titles, not just author-year)?
+4. How does the $T = 4$ synth compare to the empirical CKT setting, and is a panel bootstrap CI actually better than the inversion?
+
+The user also course-corrected on terminology: "LCA over-identifying restrictions" is not a literature concept; the chi-squared bias is a property of GMM J-tests in general, with the LCA assumption being the specific structure that produces the over-identifying restrictions in our setup.
+
+### What got built or changed
+
+- [`docs/notes/2026-04-30_chi-squared-finite-sample.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_chi-squared-finite-sample.md): new memo defining $J_R$, explaining the finite-sample bias, listing four classes of corrections (Bartlett-style, F adjustment, bootstrap calibration, Edgeworth), and explicitly comparing point-estimate panel bootstrap vs bootstrap-calibrated inversion as separate inference procedures.
+All citations include full paper titles, journal volumes, and page ranges.
+- [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md): three new TODO entries.
+First, an empirically calibrated coverage test (synthesize using each country's actual trajectory shares, unbalanced fraction, and controls).
+Second, the Imbens-Kolesár (2016) Bell-McCaffrey-Satterthwaite F adjustment as an additional row beneath the inversion CI in each table cell (cheap, principled, recommended first robustness pass).
+Third, the Hall-Horowitz (1996) bootstrap-calibrated inversion CI as an optional third row (more expensive, theoretically best).
+- Existing TODO for panel bootstrap CIs on $\hat\Delta_{d_N}$ and $\hat\Delta_{d_T}$ already expanded earlier in the session to include $\hat\Delta_{\text{avg}}$.
+
+### Decisions, with the why
+
+Decision: clarify in the memo that $J_R$ is the number of over-identifying restrictions of the GMM model in general, not "LCA-specific."
+Why: user pointed out "LCA over-identifying restrictions" is not literature terminology; the LCA is what gives rise to over-identifying restrictions in our setup, but the chi-squared bias is a generic GMM property documented in Hansen-Heaton-Yaron 1996 and elsewhere.
+
+Decision: report the F-adjusted inversion CI as an additional row beneath the chi-squared inversion CI in each table cell, not as a separate column.
+Why: user explicitly preferred row over column ("doesn't need its own column, can just be an additional row").
+This keeps the table compact while showing both calibrations side-by-side.
+
+Decision: present the point-estimate panel bootstrap as a "cross-check" rather than a "replacement" for the inversion CI in the memo.
+Why: the inversion CI is weak-ID-robust; the point-estimate bootstrap is not.
+The user's intuition that "the inversion was the most robust" was largely correct; what makes the inversion CI biased in finite samples is the chi-squared part of "chi-squared inversion CI", not the inversion structure.
+The right "best of both worlds" is bootstrap calibration of the inversion test (Hall-Horowitz 1996), which preserves weak-ID robustness and corrects the chi-squared bias.
+
+Decision: rank robustness rows in priority order: F adjustment first (cheap), bootstrap-calibrated inversion second (expensive, escalate if F adjustment doesn't close the gap), point-estimate panel bootstrap third (cross-check, not a primary inference).
+Why: the F adjustment is a one-line replacement of the critical value with a Satterthwaite-type degrees-of-freedom adjustment to the variance; running it costs nothing relative to the existing pipeline.
+The bootstrap-calibrated inversion costs $B$ Wald computations per grid point per cell; only worth doing if the F adjustment doesn't close the gap.
+
+### Approaches rejected and the reason
+
+None this sub-session.
+The session was answering questions and recording decisions, not exploring alternatives.
+
+### Open items and blockers
+
+All three new TODOs are unblocked and can proceed independently:
+
+- Empirically calibrated coverage test: half a day of code plus a few hours per country at $R = 100$.
+- F adjustment: one-line replacement plus a $\widehat{\nu}$ computation per grid point.
+Re-run synth_overid at $T = 4$ to verify gap closure.
+- Bootstrap-calibrated inversion: $B \times$ grid size Wald computations per cell.
+Start with IDN $K = 27$ specs.
+
+### Picking back up
+
+If you resume on lca-inversion:
+
+Read [`docs/notes/2026-04-30_chi-squared-finite-sample.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_chi-squared-finite-sample.md) first.
+The memo carries the full citation set and the framing of why the under-coverage is real, which is the load-bearing context for any of the three new TODO items.
+
+Open thread: choose which of the three new robustness paths to implement first.
+The recommended order is the F adjustment (cheapest, principled, single-day implementation) followed by the empirically calibrated coverage test, with the bootstrap-calibrated inversion held as a fallback if the F adjustment alone does not close the gap.
+
+Next concrete action: implement the Imbens-Kolesár (2016) Bell-McCaffrey-Satterthwaite F adjustment in [`grid_lca_inversion`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py) and the three MD delta inversions.
+Replace the $\chi^2_{J_R, 0.95}$ critical value with $J_R \cdot F_{0.95}(J_R, \widehat{\nu})$ where $\widehat{\nu}$ is the Satterthwaite-type estimate.
+Re-run synth_overid at $T = 4$, $R = 200$ and verify the under-coverage gap closes.
+If yes, re-run the empirical three-country inversion to produce F-adjusted CIs alongside the chi-squared inversion CIs.
+
+State to know:
+
+- The $T = 4$, $K = 14$, $R = 200$ Monte Carlo gives $\Delta_{\text{avg}}$ coverage of 0.840 (MC SE 0.026); 15/200 = 7.5% empty CIs.
+Conditional on a non-empty CI, $\Delta_{\text{avg}}$ covers 0.908.
+- Three-country inversion outputs at [`results/lca_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/lca_inversion_three_countries.md) and [`results/delta_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/delta_inversion_three_countries.md).
+Two cells are multi-island Delta_always: IDN/covs_all and TZA/covs_all (both phi-CIs cross $\phi = -1$, the Möbius singularity).
+- Working tree is clean except for `.claude/scheduled_tasks.lock` and `.claude/settings.local.json` (both gitignored).
+- The `prose-rules-enforcer` hook fires once per session; was triggered earlier today, so the next session will trigger it again on the first prose edit.
