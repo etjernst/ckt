@@ -1,0 +1,55 @@
+Verification: swd_always_choice nonzero counts
+Generated: 30 Apr 2026 16:50:13
+Source: tests/verify_C1_swd_always.do
+
+================================================================
+Country: IDN  vindex=prov
+================================================================
+  obs after vfirst drop:       92,738   (dropped:    300)
+  always==1 obs:        3,995
+    choice==1:        3,995
+    choice==0:            0
+    choice==.:            0
+
+  swd_always_choice nonzero obs:            0 /       92,738
+    sd:        0.000000e+00
+    min:       0.000000e+00
+    max:       0.000000e+00
+
+================================================================
+Country: TZA  vindex=region
+================================================================
+  obs after vfirst drop:       29,864   (dropped:      0)
+  always==1 obs:        6,564
+    choice==1:        6,564
+    choice==0:            0
+    choice==.:            0
+
+  swd_always_choice nonzero obs:            0 /       29,864
+    sd:        0.000000e+00
+    min:       0.000000e+00
+    max:       0.000000e+00
+
+================================================================
+Country: CHN  vindex=provcd
+================================================================
+  obs after vfirst drop:      109,535   (dropped:      0)
+  always==1 obs:       22,732
+    choice==1:       22,732
+    choice==0:            0
+    choice==.:            0
+
+  swd_always_choice nonzero obs:            0 /      109,535
+    sd:        0.000000e+00
+    min:       0.000000e+00
+    max:       0.000000e+00
+
+================================================================
+Focal-cell GMM comparison: CHN covs_all onestep
+================================================================
+  WITH    swd_always_choice: kappa =  9.49400e+00  se=  1.05144e-01  conv=1
+  WITHOUT swd_always_choice: kappa =  9.49400e+00  se=  1.05144e-01  conv=1
+  diff(kappa):  0.00000e+00
+  phi WITH    = -1.54672e-01  se=  2.30880e-01
+  phi WITHOUT = -1.54672e-01  se=  2.30880e-01
+  diff(phi):  0.00000e+00

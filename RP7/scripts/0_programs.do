@@ -2442,17 +2442,22 @@ program define run_grc_robust_vv
         local swd_list "`swd_list' swd_switcher_`s'_choice"
     }
 
-    * Demean always_choice on i.vfirst among always-urban workers.
-    * Always-urban have choice=1 in every period so within-person
-    * variation is zero; BUT cross-person variation in always-urban
-    * status within a cluster contributes. Same pattern as VV.
-    capture drop swd_always_choice
-    tempvar tmpy tmpresid
-    qui gen `tmpy' = always_choice if always == 1
-    qui reg `tmpy' i.vfirst if always == 1
-    qui predict `tmpresid' if always == 1, resid
-    qui gen swd_always_choice = `tmpresid'
-    qui replace swd_always_choice = 0 if missing(swd_always_choice)
+    * No always-urban instrument is constructed.
+    * Earlier code residualized always_choice on i.vfirst among workers
+    * with always==1 to mirror VV's switcher residualization. But always-
+    * urban have choice==1 in every period by construction, so always_choice
+    * is identically 1 within that subsample; demeaning a constant on
+    * cluster dummies gives residuals identically zero. The resulting
+    * instrument added a zero column to the moment system. The smoke test
+    * at tests/verify_C1_swd_always.do verified this empirically across
+    * all three countries (IDN, TZA, CHN: 0 nonzero values out of 92,738 /
+    * 29,864 / 109,535 observations) and showed that dropping the
+    * instrument from CHN covs_all onestep changed point estimates and
+    * standard errors by zero to machine precision. kappa is identified
+    * through the cross-equation restrictions in the moment formula
+    * (always # 1.choice term) plus the existing instrument set.
+    * See quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md
+    * (finding C1) for the full audit.
 
     * ----------------------------------------------------------------
     * Cluster-support diagnostics (brief)
@@ -2495,10 +2500,13 @@ program define run_grc_robust_vv
 
     * ----------------------------------------------------------------
     * GMM: same moment equation as run_grc, BUT instruments
-    * swd_switcher_*_choice replace switcher_*_choice, and
-    * swd_always_choice replaces always_choice. vce(cluster vfirst),
+    * swd_switcher_*_choice replace switcher_*_choice. vce(cluster vfirst),
     * winitial unadjusted independent, onestep (VV's settings).
     * Parameter count identical to run_grc -- no beta_dev.
+    * No always-urban instrument (the demeaned version would be identically
+    * zero; see comment block above and audit memo C1). kappa is identified
+    * through the moment equation's always#1.choice term combined with the
+    * standard instruments (never, switcher_traj, choice).
     * ----------------------------------------------------------------
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                   ///
                             - {Delta_base}*choice                                   ///
@@ -2509,7 +2517,7 @@ program define run_grc_robust_vv
                            , instruments(                                           ///
                             `covarlist'                                             ///
                             never `switcher_traj' choice                            ///
-                            swd_always_choice `swd_list', nocons                    ///
+                            `swd_list', nocons                                      ///
                            )                                                        ///
                              vce(cluster vfirst)                                    ///
                              winitial(unadjusted, independent)                      ///
