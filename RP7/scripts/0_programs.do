@@ -2555,6 +2555,18 @@ program define run_grc_robust_vv
     estadd scalar V_clusters = `V',           replace : `estname'
     estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
 
+    * ----------------------------------------------------------------
+    * Individual-count scalar: e(N_clust) under vce(cluster vfirst) is
+    * the location count, NOT the individual count. Compute the true
+    * count of unique pids in the GMM's e(sample) and store it as a
+    * separate scalar so the table program can show Individuals AND
+    * Locations as distinct rows. Audit memo C8.
+    * ----------------------------------------------------------------
+    tempvar pid_tag
+    qui egen `pid_tag' = tag(pid) if e(sample)
+    qui count if `pid_tag' == 1
+    estadd scalar n_indiv = r(N), replace : `estname'
+
     estimates save "$dir/output/`estname'", replace
 
     * ----------------------------------------------------------------
@@ -2785,11 +2797,101 @@ program define grc_tex_table_trend
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
-   
+
 end
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results 
+* Create LaTeX table for the Verdier-style robust GRC results.
+* Differs from grc_tex_table_trend in the bottom stats block: shows
+* Individuals (n_indiv = unique pid count in e(sample)) AND Locations
+* (N_clust = vfirst cluster count under vce(cluster vfirst)) as
+* separate rows. The main GRC tables only need one count row because
+* their vce(cluster pid) makes N_clust == individual count; the
+* Verdier tables need both because clusters are locations, not pids.
+* **********************************************************************
+cap program drop grc_tex_table_trend_robust
+program define grc_tex_table_trend_robust
+    syntax , COLumns(integer) FILEname(string asis) 	///
+					COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+					htb(string) PREhead(string asis) POSTfoot(string asis) ///
+					COEFLABels(string asis) TEXTdepvar(string asis) ///
+					[ESTPrefix(string)]
+
+    if "`estprefix'" == "" local estprefix "vv_"
+
+    local num_panels `panels'
+    local ccc ""
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    local ests_never = ""
+    local ests_avg = ""
+    local ests = ""
+
+    foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
+        local ests_never = "`ests_never' `estprefix'`country'_`estname'_never"
+        local ests_avg   = "`ests_avg' `estprefix'`country'_`estname'_avg"
+        local ests       = "`ests' `estprefix'`country'_`estname'"
+    }
+
+    * Delta_never row
+    esttab `ests_never'                    ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    fragment booktabs noobs                ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    varwidth(20)                           ///
+    nolines nomtitles `colnumbers'         ///
+    prehead(`table_prehead')               ///
+    posthead(`table_posthead')             ///
+    coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+    replace substitute(\_ _)
+
+    * Average Delta row
+    esttab `ests_avg'                      ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    fragment booktabs noobs                ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    varwidth(20)                           ///
+    nolines nomtitles nonum                ///
+    coeflabels(Delta_avg "Average $\Delta$") ///
+    append substitute(\_ _)
+
+    * Phi row + bottom stats: Individuals, Locations, Observations,
+    * J-stat, J-stat p-value, Converged.
+    esttab `ests'                          ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    keep(`keep')                           ///
+    varlabels(`keep' "`varlabel'")         ///
+    eqlabels(none)                         ///
+    fragment booktabs                      ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    s(n_indiv N_clust N Jstat Jpval converged_str, label( "Individuals" "Locations" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+    fmt(%9.0fc %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+    varwidth(20)                           ///
+    nolines nomtitles nonum                ///
+    postfoot("`table_postfoot'")           ///
+    append substitute(\_ _)
+
+end
+
+* **********************************************************************
+* Create country-specific LaTeX table with GRC results
 *	==> FOR TREND FIRST DO FILE
 * **********************************************************************
 cap program drop grc_tex_table_trend_hukou

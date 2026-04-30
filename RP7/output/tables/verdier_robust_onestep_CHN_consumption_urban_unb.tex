@@ -1,5 +1,5 @@
 \begin{table}[htbp] \centering \begin{threeparttable}
- \caption{Cluster-Residualized GRC Estimates of the Returns to Urban Location on log Consumption in China (onestep GMM)} 
+ \caption{Restricted GRC estimates of the returns to urban location with location-specific trajectory intercepts (China)} 
  \label{tab:verdier_robust_onestep_CHN_consumption_urban_unb} 
 \begin{tabular}{l ccccc} \toprule  \textbf{Dep. var:}  log(consumption) 
                     &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
@@ -16,9 +16,10 @@ Average $\Delta$    &       0.019***&       0.003** &       0.003** &       0.00
 $\phi$              &      -0.742***&      -0.076   &      -0.076   &      -0.130   &      -0.155   \\
                     &     (0.126)   &     (0.202)   &     (0.201)   &     (0.197)   &     (0.231)   \\
 \addlinespace
-Individuals         &          29   &          29   &          29   &          29   &          29   \\
+Individuals         &      34,746   &      34,746   &      34,746   &      34,746   &      34,746   \\
+Locations           &          29   &          29   &          29   &          29   &          29   \\
 Observations        &     109,535   &     109,535   &     109,535   &     109,535   &     109,535   \\
 J-stat              &               &               &               &               &               \\
 J-stat (p-value)    &               &               &               &               &               \\
 Converged           &           Y   &           Y   &           Y   &           Y   &           Y   \\
-\cmidrule{2-6} Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{Cluster-residualized GRC (Verdier-style) estimates with onestep GMM. Standard errors clustered at the village (vfirst) level in parentheses. Columns (2)-(5) include time fixed effects; column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. Stars: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.} \end{tablenotes} \end{threeparttable} \end{table}
+\cmidrule{2-6} Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{Cluster-residualized GRC estimates with onestep GMM. Standard errors clustered at the location level (first-wave province in Indonesia and China, region in Tanzania) in parentheses. Columns (2)-(5) include time fixed effects; column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. Stars: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.} \end{tablenotes} \end{threeparttable} \end{table}

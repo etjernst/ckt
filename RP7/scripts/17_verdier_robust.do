@@ -115,14 +115,14 @@ foreach country in IDN TZA CHN {
         di as txt "================================================================"
 
         * No covariates
-        run_grc_robust_vv,                                              ///
+        capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_0)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
             iterate(`iterations') `step'
 
         * Add time FE
-        run_grc_robust_vv,                                              ///
+        capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_trend)           ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
@@ -130,7 +130,7 @@ foreach country in IDN TZA CHN {
             iterate(`iterations') `step'
 
         * Add female
-        run_grc_robust_vv,                                              ///
+        capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_1)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
@@ -138,7 +138,7 @@ foreach country in IDN TZA CHN {
             iterate(`iterations') `step'
 
         * Add age^2
-        run_grc_robust_vv,                                              ///
+        capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_2)               ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
@@ -146,7 +146,7 @@ foreach country in IDN TZA CHN {
             iterate(`iterations') `step'
 
         * Add education + education^2
-        run_grc_robust_vv,                                              ///
+        capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_all)             ///
             switchers($switchers) base(`base') initial(`initial')       ///
             balance(`balance') vindex(`vidx')                           ///
@@ -195,15 +195,15 @@ foreach step in onestep twostep {
         if "`country'" == "CHN" local countryname China
         if "`country'" == "TZA" local countryname Tanzania
 
-        local table_caption "`" \caption{Cluster-Residualized GRC Estimates of the Returns to Urban Location on log Consumption in `countryname' (`step' GMM)} "'"
+        local table_caption "`" \caption{Restricted GRC estimates of the returns to urban location with location-specific trajectory intercepts (`countryname')} "'"
         local table_label "`" \label{tab:verdier_robust_`step'_`country'_`depvar'_`choice'_`balance'} "'"
 
-        local table_notes "Cluster-residualized GRC (Verdier-style) estimates with `step' GMM. Standard errors clustered at the village (vfirst) level in parentheses. Columns (2)-(5) include time fixed effects; column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. Stars: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
+        local table_notes "Cluster-residualized GRC estimates with `step' GMM. Standard errors clustered at the location level (first-wave province in Indonesia and China, region in Tanzania) in parentheses. Columns (2)-(5) include time fixed effects; column (3) adds a female indicator, column (4) adds age squared, and column (5) adds education (years of schooling, maximum across periods) and its square. Stars: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
         local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 
-        grc_tex_table_trend, columns(5)                                                    ///
+        grc_tex_table_trend_robust, columns(5)                                             ///
             country(`country'_`stepshort')                                                 ///
-            estprefix(vv_)                                                            ///
+            estprefix(vv_)                                                                 ///
             filename(verdier_robust_`step'_`country'_`depvar'_`choice'_`balance')          ///
             keep(`reportvars')                                                             ///
             varlabel(`varlab')                                                             ///

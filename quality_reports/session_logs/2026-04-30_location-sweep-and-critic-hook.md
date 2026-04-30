@@ -251,3 +251,169 @@ That's correct.
 Three commits this part of the session: `9d10917` (Python comparison + driver fix), `da5a9e0` (smoke tables), `19ac848` (writing-critic report + session log).
 > - Hook script lives at `~/.claude/hooks/critic-fixer-enforcer.py`, settings.json registers it, voice.md has the loads-on rule, two user-level memory files added.
 None of those changes are in the worktree git (they are user-level config).
+
+## Late-evening continuation: audit, C1 verification, and Δ_always table refactor
+
+Picked back up after the user asked what bigger-picture items remained for the Verdier wrap-up.
+Three threads ran:
+
+1. Audit memo for `run_grc_robust_vv` (S2 from the original 2026-04-29 spec).
+2. C1 smoke test, verification, and code drop.
+3. Task #1 (Individuals + Locations rows), kicked off but not yet regenerated.
+
+### Worktree-side artifacts
+
+- [quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md): existing pre-implementation audit got a new "Post-implementation audit (2026-04-30)" section.
+Documents seven new findings (C1--C7), then a verification subsection with the C1 outcome.
+Committed at `c3c6970`.
+- [tests/verify_C1_swd_always.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/tests/verify_C1_swd_always.do): new smoke driver.
+Reproduces the demean across IDN/TZA/CHN, runs a focal-cell GMM (CHN covs_all onestep) with and without `swd_always_choice`, writes a grep-able diagnostic.
+- [RP7/output/verify_C1_swd_always.txt](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/output/verify_C1_swd_always.txt): diagnostic output (committed because it is the audit trail; .ster files remain gitignored).
+- [RP7/scripts/0_programs.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do): three changes.
+  - L2444--2456: `swd_always_choice` demean block replaced with an explanatory comment block citing the smoke test and audit C1.
+  - L2517: instrument list lost `swd_always_choice`; comment above the `gmm` call updated.
+  - L2553--2566: added `tempvar pid_tag`; `egen tag(pid) if e(sample)`; `estadd scalar n_indiv` so the table program can show true individual count under `vce(cluster vfirst)`.
+  - L2810--2900: new program `grc_tex_table_trend_robust` cloned from `grc_tex_table_trend` with the bottom stats block expanded to `n_indiv N_clust N` (Individuals / Locations / Observations) instead of `N_clust N`.
+- [RP7/scripts/17_verdier_robust.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do): `grc_tex_table_trend_robust` replaces `grc_tex_table_trend` in the table-build call.
+
+### Decisions, with the why
+
+#### D11.
+S1 (VV Footnote-31 bootstrap overID test) deferred.
+
+Why: the user pushed back on the framing that S1 doesn't need a new exclusion restriction.
+On reflection, S1 tests the same GRC overidentifying restrictions Hansen's $J$ tests under two-step, just with a test statistic suited to the one-step weighting matrix.
+Same identifying assumptions, no new instrument needed.
+But the implementation cost (500 reps $\times$ 3 countries $\times$ 5 specs, plus validating the cell-projection logic) is high.
+Decision: footnote one-step practice in the paper for now and revisit only if a referee asks.
+
+#### D12.
+$\Delta_{\text{always}}$ row deferred.
+
+Why: I noticed the Verdier tables list $\Delta_{\text{never}}$, average $\Delta$, and $\phi$ but not $\Delta_{\text{always}}$.
+Quick fact-check showed the main GRC tables also lack $\Delta_{\text{always}}$.
+Symmetry between the two table sets is the right anchor; adding $\Delta_{\text{always}}$ to one without the other would create a presentation inconsistency.
+The user chose to leave both as-is.
+The `_always.ster` files are saved by `run_grc_robust_vv` regardless, so the row is one esttab call away if the call comes later.
+
+#### D13.
+Table caption rewritten to mirror the main-table phrasing rather than the previous jargon-leading version.
+
+Why: original caption was "Cluster-Residualized GRC Estimates of the Returns to Urban Location on log Consumption in China (onestep GMM)"---title case, leads with method jargon, mentions one-step (which is a defensible spec choice but not what the table is about).
+New caption (queued, not yet applied) mirrors the main-table form: "Restricted GRC estimates of the returns to urban location with location-specific trajectory intercepts (China)".
+Pending; will land with the `table_notes` village$\to$location fix.
+
+#### D14.
+C1 verified and the dead-weight instrument dropped.
+
+Why: smoke test [tests/verify_C1_swd_always.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/tests/verify_C1_swd_always.do) confirmed `swd_always_choice` is identically zero across all three countries (0 nonzero values out of 92,738 / 29,864 / 109,535 obs).
+Always-urban have `choice == 1` in every period in all three countries; demeaning a constant on cluster dummies returns zeros.
+Focal-cell GMM (CHN covs_all onestep) confirmed dropping the instrument yields point estimates and standard errors identical to machine precision.
+The change is mathematically equivalent (zero-column instrument adds nothing to the moment system); dropping it is purely cosmetic but makes program intent legible.
+
+#### D15.
+No regeneration of .ster files for the C1 change.
+
+Why: the math is identical.
+Existing files differ from new ones only in `e(insts)` listing the now-removed instrument name.
+Purely cosmetic and not used downstream.
+The user explicitly waived re-running for C1.
+
+#### D16.
+New finding C8 (Individuals labeling bug) prioritized as Task #1.
+
+Why: comparing the regenerated `RP7/output/tables/verdier_robust_*` files against the main GRC tables, I noticed the Verdier "Individuals" rows show 29 / 23 / 26 (CHN / IDN / TZA), which are cluster counts (provinces / regions), not individual counts.
+The main GRC tables correctly report 34,746 / 29,697 / 11,012 individuals.
+Cause: `grc_tex_table_trend` reads `e(N_clust)` and labels it "Individuals."
+Under `run_grc`'s `vce(cluster pid)`, `N_clust` is the individual count and the label is correct.
+Under `run_grc_robust_vv`'s `vce(cluster vfirst)`, `N_clust` is the location (cluster) count and the label is wrong.
+Fix: store `n_indiv` separately on the ster, clone the table program, show both rows.
+
+#### D17.
+Cloned table program (`grc_tex_table_trend_robust`) instead of parameterizing the existing one.
+
+Why: project convention favors clones for table variants (`_hukou`, `_exp`, `_birth` are all siblings).
+Modifying `grc_tex_table_trend` would force the main GRC tables to either gain a redundant "Locations" row (= individuals when clustering at pid) or accept inconsistent presentation.
+A separate program with an expanded stats block keeps the main tables untouched.
+
+### Approaches rejected and the reason
+
+#### R8.
+S1 implementation rejected as out-of-scope.
+
+Why: see D11.
+The bootstrap doesn't need a new exclusion restriction (correct correction to my initial framing), but the implementation cost outweighs the benefit absent a referee request.
+
+#### R9.
+Adding $\Delta_{\text{always}}$ rejected as inconsistent with the main tables.
+
+Why: see D12.
+Main tables don't show it.
+Verdier tables shouldn't either, until the user decides whether to add it everywhere.
+
+#### R10.
+Verifying C1 by reading the existing .ster files rejected.
+
+Why: `estimates use` doesn't restore `e(sample)`, so I couldn't compute `swd_always_choice != 0` after-the-fact from a saved ester.
+Had to reproduce the demean from scratch on freshly loaded data, which is what `tests/verify_C1_swd_always.do` does.
+
+#### R11.
+Refitting just CHN without `swd_always_choice` from inside `run_grc_robust_vv` rejected.
+
+Why: too entangled to test the program by editing it.
+Cleaner to write a standalone smoke driver that builds the moment equation by hand, run both versions side by side, and compare scalars.
+The standalone path produced a permanent audit-trail file ([RP7/output/verify_C1_swd_always.txt](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/output/verify_C1_swd_always.txt)) that future-Claude can rerun.
+
+#### R12.
+Modifying `grc_tex_table_trend` to add the "Locations" row rejected.
+
+Why: see D17.
+Touching the main-pipeline program would propagate to every GRC table in the paper.
+Cloning is the project convention.
+
+### Open items and blockers
+
+#### Task #1 (in progress)
+
+Code changes for Individuals + Locations rows are complete and committed will need a separate commit.
+Still pending: regenerate the 30 .ster files so the new `n_indiv` scalar exists.
+Asked the user whether to kick off the full re-run (~30 min for 30 GMM cells) or pursue a targeted post-hoc patch.
+Not yet resolved.
+
+#### Task #2 (pending)
+
+Improve missing-vfirst drop logging in `run_grc_robust_vv` (C2 from the audit).
+Two changes proposed: (1) always print the count and percentage to the log, even when 0; (2) `estadd scalar n_dropped_vfirst` so it survives on the ster.
+
+#### Pending from earlier in the day
+
+`table_notes` string fix (village$\to$location) + caption rewrite (mirroring main tables, "Restricted GRC estimates of the returns to urban location with location-specific trajectory intercepts (China)") need to land together.
+Will combine with the Task #1 regeneration so a single re-run produces both the new caption AND the new Individuals + Locations rows.
+
+#### Audit memo C3--C7
+
+Minor findings logged for later: unused `_delta.ster`, `from(\`initial')` shape, missing program docstring, `estat overid` swallowing missings, no per-trajectory rank diagnostic.
+Not blocking any current work.
+
+### Picking back up
+
+> **If you resume:**
+> Read this section + [audit memo](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md) (especially the post-implementation section).
+>
+> Open thread: Task #1 code changes are landed but not yet committed; the .ster files need regeneration before the new tables can build.
+The user signed off on Task #1; the regeneration approach (a vs b in the chat) is the open question.
+>
+> Next concrete actions, in order:
+> 1. Decide on regeneration path (a: full rerun with `skip_if_exists 0`; b: targeted post-hoc patch via a separate do-file).
+> 2. Regenerate the 30 .ster files.
+> 3. Verify the new tables show Individuals = 34,746 / 29,697 / 11,012 (CHN / IDN / TZA) and Locations = 29 / 23 / 26.
+> 4. Bundle the table_notes village$\to$location fix and the caption rewrite into the same regeneration pass.
+> 5. Recopy the three onestep tables to Overleaf.
+> 6. Commit.
+>
+> State to know:
+> - Worktree git is on `worktree-verdier-wrap-up` at `c3c6970` (C1 drop + audit memo + smoke test).
+Three uncommitted changes ready: `RP7/scripts/0_programs.do` (n_indiv estadd + new table program), `RP7/scripts/17_verdier_robust.do` (call new program).
+> - The new program `grc_tex_table_trend_robust` lives at [0_programs.do L2810--2900](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do).
+> - Existing .ster files are still mathematically correct for the C1 change (no `n_indiv` scalar yet, but coefs/SEs are right).
+> - `n_indiv` cannot be backfilled from a saved ester because `estimates use` does not restore `e(sample)`.
