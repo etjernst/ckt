@@ -194,3 +194,80 @@ The $T = 2$ pathology was specific to the $K = 2$ just-identified case where the
 At the empirical $K \geq 5$ scale, the chi-squared approximation works cleanly.
 
 Validation gate memo updated with the over-identified results; TODO entry for $\Delta_{\text{avg}}$ marked RESOLVED.
+
+## T = 4 cross-check at R = 50
+
+User asked whether coverage degrades further at higher $T$.
+$T = 4$ with $K = 14$ switchers ($J_R = 13$) at $R = 50$, $N = 15{,}000$:
+
+| Parameter | Coverage | MC SE |
+|---|---:|---:|
+| $\phi$ | 0.86 | 0.049 |
+| $\Delta_{d_N}$ | 0.90 | 0.042 |
+| $\Delta_{\text{avg}}$ | 0.84 | 0.052 |
+| $\Delta_{d_T}$ | 0.90 | 0.042 |
+
+3/50 empty CIs per parameter (consistent with the nominal 5% Type I rate of the joint $\chi^2_{13}$ LCA test).
+Conditional on non-empty CI ($n = 47$), $\phi$ covers 0.915 and $\Delta_{\text{avg}}$ covers 0.894.
+
+User judged 0.84 too far from 0.95 to be comfortable with MC-noise interpretation.
+Decision: re-run $T = 4$ at $R = 200$ to halve MC SE from $\sim 0.05$ to $\sim 0.026$ and pin down whether the residual gap is real.
+
+## T = 4 R = 200 (running, ~2 hours)
+
+Background bash task `b88u28uvl` running [`synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py) at $T = 4$ ($K = 14$, $J_R = 13$, $N = 15{,}000$), $R = 200$.
+Output streaming to `synth_overid_t4_r200.log`.
+Seeds 2000 to 2199 (the first 50 are the same seeds used in the $R = 50$ run, so we will see directly how the new 150 reps shift the headline numbers).
+At ~36 s per rep (measured from the $R = 50$ run), expect completion around two hours from launch.
+
+After it lands:
+
+1. Update the validation gate memo's $T = 4$ section with $R = 200$ numbers.
+2. If $\Delta_{\text{avg}}$ coverage stays below $\sim 0.90$ at $R = 200$, that is real under-coverage worth investigating (likely candidates: finite-sample chi-squared bias as $J_R$ grows; per-switcher mass of $\sim 375$ individuals at $N = 15{,}000$ being too sparse vs the empirical $\sim 1100$ in CHN's $K = 10$).
+3. If $\Delta_{\text{avg}}$ coverage rises to $\sim 0.90$, the $R = 50$ number was MC noise and the chi-squared approximation is fine at $T \leq 4$ scale.
+4. Either way, commit the new CSVs and append a short "evaluate-from-here" subsection.
+
+## State and key file pointers (for picking back up)
+
+Key files touched this session:
+
+- [`explorations/python-grc/lca_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py): inversion machinery; `find_islands` is now generic over the x column, `format_islands` handles unbounded multi-island reporting.
+- [`explorations/python-grc/run_all_countries_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/run_all_countries_inversion.py): three-country, four-CI runner. Outputs at [`results/lca_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/lca_inversion_three_countries.md) and [`results/delta_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/delta_inversion_three_countries.md).
+- [`explorations/python-grc/synth_t2_coverage.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_t2_coverage.py): the original $K = 2$ coverage check showing the 0.79 anomaly for $\Delta_{\text{avg}}$.
+- [`explorations/python-grc/synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py): parameterized over-identified synthesizer; pass `SYNTH_OVERID_T=3` or `=4` via env var. Outputs `results/synth_overid_t{T}_coverage_{per_rep,summary}.csv`.
+
+Memos and reports:
+
+- [`docs/notes/2026-04-30_mobius-singularity.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_mobius-singularity.md): definitions of Möbius transformation, pole, singularity; the algebraic derivation of the $1+\phi$ pole; the explicit note that "Möbius singularity" is our coinage; the reporting decision to render multi-island CIs as the union of intervals with $\pm \infty$ endpoints in tables.
+- [`quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md): single source of truth for the validation gate. Contains the full decomposition of the original failure (Issue 1: Stata Delta_avg formula bug; Issue 2: auxiliary OLS vs GMM beta gap), the resolution (Stata fix + MD inversion), the three-country inversion CI table, the $T = 2$ coverage finding, the over-identified $T = 3$ resolution, and the $T = 4$ cross-check.
+
+Key decisions, with the why:
+
+1. Multi-island CIs reported as union of intervals with $\pm \infty$ endpoints, footnoted to point at the singularity.
+**Why**: a check-mark "uninformative" cell hides why the CI is wide; the union is more honest.
+**How to revise**: switch to check marks if a coauthor or reviewer prefers cleaner table aesthetics.
+2. Phrase "Möbius singularity" introduced explicitly the first time used in any paper text.
+**Why**: it is our coinage, not literature jargon, even though "Möbius transformation" is standard math.
+3. $T = 4$ re-run at $R = 200$ rather than larger $N$ or smaller $K$.
+**Why**: the user's question was specifically whether coverage degrades with $T$; halving MC SE gives a definitive answer to that question without confounding it with sample-size or fragility changes.
+4. Coverage check uses TRUE $\pi_{\text{within}}$ (not sample $\hat\pi_s$).
+**Why**: the population $\Delta_{\text{avg}}$ is the parameter being targeted; using true $\pi$ tests the chi-squared approximation cleanly without conflating $\pi$ sampling variance with the inversion machinery.
+**Caveat**: a separate experiment that propagates $\hat\pi_s$ variance through the Jacobian would test that hypothesis, which is recorded in the (now resolved) TODO entry.
+
+If interrupted before $R = 200$ lands:
+
+- The bash task `b88u28uvl` writes to `explorations/python-grc/synth_overid_t4_r200.log`. Tail the log to see progress.
+- Output CSVs land at `explorations/python-grc/results/synth_overid_t4_coverage_{per_rep,summary}.csv` and overwrite the $R = 50$ files (which are committed in `76f6bec`).
+- If you need to restart, `SYNTH_OVERID_T=4 python -u synth_overid.py 200` from `explorations/python-grc/`.
+
+Commit chain on `lca-inversion` for today's work (run `git log --oneline 5cfe158..HEAD`):
+
+- `5cfe158` Stata `Delta_avg` formula fix and validation infrastructure (yesterday).
+- `dc1b1ea` MD inversion and three-country validation (this morning's first sub-session).
+- `a0e22cf` four-CI runner extension and multi-island handling.
+- `396f8bd` $T = 2$ coverage check finding the 0.79 $\Delta_{\text{avg}}$ anomaly.
+- `9383dfe` Möbius singularity memo.
+- `3749257` $T = 3$ over-identified coverage resolving the under-coverage finding.
+- `4da95b5` parameterize `synth_overid.py` by $T$ via env var.
+- `76f6bec` $T = 4$ cross-check at $R = 50$.
+- ($T = 4$ $R = 200$ commit pending after the background run lands).
