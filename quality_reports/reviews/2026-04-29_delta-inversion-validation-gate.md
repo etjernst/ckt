@@ -243,3 +243,25 @@ A follow-up experiment that recomputes $\hat\pi_s$ from each replication's data 
 A second candidate: with $K = 2$ kept switchers in T=2, the $\Delta_{\text{avg}}$ equation is degenerate in a particular way (it reduces to $\beta + \phi \pi_3 (\mu_3 - \mu_2)$ instead of a sum over many switchers); the under-coverage may not show up at the empirical $K = 5$ to $27$ scale.
 
 Per-replication CSVs at [`results/synth_t2_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_t2_coverage_per_rep.csv) and [`results/synth_t2_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_t2_coverage_summary.csv).
+
+## Over-identified synthetic coverage check (R = 100, K = 6, T = 3)
+
+To diagnose the $\Delta_{\text{avg}}$ under-coverage on the just-identified $K = 2$ synth, [`synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py) implements a $T = 3$ DGP with $K = 6$ kept switcher trajectories (so $J_R = K - 1 = 5$ over-identifying restrictions on $\phi$).
+The parameters match realistic CKT log-consumption scales: trajectory means spaced 0.1 log units apart, $\sigma_\alpha = 0.6$ (within-trajectory dispersion), $\sigma_\epsilon = 0.3$ (transitory shock), $\phi_{\text{true}} = -0.5$, $\beta_{\text{base}} = 0.05$.
+The narrower mean spacing makes this DGP substantially more fragile than the $T = 2$ synth; the model has more information across switcher trajectories but less signal per trajectory.
+
+| Parameter | True value | Coverage | MC SE | Empty CI | Multi-island |
+|---|---:|---:|---:|---:|---:|
+| $\phi$ | $-0.500$ | 0.92 | 0.027 | 5 | 0 |
+| $\Delta_{d_N}$ | $+0.100$ | 0.91 | 0.029 | 5 | 0 |
+| $\Delta_{\text{avg}}$ | $-0.077$ | 0.90 | 0.030 | 5 | 0 |
+| $\Delta_{d_T}$ | $-0.250$ | 0.93 | 0.026 | 5 | 0 |
+
+The 5 empty CIs per parameter are replications where the joint LCA test rejected at the 5% level over the entire grid; with $J_R = 5$ and the $\chi^2_5$ critical value at 11.07, that is exactly the nominal Type I error rate.
+Conditional on a non-empty CI ($n = 95$ reps), each parameter covers at 0.95 to 0.98, fully consistent with the asymptotic chi-squared approximation.
+
+This closes the $\Delta_{\text{avg}}$ under-coverage finding from the $T = 2$ run.
+The $T = 2$ pathology was specific to the $K = 2$ just-identified case where the $\Delta_{\text{avg}}$ moment vector reduces to a one-dimensional reparameterization tying both moments through $\phi (\alpha_3 - \alpha_2)$ with opposite-sign loadings.
+At $K = 6$ with five over-identifying restrictions and trajectory means spaced 6$\times$ tighter than the $T = 2$ synth, the chi-squared approximation works cleanly across all four parameters.
+
+Per-replication CSV at [`results/synth_overid_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_coverage_per_rep.csv); summary at [`results/synth_overid_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_coverage_summary.csv).

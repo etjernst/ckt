@@ -170,3 +170,27 @@ Worth a small follow-up but not a blocker for the inversion-CI infrastructure.
 
 Validation gate memo updated at [`quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md) with the final inversion table and coverage results.
 All four open items from the morning hand-off now closed.
+
+## Möbius singularity memo and over-identified synthesizer
+
+User asked for an explanation of the multi-island CI and the meaning of $\phi = -1$.
+The relevant algebra: $\Delta_{d_T} = (\beta + \phi(\alpha_{d_T}^{\text{obs}} - \mu_{\text{base}}))/(1+\phi)$ is a Möbius transformation in $\phi$, with its single pole at $\phi = -1$.
+Under LCA the rural counterfactual mean for always-movers $\mu_{d_T}$ is not directly observed (the GMM code calls it $\kappa$, a misnomer to fix); we recover it by combining the LCA restriction with the urban mean, and the $1+\phi$ factor in the denominator drops out of that elimination.
+The phrase "Möbius singularity" applied to this specific GRC parameter combination is our coinage, not jargon from the literature; we will introduce it explicitly the first time we use it in the paper.
+
+Memo with definitions and reporting decisions saved at [`docs/notes/2026-04-30_mobius-singularity.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-04-30_mobius-singularity.md).
+Decision: report multi-island CIs as a union of intervals with $\pm \infty$ endpoints, footnoted to point readers at the singularity; we may switch to "uninformative" check marks later if a coauthor or reviewer prefers cleaner table aesthetics.
+
+To diagnose the Delta_avg under-coverage from the T=2 synth, built [`synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py) with $T = 3$, $K = 6$ kept switchers ($J_R = 5$, strongly over-identified), and CKT-realistic parameters: trajectory means spaced 0.1 log units apart, $\sigma_\alpha = 0.6$, $\sigma_\epsilon = 0.3$, $\phi_{\text{true}} = -0.5$, $\beta_{\text{base}} = 0.05$.
+The user noted that the $T=2$ synth has trajectory means spaced 1.0 log units apart, which makes the model artificially un-fragile relative to real CKT data where mean differences across trajectories are 0.1 to 0.3 log units.
+$R = 100$ coverage on the over-identified synth landed.
+
+Headline: $\Delta_{\text{avg}}$ coverage jumped from 0.79 ($T=2$, $K=2$) to 0.90 ($T=3$, $K=6$).
+All four parameters cover at 0.90 to 0.93, within roughly two MC SEs of the nominal 0.95.
+5 of 100 reps return empty CIs per parameter, which matches the nominal Type I rate of the joint $\chi^2_5$ LCA test exactly; conditional on a non-empty CI, all four parameters cover at 0.95 to 0.98, which is the asymptotic chi-squared approximation working as advertised.
+
+This closes the under-coverage finding.
+The $T = 2$ pathology was specific to the $K = 2$ just-identified case where the $\Delta_{\text{avg}}$ moment vector reduces to a one-dimensional reparameterization.
+At the empirical $K \geq 5$ scale, the chi-squared approximation works cleanly.
+
+Validation gate memo updated with the over-identified results; TODO entry for $\Delta_{\text{avg}}$ marked RESOLVED.

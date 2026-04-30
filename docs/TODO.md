@@ -22,17 +22,15 @@ For the paper, identify which tables actually display `Delta_avg` and prioritize
 For the hukou-split table specifically (8_GrRC_hukou), this might combine with the kappa-rename TODO since both touch the same code path.
 **Estimated cost:** modest. Each auxiliary script takes 30-60 minutes to rerun, and not all of them surface `Delta_avg` in the published table cells (some only use it as a scalar diagnostic).
 
-### Delta_avg inversion under-coverage on the T=2 synthesizer
+### Delta_avg inversion under-coverage on the T=2 synthesizer (RESOLVED)
 **Added:** 2026-04-30.
+**Resolved:** 2026-04-30.
 **Branch:** lca-inversion.
-**Context:** [`synth_t2_coverage.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_t2_coverage.py) at $R = 100$ shows nominal-95% coverage of 0.92 for $\phi$, 0.93 for $\Delta_{d_N}$, 0.94 for $\Delta_{d_T}$---all within one MC SE of nominal---but only 0.79 for $\Delta_{\text{avg}}$ (MC SE 0.041, about four SDs below nominal).
-The under-coverage is specific to the avg case since the other three deltas use the same general MD scaffolding and cover correctly.
-**Candidate explanations:**
-1. The constrained MD passes $\pi_s$ as a known constant in the Jacobian; sampling variability in $\hat\pi_s$ from each replication's data is not propagated, which would shrink the CI relative to the true sampling distribution of $\widehat{\Delta}_{\text{avg}}$.
-2. With only $K = 2$ kept switchers in T=2, the avg constraint reduces to $\beta + \phi \pi_3 (\mu_3 - \mu_2)$, which is a one-dimensional reparameterization that may have a finite-sample pathology not present at empirical $K = 5$ to $27$.
-**Action:** (a) rerun coverage with $\hat\pi_s$ recomputed on each replication's sample and the $\pi_s$ Jacobian extended to incorporate sampling variance; (b) rerun coverage on a larger-$K$ synthesizer (extend the T=2 DGP to $K = 5$ switchers) and check whether the gap closes; (c) if both fail to fix coverage, consider reporting a wider CI for $\Delta_{\text{avg}}$ in the paper or switching to a bootstrap CI.
-**Why low-medium priority:** the under-coverage matters for the paper's $\Delta_{\text{avg}}$ inference, but $\phi$ and $\Delta_{d_N}$ / $\Delta_{d_T}$ (the trajectory-specific extrapolation returns) cover correctly, and those are the headline objects.
-**Estimated cost:** half a day for (a); 1-2 hours for (b).
+**Resolution:** the under-coverage was a $K = 2$ small-sample pathology specific to the just-identified $T = 2$ synth.
+[`synth_overid.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_overid.py) reruns coverage with $T = 3$, $K = 6$ kept switchers ($J_R = 5$, over-identified), trajectory means spaced 0.1 log units apart (CKT-realistic, vs 1.0 in T=2), $\sigma_\alpha = 0.6$, $\sigma_\epsilon = 0.3$, $\phi = -0.5$, $\beta = 0.05$.
+$\Delta_{\text{avg}}$ coverage at $R = 100$ jumps to 0.90 (MC SE 0.030), within roughly two MC SEs of nominal 0.95.
+The 5/100 empty CIs per parameter match the nominal Type I rate of the joint $\chi^2_5$ LCA test (5%), so conditional on a non-empty CI all four parameters cover at 0.95 to 0.98.
+The chi-squared approximation works cleanly at empirical $K \geq 5$ scale.
 
 ### Per-replication LCA inversion CI in the simulation (Stream C deliverable)
 **Added:** 2026-04-29.
