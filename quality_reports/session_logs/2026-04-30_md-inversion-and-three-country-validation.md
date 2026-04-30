@@ -125,3 +125,48 @@ If you resume to debug something specific:
 - The MD machinery is in `lca_inversion.py`; smoke tests in `smoke_md_vs_just_id.py` and `smoke_delta_never_md.py` (the latter covers all three deltas despite the name).
 - Stata-side ground truth is at `rerun_workdir/published_deltas.csv`, regenerated after the IDN+CHN+TZA reruns.
 The do-files `rerun_*_fixed.do` use the local fixed `0_programs.do`; if you re-run them, set `global skip_if_exists 1` to avoid redoing finished cells.
+
+## Post-validation wrap-up
+
+Two commits landed today on `lca-inversion`: `5cfe158` (Stata Delta_avg fix + validation infrastructure) and `dc1b1ea` (MD inversion + three-country validation).
+Working tree is clean except for `.claude/settings.local.json` (gitignored / local-only).
+No commits pushed to remote yet; the user can push when ready.
+
+Cached state to know when picking back up:
+
+- `published_deltas.csv` already reflects all 15 corrected (country, spec) cells.
+The two background jobs (CHN id `blu3u8iie`, TZA id `bnaznb3k2`) both completed cleanly with exit 0; no segfaults this round (we removed the dangerous CSV-write tail that crashed the IDN run yesterday).
+- `${skip_if_exists}` is now wired into `run_grc` in [`RP7/scripts/0_programs.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/0_programs.do).
+Set `global skip_if_exists 1` in any new master driver to skip cells whose `_avg.ster` already exists.
+- The post-edit-scan and prose-rules-enforcer hooks have been triggered this session, so the voice.md and rules/manuscript-writing.md flags are set.
+Will reset on the next session.
+- Auxiliary GRC tables (8_GrRC_hukou, 11/13/14/15) still carry the buggy Delta_avg in their published `.ster` files since we only re-ran 5_GrRC's mainline.
+Those will pick up the corrected formula on the next routine run of those scripts.
+
+## Picking back up, second sub-session (2026-04-30, late)
+
+Closed three of four open items from the morning hand-off in this same day.
+
+First, the multi-island handling in [`lca_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py) is now generic: `find_islands` takes an arbitrary `x` column (default `phi`), and a new `format_islands` helper pretty-prints unions of intervals and annotates endpoints touching the grid boundary as `-inf`/`+inf` so unbounded CIs surface honestly in tables.
+
+Second, [`run_all_countries_inversion.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/run_all_countries_inversion.py) now computes all four inversions per (country, spec) cell---$\phi$ (just-identified), $\Delta_{d_N}$, $\Delta_{\text{avg}}$, $\Delta_{d_T}$ via constrained MD---and writes a separate delta-inversion markdown table (`results/delta_inversion_three_countries.md`) with islands and grid annotations alongside the existing phi summary.
+
+Third, the new script [`synth_t2_coverage.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_t2_coverage.py) implements the synthetic-data coverage gate at $R = 100$ replications.
+The DGP's LCA structure pins the truth for every parameter ($\phi = -1.5$, $\Delta_{d_N} = +2.0$, $\Delta_{\text{avg}} \approx -0.43$, $\Delta_{d_T} = -2.5$), which lets us check empirical coverage at the nominal 95% level cleanly.
+
+Both jobs landed cleanly.
+
+Three-country inversion table results (`results/delta_inversion_three_countries.md`).
+The well-identified IDN and TZA cells (covs_trend through covs_all, four specs each, three deltas each) return inversion CIs that bracket Stata's $\pm 1.96 \cdot$SE band tightly.
+Two cells produce multi-island Delta_always CIs where the phi-CI crosses $\phi = -1$ (the Mobius singularity): IDN/covs_all returns $[-\infty, +0.040] \cup [+0.660, +\infty]$ and TZA/covs_all returns $[-\infty, -0.140] \cup [+1.720, +\infty]$.
+In both cases a convex-hull CI would have spanned the rejection region between the two islands, so the multi-island summary is materially more informative.
+Pooled CHN cells return empty CIs across the board, consistent with prior find_islands diagnostics showing the pooled CHN sample never accepts at 5% across the entire $\phi$-grid.
+
+Coverage at $R = 100$ on the T=2 synthesizer: $\phi$ covers at 0.92 (MC SE 0.027), Delta_never at 0.93 (0.026), Delta_avg at 0.79 (0.041), Delta_always at 0.94 (0.024).
+Three of four parameters land within one MC SE of nominal 95%.
+Delta_avg under-covers at 0.79, about four MC SEs below nominal.
+This is a real finding flagged in the validation memo's coverage section, with two candidate explanations: pi_s sampling variance not propagated into the Jacobian (we passed truth-known shares); or a $K = 2$-switcher degeneracy specific to T=2 that may not surface at the empirical $K = 5$ to $27$ scale.
+Worth a small follow-up but not a blocker for the inversion-CI infrastructure.
+
+Validation gate memo updated at [`quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md) with the final inversion table and coverage results.
+All four open items from the morning hand-off now closed.

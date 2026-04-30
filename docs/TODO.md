@@ -8,6 +8,32 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Regenerate auxiliary GRC tables to pick up the Delta_avg fix
+**Added:** 2026-04-30.
+**Branch:** lca-inversion.
+**Context:** Commit `5cfe158` (2026-04-29) fixed a bug in `RP7/scripts/0_programs.do` where `Delta_avg` was computed using over-all-sample shares (`sum 1.switcher_s if e(sample); local num_s = r(mean)`).
+Those weights summed to the switcher fraction (~4% in IDN/CHN, ~11% in TZA) instead of 1, so the published `Delta_avg` equaled `switcher_frac * E[Delta | switcher]` rather than the actual average return for switchers, depending on country.
+The fix conditions on `& switcher == 1` so the weights sum to 1 across the switcher subsample.
+We re-ran 5_GrRC.do's mainline (urban / consumption / unbalanced, 5 specs each for IDN, CHN, TZA), so those `_avg.ster` files are now correct.
+But the `_avg.ster` files for the auxiliary tables (6_GrRC_NonAg, 8_GrRC_hukou, 11_GrRC_max_experience, 13_GrRC_max_experience_share, 14_GrRC_NonAg_experience, 15_GrRC_birth) still carry the buggy values.
+Any paper table that displays `Average Delta` from those scripts is currently showing `switcher_frac * correct_value`.
+**Action:** when next running each of those scripts, the corrected formula in `0_programs.do` will pick up automatically.
+For the paper, identify which tables actually display `Delta_avg` and prioritize regenerating those.
+For the hukou-split table specifically (8_GrRC_hukou), this might combine with the kappa-rename TODO since both touch the same code path.
+**Estimated cost:** modest. Each auxiliary script takes 30-60 minutes to rerun, and not all of them surface `Delta_avg` in the published table cells (some only use it as a scalar diagnostic).
+
+### Delta_avg inversion under-coverage on the T=2 synthesizer
+**Added:** 2026-04-30.
+**Branch:** lca-inversion.
+**Context:** [`synth_t2_coverage.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_t2_coverage.py) at $R = 100$ shows nominal-95% coverage of 0.92 for $\phi$, 0.93 for $\Delta_{d_N}$, 0.94 for $\Delta_{d_T}$---all within one MC SE of nominal---but only 0.79 for $\Delta_{\text{avg}}$ (MC SE 0.041, about four SDs below nominal).
+The under-coverage is specific to the avg case since the other three deltas use the same general MD scaffolding and cover correctly.
+**Candidate explanations:**
+1. The constrained MD passes $\pi_s$ as a known constant in the Jacobian; sampling variability in $\hat\pi_s$ from each replication's data is not propagated, which would shrink the CI relative to the true sampling distribution of $\widehat{\Delta}_{\text{avg}}$.
+2. With only $K = 2$ kept switchers in T=2, the avg constraint reduces to $\beta + \phi \pi_3 (\mu_3 - \mu_2)$, which is a one-dimensional reparameterization that may have a finite-sample pathology not present at empirical $K = 5$ to $27$.
+**Action:** (a) rerun coverage with $\hat\pi_s$ recomputed on each replication's sample and the $\pi_s$ Jacobian extended to incorporate sampling variance; (b) rerun coverage on a larger-$K$ synthesizer (extend the T=2 DGP to $K = 5$ switchers) and check whether the gap closes; (c) if both fail to fix coverage, consider reporting a wider CI for $\Delta_{\text{avg}}$ in the paper or switching to a bootstrap CI.
+**Why low-medium priority:** the under-coverage matters for the paper's $\Delta_{\text{avg}}$ inference, but $\phi$ and $\Delta_{d_N}$ / $\Delta_{d_T}$ (the trajectory-specific extrapolation returns) cover correctly, and those are the headline objects.
+**Estimated cost:** half a day for (a); 1-2 hours for (b).
+
 ### Per-replication LCA inversion CI in the simulation (Stream C deliverable)
 **Added:** 2026-04-29.
 **Branch:** Stream C (simulation work, lives on the `simulations` worktree).
