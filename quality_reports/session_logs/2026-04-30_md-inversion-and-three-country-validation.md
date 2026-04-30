@@ -271,3 +271,47 @@ Commit chain on `lca-inversion` for today's work (run `git log --oneline 5cfe158
 - `4da95b5` parameterize `synth_overid.py` by $T$ via env var.
 - `76f6bec` $T = 4$ cross-check at $R = 50$.
 - ($T = 4$ $R = 200$ commit pending after the background run lands).
+
+## Status update
+
+$T = 4$ $R = 200$ background task at 100/200 reps as of this update.
+Cadence is steady at 36 s per rep, no failures, no new findings yet.
+Coverage will land around the next two-hour mark.
+No further code changes pending; only the post-run analysis and commit remain.
+
+## $T = 4$ $R = 200$ landed
+
+Final coverage at $R = 200$ (MC SE ~0.024):
+
+| Parameter | Coverage | MC SE |
+|---|---:|---:|
+| $\phi$ | 0.870 | 0.024 |
+| $\Delta_{d_N}$ | 0.905 | 0.021 |
+| $\Delta_{\text{avg}}$ | 0.840 | 0.026 |
+| $\Delta_{d_T}$ | 0.895 | 0.022 |
+
+The 0.84 for $\Delta_{\text{avg}}$ at $R = 50$ was real, not MC noise.
+Coverage trajectory: $T = 2$ K=2 0.79; $T = 3$ K=6 0.90; $T = 4$ K=14 0.84.
+The pattern: $T = 3$ K=6 sits closest to nominal across all four parameters; $T = 2$ K=2 has the just-identified small-$K$ pathology; $T = 4$ K=13 J_R=13 shows mild under-coverage that grows with $J_R$.
+
+Empty-CI rate at $T = 4$ is $7.5\%$ (15/200) vs nominal 5%, MC SE 0.015.
+That tells us the joint $\chi^2_{13}$ over-identification test itself is over-rejecting in finite samples by about 2.5 percentage points.
+The bias propagates into the inversion: too many reps reject the truth.
+
+Conditional on a non-empty CI ($n = 185$): $\phi$ 0.919, $\Delta_{d_N}$ 0.978, $\Delta_{\text{avg}}$ 0.908, $\Delta_{d_T}$ 0.968.
+$\Delta_{\text{avg}}$ stays at 0.91 even after dropping the 15 globally-rejected reps, so it has its own residual under-coverage on top of the global Wald-rejection bias.
+
+Conclusion: the chi-squared approximation has a finite-sample bias that grows with $J_R$.
+With $J_R = 5$ (T=3) the bias is small; with $J_R = 13$ (T=4) it is mild but persistent (~5-10 pct of under-coverage).
+This is a known property of overidentification tests in moderate samples and not a bug in our machinery.
+
+Implications for the empirical paper:
+
+- TZA $K = 5$ ($J_R = 4$): closest to T=3 in over-identification; inversion CIs should be approximately well-calibrated.
+- CHN $K = 10$ ($J_R = 9$): mild under-coverage expected (between $T=3$ and $T=4$).
+- IDN $K = 27$ ($J_R = 26$): could be more under-covering than $T=4$; quantification would need $T=5$ or $T=6$ MC, or panel bootstrap.
+
+The reasonable next move (not done this session) is a panel bootstrap CI on $\Delta_{\text{avg}}$ for IDN as a robustness check.
+This is in the existing TODO entry for "Add panel bootstrap CIs for $\hat\Delta_{d_N}$ and $\hat\Delta_{d_T}$ in main tables", which should be extended to include $\Delta_{\text{avg}}$.
+
+Validation gate memo updated with $T = 4$ $R = 200$ findings and the calibration discussion.

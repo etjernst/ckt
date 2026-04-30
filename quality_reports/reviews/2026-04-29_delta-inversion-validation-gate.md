@@ -282,6 +282,51 @@ $R$ was halved from the $T = 3$ run to keep wall-clock manageable ($K = 14$ Wald
 Conditional on a non-empty CI ($n = 47$ reps), $\phi$ covers 43/47 $= 0.915$; $\Delta_{\text{avg}}$ covers 42/47 $= 0.894$.
 These are well within MC band of nominal 0.95.
 
+### Updated $T = 4$ at $R = 200$
+
+The user judged the $R = 50$ numbers too noisy to settle whether the under-coverage was real, so the run extended to $R = 200$ (MC SE drops from $\sim 0.05$ to $\sim 0.02$).
+
+| Parameter | True value | Coverage | MC SE | Empty CI | Multi-island |
+|---|---:|---:|---:|---:|---:|
+| $\phi$ | $-0.500$ | 0.870 | 0.024 | 15 | 0 |
+| $\Delta_{d_N}$ | $+0.100$ | 0.905 | 0.021 | 15 | 0 |
+| $\Delta_{\text{avg}}$ | $-0.275$ | 0.840 | 0.026 | 15 | 0 |
+| $\Delta_{d_T}$ | $-0.650$ | 0.895 | 0.022 | 15 | 0 |
+
+15/200 $= 7.5\%$ empty CIs (MC SE $0.015$) is slightly above the nominal 5% Type I rate of the joint $\chi^2_{13}$ LCA test, suggesting the test itself over-rejects in finite samples by about 2.5 percentage points.
+Conditional on a non-empty CI ($n = 185$): $\phi$ covers $170/185 = 0.919$, $\Delta_{\text{avg}}$ covers $168/185 = 0.908$, $\Delta_{d_N}$ covers $181/185 = 0.978$, $\Delta_{d_T}$ covers $179/185 = 0.968$.
+Even conditioning on a non-empty CI, $\Delta_{\text{avg}}$ sits at 0.91, about 1.6 MC SE below the nominal 0.95.
+
+The 0.84 for $\Delta_{\text{avg}}$ at $R = 50$ was real, not MC noise.
+
+### Coverage trajectory
+
+| Parameter | $T=2$, $K=2$, $R=100$ | $T=3$, $K=6$, $R=100$ | $T=4$, $K=14$, $R=200$ |
+|---|---:|---:|---:|
+| $\phi$ | 0.92 | 0.92 | 0.870 |
+| $\Delta_{d_N}$ | 0.93 | 0.91 | 0.905 |
+| $\Delta_{\text{avg}}$ | **0.79** | **0.90** | **0.840** |
+| $\Delta_{d_T}$ | 0.94 | 0.93 | 0.895 |
+
+The story has three layers.
+
+First, $T = 2$, $K = 2$ is anomalously bad for $\Delta_{\text{avg}}$ (0.79) because of the just-identified small-$K$ pathology where the moment vector reduces to a one-dimensional reparameterization linking both moments through $\phi(\alpha_3 - \alpha_2)$ with opposite-sign loadings.
+
+Second, $T = 3$ with $K = 6$ ($J_R = 5$) sits closest to nominal across all four parameters (0.91 to 0.93).
+
+Third, $T = 4$ with $K = 14$ ($J_R = 13$) shows mild persistent under-coverage of 0.05 to 0.11 across all four parameters, with $\Delta_{\text{avg}}$ hit hardest at 0.84.
+This is consistent with the well-known finite-sample bias in chi-squared asymptotics that grows with the dof of the test---pile up enough degrees of freedom and the asymptotic distribution underestimates the tail mass of the empirical Wald.
+The bias also propagates into the over-identification test itself, which over-rejects the truth at $7.5\%$ vs nominal $5\%$ at $T = 4$.
+
+The empirical CKT cells span $K = 5$ (TZA) to $K = 27$ (IDN).
+TZA at $K = 5$ should be best-calibrated (closest to $T = 3$ in $J_R$); IDN at $K = 27$ may exhibit slightly more under-coverage than $T = 4$.
+We can quantify this further if needed (run $T = 5$ or $T = 6$ at $R \approx 100$, or run a higher-$N$ $T = 4$ to see if the bias is partly small-N-per-switcher), but the qualitative finding is robust: the inversion CI is approximately calibrated, with modest under-coverage that grows with $J_R$.
+
+Reporting decision for the paper: the inversion CIs in `delta_inversion_three_countries.md` should be treated as approximately calibrated, with the caveat that they may be 0 to 10 percentage points narrower than the true 95% CI in the most over-identified specs.
+Bootstrap CIs (cluster bootstrap on individuals) would provide a robustness check, particularly for $\Delta_{\text{avg}}$, and would also check the IDN $K = 27$ scale where the chi-squared under-coverage is likely most pronounced.
+
+Per-replication CSV at [`results/synth_overid_t4_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t4_coverage_per_rep.csv); summary at [`results/synth_overid_t4_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_overid_t4_coverage_summary.csv).
+
 | | Coverage by $T$ |  |  |
 |---|---:|---:|---:|
 | Parameter | $T=2$, $K=2$ | $T=3$, $K=6$ | $T=4$, $K=14$ |

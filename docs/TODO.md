@@ -63,16 +63,18 @@ If only one basin, the divergence between Python and Stata is something other th
 If multiple basins, the basin-switching framing is supported.
 **Estimated cost:** $50 \times 12$ min $\approx 10$ hours of Python compute (parallelizable).
 
-### Add panel bootstrap CIs for $\hat\Delta_{d_N}$ and $\hat\Delta_{d_T}$ in main tables
-**Added:** 2026-04-22 (scope narrowed 2026-04-29).
+### Add panel bootstrap CIs for $\hat\Delta_{d_N}$, $\hat\Delta_{\text{avg}}$, and $\hat\Delta_{d_T}$ in main tables
+**Added:** 2026-04-22 (scope narrowed 2026-04-29; expanded 2026-04-30 to include $\Delta_{\text{avg}}$).
 **Branch:** TBD (depends on whether bootstrap is computed on Stream B or Stream A).
-**Context:** Default GMM CIs may under-cover for the trajectory-specific extrapolated returns $\hat\Delta_{d_N}$ and $\hat\Delta_{d_T}$ because they combine the LCA slope with extrapolation distance to the never-mover mean.
+**Context:** Default GMM and inversion CIs may under-cover for the trajectory-specific returns because they combine the LCA slope with extrapolation distance to the trajectory mean.
+**Scope expanded 2026-04-30:** $\Delta_{\text{avg}}$ added after the $T = 4$, $K = 14$, $J_R = 13$ over-identified Monte Carlo at $R = 200$ showed mild persistent under-coverage of the inversion CI: 0.840 vs nominal 0.95 (4 MC SEs below).
+The pattern is consistent with finite-sample bias in chi-squared asymptotics that grows with $J_R$, plus a small upward bias in the joint LCA over-id test itself (7.5% empty CIs vs nominal 5%).
+The empirical IDN spec has $K = 27$, so the IDN inversion CI for $\Delta_{\text{avg}}$ is most likely the cell with the largest under-coverage gap.
 **Scope narrowed 2026-04-29:** original entry covered $\hat\phi$ too, but with the LCA inversion CI as the headline weak-ID-robust inference for $\phi$, a cluster bootstrap on $\phi$ would be a redundant third inference.
-Bootstrap is more useful for $\Delta_{d_N}$ and $\Delta_{d_T}$ (no inversion analog).
-**Action:** add panel bootstrap CIs ($B = 500$, resample individuals with replacement, preserve all within-person waves) alongside the existing GMM SEs in the tables that report the trajectory-specific $\hat\Delta_{\underline d}$.
+**Action:** add panel bootstrap CIs ($B = 500$, resample individuals with replacement, preserve all within-person waves) alongside the existing GMM SEs and inversion CIs in the tables that report the trajectory-specific $\hat\Delta_{\underline d}$ and $\hat\Delta_{\text{avg}}$.
 Use bias-corrected percentile intervals.
 **Target tables:** the main GRC results tables for CHN / IDN / TZA consumption (balanced and unbalanced), and the hukou-split tables for CHN.
-**Scope caveat:** hold until simulation coverage results land in case the under-coverage risk turns out to be small.
+The IDN unbalanced $K = 27$ specs are the highest priority because that's where the chi-squared bias is most likely to bite.
 **Estimated cost:** $B = 500$ means 500 GMM fits per country-spec; parallelizable across cores; ~few hours per country.
 
 ---
