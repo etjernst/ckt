@@ -48,8 +48,8 @@ OUTDIR.mkdir(exist_ok=True)
 
 # --- DGP --------------------------------------------------------------
 
-T = 3
-N_INDIVIDUALS = 10_000
+T = int(__import__("os").environ.get("SYNTH_OVERID_T", "3"))
+N_INDIVIDUALS = 10_000 if T <= 3 else 15_000
 
 # Treatment patterns ordered as integer codes 0..2^T-1 with code = sum
 # t bit_t * 2^t. Code 0 is the all-zero pattern (never); code 2^T-1
@@ -69,17 +69,38 @@ NEVER = _code(tuple(0 for _ in range(T)))
 ALWAYS = _code(tuple(1 for _ in range(T)))
 SWITCHERS = sorted(c for c in TREATMENT_PATTERN if c not in (NEVER, ALWAYS))
 
-# Realistic trajectory shares for log per-capita consumption settings
-# in CKT. Never and always dominate; switcher mass spreads across
-# 6 patterns. Sums to 1.
-TRAJECTORY_PROBS: dict[int, float] = {
-    NEVER:   0.30,
-    ALWAYS:  0.42,
-}
-_sw_probs = [0.05, 0.04, 0.05, 0.04, 0.05, 0.05]
-for s, p in zip(SWITCHERS, _sw_probs):
-    TRAJECTORY_PROBS[s] = p
-assert abs(sum(TRAJECTORY_PROBS.values()) - 1.0) < 1e-9
+
+def _build_trajectory_probs() -> dict[int, float]:
+    """Realistic trajectory shares for log per-capita consumption
+    settings in CKT. Never and always dominate; switcher mass spreads
+    roughly evenly across the 2^T - 2 switcher patterns. Sums to 1."""
+    probs: dict[int, float] = {}
+    if T == 3:
+        probs[NEVER]  = 0.30
+        probs[ALWAYS] = 0.42
+        # 6 switcher patterns at moderate per-pattern shares
+        per_sw = [0.05, 0.04, 0.05, 0.04, 0.05, 0.05]
+    elif T == 4:
+        probs[NEVER]  = 0.25
+        probs[ALWAYS] = 0.40
+        # 14 switcher patterns at uniform 0.025 each = 0.35
+        per_sw = [0.025] * 14
+    else:
+        # Generic fallback: equal mass on switchers, sized to leave
+        # 0.55 on (never, always) at 0.25, 0.30
+        probs[NEVER]  = 0.25
+        probs[ALWAYS] = 0.30
+        residual = 1.0 - 0.55
+        per_sw = [residual / len(SWITCHERS)] * len(SWITCHERS)
+    for s, p in zip(SWITCHERS, per_sw):
+        probs[s] = p
+    assert abs(sum(probs.values()) - 1.0) < 1e-9, (
+        f"Trajectory shares sum to {sum(probs.values())}, expected 1.0"
+    )
+    return probs
+
+
+TRAJECTORY_PROBS: dict[int, float] = _build_trajectory_probs()
 
 # Trajectory means spaced 0.1 log units apart on the integer codes.
 # This is the realistic CKT scale for log per-capita consumption.
@@ -275,7 +296,7 @@ def main(R: int = 100):
             print(f"  done {r + 1}/{R}")
 
     out = pd.DataFrame(rows)
-    out.to_csv(OUTDIR / "synth_overid_coverage_per_rep.csv", index=False)
+    out.to_csv(OUTDIR / f"synth_overid_t{T}_coverage_per_rep.csv", index=False)
 
     summary = []
     for label, true_val, key in [
@@ -300,12 +321,12 @@ def main(R: int = 100):
         })
 
     sdf = pd.DataFrame(summary)
-    sdf.to_csv(OUTDIR / "synth_overid_coverage_summary.csv", index=False)
+    sdf.to_csv(OUTDIR / f"synth_overid_t{T}_coverage_summary.csv", index=False)
     print()
     print(sdf.to_string(index=False))
     print()
-    print(f"Per-rep CSV  -> {OUTDIR / 'synth_overid_coverage_per_rep.csv'}")
-    print(f"Summary CSV  -> {OUTDIR / 'synth_overid_coverage_summary.csv'}")
+    print(f"Per-rep CSV  -> {OUTDIR / f'synth_overid_t{T}_coverage_per_rep.csv'}")
+    print(f"Summary CSV  -> {OUTDIR / f'synth_overid_t{T}_coverage_summary.csv'}")
 
 
 if __name__ == "__main__":
