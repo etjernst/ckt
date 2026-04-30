@@ -610,17 +610,23 @@ def grid_delta_always_md_inversion(
 def find_islands(
     curve: pd.DataFrame,
     type_one: float = 0.05,
+    x: str = "phi",
 ) -> list[tuple[float, float]]:
-    """Walk the (phi, p_value) grid and return non-rejected regions as a list
-    of ``(phi_lo, phi_hi)`` intervals.
+    """Walk the (``x``, p_value) grid and return non-rejected regions
+    as a list of ``(x_lo, x_hi)`` intervals.
 
-    With one island the result matches the convex-hull CI from
-    ``grid_lca_inversion``. With multiple islands the convex hull would
-    overstate coverage, so the paper should report each island separately.
+    With one island the result matches the convex-hull CI returned by
+    ``grid_lca_inversion`` / ``grid_md_inversion`` /
+    ``grid_delta_*_md_inversion``. With multiple islands the convex
+    hull would overstate coverage, so the paper should report each
+    island separately. The ``x`` column defaults to ``phi`` for the
+    LCA inversions; pass ``x="delta"`` for the trajectory-specific
+    delta inversion curves.
 
-    Returns an empty list if no grid point is accepted at level ``type_one``.
+    Returns an empty list if no grid point is accepted at level
+    ``type_one``.
     """
-    df = curve.sort_values("phi").reset_index(drop=True)
+    df = curve.sort_values(x).reset_index(drop=True)
     accept = (df["p_value"].values >= type_one).astype(int)
     if not accept.any():
         return []
@@ -628,8 +634,39 @@ def find_islands(
     diffs = np.diff(np.concatenate([[0], accept, [0]]))
     starts = np.where(diffs == 1)[0]
     ends = np.where(diffs == -1)[0] - 1
-    return [(float(df["phi"].iloc[s]), float(df["phi"].iloc[e]))
+    return [(float(df[x].iloc[s]), float(df[x].iloc[e]))
             for s, e in zip(starts, ends)]
+
+
+def format_islands(
+    islands: list[tuple[float, float]],
+    grid_bounds: tuple[float, float] | None = None,
+    fmt: str = "+.3f",
+) -> str:
+    """Pretty-print a list of islands as a union of intervals.
+
+    If ``grid_bounds`` is supplied and an island touches the lower
+    (resp.\ upper) bound, the endpoint is annotated as ``-inf``
+    (resp.\ ``+inf``) to flag that the CI extends beyond the grid.
+    Use this for the Mobius-singularity case in
+    ``grid_delta_always_md_inversion``, where the true CI may be
+    unbounded.
+    """
+    if not islands:
+        return "empty"
+    parts = []
+    lo_bound = hi_bound = None
+    if grid_bounds is not None:
+        lo_bound, hi_bound = grid_bounds
+    for lo, hi in islands:
+        lo_str = f"{lo:{fmt}}"
+        hi_str = f"{hi:{fmt}}"
+        if lo_bound is not None and np.isclose(lo, lo_bound):
+            lo_str = "-inf"
+        if hi_bound is not None and np.isclose(hi, hi_bound):
+            hi_str = "+inf"
+        parts.append(f"[{lo_str}, {hi_str}]")
+    return " U ".join(parts)
 
 
 def summary_curve_stats(curve: pd.DataFrame) -> dict:

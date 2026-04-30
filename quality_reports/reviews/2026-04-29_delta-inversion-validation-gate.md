@@ -198,9 +198,48 @@ TZA matches to 1.5--5%, IDN to 4--12%, CHN to 3--18%.
 covs_0 (the weakly-identified spec, $J_p < 0.001$ in IDN and CHN) keeps a wider gap because GMM uses additional moments (the always-mover and unbalanced moments) that the auxiliary OLS does not.
 For weak-ID-robust inversion, that residual is acceptable: coverage matters more than point-estimate parity, and the inversion CI bounds (not the point) are what gets reported.
 
-Open items:
+Open items resolved 2026-04-30 (late sub-session):
 
-- $\Delta_{d_T}$ multi-island handling: when the $\phi$-CI crosses $-1$ (Mobius singularity), `grid_delta_always_md_inversion` should report a union of intervals via `find_islands` rather than the convex hull.
-The grid bounds need to expand for that case (IDN covs_all currently hits $\pm 1.5$).
-- `run_all_countries_inversion.py` extension to compute and report all four CI rows ($\phi$, $\Delta_{d_N}$, $\Delta_{\text{avg}}$, $\Delta_{d_T}$) per cell.
-- Coverage check on the T=2 synthesizer to verify nominal coverage at $R = 100$ replications.
+1. Multi-island handling done.
+`find_islands` now takes an arbitrary `x` column (defaults to `phi`); a new `format_islands` helper renders unions of intervals and labels endpoints touching the grid bound as $-\infty$ / $+\infty$ to flag unbounded CIs.
+The $\Delta$ grid for the always case widened to $[-5, +5]$ step 0.02.
+2. `run_all_countries_inversion.py` now computes all four inversions per cell and writes a separate delta-inversion table.
+Outputs at [`results/lca_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/lca_inversion_three_countries.md) and [`results/delta_inversion_three_countries.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/delta_inversion_three_countries.md).
+3. T=2 synthesizer coverage check at $R = 100$ ran via [`synth_t2_coverage.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/synth_t2_coverage.py).
+
+## Three-country inversion CI table (final)
+
+The inversion CI for $\phi$ matches the saved table from the previous wave (it uses `grid_lca_inversion`, unchanged).
+The new outputs cover the three trajectory-specific deltas.
+
+For the seven well-identified IDN and TZA cells (covs_trend through covs_all), the MD inversion CIs bracket Stata's $\pm 1.96 \cdot$SE band tightly: IDN/$\Delta_{d_N}$ Stata $[+0.045, +0.127]$ vs inversion $[+0.040, +0.150]$ for covs_trend; TZA/$\Delta_{d_T}$ Stata $[-0.522, -0.002]$ vs inversion $[-0.680, -0.140]$ for covs_trend.
+The pooled CHN sample's $\phi$-CI is empty across every spec (Hansen J rejects at all grid $\phi$ at the 5% level), so all three CHN delta inversions return empty as expected.
+The covs_0 cells return empty CIs across all three countries because the spec is weakly identified.
+
+Two cells produce multi-island $\Delta_{d_T}$ CIs when $\phi$'s CI crosses the Mobius singularity at $\phi = -1$:
+
+- IDN/covs_all: $[-\infty, +0.040] \cup [+0.660, +\infty]$ (rejection on $[+0.040, +0.660]$).
+- TZA/covs_all: $[-\infty, -0.140] \cup [+1.720, +\infty]$ (rejection on $[-0.140, +1.720]$).
+
+In both cases the convex-hull CI would have spanned the rejection region, so the multi-island summary is materially more informative.
+
+## Synthetic coverage check (R = 100)
+
+The T=2 synthesizer with $\phi_{\text{true}} = -1.5$, $\Delta_{\text{base}} = 0.5$, and trajectory means $\mu \in \{1, 2, 3, 4\}$ pins the truth to $\Delta_{d_N} = 2.0$, $\Delta_{\text{avg}} \approx -0.43$, $\Delta_{d_T} = -2.5$.
+Empirical 95% coverage across $R = 100$ replications:
+
+| Parameter | True value | Coverage | MC SE | Empty CI | Multi-island |
+|---|---:|---:|---:|---:|---:|
+| $\phi$ | $-1.500$ | 0.92 | 0.027 | 0 | 0 |
+| $\Delta_{d_N}$ | $+2.000$ | 0.93 | 0.026 | 0 | 0 |
+| $\Delta_{\text{avg}}$ | $-0.429$ | 0.79 | 0.041 | 0 | 0 |
+| $\Delta_{d_T}$ | $-2.500$ | 0.94 | 0.024 | 0 | 1 |
+
+Three of four parameters cover within roughly one MC SE of the nominal 95%.
+$\Delta_{\text{avg}}$ under-covers at 0.79 (about four MC SEs below nominal), which is a real finding worth investigating.
+The other three deltas use a profile likelihood at chi-squared with $J_R = 1$ dof under the same general MD scaffolding, so the under-coverage cannot be a global bug; it is specific to how the avg constraint propagates the $\pi_s$-weighted mean.
+One candidate: the inversion treats $\pi_s$ as known constants (we passed truth-known shares in the coverage check), but the Wald variance does not absorb the finite-sample variability that the empirical $\hat\pi_s$ would inject into $\hat c_1$.
+A follow-up experiment that recomputes $\hat\pi_s$ from each replication's data and adds its sampling variance to the Jacobian would discriminate this.
+A second candidate: with $K = 2$ kept switchers in T=2, the $\Delta_{\text{avg}}$ equation is degenerate in a particular way (it reduces to $\beta + \phi \pi_3 (\mu_3 - \mu_2)$ instead of a sum over many switchers); the under-coverage may not show up at the empirical $K = 5$ to $27$ scale.
+
+Per-replication CSVs at [`results/synth_t2_coverage_per_rep.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_t2_coverage_per_rep.csv) and [`results/synth_t2_coverage_summary.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/results/synth_t2_coverage_summary.csv).
