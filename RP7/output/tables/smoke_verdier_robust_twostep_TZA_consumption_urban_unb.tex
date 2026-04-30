@@ -1,0 +1,24 @@
+\begin{table}[htbp] \centering \begin{threeparttable}
+ \caption{TZA smoke: Cluster-Residualized GRC, log Consumption, twostep GMM} 
+ \label{tab:smoke_verdier_robust_twostep_TZA} 
+\begin{tabular}{l ccccc} \toprule  \textbf{Dep. var:}  log(consumption) 
+                    &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+                    &               &               &               &               &               \\
+\addlinespace
+$\Delta_{\text{never}}$&       0.539***&       0.381***&       0.385***&       0.391***&       0.248***\\
+                    &     (0.085)   &     (0.035)   &     (0.036)   &     (0.037)   &     (0.026)   \\
+                    &               &               &               &               &               \\
+\addlinespace
+Average $\Delta$    &       0.010*  &       0.000   &      -0.001   &      -0.006   &       0.031   \\
+                    &     (0.005)   &     (0.021)   &     (0.022)   &     (0.027)   &     (0.025)   \\
+                    &               &               &               &               &               \\
+\addlinespace
+$\phi$              &      -0.998***&      -0.697***&      -0.704***&      -0.746***&      -0.662***\\
+                    &     (0.145)   &     (0.056)   &     (0.056)   &     (0.062)   &     (0.076)   \\
+\addlinespace
+Individuals         &          26   &          26   &          26   &          26   &          26   \\
+Observations        &      29,864   &      29,864   &      29,864   &      29,864   &      29,864   \\
+J-stat              &        63.0   &         2.8   &         2.6   &         2.2   &         0.5   \\
+J-stat (p-value)    &       0.000   &       0.242   &       0.276   &       0.328   &       0.761   \\
+Converged           &           N   &           Y   &           Y   &           Y   &           Y   \\
+\cmidrule{2-6} Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{Smoke-test table. Cluster-residualized GRC with twostep GMM, TZA only. Standard errors clustered at vfirst.} \end{tablenotes} \end{threeparttable} \end{table}
