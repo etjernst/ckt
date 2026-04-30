@@ -2,9 +2,32 @@
 * Project:          Returns to migration
 * Task:             Set sub-directory globals + project-wide constants
 * **********************************************************************
+* values switch (M4 / Phase 4): nominal (default) reads $dir/data; real
+* reads $dir/data_real (which junctions to the deflated-values data folder
+* in Dropbox). $vsfx is appended to ster, CSV, and LaTeX filenames so
+* nominal and real outputs coexist without clobbering. Nominal mode keeps
+* bare filenames for backward compat with the pre-M4 reference set; real
+* mode appends "_r" (2 chars chosen to stay under Stata's 32-char _est_
+* ceiling on the longest M11 estnames).
+  if "$values" == "" {
+      global values "nominal"
+  }
+
+  if "$values" == "nominal" {
+      global vsfx ""
+      global dirdata "$dir/data"
+  }
+  else if "$values" == "real" {
+      global vsfx "_r"
+      global dirdata "$dir/data_real"
+  }
+  else {
+      di as error "0_path_config: unknown values=$values; must be nominal or real"
+      exit 198
+  }
+
 * Set working directories as relative absolute filepaths
   global      scripts         "$dir/scripts"
-  global      dirdata         "$dir/data"
   global      logs            "$dir/scripts/logs"
   global      output          "$dir/output"
 

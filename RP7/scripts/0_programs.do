@@ -635,8 +635,10 @@ program 				define sumstats_table
 	* Clear any existing file handle
 	file close _all
 
-  * Construct the full file path using the output directory
-  local filepath "`outputdir'/`filename'.tex"
+  * Construct the full file path using the output directory.
+  * M4: append ${vsfx} (empty for nominal, "_r" for real) so nominal/real
+  * artifacts coexist without clobbering.
+  local filepath "`outputdir'/`filename'${vsfx}.tex"
 	local table_label "tab:`filename'"
 
   file open myfile using "`filepath'", write replace
@@ -1047,7 +1049,7 @@ program define create_panel_tex_table
         }
         
         esttab `ests'                          ///
-        using "$output/tables/`filename'.tex", ///
+        using "$output/tables/`filename'${vsfx}.tex", ///
 		se b(%8.3f)                            ///           
         keep(`keep') fragment booktabs         ///
         collabels("")                          ///
@@ -1103,7 +1105,7 @@ program define create_panel_tex_table_learn_IDN
     }
         
     esttab `ests'                          ///
-    using "$output/tables/`filename'.tex", ///
+    using "$output/tables/`filename'${vsfx}.tex", ///
 	se b(%8.3f)                            ///           
     keep(`keep') fragment booktabs         ///
     collabels("")                          ///
@@ -1157,7 +1159,7 @@ program define create_panel_tex_table_learn_CHN
     }
         
     esttab `ests'                          ///
-    using "$output/tables/`filename'.tex", ///
+    using "$output/tables/`filename'${vsfx}.tex", ///
 	se b(%8.3f)                            ///           
     keep(`keep') fragment booktabs         ///
     collabels("")                          ///
@@ -1494,7 +1496,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_dts_`country'_covars' (p-value: `p_dts_`country'_covars')", size(small) pos(6) span) ///
 		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
 	
-		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars${vsfx}.pdf", replace
 	
 	coefplot ///
 		(covars_`country', keep(`interaction_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
@@ -1507,7 +1509,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_dts_`country'_nocovars' (p-value: `p_dts_`country'_nocovars')", size(small) pos(6) span) ///
 		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
 	
-		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars${vsfx}.pdf", replace
 	
 * Plot them for \mu, sorting by size
 	coefplot ///
@@ -1521,7 +1523,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_mus_`country'_covars' (p-value: `p_mus_`country'_covars')", size(small) pos(6) span) ///
 		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
 	
-		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars${vsfx}.pdf", replace
 	
 	coefplot ///
 		(covars_`country', keep(`mu_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
@@ -1534,7 +1536,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_mus_`country'_nocovars' (p-value: `p_mus_`country'_nocovars')", size(small) pos(6) span) ///
 		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
 	
-		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars${vsfx}.pdf", replace
 
 end
 
@@ -1841,9 +1843,9 @@ program define run_grc
     * pick up from the next missing cell on relaunch. To force a fresh run,
     * either delete `$output/`estname'*.ster` or unset ${skip_if_exists}.
     if "${skip_if_exists}" == "1" {
-        capture confirm file "$output/`estname'_g.ster"
+        capture confirm file "$output/`estname'_g${vsfx}.ster"
         if _rc == 0 {
-            di as text "run_grc: SKIP `estname' (`estname'_g.ster present)"
+            di as text "run_grc: SKIP `estname' (`estname'_g${vsfx}.ster present)"
             exit
         }
     }
@@ -1947,21 +1949,21 @@ program define run_grc
 	  di as text "run_grc: `estname' fit in " %7.2f r(t`_tslot') " sec  (timer slot `_tslot')"
 
 	  * Save results
-      estimates save "$dir/output/`estname'", replace
+      estimates save "$dir/output/`estname'${vsfx}", replace
       
       * Compute Delta_never
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
       * Save results
-      estimates save "$dir/output/`estname'_n", replace
+      estimates save "$dir/output/`estname'_n${vsfx}", replace
            
       * Compute Delta_always (average Delta for always-urban)
       estimates restore `estname'   // make sure the results are in memory
       nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
       * Save results
-      estimates save "$dir/output/`estname'_a", replace
+      estimates save "$dir/output/`estname'_a${vsfx}", replace
       
       * Compute all switcher Deltas.
       * Wrapped in capture-noisily so small subsamples (hukou splits,
@@ -1990,7 +1992,7 @@ program define run_grc
 	      estadd scalar joint_chi2 = r(chi2), replace
 	      estadd scalar joint_p    = r(p),    replace
           * Save results
-          estimates save "$dir/output/`estname'_d", replace
+          estimates save "$dir/output/`estname'_d${vsfx}", replace
 	  }
 	  if _rc != 0 {
 	      di as text "run_grc: per-trajectory Delta_d block failed for `estname' (rc=" _rc ")"
@@ -2015,7 +2017,7 @@ program define run_grc
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
       * Save results
-      estimates save "$dir/output/`estname'_g", replace
+      estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
@@ -2276,17 +2278,17 @@ program define run_grc_onestep
     local converged_str = cond(e(converged)==1, "Y", "N")
     estadd local converged_str "`converged_str'", replace : `estname'
 
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_n", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_a", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -2305,7 +2307,7 @@ program define run_grc_onestep
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_d", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -2323,7 +2325,7 @@ program define run_grc_onestep
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_g", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
@@ -2545,7 +2547,7 @@ program define run_grc_robust
     estadd scalar V_supp     = `V_supp',      replace : `estname'
 
     * Save main .ster
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_never: cluster-share-weighted aggregate over V_supp
@@ -2584,7 +2586,7 @@ program define run_grc_robust
     nlcom (Delta_never: `beta_agg_expr' + _b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base'])), post
     estadd scalar V_never_supp = `V_supp', replace
-    estimates save "$dir/output/`estname'_n", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_always (baseline-cluster beta; proper aggregation in P2)
@@ -2592,7 +2594,7 @@ program define run_grc_robust
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_a", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Per-switcher Deltas (baseline-cluster beta) + joint test
@@ -2615,7 +2617,7 @@ program define run_grc_robust
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_d", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_avg: trajectory-share-weighted average across switchers
@@ -2637,7 +2639,7 @@ program define run_grc_robust
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_g", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
@@ -2818,7 +2820,7 @@ program define run_grc_robust_vv
     estadd scalar V_clusters = `V',           replace : `estname'
     estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
 
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Standard nlcoms (Delta_never, Delta_always, per-switcher Delta,
@@ -2828,12 +2830,12 @@ program define run_grc_robust_vv
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_n", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_a", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -2853,7 +2855,7 @@ program define run_grc_robust_vv
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_d", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -2871,7 +2873,7 @@ program define run_grc_robust_vv
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_g", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
@@ -2954,17 +2956,17 @@ program define grc_tex_table_trend
     * Skip-and-warn if a required ster is missing (e.g. running tables-only
     * on a cell whose regression hasn't completed yet).
     local first_covs : word 1 of `covs2set'
-    capture confirm file "$dir/output/`_stem'_`first_covs'.ster"
+    capture confirm file "$dir/output/`_stem'_`first_covs'${vsfx}.ster"
     if _rc != 0 {
         di as error "grc_tex_table_trend: SKIP `_label' (sters missing on disk)"
         exit
     }
       foreach estname in `covs2set' {
-        estimates use "$dir/output/`_stem'_`estname'"
+        estimates use "$dir/output/`_stem'_`estname'${vsfx}"
         estimates store `_stem'_`estname'
-        estimates use "$dir/output/`_stem'_`estname'_n"
+        estimates use "$dir/output/`_stem'_`estname'_n${vsfx}"
         estimates store `_stem'_`estname'_n
-        estimates use "$dir/output/`_stem'_`estname'_g"
+        estimates use "$dir/output/`_stem'_`estname'_g${vsfx}"
         estimates store `_stem'_`estname'_g
       }
 
@@ -2985,7 +2987,7 @@ program define grc_tex_table_trend
 
       * Output Delta-never row
       esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
+      using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
@@ -2999,7 +3001,7 @@ program define grc_tex_table_trend
 
       * Output Delta average row
       esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
+      using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
@@ -3011,7 +3013,7 @@ program define grc_tex_table_trend
 
     * Output other estimates
       esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
+      using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       keep(`keep')                           ///
       varlabels(`keep' "`varlabel'")         ///
@@ -3165,18 +3167,18 @@ program define het_table_delta
     * Phase 1b.5b: load estimate from disk inside the program.
     * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
     * max-cov set = ca, Delta-per-trajectory suffix = d.
-    capture confirm file "$dir/output/grc_`country'_cuu_ca_d.ster"
+    capture confirm file "$dir/output/grc_`country'_cuu_ca_d${vsfx}.ster"
     if _rc != 0 {
         di as error "het_table_delta: SKIP `country' (sters missing on disk)"
         exit
     }
-    estimates use "$dir/output/grc_`country'_cuu_ca_d"
+    estimates use "$dir/output/grc_`country'_cuu_ca_d${vsfx}"
     estimates store grc_`country'_cuu_ca_d
     local ests_delta = "grc_`country'_cuu_ca_d"
-	
+
 	* Output Deltas and mus
 	esttab `ests_delta'						 ///
-    using "$output/tables/`filename'.tex",   ///
+    using "$output/tables/`filename'${vsfx}.tex",   ///
 	se b(%8.3f)                              ///  
     keep(`keep') 							 ///
     coeflabels(`coeflabels') 				 ///
@@ -3221,18 +3223,18 @@ program define het_table_mu
     * Phase 1b.5b: load estimate from disk inside the program.
     * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
     * max-cov set = ca; main fit has empty sfx1.
-    capture confirm file "$dir/output/grc_`country'_cuu_ca.ster"
+    capture confirm file "$dir/output/grc_`country'_cuu_ca${vsfx}.ster"
     if _rc != 0 {
         di as error "het_table_mu: SKIP `country' (sters missing on disk)"
         exit
     }
-    estimates use "$dir/output/grc_`country'_cuu_ca"
+    estimates use "$dir/output/grc_`country'_cuu_ca${vsfx}"
     estimates store grc_`country'_cuu_ca
     local ests = "grc_`country'_cuu_ca"
-	
+
 	* Output Deltas and mus
 	esttab `ests'							 ///
-    using "$output/tables/`filename'.tex",   ///
+    using "$output/tables/`filename'${vsfx}.tex",   ///
 	se b(%8.3f)                              ///  
     keep(`keep') 							 ///
     coeflabels(`coeflabels') 				 ///
