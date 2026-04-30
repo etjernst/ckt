@@ -8,6 +8,28 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Resolve `_est_<name>` 32-char overflow in 5_GrRC.do's table-build block
+**Added:** 2026-05-01.
+**Branch:** lca-inversion.
+**Context:** Commit `2b24344` wired LCA inversion CIs into the GRC pipeline (`attach_inversion_ci` + `5b_inversion.do` + extended `grc_tex_table_trend`).
+The 5b_inversion driver runs cleanly and writes inversion CI scalars and macros to all 15 mainline `.ster` files in ~1 hour.
+The end-to-end verification then needs to render the table via `grc_tex_table_trend, spec(urban)`, which requires the four sters per cell to be in memory under their disk-side names (`grc_<country>_urban_<spec>{,_never,_avg,_always}`).
+The longest of those is `grc_IDN_urban_covs_trend_never` at 30 chars; with the `_est_` prefix Stata stores it under, the effective name is 35 chars and overflows the 32-char `_est_<NAME>` limit.
+The error `r(7) invalid name` fires inside the `estimates store` call.
+
+Two interlocking issues:
+1. **5_GrRC.do internal naming inconsistency.** `run_grc, estname(grc_<country>_urban_<spec>)` saves sters with the long name, but the `* Make sure estimates are in memory` block (lines ~280, ~325) does `estimates store grc_<country>_<spec>` (without `urban`).
+The disk-side names and the in-memory store names diverge.
+The existing table-build flow apparently still works in production---likely because `grc_tex_table_trend` is called with `spec(urban)` and so esttab actually looks for `grc_<country>_urban_<spec>{,_never,_avg}` in memory, but those store names are 30+ chars and would also overflow.
+Either (a) production has been silently running on stale cached state, (b) the `_urban_` segment is omitted somewhere I haven't found, or (c) the table-build block has a separate workaround.
+**Action:** trace exactly how production resolves this when running 5_GrRC.do end-to-end on a fresh tree. Likely fix: rename to a shorter identifier (e.g., drop `_urban_` from the in-memory store names or compress `urban`/`nonag` to `u`/`n`).
+2. **`grc_tex_table_trend` should not assume short names.** Its current `local ests_never = "...grc_<country>_<spec>_<estname>_never"` is what generates the long names that trip the limit.
+**Action:** consider changing the program to take a separate `estname_pattern()` argument so callers can supply a shorter naming scheme without touching the table builder.
+
+**Estimated cost:** half a day of tracing + minor renaming.
+**Why it matters:** the LCA-inversion CI rows in the new `grc_tex_table_trend` extension cannot be exercised end-to-end until the lookup names match.
+The CI scalars and macros are correctly attached to the sters by `attach_inversion_ci`; only the rendering step is blocked.
+
 ### Regenerate auxiliary GRC tables to pick up the Delta_avg fix
 **Added:** 2026-04-30.
 **Branch:** lca-inversion.
