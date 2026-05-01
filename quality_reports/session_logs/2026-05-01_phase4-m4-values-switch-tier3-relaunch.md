@@ -502,3 +502,104 @@ Files are already on disk in Dropbox; the commit just captures the source change
 - Confirm Overleaf compile renders the 3 tables correctly with proper envelopes (from `\GRCtable{...}`), tighter inter-block spacing, and the `\bar{\Delta}` label.
 - Then commit the `0_programs.do` Phase 1b.6 strip + the regen helper + the test driver popup fixes.
 - Tier 3 #5 still pending.
+
+---
+
+## Final wrap before /clear
+
+### What landed after the last log section
+
+User compiled in Overleaf and confirmed the spacing fix renders correctly.
+Then flagged a follow-on bug: CHN and TZA tables had no tablenotes.
+
+Diagnosis: `\GRCtable` in `preamble.tex` line 256 used `\ifx\GRCthisnotes\@empty`.
+`\@empty` requires `\makeatletter` to parse correctly because `@` has catcode 12 in the document body.
+Outside `\makeatletter`, `\@empty` parses as `\@` (the inter-sentence space command) followed by literal `empty`, so the comparison silently never matches.
+The fallback to `\GRCnotesxref{#1}{#4}` was never triggered.
+With #5 supplied (IDN canonical), notes rendered.
+With #5 default empty (CHN, TZA), `\GRCthisnotes` stayed empty, and the tablenotes block emitted nothing.
+
+Fix: replaced `\@empty` with `\empty` (kernel-defined, document-body-safe).
+Applied to both:
+- Live `Overleaf-Dropbox/preamble.tex` line 256 (operational, outside git tree).
+- Tracked staging draft [quality_reports/reviews/2026-04-28_preamble-macros-draft.tex](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_preamble-macros-draft.tex) line 151 (committed `7448f6a`).
+
+User confirmed the rendered output looked good after the fix.
+
+### Decisions, with the why
+
+Decision: leave `paper/preamble.tex` (local, 168 lines) stale rather than syncing the Overleaf preamble.tex (305 lines) back into it.
+Why: user explicitly said "the fix was entirely in the paper, then honestly it's fine let's not mess with the local paper".
+The Overleaf-Dropbox copy is the canonical operational source.
+Local `paper/preamble.tex` exists only as a historical artifact and isn't used to compile.
+A one-shot sync would be ~140 lines of unrelated Overleaf evolution dragged into git history with no operational benefit.
+
+Decision: capture the `\@empty` fix in the staging draft, not in `paper/preamble.tex`.
+Why: the staging draft IS the canonical "source" for the GRC macro block in git; the macros were originally pasted from there into Overleaf.
+Updating the draft means future re-pastes will carry the fix.
+Updating `paper/preamble.tex` would require first syncing all the missing GRC macros from Overleaf, which the user vetoed.
+
+Decision: commit the Phase 1b.6 fix and the table regen now even though Tier 3 #5 is still running.
+Why: the spacing fix only touches `grc_tex_table_trend` and the 3 cuu tables.
+It doesn't conflict with Tier 3 #5 (which writes other ster files via `run_grc_with_extra_regressor`).
+Holding the commit would just risk losing it if context compresses.
+
+### Approaches rejected
+
+Approach: chase the esttab option that emits the blank tabular row.
+Reason: three controlled tests (variants A, B, C, D) ruled out `gaps` / `nolast` / `coeflabels`-vs-`varlabels`.
+The blank row comes from some interaction of `nomtitles` + `noobs` + `varwidth(20)` that I did not fully trace.
+Time vs payoff was unfavorable; the codebase already has a post-hoc `filefilter` precedent in `1_summaryStats.do`.
+
+Approach: post-process via mata file rewrite.
+Reason: the existing `removeStringFromTex` wrapper around Stata's `filefilter` is simpler, faster, and matches the project's established style.
+
+Approach: live with the spacing or fix it via LaTeX-side `\setlength{\defaultaddspace}{0pt}`.
+Reason: would zero out `\addlinespace` everywhere in the paper, not just the GRC tables.
+The blank tabular row is the visual culprit, not the `\addlinespace`; killing the wrong thing.
+
+### Open items and blockers
+
+- Tier 3 #5 (`b8jjayskx`) still running, last check during this session showed PID 12516 alive at 200+MB.
+No estimate of remaining time.
+On completion: that closes Phase 1b.5 (M11 + extras dispatch + hukou merge + mu-loop dedup).
+- Tier 2 nominal byte-identity check: skipped per user (M4 T3 bit-identity at full precision is stronger evidence; the only expected diff is the `Delta_avg` label flip we already saw).
+- Paper-side `\GRCvaluesfx` macro for nominal/real switch: deferred per yesterday's session; user clarified real-values output would either replace or appear as a robustness appendix, not coexist with parallel paths.
+- The other 8 main GRC tables (cub, iuu, hukou × 4, experience family, heterogeneity) and 4 hukou variants will pick up the Phase 1b.6 spacing fix on their next regeneration.
+No need to force a regen now since they're not in the active paper section.
+- `RP7/output/test_min_*.tex` and `RP7/output/test_addlinespace_*.tex` are untracked transient test outputs.
+Can be deleted; they're not gitignored but probably should be added to gitignore for `RP7/output/test_*`.
+- `paper/preamble.tex` continues to drift from Overleaf-Dropbox; user accepted this.
+
+### Picking back up
+
+**If you resume:** Read [quality_reports/session_logs/2026-05-01_phase4-m4-values-switch-tier3-relaunch.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-05-01_phase4-m4-values-switch-tier3-relaunch.md) end to end.
+
+**Open thread:** Tier 3 #5 (`b8jjayskx`) finishing.
+On completion the whole Phase 1 + Phase 2 + Phase 4 stack is ready for PR.
+
+**Next concrete actions, in priority order:**
+1. Check `b8jjayskx` status; if finished, inspect ster count vs expected, look for any errors in the smcl, and post results to the session log.
+2. After Tier 3 #5 closes, the worktree branch `worktree-grc-pipeline-refactor` is ready for PR review against `main`.
+The audit-and-fixes work, M3 + S3 + Δ̄ + M4 + extras dispatch + hukou merge + mu-loop dedup + Phase 1b.6 spacing all in one stack.
+3. (Optional) clean up untracked `RP7/output/test_*` transient files; add `RP7/output/test_*` to `.gitignore` so future test drivers don't pollute the diff.
+
+**State to know:**
+- Branch `worktree-grc-pipeline-refactor` last commit `7448f6a`.
+- Working tree clean except `.claude/settings.local.json`, `.claude/scheduled_tasks.lock`, and untracked transient test outputs in `RP7/output/`.
+- Tier 3 #5 task ID `b8jjayskx` still running in the background.
+- prose-rules-enforcer flag is set this session (voice.md and manuscript-writing.md were Read).
+Resets next session.
+- MCP `default` Stata session reported as `stopped` with dead pid 17924 earlier in session; not relevant unless next session tries to use MCP.
+- Live Overleaf preamble.tex has the `\@empty` -> `\empty` fix applied; that file is outside the git tree.
+
+### Commits landed this session
+
+In order:
+- `b3b021d` (yesterday) M4 stage 1+3: values switch in 0_path_config + ${vsfx} on all output paths.
+- `5fbe30b` (yesterday) M4 stage 2: gitignore RP7/data_real + document junction in CLAUDE.md.
+- `b8530a7` (yesterday) M4 verification harness: 4-test driver for values switch.
+- `d896edd` (this morning) M4 verification harness fixes (`_b[Delta_avg]`, `quietly` wrappers) + 2026-05-01 session log.
+- `49e05d4` (today) M4 verification harness PASSED on grc_IDN_cub_c0 (4/4 tests) + driver hardening.
+- `f68892e` (today) Phase 1b.6: strip esttab's blank tabular rows in grc_tex_table_trend.
+- `7448f6a` (today) Fix `\@empty` bug in GRC macros staging draft.
