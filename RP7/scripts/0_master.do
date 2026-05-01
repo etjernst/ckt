@@ -47,8 +47,8 @@ if "`c(username)'"=="etje0002" {
 	global dir = "C:/Users/etje0002/Desktop/git/ReturnsToMigration"
 }
 if "`c(username)'"=="maand" {
-	* Local RP7 working copy. Active path while the lca-inversion worktree exists:
-	global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	* Local RP7 working copy. Active path while the verdier-wrap-up worktree exists:
+	global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
 	* After the branch merges to main, comment the line above and uncomment:
 	* global dir = "C:/git/ckt/RP7"
 }
@@ -104,3 +104,5 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/15_GrRC_birth.do"
 * Generate heterogeneity tables
 	include			"$dir/scripts/16_heterogeneity_tables.do"
+* Run Verdier-style robust GRC (cluster-residualized instruments)
+	include			"$dir/scripts/17_verdier_robust.do"
