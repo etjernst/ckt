@@ -2369,6 +2369,40 @@ end
 capture program drop run_grc_robust_vv
 program define run_grc_robust_vv
 
+    * ============================================================
+    * Purpose:  GRC GMM with Verdier (2020 JAE) cluster-residualized
+    *           switcher instruments and SEs clustered at vfirst.
+    *           Used by 17_verdier_robust.do for the paper's
+    *           "Allowing location-specific trajectory intercepts"
+    *           subsection.
+    *
+    * Key differences from run_grc (audit memo A1-A10, C1-C8):
+    *   - Switcher instruments swd_switcher_*_choice are residuals
+    *     from regressing switcher_s_choice on i.vfirst within
+    *     trajectory s (first stage below).
+    *   - No always-urban instrument: always_choice is a constant
+    *     among always==1 workers, so the demeaned version would
+    *     be identically zero (audit C1, smoke-test verified).
+    *   - vce(cluster vfirst), winitial(unadjusted, independent).
+    *   - Default: onestep GMM (matching VV's setting).
+    *
+    * SIDE EFFECT: drops observations with missing vfirst from the
+    * loaded data. The drop persists across calls within the same
+    * `use'. Driver `17_verdier_robust.do' reloads per country, so
+    * cross-country contamination is avoided. Reload before unrelated
+    * estimation if reusing the program elsewhere (audit C2).
+    *
+    * Output (.ster files in $dir/output):
+    *   <estname>          -- main GMM fit
+    *   <estname>_never    -- nlcom Delta_never
+    *   <estname>_always   -- nlcom Delta_always
+    *   <estname>_delta    -- nlcom per-switcher Delta + joint test
+    *   <estname>_avg      -- nlcom Delta_avg
+    *
+    * Full audit at:
+    *   quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md
+    * ============================================================
+
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
         [covars(varlist) iterate(numlist) initial(string) phistart(real -1) ///
@@ -2410,10 +2444,15 @@ program define run_grc_robust_vv
     * Build vfirst + drop missing-vfirst obs
     * ----------------------------------------------------------------
     gen_vfirst, vname(`vindex') genname(vfirst)
+    qui count
+    local n_pre_drop = r(N)
     qui count if missing(vfirst)
-    if r(N) > 0 {
-        di as text "run_grc_robust_vv: dropping " r(N) " obs with missing vfirst"
-    }
+    local n_dropped_vfirst = r(N)
+    local pct_dropped = cond(`n_pre_drop' > 0, ///
+        100*`n_dropped_vfirst'/`n_pre_drop', 0)
+    di as text "run_grc_robust_vv: vfirst missing -> dropping " ///
+        `n_dropped_vfirst' " of " `n_pre_drop' " obs (" ///
+        %5.2f `pct_dropped' "%)"
     qui drop if missing(vfirst)
 
     qui levelsof vfirst, local(vvals)
@@ -2440,6 +2479,20 @@ program define run_grc_robust_vv
         qui gen swd_switcher_`s'_choice = `tmpresid'
         qui replace swd_switcher_`s'_choice = 0 if missing(swd_switcher_`s'_choice)
         local swd_list "`swd_list' swd_switcher_`s'_choice"
+    }
+
+    * Per-trajectory rank diagnostic (audit C7): a (cluster, trajectory)
+    * cell with very few workers absorbs almost everything into i.vfirst
+    * and produces residuals near zero, leaving residual variance from a
+    * smaller effective sample than counts suggest. Print nonzero-residual
+    * counts per trajectory so weak first stages are visible in the log.
+    foreach s of numlist `switchers' {
+        qui count if switcher_`s' == 1
+        local n_traj_`s' = r(N)
+        qui count if switcher_`s' == 1 & swd_switcher_`s'_choice != 0
+        local nz_traj_`s' = r(N)
+        di as text "  trajectory `s': nonzero residuals = " ///
+            `nz_traj_`s'' " / " `n_traj_`s''
     }
 
     * No always-urban instrument is constructed.
@@ -2498,6 +2551,12 @@ program define run_grc_robust_vv
     di as text "run_grc_robust_vv: base trajectory = `base'"
     di as text "run_grc_robust_vv: phi initial value = `phistart'"
 
+    * Initial-values option is declared optional; only attach from(...)
+    * to the gmm call when the caller actually supplied starting values.
+    * Empty from() would otherwise leave the option present but blank.
+    local fromopt
+    if "`initial'" != "" local fromopt "from(`initial')"
+
     * ----------------------------------------------------------------
     * GMM: same moment equation as run_grc, BUT instruments
     * swd_switcher_*_choice replace switcher_*_choice. vce(cluster vfirst),
@@ -2522,7 +2581,7 @@ program define run_grc_robust_vv
                              vce(cluster vfirst)                                    ///
                              winitial(unadjusted, independent)                      ///
                              `stepopt'                                              ///
-                             from(`initial')                                        ///
+                             `fromopt'                                              ///
                              quickderivatives nolog                                 ///
                              iterate(`iterate')
 
@@ -2541,6 +2600,12 @@ program define run_grc_robust_vv
     estadd scalar joint_chi2 = r(chi2), replace : `estname'
     estadd scalar joint_p    = r(p),    replace : `estname'
 
+    * Note (audit C6): under one-step GMM, Stata's behavior is version-
+    * dependent -- some versions return rc != 0, others return rc == 0
+    * with r(J) missing. Either path leaves Jstat unset / missing on the
+    * ster, which renders as a blank cell in the table -- the desired
+    * behavior under onestep. Worth knowing if a future Stata version
+    * starts populating these cells with a non-missing value.
     capture estat overid
     if _rc == 0 {
         estadd sca Jstat = r(J),    replace : `estname'
@@ -2554,6 +2619,7 @@ program define run_grc_robust_vv
     estadd local converged_str "`converged_str'", replace : `estname'
     estadd scalar V_clusters = `V',           replace : `estname'
     estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
+    estadd scalar n_dropped_vfirst = `n_dropped_vfirst', replace : `estname'
 
     * ----------------------------------------------------------------
     * Individual-count scalar: e(N_clust) under vce(cluster vfirst) is
