@@ -575,14 +575,19 @@ Can be deleted; they're not gitignored but probably should be added to gitignore
 
 **If you resume:** Read [quality_reports/session_logs/2026-05-01_phase4-m4-values-switch-tier3-relaunch.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-05-01_phase4-m4-values-switch-tier3-relaunch.md) end to end.
 
-**Open thread:** Tier 3 #5 (`b8jjayskx`) finishing.
-On completion the whole Phase 1 + Phase 2 + Phase 4 stack is ready for PR.
+**Open thread:** Tier 3 #5 (`b8jjayskx`) just finished AT THE END OF THE SESSION with `r(3900)` out-of-memory inside `editmissing()` in the GMM derivative evaluator (Step 2 iteration 10 of some cell).
+1365 sters on disk (was 1010 at Tier 3 #4 launch, +355 cells this run).
+28 error markers in `RP7/scripts/_smoke_full.log` (1.8 MB).
+The crash is internal to Stata mata (different from Tier 3 #4's silent external kill); it's a fresh issue, not a continuation of the M4 work.
 
 **Next concrete actions, in priority order:**
-1. Check `b8jjayskx` status; if finished, inspect ster count vs expected, look for any errors in the smcl, and post results to the session log.
-2. After Tier 3 #5 closes, the worktree branch `worktree-grc-pipeline-refactor` is ready for PR review against `main`.
+1. Diagnose the `r(3900) editmissing(): out of memory` crash.
+Locate the cell that was running when memory blew up.
+Check whether it's a single problematic cell (e.g. one with too many trajectories or an unusually large $N$) or a generic memory leak across the smoke driver.
+2. Decide whether to relaunch Tier 3 #6 with `skip_if_exists=1` from where #5 stopped, or fix the OOM cell first and then resume.
+3. After Tier 3 closes, the worktree branch `worktree-grc-pipeline-refactor` is ready for PR review against `main`.
 The audit-and-fixes work, M3 + S3 + Δ̄ + M4 + extras dispatch + hukou merge + mu-loop dedup + Phase 1b.6 spacing all in one stack.
-3. (Optional) clean up untracked `RP7/output/test_*` transient files; add `RP7/output/test_*` to `.gitignore` so future test drivers don't pollute the diff.
+4. (Optional) clean up untracked `RP7/output/test_*` transient files; add `RP7/output/test_*` to `.gitignore` so future test drivers don't pollute the diff.
 
 **State to know:**
 - Branch `worktree-grc-pipeline-refactor` last commit `7448f6a`.
