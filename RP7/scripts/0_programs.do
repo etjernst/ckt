@@ -3028,6 +3028,13 @@ program define grc_tex_table_trend
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
 
+    * Phase 1b.6: strip esttab's spurious blank tabular rows.
+    * Same workaround as 1_summaryStats.do, specialized for 6-column GRC
+    * tables. Removes the literal pattern emitted between fragments by
+    * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
+    removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
+        , remove("                    &               &               &               &               &               \BS\BS")
+
 end
 
 * **********************************************************************

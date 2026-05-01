@@ -363,3 +363,142 @@ This is paper-side work that hasn't been done yet; defer until M4 verification i
 - Third batch attempt `bqt4wzzsq` running, mid-T3 nominal fit at 12:51 (started 12:31).
 - Tier 3 #5 (`b8jjayskx`) still running (no action).
 - Three uncommitted fixes accumulated in `tests/verify_M4_values_switch.do`: popup safety + log path rename + estname shortening + mata writer fixes (strofreal removal + unlink).
+
+### M4 verification CLOSED, committed in `49e05d4`
+
+`bqt4wzzsq` finished cleanly with all four tests PASSING:
+- T1 config: PASS.
+- T2 real fit: PASS, N=16,391, Delta_avg_real = -0.1375 (deflated; sign flip vs nominal).
+- T3 nominal refit: PASS bit-identical to pre-M4 reference (`mreldif(b_nom, b_pre) = 0` exactly, V matrices too).
+- T4 real != nominal: PASS, mreldif = 0.93, max |dB| = 5.59.
+
+Headline finding: T3's bit-identity at full precision establishes that M4's `${vsfx}` path edits are perfectly transparent in nominal mode.
+Persisted artifact at `RP7/output/verify_M4_values_summary.txt`.
+
+Committed with the driver fixes accumulated this session: popup safety wrapper, log path rename, estname shortening (`vM4_real_*`/`vM4_nom_*`), and the mata writer corrections (`st_local` reads + `unlink()` before `fopen`).
+Decision to skip Tier 2: T3's bit-identity is stronger evidence than a per-cell replay, the M11 pipeline is uniform across cells, and Tier 2's expected diff was already fully predicted (just the `Delta_avg` label flip).
+User signed off on skipping.
+
+### Tangent continued: paper-side wiring after the file copy
+
+User confirmed: only TZA had been copied to Overleaf-Dropbox (the IDN and CHN files in `tables/` are still pre-refactor full-envelope shape).
+And `sec_results.tex` line 85 had a typo: `\GRCtable{TZA}{consumption}{urban}{unb}` mid-sentence instead of `\ref{tab:GRC_TZA_consumption_urban_unb}`.
+That spurious macro invocation was floating the entire TZA table at line 85, which is why TZA appeared before IDN despite the source order suggesting otherwise.
+With user approval, did three things:
+- Copied IDN/CHN/TZA `consumption_urban_unb` tables from `RP7/output/tables/` to `Overleaf-Dropbox/tables/`.
+- Fixed the line-85 typo: `\GRCtable{TZA}{...}` -> `\ref{tab:GRC_TZA_consumption_urban_unb}`, dropped the spurious double space.
+- Swapped lines 102-107 (commented `\GRCtable{...}` block + active `\input{}` block) to active `\GRCtable{IDN/CHN/TZA}{consumption}{urban}{unb}[\GRCnotesIDNcanonical]` calls.
+None of these are committed yet (they're in Dropbox, outside the git tree).
+
+### Detour: addlinespace + blank-row visual issue
+
+User flagged that the new GRC tables show too much vertical space between coefficient blocks---about 1.5 lines, not the half-line `\addlinespace` should give.
+Diagnosis: between every coefficient block there's a blank tabular row (`& & & & & \\`) AND `\addlinespace` stacked.
+The blank row is the larger contributor.
+
+Read `esttab.ado` from `~/ado/plus/e/`.
+The `gaps` option (auto-enabled when `se` is used) does three things at lines 894, 902, and 928:
+- defaults `posthead` to `\addlinespace` (booktabs `midgap`),
+- defaults `prefoot` to `\addlinespace` when stats are present,
+- auto-builds `varlabels(... end("" \addlinespace) nolast)`---inserts blank row + `\addlinespace` at end of each varlabel's rows, except the last.
+
+Why no blank row after phi: the third esttab call in `grc_tex_table_trend` (line 3015 of `0_programs.do`) explicitly passes `varlabels(`keep' "`varlabel'")`.
+That bypasses the auto-end injection.
+First two esttab calls only set `coeflabels`---so they fall through to the auto-end path.
+But the user has not yet greenlit the fix in `0_programs.do`; they asked me to test the proposed fix on a test table first.
+
+Wrote `tests/test_addlinespace_fix.do` to compare:
+- baseline: current pattern.
+- fix: explicit `varlabels(...)` on first two esttab calls (mirroring how the third does it).
+
+First test attempt failed for two reasons:
+- Baseline third esttab errored r(111) "coefficient phi not found" because in this test driver the kept variable is named "phi" but the `ests` matrix uses different naming.
+- Fix block had `keep(Delta_never)`, but `Delta_never` may not be the matrix column name---silent skip.
+Removed `keep()` from fix block in retry; same r(111) on baseline; fix block STILL produces no file (no error in smcl, just no file).
+
+Open hypothesis: `varlabels(Delta_never "..." Delta_always "...")` may error or silently skip when `Delta_always` isn't in the matrix.
+`coeflabels` tolerates unmatched entries; `varlabels` may not.
+Wrote `tests/test_addlinespace_minimal.do` to test three variants (coeflabels both, varlabels both, varlabels Delta_never only) plus a `matrix list e(b)` diagnostic to find the actual coefficient name.
+Currently running as `bvhhjuea1`.
+
+### Decisions, with the why
+
+Decision: test the addlinespace fix empirically before editing `0_programs.do`.
+Why: the esttab.ado source supports the diagnosis but doesn't fully explain why `nolast` doesn't suppress the trailing on the first two calls---those have only one varlabel that actually renders.
+The user explicitly asked me to verify; they have intuition that "I'm not 100% sure" is correct.
+
+Decision: use `tests/` for the test driver, not edit `0_programs.do` first.
+Why: per `~/.claude/rules/script-safety.md`, never edit data-processing scripts without explicit approval.
+The user approved the diagnosis path but the fix itself still needs verification.
+
+### Open items
+
+- Wait on `bvhhjuea1` minimal 3-variant test to identify which `varlabels` form actually works.
+- Once the right form is found, update the FIX block in `tests/test_addlinespace_fix.do`, rerun, diff baseline vs fix, and report whether blank row is suppressed and `\addlinespace` survives.
+- Then either (a) edit `0_programs.do` lines 2989-3012 with user approval, or (b) defer and note the visual issue is cosmetic.
+- Also still pending: the IDN canonical tablenotes ref via `\GRCnotesIDNcanonical`---verify it renders correctly when the user compiles in Overleaf.
+- Tier 3 #5 (`b8jjayskx`) still running.
+
+### Detour resolution: filefilter precedent in summary stats
+
+Three rounds of unsuccessful diagnosis through esttab.ado source:
+- Variant A (coeflabels with both Delta_never and Delta_always) and B (varlabels with both): byte-identical baseline output.
+- Variant C (varlabels with Delta_never only): also identical.
+- Variant D (drop Delta_always entirely from coeflabels in baseline): still identical.
+
+So `nolast` and the `gaps`-driven auto-end injection were not what controlled the trailing blank rows.
+The blank rows are emitted by esttab's `nomtitles + noobs + varwidth(20)` interaction, which I did not fully trace.
+
+User pointed me back to `0_programs.do` and `make_tables.do` to look for filefilter usage.
+Found 30+ instances in `1_summaryStats.do` already calling `removeStringFromTex` (a thin wrapper around Stata's `filefilter`) with patterns like `" &  &  &  &  \BS\BS  \BSaddlinespace"`---exactly the post-hoc strip approach we needed.
+The codebase has the precedent baked into the summary stats workflow but `grc_tex_table_trend` never adopted it.
+
+Solution: added one `removeStringFromTex` call at the end of `grc_tex_table_trend` (after the third esttab call) targeting the 6-column GRC table's literal blank-row pattern.
+The pattern is stable: 20 leading spaces (from `varwidth(20)`) + 5 inner `&` separated by 15 spaces (from `modelwidth`) + `\BS\BS`.
+Only one filefilter pass per cell.
+The `\addlinespace` stays intact.
+
+Verification: regenerated the 3 cuu §grc-returns tables via `tests/regen_grc_returns_3.do`.
+Diff shows 4 changes per cell:
+- 3 blank tabular rows stripped (lines 3, 7, 11)---the Phase 1b.6 spacing fix.
+- 1 label change (line 9): `Average $\Delta$` -> `$\bar{\Delta}$`.
+The label change is the predicted M3 mu-loop diff from yesterday's session log; not part of this fix but rolled in because the table-builder reads from the post-M3 sters.
+All numerics bit-identical.
+
+Files dropped from 1869 to 1563 bytes each (~16% smaller).
+Copied to Overleaf-Dropbox `tables/` as the persistent paper-side artifact.
+
+Popup-safety fix on the test drivers: I had introduced popups by changing `capture noisily {` to plain `{` on `tests/test_addlinespace_fix.do` line 33 when restructuring for per-block isolation, and forgot to wrap `tests/test_addlinespace_minimal.do` at all.
+Fixed both---they now have proper `capture noisily { ... }` + `exit, STATA clear` flow so future runs won't fire the Windows batch popup even on r(111).
+
+### Decisions, with the why
+
+Decision: post-hoc filefilter strip rather than chase the esttab option that emits the blank row.
+Why: I ruled out `gaps`, `nolast`, `coeflabels`/`varlabels` shape with three controlled tests.
+The blank row comes from somewhere else in esttab's transition machinery (`nomtitles` + `noobs` + `varwidth` interaction).
+Tracing that further would have been a sinkhole for cosmetic gain.
+The filefilter approach is the project's established workaround for this exact pattern (1_summaryStats.do has 30+ such calls), and adding one line to `grc_tex_table_trend` matches that style.
+
+Decision: regenerate only the 3 §grc-returns tables, not the full pipeline.
+Why: the `removeStringFromTex` call is internal to `grc_tex_table_trend`, so any cell that runs through that function gets the strip.
+The 3 cuu cells are what's affected in the active paper section; other cells (cub, iuu, cnu, hukou, experience family) will pick up the strip when their tables are next regenerated.
+No need to force a full regen now.
+
+Decision: commit-or-hold question deferred to user.
+Why: the visible payoff is in the rendered Overleaf PDF, not in the .tex source.
+User wants to confirm the rendering before committing.
+Files are already on disk in Dropbox; the commit just captures the source change in `0_programs.do`.
+
+### Status now
+
+- `0_programs.do` has the Phase 1b.6 strip; uncommitted.
+- `tests/regen_grc_returns_3.do` is new; uncommitted.
+- `tests/test_addlinespace_*.do` (fix + minimal) have popup-safety fixes; uncommitted.
+- 3 GRC §grc-returns tables regenerated and copied to Overleaf-Dropbox.
+- Tier 3 #5 (`b8jjayskx`) still running.
+
+### Open items
+
+- Confirm Overleaf compile renders the 3 tables correctly with proper envelopes (from `\GRCtable{...}`), tighter inter-block spacing, and the `\bar{\Delta}` label.
+- Then commit the `0_programs.do` Phase 1b.6 strip + the regen helper + the test driver popup fixes.
+- Tier 3 #5 still pending.
