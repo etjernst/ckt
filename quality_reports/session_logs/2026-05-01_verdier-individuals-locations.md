@@ -320,3 +320,40 @@ Nothing pushed; user merges manually when ready.
 > - `global skip_if_exists` is at 1 in `17_verdier_robust.do`.
 Toggle to 0 locally and back to 1 for any forced regen; do not commit the toggle.
 > - The 30 `.ster` files have `n_indiv` (from the previous regen) but NOT `n_dropped_vfirst` (added this session, never re-run).
+
+## Push, PR, review, post-merge issue (2026-05-01, late evening)
+
+Pushed `worktree-verdier-wrap-up` to `origin` (10 commits, `b79160f..32dc72e`).
+Initial PR creation against `main` failed because the remote had no `main` branch---only the two worktree branches existed on `origin`.
+The user pushed local `main` to remote (`91d7998`) and the PR opened cleanly: [PR #1](https://github.com/etjernst/ckt/pull/1) "Verdier robust GMM: production-ready estimator + paper tables", base `main`, head `worktree-verdier-wrap-up`, 23 files / +3,421 / -32.
+
+Ran a code review on the PR via the `/review` skill.
+Output went to chat (no on-disk memo this round; would be at `quality_reports/reviews/2026-05-01_pr1-review.md` if needed later).
+Two findings worth tracking post-merge: the `$dir` paths in [`RP7/scripts/0_master.do:51`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_master.do) and [`RP7/scripts/17_verdier_robust.do:26`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/17_verdier_robust.do) point at the worktree location and need to flip to `C:/git/ckt/RP7` after merge.
+The user asked whether to fix on this branch or open an issue; the worktree convention requires the path to point at the worktree while the worktree exists, so fixing pre-merge would break the pipeline.
+Opened [issue #2](https://github.com/etjernst/ckt/issues/2) instead with file pointers, from/to snippets, the convention rationale, and the optional `.ster` regen follow-up.
+
+Tried `gh pr review 1 --approve` and got blocked: GitHub forbids self-approval (the user authored the PR).
+Two paths offered: submit as a non-approving review comment, or merge directly.
+Merge decision pending.
+
+### Decisions, with the why
+
+D15. Opened an issue rather than fixing `$dir` paths on this branch.
+
+Why: the project convention encodes `$dir` as a per-worktree path that points at the worktree while the worktree exists, and gets flipped to the main-tree path at merge time.
+The committed state of the worktree branch IS supposed to have the worktree path; flipping pre-merge would prevent the user from running the pipeline locally before the merge lands.
+The issue gives future-us a clickable reminder with line numbers and the from/to text.
+
+D16. Pushed local `main` to remote in the middle of the PR setup.
+
+Why: the remote (`https://github.com/etjernst/ckt.git`) had only the two worktree branches and no `main`, so the PR couldn't open against a non-existent base.
+Pushing main was a one-time bootstrap; future PRs will target the now-canonical `origin/main`.
+The user ran the push themselves from a separate bash session in the main worktree.
+
+### Open items
+
+- Decide whether to merge PR #1 (squash / merge / rebase) or wait on review.
+GitHub self-approval is blocked, so the PR cannot be approved by Claude on the user's behalf.
+- After merge: address [issue #2](https://github.com/etjernst/ckt/issues/2).
+- Optional regen of the 30 `.ster` files for `n_dropped_vfirst` is still pending; can be folded into the post-merge fixup commit on main.
