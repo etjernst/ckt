@@ -584,7 +584,10 @@ The crash is internal to Stata mata (different from Tier 3 #4's silent external 
 1. Diagnose the `r(3900) editmissing(): out of memory` crash.
 Locate the cell that was running when memory blew up.
 Check whether it's a single problematic cell (e.g. one with too many trajectories or an unusually large $N$) or a generic memory leak across the smoke driver.
-2. Decide whether to relaunch Tier 3 #6 with `skip_if_exists=1` from where #5 stopped, or fix the OOM cell first and then resume.
+2. **MUST** relaunch Tier 3 #6 with `skip_if_exists=1` (the M10 skip-on-exists guard inside `run_grc`).
+1365 sters are already on disk from Tier 3 #4 + #5; rerunning from scratch would burn ~70 hours of compute regenerating identical numbers.
+The skip guard is in `0_programs.do` `run_grc` near line 1846 (`capture confirm file "$output/`estname'_g${vsfx}.ster"`); the smoke driver passes `skip_if_exists` through.
+Verify the smoke driver still has it set to 1 before launching---it was set to 1 for #5, but make sure no edit since then changed it.
 3. After Tier 3 closes, the worktree branch `worktree-grc-pipeline-refactor` is ready for PR review against `main`.
 The audit-and-fixes work, M3 + S3 + Δ̄ + M4 + extras dispatch + hukou merge + mu-loop dedup + Phase 1b.6 spacing all in one stack.
 4. (Optional) clean up untracked `RP7/output/test_*` transient files; add `RP7/output/test_*` to `.gitignore` so future test drivers don't pollute the diff.
