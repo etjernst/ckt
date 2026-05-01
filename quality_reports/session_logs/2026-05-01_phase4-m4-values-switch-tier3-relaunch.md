@@ -242,5 +242,124 @@ First MCP command in next session should `clear all` before doing anything else.
 - `b3b021d` M4 (Phase 4) stage 1+3: values switch in 0_path_config + ${vsfx} on all output paths.
 - `5fbe30b` M4 (Phase 4) stage 2: gitignore RP7/data_real + document junction in CLAUDE.md.
 - `b8530a7` M4 (Phase 4) verification harness: 4-test driver for values switch.
+- `d896edd` M4 verification harness fixes (`_b[Delta_avg]`, `quietly` wrappers) + 2026-05-01 session log.
 
 Plus disk-only changes: `RP7/data_real` junction created locally.
+
+---
+
+## Continuation later 2026-05-01: batch verification, two failure modes, retry
+
+Resumed after /clear.
+Open thread was picking a run mode (MCP vs batch) for the M4 verification harness and executing it.
+User chose batch ("we've basically agreed batch is better for something with so much output, and concurrent batches are fine").
+
+### Driver hygiene (uncommitted; will go in next commit)
+
+Added `capture noisily { ... }` wrapper plus `exit, STATA clear` at the tail of `tests/verify_M4_values_switch.do` per `~/.claude/rules/stata-conventions.md`.
+That convention is the canonical fix for the Windows batch-mode "Stata finished" modal popup, on both success AND error paths.
+
+### Failure 1: `r(608)` log-file lock
+
+First batch (`bptx7yxio`) errored at `log using "$logs/verify_M4_values.smcl", replace` with `r(608); cannot be modified or erased; likely cause is read-only directory or file`.
+Diagnosis steps:
+- `tasklist | grep -i stata` showed live processes (Tier 3 #5 batch + MCP servers).
+- `mcp-stata list_sessions` reported `default` as `status: "stopped"` with `pid: 17924`.
+- `rm -f` on the smcl returned `Device or resource busy`, indicating a ghost file handle from yesterday's failed MCP attempts that Windows hadn't released.
+
+Fix: renamed the log path in the driver from `verify_M4_values.smcl` to `verify_M4_values_batch.smcl`.
+Cleaner than killing processes (Tier 3 #5 was running) or restarting Stata (would interrupt it).
+Updated header comment to match.
+
+### Failure 2: `r(7)` invalid name (32-char `_est_` ceiling)
+
+Second batch (`b47htghk8`) cleared the smcl issue but errored ~10 minutes later inside `run_grc` with `_est_verify_M4_values_real_IDN_cub_c0 invalid name`.
+Diagnosis: estname `verify_M4_values_real_IDN_cub_c0` is 32 characters; with the `_est_` prefix Stata uses internally that becomes 37, busting the 32-char internal-name ceiling documented in `~/.claude/rules/stata-conventions.md`.
+
+Confirmed via grep on `0_programs.do` that `${vsfx}` is appended only to disk paths inside run_grc, not to the eststo internal name.
+Shortening the estname (rather than the disk filename) is the right lever.
+
+Fix: shortened the verify-harness estnames using a `vM4_` prefix.
+- `verify_M4_values_real_IDN_cub_c0` (32 chars) became `vM4_real_IDN_cub_c0` (19); plus `_g` suffix = 21; `_est_` + 21 = 26, fits.
+- `verify_M4_values_nominal_IDN_cub_c0` (35) became `vM4_nom_IDN_cub_c0` (18); plus `_g` = 20; `_est_` + 20 = 25, fits.
+
+Sites changed: 2 `run_grc, estname(...)` lines (T2 and T3, both with backtick `country`), 4 `estimates use ".../<estname>...ster"` lines, 2 `capture confirm file` lines, plus the header `Output:` comment.
+First `replace_all` on the hardcoded `IDN` form missed the macro form (`` `country' ``); caught it in a follow-up grep before relaunch.
+
+The `vM4_*` prefix is far enough from `verify_M4_*` that it doesn't collide with the prior mu-loop verification harness's persisted sters in `RP7/output/verify_M4_*.ster`.
+
+### Decisions, with the why
+
+Decision: rename the log file rather than chase the ghost handle.
+Why: the holding process was unidentifiable (MCP `default` reported stopped, but Windows clearly still had a handle attached).
+Killing the only candidate live PID would have corrupted 2+ hours of Tier 3 #5 progress.
+Rename is non-invasive and the smcl filename is internal scaffolding, not load-bearing.
+
+Decision: shorten via `vM4_` prefix rather than re-architect the estname budget.
+Why: the 32-char ceiling is a hard Stata constraint, not negotiable.
+The `verify_M4_values_*` prefix was always going to be tight: `verify_M4_values_` alone is 17 chars, leaving only 8 for everything else after the `_g` suffix and `_est_` overhead.
+Other M11 estname conventions already use compact tags (`cuu`, `ca`, `os`, `ts`), so a 3-letter `vM4` prefix is consistent with house style.
+
+Decision: keep the `vM4_` prefix far from `verify_M4_*` (the mu-loop harness sters).
+Why: the two harnesses' artifacts then stay cleanly separated on disk; `ls RP7/output/v*.ster` shows them in obvious groups.
+A `verify_*` shortening (e.g., `vfy_`) would have visually conflated them.
+
+### Status as of last check
+
+- Third batch (`bwxhxfua7`) launched at ~10:18; expected ~5--10 min for two GMM fits on `grc_IDN_cub_c0`.
+- Tier 3 #5 (`b8jjayskx`) still running, no contention with the verify batch (separate Stata MP processes; license allows concurrent batches).
+- No commits yet from today's continuation; uncommitted changes in `tests/verify_M4_values_switch.do` (popup safety + log rename + estname shortening).
+
+### Open items
+
+- Wait on `bwxhxfua7`, read T1/T2/T3/T4 results from `RP7/output/verify_M4_values_summary.txt`.
+- Commit driver fixes once a clean run produces the summary file.
+- Tier 3 #5 still running; no action needed.
+
+### Continuation: failure modes 3 and 4 plus paper-side diagnosis
+
+`bwxhxfua7` finished after ~10 min (T2 + T3 fits successful) but errored at the mata summary writer with r(3253) `nonreal found where real required`.
+The smcl showed all four tests had passed before the mata error fired:
+- T1 PASS (config switch wires up).
+- T2 PASS (`vM4_real_IDN_cub_c0_*_r.ster` on disk, N=16,391, Delta_avg_real = -0.1375).
+- T3 PASS bit-identical (`mreldif(b_nom, b_pre) = 0`, V matrices too; Delta_avg_nom = 0.1539 matches pre-M4 exactly).
+- T4 PASS (max |b_real - b_nom| = 5.59, mreldif = 0.93; deflation flips Delta_avg sign as expected).
+
+Diagnosis: `strofreal(st_local("t1_pass"))` is wrong because `st_local` already returns a string and mata's `strofreal` expects a real.
+Fix: drop `strofreal` on the four `t*_pass` reads (the `st_numscalar` reads stay; those return real).
+
+Relaunched as `bbclpgfno`.
+Hit a different mata error: r(602) `file already exists` on `fopen(..., "w")`.
+Mata's "w" mode is exclusive-create, not truncate-or-create.
+The 10:35:48 partial summary file from `bwxhxfua7` was still on disk.
+Fix: prepend `unlink(...)` to the summary path so the writer always starts clean.
+Also `rm -f` the stale summary on disk to avoid depending on the unlink during the next run.
+
+Relaunched as `bqt4wzzsq` at 12:31.
+Currently running, mid-T3 nominal fit at last check (12:51).
+Slower than the prior runs because Tier 3 #5 (`b8jjayskx`, PID 12516) is now also actively iterating, sharing CPU with the M4 batch (PID 24324).
+Both Stata MP processes alive; the slowdown is contention, not a hang.
+
+### Decision: chase the cosmetic mata bug rather than hand-write the summary
+
+Why: the verification harness is supposed to be self-contained and re-runnable.
+Hand-writing the summary file based on the smcl numbers I already read would have been faster, but it would have left the harness broken for future replays.
+The `unlink()` + `st_local` fixes cost two extra ~10 min runs and a third ~10 min run still pending; in exchange, the harness produces a clean summary on demand, every time.
+
+### Tangent: Overleaf bare-tabular issue (user question while waiting)
+
+User asked why `GRC_TZA_consumption_urban_unb` shows up in Overleaf without the `\begin{table}` wrapper.
+
+Diagnosis: the M11 / Phase 1b.2 refactor slimmed the `.do` table output to emit only the inner `\begin{tabular}...\end{tabular}`.
+The `\GRCtable{country}{depvar}{choice}{balance}` macro was added to Overleaf's [preamble.tex](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/preamble.tex) (line 254) to supply the missing `\begin{table}`, caption, label, threeparttable, `\input{tables/GRC_<...>}`, and tablenotes.
+But the body of [main.tex](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/main.tex) still has bare `\input{tables/GRC_TZA_consumption_urban_unb}` (lines 708--713) instead of `\GRCtable{TZA}{consumption}{urban}{unb}`.
+So Overleaf is `\input`-ing the new bare-tabular file with no envelope, and the prose `\ref{tab:GRC_TZA_consumption_urban_unb}` produces an undefined-reference warning (3 hits in the compile log).
+
+Fix: in Overleaf `main.tex`, swap each `\input{tables/GRC_<...>}` for the corresponding `\GRCtable{...}` / `\GRCexptable{...}` / `\GRChukoutable{...}` invocation per the [draft notes file](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_preamble-macros-draft.tex) line 263+.
+This is paper-side work that hasn't been done yet; defer until M4 verification is closed.
+
+### Status as of last check
+
+- Third batch attempt `bqt4wzzsq` running, mid-T3 nominal fit at 12:51 (started 12:31).
+- Tier 3 #5 (`b8jjayskx`) still running (no action).
+- Three uncommitted fixes accumulated in `tests/verify_M4_values_switch.do`: popup safety + log path rename + estname shortening + mata writer fixes (strofreal removal + unlink).

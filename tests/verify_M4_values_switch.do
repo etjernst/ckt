@@ -28,8 +28,9 @@
 *          RP7/scripts/0_path_config.do (post-M4)
 *          RP7/scripts/0_programs.do    (post-M4)
 * Output:  RP7/output/verify_M4_values_summary.txt
-*          RP7/output/verify_M4_values_*.ster (T2 real, T3 nominal refits)
-*          RP7/scripts/logs/verify_M4_values.smcl
+*          RP7/output/vM4_real_IDN_cub_c0{,_n,_a,_d,_g}_r.ster (T2)
+*          RP7/output/vM4_nom_IDN_cub_c0{,_n,_a,_d,_g}.ster (T3)
+*          RP7/scripts/logs/verify_M4_values_batch.smcl
 *
 * Run via: cd RP7/scripts && stata-mp -b do ../../tests/verify_M4_values_switch.do
 * Or via MCP `default` session: do "tests/verify_M4_values_switch.do"
@@ -47,7 +48,9 @@ quietly include "$dir/scripts/0_path_config.do"
 quietly include "$dir/scripts/0_programs.do"
 
 capture log close
-log using "$logs/verify_M4_values.smcl", replace
+log using "$logs/verify_M4_values_batch.smcl", replace
+
+capture noisily {
 
 * ============================================================
 * Stash pre-M4 nominal reference. Load main + _g sters; capture e(b),
@@ -129,26 +132,26 @@ local base `r(base)'
 local initial "`r(initial)'"
 local iterations $grc_max_iter
 
-quietly run_grc, estname(verify_M4_values_real_`country'_cub_c0)      ///
+quietly run_grc, estname(vM4_real_`country'_cub_c0)      ///
     switchers($switchers) base(`base') initial(`initial')             ///
     balance(`balance') iterate(`iterations')
 
 * The _r suffix is appended INSIDE run_grc via ${vsfx}, so the disk
-* file is verify_M4_values_real_IDN_cub_c0_r.ster.
-quietly estimates use "$output/verify_M4_values_real_IDN_cub_c0_r.ster"
+* file is vM4_real_IDN_cub_c0_r.ster.
+quietly estimates use "$output/vM4_real_IDN_cub_c0_r.ster"
 matrix b_real_main = e(b)
 matrix V_real_main = e(V)
 scalar N_real = e(N)
-quietly estimates use "$output/verify_M4_values_real_IDN_cub_c0_g_r.ster"
+quietly estimates use "$output/vM4_real_IDN_cub_c0_g_r.ster"
 scalar Delta_avg_real = _b[Delta_avg]
 
 di "  N_real             = " N_real
 di "  Delta_avg_real     = " %20.16e Delta_avg_real
 
 * T2 success conditions: ster files exist on disk with _r suffix; e(N)>0.
-capture confirm file "$output/verify_M4_values_real_IDN_cub_c0_r.ster"
+capture confirm file "$output/vM4_real_IDN_cub_c0_r.ster"
 local t2_main_exists = (_rc == 0)
-capture confirm file "$output/verify_M4_values_real_IDN_cub_c0_g_r.ster"
+capture confirm file "$output/vM4_real_IDN_cub_c0_g_r.ster"
 local t2_g_exists = (_rc == 0)
 local t2_pass = `t2_main_exists' & `t2_g_exists' & (N_real > 0)
 di "  T2 result          : " cond(`t2_pass', "PASS", "FAIL")
@@ -175,15 +178,15 @@ quietly initial_values lndepvar, switchers($switchers) balance(`balance') estnam
 local base `r(base)'
 local initial "`r(initial)'"
 
-quietly run_grc, estname(verify_M4_values_nominal_`country'_cub_c0)    ///
+quietly run_grc, estname(vM4_nom_`country'_cub_c0)    ///
     switchers($switchers) base(`base') initial(`initial')              ///
     balance(`balance') iterate(`iterations')
 
-quietly estimates use "$output/verify_M4_values_nominal_IDN_cub_c0.ster"
+quietly estimates use "$output/vM4_nom_IDN_cub_c0.ster"
 matrix b_nom_main = e(b)
 matrix V_nom_main = e(V)
 scalar N_nom = e(N)
-quietly estimates use "$output/verify_M4_values_nominal_IDN_cub_c0_g.ster"
+quietly estimates use "$output/vM4_nom_IDN_cub_c0_g.ster"
 scalar Delta_avg_nom = _b[Delta_avg]
 
 di "  N_nom              = " N_nom
@@ -236,22 +239,23 @@ di "  T4 result          : " cond(`t4_pass', "PASS (estimates differ)", "FAIL (e
 * Persist a summary file
 * ============================================================
 mata:
+unlink(st_global("output") + "/verify_M4_values_summary.txt")
 fh = fopen(st_global("output") + "/verify_M4_values_summary.txt", "w")
 fput(fh, "M4 (Phase 4) values(nominal|real) switch verification")
 fput(fh, sprintf("Run: %s", c("current_time")))
 fput(fh, "")
-fput(fh, sprintf("T1 config:       %s", strofreal(st_local("t1_pass"))))
+fput(fh, sprintf("T1 config:       %s", st_local("t1_pass")))
 fput(fh, sprintf("T2 real fit:     %s   (N=%s, Delta_avg=%s)",
-                 strofreal(st_local("t2_pass")),
+                 st_local("t2_pass"),
                  strofreal(st_numscalar("N_real")),
                  strofreal(st_numscalar("Delta_avg_real"), "%22.16e")))
 fput(fh, sprintf("T3 nominal:      %s   (N=%s, Delta_avg=%s, mreldif b=%s)",
-                 strofreal(st_local("t3_pass")),
+                 st_local("t3_pass"),
                  strofreal(st_numscalar("N_nom")),
                  strofreal(st_numscalar("Delta_avg_nom"), "%22.16e"),
                  st_local("mrel_b_nom")))
 fput(fh, sprintf("T4 real != nom:  %s   (mreldif=%s, max|dB|=%s)",
-                 strofreal(st_local("t4_pass")),
+                 st_local("t4_pass"),
                  st_local("mrel_b_rn"),
                  st_local("max_abs_b_rn")))
 fput(fh, "")
@@ -264,4 +268,12 @@ end
 di ""
 type "$output/verify_M4_values_summary.txt"
 
-log close
+}
+local saved_rc = _rc
+capture log close
+if `saved_rc' != 0 {
+    di as error ">>> verify_M4_values_switch.do FAILED with rc=`saved_rc'"
+}
+
+* Suppress the Windows batch-mode "Stata finished" popup.
+exit, STATA clear
