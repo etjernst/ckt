@@ -147,8 +147,11 @@
   \def\GRCthisconnector{\GRCdepvarconnector{#2}}%
   \def\GRCthisbalmod{\GRCbalmodifier{#4}}%
   % Resolve notes: if #5 nonempty use it; else default to Template B.
+  % Use \empty (kernel-defined, document-body-safe) not \@empty (which
+  % requires \makeatletter; otherwise the comparison silently fails and
+  % the fallback never triggers, leaving CHN/TZA tables with no notes).
   \def\GRCthisnotes{#5}%
-  \ifx\GRCthisnotes\@empty
+  \ifx\GRCthisnotes\empty
     \def\GRCthisnotes{\GRCnotesxref{#1}{#4}}%
   \fi
   \begin{table}[htbp]\centering
