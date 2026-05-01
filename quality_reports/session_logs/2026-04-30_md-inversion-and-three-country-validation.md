@@ -551,3 +551,91 @@ This requires re-running 5_GrRC.do first, which is ~30 min for the urban/cons/un
 Once both are done, the production pipeline is ready for the table render.
 3. **Pick the next robustness path** from the chi-squared finite-sample memo: F adjustment first (cheap), then bootstrap-calibrated inversion if F doesn't close the gap, plus the empirically calibrated coverage test.
 All three are unblocked and decoupled from the table-render issue.
+
+## Sub-session 2026-05-01: F-adjustment spec, plan, plan review, pivot
+
+### What got built or changed
+
+- [`quality_reports/specs/2026-05-01-f-adjustment-inversion.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/specs/2026-05-01-f-adjustment-inversion.md): MUST/SHOULD/MAY spec for adding an F-adjusted variant of every chi-squared inversion in `lca_inversion.py`, anchored against `clubSandwich`, with synth coverage at $T=4, K=14, R=200$ as the load-bearing gate.
+- [`quality_reports/plans/2026-05-01-f-adjustment-inversion.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-01-f-adjustment-inversion.md): 8-step plan, ~30 hours estimated, with explicit $\hat{\nu}$ formula derivation in Step 0 and a per-cluster cluster-streaming requirement in Step 1.
+- [`quality_reports/reviews/2026-05-01_f-adjustment-spec-methods-review.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-01_f-adjustment-spec-methods-review.md): methods review of the spec; 0 critical, 4 major (F1 high-$J_R$ synth, F2 rank-deficient anchor, F3 memory streaming, F4 nlcom width sanity check). All four folded into the plan.
+
+### What the M11 read landed
+
+User pointed me at [`C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/STER_NAMING.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/STER_NAMING.md) early in the session.
+The grc-pipeline-refactor branch's M11 rename ($grc_<country>_<spec3>_<covs2>_<sfx1>$, e.g. `grc_IDN_cuu_ca`) solves the 32-char `_est_<name>` issue from the prior session's third concrete next move.
+Decision: pause the Stata-side wiring of inversion CIs into the production pipeline (5b_inversion.do, esttab `stats()` extension) and continue Python-side robustness work in parallel.
+Why: the refactor branch has M3 (collapses four `grc_tex_table_trend*` programs into one) which collides directly with our esttab extension; doing it now means redoing it after the merge.
+The chi-squared finite-sample work is fully decoupled from naming and lives in `explorations/python-grc/`.
+
+### Plan review and the pivot
+
+Ran `/review-plan` with the econometrics methodology persona and two web searches.
+Critic surfaced three Red findings:
+
+1. PT 2018 Theorem 2 (the multi-parameter Wald-Satterthwaite df formula our plan rests on) was retracted via a 2023 corrigendum.
+With $J_R \in \{4, 9, 13, 26\}$ this is exactly our regime.
+2. The auxiliary OLS uses individual-trajectory `alpha[d]` dummies; PT 2018 distinguishes plain CR2 from BRL-FE under absorbed FE.
+The plan had not committed to which variant we implement, and the two have different leverage adjustments under FE.
+3. The bridge from "auxiliary-OLS Wald" to "GMM inversion" was undocumented.
+The plan treated the auxiliary OLS as a drop-in for the GMM problem without showing equivalence; if the bridge is wrong, every coverage number downstream is meaningless.
+
+User's reaction to the critic report was correct: this had drifted into something quasi-novel.
+The actual procedure (CR2 + Satterthwaite Wald on a linear restriction of an OLS coefficient vector) is *not* novel; it is what `clubSandwich::Wald_test` does directly.
+The novelty in the original plan was the Python reimplementation and the undocumented bridge.
+
+### Five alternatives surfaced
+
+Presented in chat, ranked by simplicity:
+
+1. Call `clubSandwich` directly via R subprocess, batched per cell.
+Off-the-shelf; ~9 hours total instead of ~30.
+2. Wild cluster bootstrap inversion (Cameron-Gelbach-Miller 2008, MacKinnon-Webb 2018). Available as `boottest` (Stata) or `fwildclusterboot` (R).
+3. Hall-Horowitz (1996) bootstrap calibration of the inversion. The original plan's fallback.
+4. Empirically-calibrated chi-squared quantiles via Monte Carlo on each country's actual switcher distribution.
+The "empirically calibrated coverage test" already in `docs/TODO.md`.
+5. Original plan: implement CR2 + Satterthwaite in Python from scratch.
+
+### Decisions, with the why
+
+Decision: rewrite the plan around option 1 (clubSandwich via R subprocess), pending user approval.
+Why: zero new methodology to defend; clubSandwich tracks the PT 2023 corrigendum, picks the right CR2 vs BRL-FE variant from the regression spec, and is well-validated.
+Drops the plan from 30 hours to ~9 hours.
+Failure mode: R subprocess fragility on Windows; mitigated by CSV-handoff rather than rpy2.
+If R is genuinely unavailable, fall back to option 2 (wild cluster bootstrap, pure Python via `numpy.random`).
+
+Decision: do not implement options 2--5 unless option 1 fails the empirical sanity check.
+Why: Option 1 produces an off-the-shelf, well-cited correction; we only escalate to bootstrap calibration if clubSandwich's CR2 + Satterthwaite leaves coverage materially below nominal at IDN's $J_R = 26$.
+
+### Approaches rejected and the reason
+
+Rejected: implementing CR2 + Satterthwaite from scratch in Python with our own anchor harness (the original plan).
+Why: three Red findings from the methods review, all concentrated in the bridge derivation and the BRL-FE distinction; off-the-shelf clubSandwich removes all three at once.
+
+Rejected: jumping straight to Hall-Horowitz bootstrap calibration.
+Why: more expensive ($B \times \text{grid}$ Walds per cell, ~5--15 hours per empirical re-run) and harder to verify than CR2-Satterthwaite, which is the literature's first-line correction.
+
+### Open items going into next session
+
+- User has not yet approved the option-1 rewrite of the plan.
+Pending: should the plan be rewritten around clubSandwich-via-subprocess, or do they want to explore one of the other alternatives more carefully first?
+- Methods review's Yellow findings still live in the rewrite: $R = 1000$ headline runs (not $R = 200$), per-grid $\hat{\nu}$ contiguity check, F-adj-vs-Python-chi-squared comparison instead of F-adj-vs-nlcom, second R anchor (`commarobust::BMlmSE`).
+- Stata-pipeline integration of inversion CIs remains paused pending the `worktree-grc-pipeline-refactor` merge to main.
+
+### Picking back up
+
+If you resume on `lca-inversion`:
+
+1. Read [`quality_reports/plans/2026-05-01-f-adjustment-inversion.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-01-f-adjustment-inversion.md) (current ~30-hour version) and [`quality_reports/reviews/2026-05-01_f-adjustment-spec-methods-review.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-01_f-adjustment-spec-methods-review.md).
+2. Confirm with user whether to rewrite the plan around option 1 (clubSandwich via R subprocess).
+If yes, the new plan is ~9 hours: R-script wrapper (1h), Python subprocess wrapper (2h), synth coverage at $R=1000$ (3h), empirical three-country re-run (2h), one-page note in lieu of a derivation memo (1h).
+If user wants option 2 (wild cluster bootstrap), the plan changes shape entirely; ~5--15 hour runtime budget.
+3. Either way, the existing F1--F4 fold-ins from the methods review carry over: high-$J_R$ synth, rank-deficient anchor (becomes a clubSandwich rank-deficient case), per-cluster memory budget (irrelevant under option 1; clubSandwich handles it), F-adj-vs-Python-chi-squared sanity check.
+4. Stata-pipeline integration of inversion CIs stays paused until `worktree-grc-pipeline-refactor` merges; resume that thread after the merge.
+
+State to know:
+
+- Working tree is clean except for `.claude/scheduled_tasks.lock` and `.claude/settings.local.json` (gitignored).
+- No commits this sub-session yet; spec, plan, and methods review are uncommitted.
+- The `prose-rules-enforcer` hook fired once early in the session; will reset on the next session.
+- M11 short-naming convention is documented at [`C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/STER_NAMING.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/STER_NAMING.md); when grc-pipeline-refactor merges, our `5b_inversion.do` and `attach_inversion_ci` need to switch from `grc_<country>_urban_<spec>` to `grc_<country>_<spec3>_<covs2>` naming.
