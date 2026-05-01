@@ -252,3 +252,71 @@ Onestep cells converged with the C1 drop; twostep cells are mixed---some converg
 > - Per-cell `capture noisily` in the driver means future regen runs won't get blocked by single-cell failures.
 > - The critic-fixer-enforcer hook fires on PostToolUse(Agent) but per-session flags reset; the state file at `~/.claude/sessions/<sid>/critic-fixer-state.json` will not exist initially in a new session.
 That's correct behavior.
+
+## Late-evening continuation (2026-05-01, picking up after `ba3ecee`)
+
+The user resumed and confirmed (1) the three new onestep Verdier tables compile fine on Overleaf, (3) the critic-fixer hook smoke test is being handled in a different session and is dropped from this branch's to-do.
+That left Task #2 (better drop-count logging) and audit nits C3--C7 to do in parallel.
+Both touch the same `run_grc_robust_vv` block in `0_programs.do`, so they went in as one editing pass.
+
+### What got built or changed
+
+- [RP7/scripts/0_programs.do](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do): six edits to the `run_grc_robust_vv` block.
+  - Program header (~25 lines) added between `program define` and `syntax`, covering purpose, key differences from `run_grc`, the C2 sample-mutation side effect, and the five `.ster` outputs.
+  - Drop-count block rewritten so the count and percentage print on every call (was guarded by `if r(N) > 0`); the local `n_dropped_vfirst` is captured for downstream `estadd`.
+  - Per-trajectory nonzero-residual diagnostic added after the demean loop (audit C7).
+  - `local fromopt` block before the gmm call; the call now passes `\`fromopt'` instead of `from(\`initial')` (audit C4).
+  - One-line comment about Stata-version-dependent `estat overid` rc behavior under one-step GMM (audit C6).
+  - `estadd scalar n_dropped_vfirst = \`n_dropped_vfirst', replace : \`estname'` next to the other estadd-scalar block.
+- [quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md): added a "Task #2 + C3--C7 resolution (2026-05-01)" section at the end mapping each finding to its resolution.
+
+### Verification
+
+Parse-checked via the Stata MCP (`include "$dir/scripts/0_programs.do"`, then `program list run_grc_robust_vv`).
+Both succeeded.
+Did NOT regenerate the 30 `.ster` files; the user explicitly chose to defer the regen.
+The new `n_dropped_vfirst` scalar will land on the `.ster` files only when `17_verdier_robust.do` is next run with `skip_if_exists 0`.
+
+### Decisions, with the why
+
+D12. Did all six edits in one commit (`b0a2edb`).
+
+Why: they're all to the same program, all are documentation or diagnostic changes (math is unchanged for every one), and splitting would have created six near-identical commit messages.
+The commit body lists the finding-by-finding mapping for traceability.
+
+D13. Skipped regen of `.ster` files for the new `n_dropped_vfirst` scalar.
+
+Why: same logic as the C1 commit (math is unchanged, the existing `.ster` files are still correct).
+The `n_dropped_vfirst` scalar is an audit aid for whoever next runs the driver; we can backfill on demand.
+The print-on-every-call diagnostic in the runtime log is the more important half of Task #2 anyway.
+
+D14. C3 (`_delta` ster built but unread) accepted as-is, no code change.
+
+Why: the audit memo recommended accept; the `.ster` is cheap to build and harmless to leave on disk, and a future table that wants per-switcher $\Delta$ rows or the joint test result would need it.
+
+### Open items and blockers
+
+- Pending regen of the 30 `.ster` files to bake in `n_dropped_vfirst` (deferred per user; toggle `skip_if_exists` to 0 locally, run `17_verdier_robust.do`, toggle back).
+- Audit C2's "sample mutation" warning is now in the program header, but the program still mutates the loaded data.
+A `preserve` / `restore` refactor is possible but not done; the driver pattern reloads per country, so the side effect is contained in practice.
+
+## Picking back up (revised)
+
+> **If you resume:**
+> Read this file end-to-end---the late-evening continuation has the latest state.
+The audit memo's "Task #2 + C3--C7 resolution" section is the finding-by-finding map.
+>
+> Verdier wrap-up is now done; all open audit findings are closed or explicitly accepted.
+The branch is ready for merge whenever the user wants.
+>
+> Next concrete actions if anything else comes up:
+> 1. Regenerate the 30 `.ster` files to bake `n_dropped_vfirst` onto each (toggle `skip_if_exists` to 0, run, toggle back).
+> 2. Smoke-test the critic-fixer-enforcer hook (being done in a parallel session, not this one).
+>
+> State to know:
+> - Worktree git is on `worktree-verdier-wrap-up` at `b0a2edb`.
+Four commits this session (`c3c6970`, `3979305`, `ad84934`, `b0a2edb`) plus `ba3ecee` for the original session log.
+Nothing pushed; user merges manually when ready.
+> - `global skip_if_exists` is at 1 in `17_verdier_robust.do`.
+Toggle to 0 locally and back to 1 for any forced regen; do not commit the toggle.
+> - The 30 `.ster` files have `n_indiv` (from the previous regen) but NOT `n_dropped_vfirst` (added this session, never re-run).

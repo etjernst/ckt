@@ -342,3 +342,20 @@ The audit trail is preserved in this memo and the smoke test for anyone who want
 
 **Side observation:** IDN drops 300 observations to missing `vfirst` (close to the 297-obs gap between main GRC and Verdier IDN tables; the 3-obs residual is probably observations that drop later for other reasons).
 This motivates Task #2 (better drop-count logging in `run_grc_robust_vv`).
+
+## Task #2 + C3--C7 resolution (2026-05-01, commit `b0a2edb`)
+
+All remaining open items in this memo are now closed.
+Math is unchanged for every edit; the driver does not need a regen unless `n_dropped_vfirst` is wanted on existing `.ster` files.
+Parse-checked via the Stata MCP after edits.
+
+| Finding | Resolution |
+|---|---|
+| Task #2 | Drop count and percentage now logged on every call (was conditional on `r(N) > 0`). `n_dropped_vfirst` posted via `estadd scalar` so it survives on the `.ster`. |
+| C3 (`_delta` ster unread) | Accepted; no code change. Filed as documented behavior. |
+| C4 (`from()` shape) | `from()` now conditional on `initial` being non-empty via a `local fromopt` block. Behavior unchanged in practice (the driver always supplies starting values). |
+| C5 (light docstring) | ~25-line program header added covering purpose, key differences from `run_grc`, the C2 sample-mutation side effect, and output `.ster` files. |
+| C6 (`estat overid` silent path) | One-line comment added flagging the Stata-version-dependent rc behavior under one-step GMM. |
+| C7 (no per-trajectory rank diagnostic) | Per-trajectory nonzero-residual counts printed after the demean loop, so weak first stages are visible in the log. |
+
+Edits live in [`RP7/scripts/0_programs.do`](file:///C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7/scripts/0_programs.do) at the `run_grc_robust_vv` block.
