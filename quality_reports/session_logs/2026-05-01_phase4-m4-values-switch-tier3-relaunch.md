@@ -611,3 +611,158 @@ In order:
 - `49e05d4` (today) M4 verification harness PASSED on grc_IDN_cub_c0 (4/4 tests) + driver hardening.
 - `f68892e` (today) Phase 1b.6: strip esttab's blank tabular rows in grc_tex_table_trend.
 - `7448f6a` (today) Fix `\@empty` bug in GRC macros staging draft.
+
+---
+
+## Continuation 2026-05-02: Tier 3 #6 launch + PR prep + Tier 1 lint
+
+Resumed after `/clear`.
+User confirmed yesterday's OOM diagnosis: the `editmissing()` failure in Tier 3 #5 was likely caused by a parallel R process competing for RAM, not a code-side leak.
+That makes per-cell forensic on the OOM unnecessary.
+Plan: relaunch Tier 3 #6 with `skip_if_exists=1` and work other tasks in parallel.
+
+### Tier 3 #6 launched
+
+Confirmed `RP7/scripts/_smoke_full.do` L57 still has `global skip_if_exists 1` and `0_programs.do` L1845 still has the M10 guard.
+Archived the prior 1.8 MB OOM log to `_smoke_full.tier3-5_OOM_2026-05-01.log` so the new run does not overwrite it.
+Launched batch `bayt3x4r5` from `RP7/scripts/`.
+Confirmed alive at 12:43:27 (log size 497 KB at 3 min, mid-GMM iteration of an early cell).
+Error/completion monitor armed twice: `b166y7uz7` (timed out at 1 hr), re-armed as `bfomr7mm4` (3-hr window).
+1365 sters on disk at relaunch; 263 of those are `_g.ster` (the suffix the M10 guard checks).
+
+### Three commits while Tier 3 ran
+
+User chose three separate atomic commits over a bundled one.
+Commits in order:
+
+- `1fe0250` `.gitignore`: ignore `RP7/output/test_*` transient test artifacts (the addlinespace investigation outputs).
+- `c46de1a` Add [tests/tier2_table_diff.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/tier2_table_diff.py): classified Tier 2 byte-identity check.
+  Walks every reference table, computes per-file unified diffs against live, classifies hunks as `LABEL_FLIP` / `BLANK_ROW` / `ADDLINESPACE` / `UNEXPECTED`.
+  Exit code is the count of files with at least one `UNEXPECTED` hunk (0 = clean Tier 2 pass).
+  review-python subagent gave it 96/100; the only minor finding (no `requirements.txt`) was non-actionable for a stdlib-only script.
+- `b1387e0` Draft PR description for the GRC pipeline refactor branch at [quality_reports/reviews/2026-05-02_PR-description-draft.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_PR-description-draft.md).
+  Title, summary, change-by-area, verification-status table (PENDING/IN PROGRESS rows for Tier 2 / Tier 3), open items, reviewer notes.
+
+### Tier 1 lint sweep ran clean
+
+Five Tier 1 checks (per spec section 4b):
+
+- Old-suffix references (`_avg.ster` etc.) in do-files: PASS (zero hits).
+  The `_avg`/`_never`/`_always`/`_delta` matches that came up in `0_programs.do` are `nlcom` equation names, not file suffixes; the file documents this at L30--33.
+- Dead-script `include` references (10/11/12/13/14/15/16/3): PASS (zero hits).
+- Estname construction uses M11 shorthand (`cuu`/`cub`/`iuu`/`cnu`): PASS.
+- 32-char `_est_` ceiling: PASS with at minimum 2 chars of slack.
+  Longest production stem is `grc_TZA_iuu_maxexpsh_ca_g` (25 chars) → 30 internal name.
+- Script inventory: 13 files in `RP7/scripts/`, matches the spec target.
+  S2 not fully shipped: `2_OLS_uGRC.do` and `7_OLS_uGRC_hukou.do` still separate; `9_learning.do` not renamed; `make_tables.do` replaces `16_*` rather than rename.
+
+Lint review at [quality_reports/reviews/2026-05-02_tier1-lint.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_tier1-lint.md).
+
+### Pre-M11 orphan sters surfaced (Check 6)
+
+Off-spec finding while running the length budget:
+**75 leftover sters** in `RP7/output/` from before commit `ddb3886` (M11 / Phase 1a):
+
+- 60 with old suffix words: `*_always.ster`, `*_never.ster`, `*_delta.ster`, `*_avg.ster`.
+- 15 main-fit sters with the old `urban_covs_*` and `nonag_covs_*` naming.
+
+No live do-file writes or reads them.
+They coexist on disk with the new-naming sters Tier 3 #6 is producing.
+A 31-char stem like `grc_TZA_urban_covs_trend_always` busts the `_est_` ceiling if anyone tries to load it interactively, so the dead files are a foot-gun for future-me.
+**Cleanup is paused** until the user explicitly approves the `rm` --- the directory is shared replication-package output, not local-only.
+
+### Decisions, with the why
+
+**Decision: skip per-cell forensic on the Tier 3 #5 OOM.**
+Why: user confirmed the proximate cause is a parallel R process competing for RAM, not a code-side leak.
+A per-cell investigation would have spent hours fingerprinting whichever cell happened to be running when system memory tightened, with no actionable code change at the end.
+The right mitigation is operational (don't run heavy R alongside Tier 3), not algorithmic.
+
+**Decision: archive prior OOM log to a timestamped name before the relaunch.**
+Why: `stata-mp -b` overwrites `<file>.log` by default.
+The 1.8 MB Tier 3 #5 log has 28 error markers that may matter for post-mortem if the OOM recurs.
+Cost of preserving: a single `mv`.
+Cost of losing it: irrecoverable.
+
+**Decision: separate commits for each artifact (.gitignore, harness, PR draft) instead of one bundled commit.**
+User preference, explicit in this session.
+Why: each commit captures one logical change so the edit history is meaningful (per CLAUDE.md "atomic commits frequently").
+The three artifacts share no semantic dependency; bundling would have made a future bisect harder.
+
+**Decision: keep human-readable .tex table names; do not rename to match M11 ster shorthand.**
+Why: tables are paper-facing, sters are code-facing.
+`GRC_IDN_consumption_urban_unb.tex` is recognizable to a coauthor; `GRC_IDN_cuu.tex` is not without the legend.
+Renaming would also re-freeze the Tier 0 reference snapshot, which would invalidate the Tier 2 byte-identity check we are about to run.
+Targeted exception: standardize the experience-family abbreviation so .tex names match ster names (`exp_m_sh` → `maxexpsh` etc.); narrower scope, higher payoff.
+Full rename can be revisited as its own phase post-PR.
+
+### Approaches rejected
+
+**Rejected: deleting the 75 orphan sters during this session.**
+Why: Tier 3 #6 is mid-flight, writing into the same directory.
+A `rm` issued now risks racing with the batch's writes (different filenames in this case, but the discipline is conservative: don't `rm` from a directory with an active writer).
+Punted to post-Tier-3 with an explicit user go/no-go.
+
+**Rejected: bundling .gitignore + tier2 harness + PR draft into one commit.**
+Why: see "Decisions" above; user preference.
+Took roughly the same total time as the bundled commit because the working tree changes were already segmented.
+
+**Rejected: running the Tier 2 harness now against the stale 12 live tables.**
+Why: the live `RP7/output/tables/` only has 12 of the 53 reference tables (the smoke driver explicitly skips `make_tables.do`; tables get rebuilt only when `_smoke_tables_only.do` runs separately).
+Running the harness against partial output would produce a noisy "missing in live" report that obscures the real Tier 2 result.
+Defer to post-Tier-3 + `_smoke_tables_only.do`.
+
+### Files changed
+
+- [.gitignore](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/.gitignore): one new entry, `RP7/output/test_*`.
+- [tests/tier2_table_diff.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/tier2_table_diff.py): new file, 271 lines.
+- [quality_reports/reviews/2026-05-02_PR-description-draft.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_PR-description-draft.md): new file.
+- [quality_reports/reviews/2026-05-02_tier1-lint.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_tier1-lint.md): new file (uncommitted at log time).
+
+Disk-only changes:
+
+- `RP7/scripts/_smoke_full.tier3-5_OOM_2026-05-01.log`: archived OOM log (1.8 MB).
+- `RP7/scripts/_smoke_full.log`: live Tier 3 #6 log, growing as the batch runs.
+
+### Open items
+
+User just expanded scope at the end of the session:
+
+1. Tier 1 lint sweep: DONE, review committed below; 75 orphan sters await cleanup approval.
+2. Audit `tests/regression_test.py` (older M7 scaffold) vs the new `tier2_table_diff.py`; decide if one supersedes the other or if they cover different ground.
+3. Plan for the S1 ster scraper.
+   User said this "deserves its own plan" --- write the plan, do not implement until approved.
+4. Append a "shipped vs deferred" status footer to the umbrella refactor spec.
+5. MEMORY.md hygiene pass: prune entries that are stale (e.g. ster-count snapshots, the agent-archiving question if since resolved).
+
+Tier 2 byte-identity check still parked until Tier 3 #6 closes and `_smoke_tables_only.do` regenerates the 53 production tables.
+PR creation also parked: not mergeable until Tier 2 reports zero `UNEXPECTED` diffs.
+
+### Status as of session log time
+
+- Branch `worktree-grc-pipeline-refactor` last commit `b1387e0` (PR draft).
+- Tier 3 #6 batch `bayt3x4r5` running in background.
+- Error/completion monitor `bfomr7mm4` armed for 3 hours.
+- Working tree: `quality_reports/reviews/2026-05-02_tier1-lint.md` uncommitted.
+
+### Picking back up
+
+**If you resume:** read this continuation block top to bottom, then walk down "Open items" 2--5 in whatever order looks productive.
+The 75-orphan-ster cleanup is the only item that requires explicit user approval before action.
+
+**Next concrete actions:**
+
+1. Commit the Tier 1 lint review.
+2. Open `tests/regression_test.py`, `tests/compare_tabular_bodies.py`, and `tests/tier2_table_diff.py` side by side.
+   Decide if any are redundant.
+   Document the verdict in a short note or by deleting/merging.
+3. Draft the S1 plan as `docs/plans/2026-05-02-s1-ster-scraper.md`.
+   No implementation in the same session.
+4. Spec status footer: append a "shipped vs deferred" table to [`quality_reports/specs/2026-04-24_grc-pipeline-refactor.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-24_grc-pipeline-refactor.md).
+5. MEMORY.md prune: read top to bottom, mark stale entries for removal, ask user to confirm before deleting.
+
+### Commits landed in 2026-05-02 continuation
+
+- `1fe0250` `.gitignore`: ignore `RP7/output/test_*` transient test artifacts.
+- `c46de1a` Add `tests/tier2_table_diff.py`: classified Tier 2 byte-identity check.
+- `b1387e0` Draft PR description for the GRC pipeline refactor branch.
