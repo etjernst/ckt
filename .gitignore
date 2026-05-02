@@ -23,6 +23,9 @@ RP7/output/**/*.log
 RP7/output/*.gph
 RP7/output/**/*.gph
 
+# Transient test artifacts (e.g. addlinespace investigation, minimal repros)
+RP7/output/test_*
+
 # Stata artifacts
 *.log
 *.smcl
