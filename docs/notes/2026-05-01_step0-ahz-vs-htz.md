@@ -53,9 +53,9 @@ That is enough agreement to use Stata as the production engine for the F-adjuste
 ## What this does not prove
 
 First, the 2017 SSC version of `reg_sandwich` does not necessarily implement the 2023 PT corrigendum to Theorem 2.
-The corrigendum touches multi-parameter Wald-Satterthwaite, which is exactly the regime we use, but if it edits a code path that this $q = 3$ toy test does not exercise, the agreement would not catch it.
-Step 0a verifies the GitHub history at https://github.com/jepusto/clubSandwich-Stata, identifies the corrigendum-addressing commit, compares against SSC `.pkg` metadata, and falls back to a `net install` from a pinned commit SHA if SSC lags.
-The production version is then locked.
+The GitHub history at https://github.com/jepusto/clubSandwich-Stata stops at commit `e9741c0` on 2017-05-31, so SSC and GitHub are the same code generation; both predate the 2023 corrigendum.
+Per user direction, we proceed with the SSC build and track the corrigendum question in [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md) under "Look into the 2023 PT corrigendum vs the 2017 `reg_sandwich` we are using".
+The strong AHZ-vs-HTZ agreement above (against current R `clubSandwich` 0.6.2) is suggestive that the corrigendum does not touch the HTZ code path we use, but is not proof.
 
 Second, the unabsorbed `i.trajectory` branch is not yet validated at our scale ($K = 27$, $J_R = 26$).
 This toy panel uses three regressors of interest plus one nuisance; the LCA design has $K + J_R = 53$ regressors with small per-cluster $N$.
@@ -66,5 +66,6 @@ Third, coverage at LCA scale is a Step 3 result, not a Step 0 result.
 ## Hand-off
 
 Step 0 cleared.
-Step 0a is next: pull the GitHub history, identify the corrigendum commit, decide between the SSC build and a pinned GitHub install, and run the FE-absorption A/B test on a representative country dataset.
-Locked decisions 2 (corrigendum-compliant version) and 8 (FE-absorption choice) close out at the end of Step 0a.
+Step 0a (corrigendum portion): GitHub head is `e9741c0` (2017-05-31), same code generation as SSC.
+Per user, we use the SSC build now and track the corrigendum read in `docs/TODO.md`.
+Step 0a (FE-absorption portion) is the next concrete action: run the LCA-style auxiliary OLS on a representative country dataset both with `i.trajectory` and with `absorb(trajectory)`, compare AHZ statistic, df, CR2 SE, and wall time, and lock locked decision 8.

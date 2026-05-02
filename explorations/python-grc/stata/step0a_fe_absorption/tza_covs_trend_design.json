@@ -1,0 +1,54 @@
+{
+  "country": "TZA",
+  "spec": "covs_trend",
+  "n_obs": 29864,
+  "n_clust": 11012,
+  "trajectories": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "kept_switchers": [
+    2,
+    4,
+    5,
+    6,
+    7
+  ],
+  "base_switcher": 2,
+  "J_R": 4,
+  "alpha_names": [
+    "alpha_d_1",
+    "alpha_d_2",
+    "alpha_d_3",
+    "alpha_d_4",
+    "alpha_d_5",
+    "alpha_d_6",
+    "alpha_d_7",
+    "alpha_d_8"
+  ],
+  "beta_names": [
+    "beta_s_2",
+    "beta_s_4",
+    "beta_s_5",
+    "beta_s_6",
+    "beta_s_7"
+  ],
+  "non_base_beta_names": [
+    "beta_s_4",
+    "beta_s_5",
+    "beta_s_6",
+    "beta_s_7"
+  ],
+  "control_names": [
+    "period_2",
+    "period_3"
+  ],
+  "K_regressors_no_intercept": 17,
+  "rank_with_intercept": 17
+}

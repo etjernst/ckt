@@ -108,6 +108,20 @@ Re-run the empirical three-country inversion to produce the F-adjusted CI for ea
 No new column needed.
 **Estimated cost:** modest. The adjustment is a one-line replacement of the critical value plus a $\hat\nu$ computation per grid point; coverage rerun is automated.
 
+### Look into the 2023 PT corrigendum vs the 2017 `reg_sandwich` we are using
+**Added:** 2026-05-01.
+**Branch:** lca-inversion.
+**Context:** Step 0 of [`quality_reports/plans/2026-05-01-f-adjustment-inversion.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-01-f-adjustment-inversion.md) installed `reg_sandwich` from SSC (version `0.0`, dated 02-March-2017).
+GitHub history at https://github.com/jepusto/clubSandwich-Stata stops at commit `e9741c0` on 2017-05-31, so SSC and GitHub are the same code generation; both predate the 2023 PT corrigendum to Theorem 2.
+On the $q = 3$ toy panel, Stata AHZ and R `clubSandwich::Wald_test(test = "HTZ")` (current CRAN, 0.6.2) agree to $1.8 \cdot 10^{-8}$ on the F statistic and $1.6 \cdot 10^{-7}$ on the Satterthwaite df.
+That agreement is consistent with two stories: either the corrigendum does not touch the HTZ code path we use, or the corrigendum touches an edge case our toy does not exercise.
+**Action:** read the 2023 corrigendum, identify which test variants and code paths it changes, decide whether our LCA inversion case is in scope.
+If in scope, port the corrigendum fix into the 2017 ado or compute the test in R via subprocess.
+If out of scope, document and proceed with the SSC build.
+**Why this is a TODO and not a blocker:** the user authorized using the 2017 Stata package now; the cross-check with current R already gives strong evidence that AHZ on our test geometry is unchanged.
+**Memo:** [`docs/notes/2026-05-01_step0-ahz-vs-htz.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-01_step0-ahz-vs-htz.md).
+**Estimated cost:** half a day to read the corrigendum and trace.
+
 ### Bootstrap-calibrated inversion CI as a third robustness row (optional)
 **Added:** 2026-04-30.
 **Branch:** lca-inversion (or simulations).

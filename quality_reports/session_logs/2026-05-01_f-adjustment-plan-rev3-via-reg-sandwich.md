@@ -146,3 +146,74 @@ The post-edit-scan hook flagged em dash format violations twice and was satisfie
 The two logs together cover the whole day; this file holds the afternoon and the wrap-up.
 - M11 short-naming convention is documented at [`STER_NAMING.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/STER_NAMING.md); when grc-pipeline-refactor merges, `5b_inversion.do` and `attach_inversion_ci` need to switch from `grc_<country>_urban_<spec>` to `grc_<country>_<spec3>_<covs2>` naming.
 That is parallel to the F-adjustment work and lives in a different bucket of the TODO.
+
+---
+
+## Sub-session: 2026-05-01 evening, Step 0 + Step 0a progress
+
+Mode: Implementation.
+
+### What got done
+
+Step 0 (smoke test + AHZ-vs-HTZ cross-check): COMPLETE.
+Built a toy panel ($J = 20$, $T = 4$, $N = 80$, $q = 3$ contrast) shared between Stata and R via CSV, ran Stata `reg_sandwich` + `test_sandwich` for the joint Wald, ran R `clubSandwich::Wald_test(test = "HTZ")` on identical rows, compared scalars.
+AHZ vs HTZ agree to $1.8 \cdot 10^{-8}$ on the F statistic and $1.6 \cdot 10^{-7}$ on the Satterthwaite-approximated denominator df, both well below the plan tolerances ($10^{-4}$ on the stat, $10^{-3}$ on the df).
+The package exposes `e(F_stat)` / `e(F_df1)` / `e(F_df2)` / `e(F_pvalue)` / `e(F_eta)` so no log-parsing is needed.
+`test_sandwich.sthlp` has a typo claiming `e(F_df2)` is named `e(F_df1)` twice; `ereturn list` confirmed the actual storage names.
+Memo at [`docs/notes/2026-05-01_step0-ahz-vs-htz.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-01_step0-ahz-vs-htz.md).
+Committed in `194c445`.
+
+Step 0a corrigendum portion: handled per user direction.
+The SSC `reg_sandwich` install reports `version 0.0 updated 02-March-2017`.
+GitHub history at https://github.com/jepusto/clubSandwich-Stata stops at commit `e9741c0` on 2017-05-31; SSC and GitHub are the same code generation; both predate the 2023 PT corrigendum to Theorem 2.
+User authorized using the SSC build now and tracking the corrigendum question as a TODO; entry added to [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md) under "Look into the 2023 PT corrigendum vs the 2017 `reg_sandwich` we are using".
+
+Step 0a FE-absorption A/B: IN FLIGHT.
+Built a TZA `covs_trend` design matrix as a Stata .dta via [`build_tza_design.py`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0a_fe_absorption/build_tza_design.py).
+Dataset is 29,864 rows, 11,012 clusters, $K = 17$ regressors plus intercept (rank 17 with intercept; one alpha collinear with `unbalanced` and constant, as expected).
+Wrote a Stata A/B driver [`step0a_ab_test.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0a_fe_absorption/step0a_ab_test.do) that runs `reg_sandwich` twice (unabsorbed `alpha_d_*` vs `absorb(trajectory_id)`), then `test_sandwich beta_s_4 beta_s_5 beta_s_6 beta_s_7` for the same $q = 4$ joint test.
+
+Spec A (unabsorbed) is currently in the BRL adjustment loop and has been running >12 minutes with no further log progress beyond `note: unbalanced omitted because of collinearity.`
+Memory steady at ~140 MB (no leak).
+Scheduled wakeup for 23:11 to decide whether to keep waiting or kill and benchmark on smaller cluster counts.
+
+### Decisions, with the why
+
+Decision: use the SSC `reg_sandwich` build now and track the corrigendum read as a TODO.
+Why: GitHub head matches SSC; there is no newer build available short of porting the corrigendum ourselves.
+The Step 0 cross-check against current R `clubSandwich` 0.6.2 already gives strong evidence that AHZ on our test geometry is unchanged.
+The corrigendum may not touch the HTZ code path we use, but verifying that requires reading the corrigendum, which the user budgeted as a separate later task.
+
+Decision: pick TZA covs_trend for the FE-absorption A/B, not IDN covs_all.
+Why: TZA is the smallest country (29,864 rows vs 90k+ for IDN), so a single A/B fit completes faster.
+covs_trend is representative because all five specs (covs_0 through covs_all) share the same alpha + beta structure; the A/B is about the absorbed-vs-unabsorbed numerics, not about the controls.
+If TZA covs_trend agrees on absorbed vs unabsorbed, IDN covs_all almost certainly does too because the additional rows just average down sampling noise on the same matrices.
+
+Decision (pending): whether to keep waiting on Spec A or kill and benchmark.
+Open until the next wakeup at 23:11.
+
+### Approaches rejected and the reason
+
+`xi: reg_sandwich` with `i.trajectory` syntax.
+Why dropped: simpler to pre-build alpha_d_* dummies in Python.
+The plan calls the test the "i.trajectory" branch by analogy; in practice the unabsorbed Spec A is just "alpha_d_* as raw regressors", which is identical numerically to xi expansion and easier to debug.
+
+Testing the LCA contrast directly via test_sandwich.
+Why dropped at this step: `test_sandwich` is varlist-only (joint zero) per its source.
+For the FE-absorption A/B, joint zero on the non-base beta_s_* is the same dimension ($q = 4$) on the same model parameters and is sufficient for the absorbed-vs-unabsorbed comparison.
+This punts the LCA-contrast handling to Step 1/Step 2 (the production wrapper).
+Open question for Step 1/2: handle the per-grid-$\phi$ LCA contrast either by reparametrizing with new variables per grid point (refit cost) or by extending `test_sandwich` to accept a constraint matrix.
+The reparametrization path is the safer default; document the wall-time implication when it lands.
+
+### Files added
+
+- [`explorations/python-grc/stata/step0_reg_sandwich/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_reg_sandwich/): full Step 0 driver chain (Python DGP, Stata install + AHZ, R HTZ, Python comparator, persisted scalars, comparison memo).
+- [`explorations/python-grc/stata/step0a_fe_absorption/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0a_fe_absorption/): Step 0a Python design-matrix builder, JSON sidecar, .dta, and Stata A/B driver.
+- [`docs/notes/2026-05-01_step0-ahz-vs-htz.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-01_step0-ahz-vs-htz.md): Step 0 verdict and reproducibility recipe.
+- [`docs/TODO.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/TODO.md): added the corrigendum follow-up entry.
+
+### Open items going into next checkpoint
+
+- Decide whether reg_sandwich Spec A on TZA covs_trend completes in reasonable wall time, or whether the package's mata loop is too slow for our cluster count.
+- If too slow, benchmark `reg_sandwich` runtime as a function of $J$ to characterize the curve, then decide whether to (a) port the BRL adjustment to a faster Mata implementation, (b) switch to clubSandwich-via-R subprocess (originally rejected for adding R as a dependency), or (c) re-derive the AHZ p-value from `e(b)` / `e(V)` plus the per-cluster influence-matrix machinery directly.
+- Once Spec A completes, run Spec B and compare; lock decision 8.
