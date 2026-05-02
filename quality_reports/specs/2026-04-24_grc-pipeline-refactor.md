@@ -594,3 +594,65 @@ M4 mu-loop cleanup landed at commit `d2b0c73` but stays at "RESOLVED" not "CLOSE
 ## 9. Success criteria
 
 A complete refactor satisfies all MUST items, the regression test passes, the file count under `RP7/scripts/` drops from 22 to approximately 13, the `values()` switch produces identical results to a fresh run of the current `ReplicationPackage6 - real values\` scripts, and the new overview CSV makes spec comparisons visibly easier in the day-to-day workflow.
+
+## 10. Status footer (2026-05-02, PR-time snapshot)
+
+Snapshot at the point the GRC pipeline refactor branch is being prepared for the PR to `main`.
+Tier 3 #6 smoke run is still in flight; Tier 2 byte-identity check is parked until the smoke closes and `_smoke_tables_only.do` regenerates the production tables.
+
+### Shipped
+
+| Item | Spec section | Landing commit(s) | Notes |
+|---|---|---|---|
+| M1: collapse 10/11/12/13 into `5_GrRC.do` | section 2 M1 | Phase 1b.6 series, `47ff260` and follow-ups | `run_grc_with_extra_regressor` plus `GRC_extras.do` dispatcher; 36 stems for the experience family. |
+| M2: collapse 14/15 into the same dispatcher | section 2 M2 | Phase 1b.6 series | 4 stems for IDN nonag-experience; 4 stems for IDN birth. Faithful per-cell calls preserved. |
+| M3: unify `grc_tex_table_trend*` into one program | section 2 M3 | `062b5d5` | Single `grc_tex_table_trend` with `spec()`, `est_schedule()`, `est_prefix()` options. |
+| M4: `values(nominal\|real)` switch | section 2 M4 | `b3b021d` plus `5fbe30b` plus `b8530a7` plus `49e05d4` | `$values` global; `${vsfx}` propagated through every output path; verification harness PASSED 4/4 on `grc_IDN_cub_c0`. |
+| M6: bit-for-bit reproducibility constraint | section 2 M6 | `dda62b2` (reference freeze) | Tier 0 reference at `tests/reference/output/tables/`; 53 .tex files. |
+| M7: automated regression test | section 2 M7 | `dda62b2` (scaffold), `c46de1a` (Tier 2 classified harness) | `tests/tier2_table_diff.py` is the canonical harness post-Phase-1b; superseded `tests/regression_test.py` and `tests/compare_tabular_bodies.py` (audit at [`quality_reports/reviews/2026-05-02_test-harness-audit.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_test-harness-audit.md) recommends deletion of the older two). |
+| M8: smoke-test ster-rename on IDN | section 2 M8 | Phase 1a (`ddb3886`) | Done before the M1 collapse landed. |
+| M9: per-fit timer (`e(runtime)`) | section 2 M9 | `1cce1e9` | `estadd scalar runtime` at `0_programs.do:1947`; populates the S1 scraper's runtime column. |
+| M10: resume-on-interrupt guard | section 2 M10 | `1cce1e9` | `${skip_if_exists}` global; the M10 guard is what makes the post-OOM Tier 3 #6 relaunch viable (1365 sters already on disk). |
+| M11: unique 32-char-safe ster naming | section 2 M11 | `ddb3886` plus follow-ups | `grc_<country>_<spec3>_<covs2>[_<sfx1>]`; verified by Tier 1 lint at [`quality_reports/reviews/2026-05-02_tier1-lint.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_tier1-lint.md). |
+| S3: program-caller map | section 3 S3 | Phase 2 (caller map at `docs/reviews/2026-04-30_program-caller-map.md`) | No deletions yet; the map is the input. |
+| Phase 1b table-formatting series | not in original spec | `cceb9cb` ... `f68892e` | Caption / label / tablenotes moved to Overleaf preamble macros; tabular-only table output; blank rows stripped. |
+| Hukou merge into `run_grc` | not in original spec | `5c3308b` | Option B from M11; eliminates the duplicated `run_grc_hukou` program. |
+| Mu-loop dedup in `initial_values{,_robust}` | not in original spec | `d2b0c73` | M4-internal cleanup; bit-identical on 4 production cells (verification at `quality_reports/reviews/2026-04-30_M4-verification.md`). |
+| `\bar{\Delta}` table label | section 4a parking lot | `5e2277c` | "Average $\Delta$" -> "$\bar{\Delta}$". |
+| `\@empty` -> `\empty` fix | not in original spec | `7448f6a` | Live Overleaf `preamble.tex` patched out-of-band. |
+
+### Partial / deferred within this PR
+
+| Item | Spec section | Status | Why |
+|---|---|---|---|
+| S2: file rename pass to dispatcher names | section 3 S2 | PARTIAL | File count is 13 as targeted. Three planned renames not done: `2_OLS_uGRC.do` plus `7_OLS_uGRC_hukou.do` not merged into `2_OLS.do`; `9_learning.do` not renamed to `6_learning.do`; the `16_*` replacement is `make_tables.do` plus `make_figures.do` rather than a renamed `7_heterogeneity_tables.do`. The functional collapse landed; the cosmetic renames did not. Defer to a follow-up PR. |
+| S1: ster scraper | section 3 S1 | PLAN ONLY | Plan written at [`docs/plans/2026-05-02-s1-ster-scraper.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-05-02-s1-ster-scraper.md). Implementation gated on user approval of the four open questions in the plan. |
+| S1b: specification-curve figure | section 3 S1b | NOT STARTED | Depends on S1's CSV being live. |
+| S1c: $\Delta_{\text{always}}$ row in main GRC tables | section 3 S1c | NOT STARTED | One-line edit in `grc_tex_table_trend`; would invalidate the Tier 0 reference; defer to next PR cycle. |
+
+### Decided to skip
+
+| Item | Spec section | Decision date | Reason |
+|---|---|---|---|
+| M5: collapse enumerated blocks | section 2 M5 | 2026-04-25 | User decision: nested loops make per-country debugging harder. Revisit only after the rest of the refactor is settled. |
+| A1: combined table artifact | section 4 A1 | written into spec as "removed" | Tables are inserted in different places in the paper; no single combined artifact would help. |
+| A2: replace `replace` with `gen new_var` | section 4 A2 | postponed | Not in refactor scope; affects upstream deflation files. |
+| S2's full rename pass | section 3 S2 | 2026-05-02 | See "Partial" row above. |
+| Pre-M11 orphan ster cleanup | not in original spec | 2026-05-02 | 75 leftover sters from before commit `ddb3886`. User intends to handle via a `RP7/output/` wipe pre-merge since contents are reproducible. |
+| Experience-family .tex name standardization | not in original spec | 2026-05-02 | User punted; `exp_m_sh` in tables vs `maxexpsh` in sters stays inconsistent for now. |
+
+### Audit-driven side workstream
+
+Tracked separately from this spec; see section 7's "Audit-driven side workstream" entry.
+Closed as of 2026-05-02 except for the four lingering items (`m8` graph-save cwd, `m13` `data_path_override` triage, `m14` schemepack install bug, `m16` hardcoded panel headers).
+Data-creation findings (`DC-M1` through `DC-m7`) explicitly deferred by the user to a later session.
+
+### Verification status at PR draft time
+
+| Tier | Scope | Result |
+|---|---|---|
+| Tier 1 (static) | call-site audit, ster-name length, script inventory | GREEN; 75 orphan sters surfaced as cleanup item, not refactor regression. |
+| Tier 2 (table body byte-identity) | `tests/tier2_table_diff.py` against the 53 frozen reference tables | PENDING; runs after Tier 3 closes and `_smoke_tables_only.do` regenerates the production tables. |
+| Tier 3 (full smoke) | full master pipeline; convergence and ster counts | IN PROGRESS, batch `bayt3x4r5` (Tier 3 #6). 1365 sters at relaunch; 261+ `_g.ster` written so far in this run. |
+| M4 verify (4-test driver) | `grc_IDN_cub_c0` | PASS 4/4 (`49e05d4`). |
+| M4 mu-loop verify | 4 production cells | PASS (`7545c14`). |
