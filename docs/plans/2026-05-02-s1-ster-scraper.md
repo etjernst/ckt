@@ -1,6 +1,6 @@
 # Plan: S1 ster scraper---results-overview layer
 
-Status: draft, awaiting user approval.
+Status: revised 2026-05-04 (see section 9 for the revised design that supersedes the CSV-output target in sections 3--7).
 Branch: `worktree-grc-pipeline-refactor`.
 Umbrella spec: [section S1](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-24_grc-pipeline-refactor.md#s1-add-a-results-overview-layer-that-scrapes-ster-files), 2026-04-24.
 
@@ -171,23 +171,124 @@ Tier 3: run on the post-Tier-3 #6 ster set, count rows; should match `45 + 12 + 
 - Live updates---the scraper runs on demand, not as part of `_smoke_full.do`.
 - pre-M11 orphan sters (filtered out; user has separately decided to address those via `RP7/output/` cleanup before merge).
 
-## 8. Open questions for the user
+## 8. Open questions for the user (resolved 2026-05-04)
 
-- **Wide vs long-format final output.**
-  The plan says "wide CSV is the user-facing format, long CSV is intermediate."
-  The user might prefer the long format end-to-end (one row per ster, easier for S1b downstream).
-  Decide before Phase B.
-- **Where does the wrapper live?**
-  Spec says `scripts/python/scrape_grc_runs.py`.
-  CKT also has `tools/` and `explorations/`.
-  Confirm `scripts/python/` is correct.
-- **Subprocess vs pystata.**
-  The plan uses `stata-mp -b` subprocess for portability.
-  If the user prefers in-process pystata for speed, switch to that.
-  Functional equivalent; only difference is the Python wrapper's invocation pattern.
-- **Should the scraper also catch the deferred S1c addition (Δ_always row in tables)?**
-  Currently scope is read-only.
-  If S1c lands in this same PR cycle, the scraper schema is unchanged but the table-builder output will include a new row, which Tier 2 byte-identity flags as `UNEXPECTED`.
-  Either gate S1c behind a separate PR or refresh the Tier 0 reference after S1c lands.
+Answers below.
+Plan superseded; see section 9 for the revised design.
+
+- **Wide vs long-format final output.** Resolved: moot.
+  The user-facing surface is a Quarto report, not a CSV.
+  Both wide and long are intermediate data-frames inside the comparison module.
+  The format-comparison demo at `tools/ster_format_examples/` made the case that long is the better intermediate (clean stacking, no NaN sparseness), but neither format is now the final output.
+- **Where does the wrapper live?** Resolved: `tools/`.
+  User said "this doesn't seem so important now we can always move it but I would lean towards tools".
+- **Subprocess vs pystata.** Resolved: pystata (in-process).
+  User said "lean pystata".
+  Avoids subprocess-startup cost on a small comparison view.
+- **Should the scraper also catch the deferred S1c addition (Δ_always row in tables)?** Resolved: no.
+  User said "we can postpone S1c for now".
+  Confirms the recommendation that S1c is a write-side change while the scraper is read-side; bundling forces a Tier 2 reference re-baseline at a moment when 53/53 byte-identity is currently clean.
+
+## 9. Revised design (2026-05-04): Quarto report, not CSV
+
+### 9a. Why this section exists
+
+Once the user saw the long vs wide CSV format examples (in [`tools/ster_format_examples/`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/ster_format_examples)), she said "I'll rarely be reviewing the .csv file anyway, I want us to make something nicer than a spreadsheet".
+Sections 3 through 7 above are now historical context.
+The user-facing surface and the consumption layer change; the read layer (Stata-side or pystata extraction of `e(b)`, `e(V)`, `e(N)`, etc.) is largely unchanged.
+
+### 9b. Revised target: Quarto report
+
+Source: `tools/results_overview/report.qmd`, plain markdown plus Python code chunks.
+Renders to two outputs from one source:
+
+- `tools/results_overview/report.html`---interactive (sortable tables, plots inline), best for browser inspection and comparison views.
+- `tools/results_overview/report.md`---static markdown (plots as image links to a sibling `figures/` directory), best for GitHub preview and version-control diffs.
+
+Coauthors do not need Quarto installed.
+They open the rendered file.
+The user is open to Quarto despite never having used it.
+
+Specifically NOT used:
+
+- LaTeX (heavyweight recompile cycle; user said "ideally not LaTeX").
+- Jupyter notebook (.ipynb); coauthors do not use Jupyter.
+- Streamlit / Dash; overkill for a working tool used by three people.
+
+### 9c. Architecture
+
+```
+tools/
+  results_overview/
+    scrape.py        # pystata-based reader: ster path -> structured record
+    compare.py       # compare_two(), coefplot_two(), caterpillar_two(), spec_curve()
+    report.qmd       # the rendered surface; comparison views as code chunks
+    figures/         # generated plots, referenced by report.md (gitignored)
+    report.html      # rendered output (gitignore decision pending)
+    report.md        # rendered output (gitignore decision pending)
+```
+
+`scrape.py`: pure data-layer.
+`load_ster(path: Path) -> SterRecord` returning `b` (Series), `V` (DataFrame), `N`, parsed metadata (`country`, `spec3`, `covs2`, `suffix`, `mtime`).
+Pystata in-process, no I/O outside reads.
+Filename parser handles the post-M11 grammar plus the M4 `_r` values suffix.
+
+`compare.py`: comparison primitives.
+`compare_two(record_a, record_b)` returns a coefficient table with columns `b_a`, `se_a`, `b_b`, `se_b`, `delta`, `pct_change`.
+`coefplot_two(record_a, record_b)` returns a matplotlib Figure: paired point + CI per coefficient.
+`caterpillar_two(record_a, record_b, axis="trajectory")` for switcher-trajectory $\Delta_{\underline{d}}$ rows specifically.
+Single-run summary is `compare_two(record, None)`---degenerate case.
+
+`report.qmd`: top-level dashboard plus comparison sections.
+First version: dashboard line-per-run with $\phi$, $\bar\Delta$, $J$ p-value, $N$, runtime; one comparison section (IDN consumption with vs without covariates as the obvious first cut).
+Second version: paired comparisons for nominal vs real values, Verdier-robustness vs main approach.
+
+### 9d. Plot types
+
+Coefplots and caterpillar plots inline in the HTML render, image-linked in the markdown render.
+
+- **Coefplot**: y-axis = coefficient name, x-axis = point estimate ± 95% CI.
+  Run A and run B as offset points with overlapping whiskers.
+- **Caterpillar**: same shape as a coefplot but rows = switcher trajectories $\underline{d}$, sorted by $\hat\Delta_{\underline{d}}$ point estimate.
+  Visualizes heterogeneity in trajectory-specific returns at a glance.
+- **Specification curve** (Simonsohn, Simmons, Nelson 2020).
+  User explicitly asked for this.
+  Top panel: ranked $\phi$ (or $\bar\Delta$) point estimates with CI ribbons across a fan of plausible specifications.
+  Bottom panel: which spec choices (covariate set, balanced/unbalanced, choice variable, country, values regime) are active for each point.
+  Useful for the Verdier-vs-main and covariate-robustness questions.
+  Specification universe needs to be written down explicitly when this view is built.
+
+### 9e. Implementation phases (revised)
+
+Phase A: data layer.
+Write `scrape.py` and verify on the existing 1365+ sters in `RP7/output/`.
+Pystata initialization happens once; reads loop in-process.
+
+Phase B: comparison primitives + first comparison view.
+Write `compare.py` with `compare_two`, `coefplot_two`.
+Write a minimal `report.qmd` that exercises one comparison (IDN cuu_c0 vs cuu_ca already on disk, so no fresh runs needed).
+Render to both `.html` and `.md`; verify both targets work.
+
+Phase C: caterpillar plot + dashboard.
+Add `caterpillar_two` for trajectory-specific returns.
+Add the top-of-file dashboard.
+
+Phase D: spec curve.
+Define the specification universe explicitly.
+Add `spec_curve()` to `compare.py`.
+Add a fourth section to `report.qmd`.
+
+### 9f. Out of scope (still)
+
+- S1c $\Delta_{\text{always}}$ row addition---separate PR cycle.
+- Live updates---scraper runs on demand.
+- pre-M11 orphan sters---filtered out at the filename-parser level.
+- A web-served interactive dashboard---a static rendered HTML is sufficient.
+
+### 9g. Open question for next session
+
+- **First comparison view to prototype.**
+  Candidates: IDN covars-off vs covars-on (cuu_c0 vs cuu_ca on disk; fastest to build); nominal vs real (needs the M4 real-values branch to land first); Verdier-robustness vs main (need to confirm the relevant sters exist under the new naming scheme).
+  Lean: IDN covars-off vs covars-on, on the basis that the data is already on disk.
 
 with Claude
