@@ -766,3 +766,118 @@ The 75-orphan-ster cleanup is the only item that requires explicit user approval
 - `1fe0250` `.gitignore`: ignore `RP7/output/test_*` transient test artifacts.
 - `c46de1a` Add `tests/tier2_table_diff.py`: classified Tier 2 byte-identity check.
 - `b1387e0` Draft PR description for the GRC pipeline refactor branch.
+- `ce0798a` Add Tier 1 lint review.
+- `6a8d35d` Session log: 2026-05-02 continuation.
+- `7aee16e` Audit: `tier2_table_diff.py` supersedes `regression_test.py` plus `compare_tabular_bodies.py`.
+- `6974593` Plan: S1 ster scraper (results-overview CSV).
+- `b696d58` Spec: append PR-time status footer (section 10).
+
+---
+
+## Continuation 2026-05-02 evening: harness bugs surfaced, Tier 3 still grinding
+
+User stepped away after approving items 2--5; auto-mode work proceeded through items 4 (spec status footer) and 5 (MEMORY.md hygiene).
+Then a single low-risk action while waiting on input: a dry-run of `tier2_table_diff.py` against one of the 12 currently-stale live tables (`GRC_CHN_consumption_urban_unb.tex`) to validate classification logic.
+The dry-run surfaced two real bugs in the harness.
+
+### Two bugs in tier2_table_diff.py
+
+**Bug 1: LABEL_FLIP fails on the Δbar rename.**
+The classifier substitutes `Average $\Delta$` for `$\bar{\Delta}$` in the removed line and checks for byte-equality against the added line.
+That fails because esttab right-pads the label cell to a fixed width.
+The pre-rename label `Average $\Delta$    ` (16 chars + 4 trailing spaces) is wider than the post-rename label `$\bar{\Delta}$      ` (13 chars + 6 trailing spaces).
+Substitution preserves the original 4 trailing spaces; the live line has 6.
+Result: the classifier reports `LABEL_FLIP=0` instead of 1 for any file containing the rename.
+
+**Bug 2: Phase 1b.6 blank-row removal half-classified.**
+Phase 1b.6 does not delete the blank tabular rows; it leaves an empty line where each `& & & ... & \\` row used to be.
+The diff hunks are (-1, +1) per blank row.
+The removed line correctly matches `BLANK_ROW_RE`, but the added empty line does not match anything and falls into `UNEXPECTED`.
+Result: every blank row counts as 1 BLANK_ROW + 1 UNEXPECTED.
+
+Dry-run output for `GRC_CHN_consumption_urban_unb.tex`:
+
+```
+clean : 0 / expected only : 0 / UNEXPECTED : 1 / missing live : 4
+LABEL_FLIP=0 BLANK_ROW=3 ADDLINESPACE=0 UNEXPECTED=5
+```
+
+Expected output if the harness were correct:
+
+```
+expected only : 1 / UNEXPECTED : 0
+LABEL_FLIP=1 BLANK_ROW=6 (3 removed + 3 empty added) UNEXPECTED=0
+```
+
+### Fix proposed, awaiting user approval
+
+Per `~/.claude/rules/script-safety.md`, "bug fixes in scripts all require user approval before editing."
+Two localized edits in `tests/tier2_table_diff.py` (~10 lines total):
+
+1. `LABEL_FLIP` matching: split the row at the first `&`; compare post-`&` parts byte-equal; pre-`&` parts must match the rename pattern modulo trailing whitespace.
+2. `BLANK_ROW` classification: extend `classify_line` to also flag empty / whitespace-only lines as `BLANK_ROW`, so both sides of a (-1, +1) blank-row hunk classify together.
+
+Both fixes are bounded, easy to retest with the same dry-run command.
+
+### Decisions, with the why
+
+**Decision: dry-run the Tier 2 harness before the real Tier 2 run depended on it.**
+Why: the harness is the canonical Tier 2 gate per the spec status footer.
+Discovering classification bugs after the real Tier 2 run would mean either a manual triage of every "UNEXPECTED" hit or a re-run of `_smoke_tables_only.do`.
+Dry-run cost: one Python invocation + one .diff file to delete.
+Catching both bugs on the first try paid for itself.
+
+**Decision: do not auto-fix the bugs without approval.**
+Why: project rule explicitly requires user sign-off for script bug fixes.
+Even though the bugs are in code I wrote in this session, the rule is path-scoped to all scripts.
+The cost of waiting (a few hours) is low; the value of preserving the rule is meaningful.
+
+### Tier 3 #6 still healthy
+
+Hourly heartbeat checks throughout the afternoon and evening:
+
+| Time | `_g.ster` count | Log mtime |
+|---|---|---|
+| 12:43 | 261 | active |
+| 16:12 | 263 | mid-fit |
+| 17:38 | 265 | mid-fit |
+| 18:20 | 266 | mid-fit |
+| 19:38 | 268 | mid-fit |
+| 20:20 | 269 | mid-fit |
+| 21:02 | 270 | mid-fit |
+| 22:40 | 272 | mid-fit |
+
+About 1--2 cells per hour, which is slower than yesterday's pace but consistent with the longer GMM convergence times on the larger covariate sets.
+No errors trapped by the monitor across 7 successive 1-hour windows (which is why "monitor timed out -- re-arm if needed" notifications kept arriving; that is the no-event healthy outcome).
+
+### Files changed since the previous log block
+
+- [`quality_reports/reviews/2026-05-02_test-harness-audit.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_test-harness-audit.md): three-harness audit, recommends deletion of older two.
+- [`docs/plans/2026-05-02-s1-ster-scraper.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-05-02-s1-ster-scraper.md): S1 plan with 4 open questions for user.
+- [`quality_reports/specs/2026-04-24_grc-pipeline-refactor.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-24_grc-pipeline-refactor.md): appended section 10 status footer.
+- `MEMORY.md` (user-global, outside the repo): three prunes (collapsed duplicate "real values" entry; updated stale 22-.do count to 13; removed stale 2026-03-12 currentDate line).
+- [`RP7/output/tier2_diffs/GRC_CHN_consumption_urban_unb.tex.diff`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/output/tier2_diffs/GRC_CHN_consumption_urban_unb.tex.diff): dry-run artifact; should be deleted before the real Tier 2 run.
+
+### Open items at log time
+
+User input pending on:
+
+1. Approve the two `tier2_table_diff.py` bug fixes (LABEL_FLIP whitespace tolerance; BLANK_ROW empty-line side).
+2. Approve deletion of `tests/regression_test.py` and `tests/compare_tabular_bodies.py` per the harness audit.
+3. Answer the four open questions in [docs/plans/2026-05-02-s1-ster-scraper.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-05-02-s1-ster-scraper.md) section 8 before S1 implementation starts.
+4. Approve cleanup of the dry-run artifact in `RP7/output/tier2_diffs/`.
+
+Tier 3 #6 still running.
+Tier 2 still parked until the smoke closes and `_smoke_tables_only.do` regenerates the production tables.
+PR creation also parked.
+
+### Picking back up
+
+**If you resume:** read the "Two bugs" subsection above; the proposed fix is small.
+The four user-input gates above are the only blockers on PR-readiness besides Tier 3 closing.
+Once user approves the harness fixes, retest with the same `--filter` invocation, then run unfiltered to spot any other surprises before the real Tier 2.
+
+### Commits landed in 2026-05-02 evening continuation
+
+None.
+This block is a status update; no code or doc edits since `b696d58` except this session log append.
