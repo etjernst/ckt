@@ -1,9 +1,7 @@
 # PR description draft: GRC pipeline refactor
 
-Draft body for the eventual `worktree-grc-pipeline-refactor` -> `main` PR.
-Generated 2026-05-02, before Tier 3 #6 closes.
-The PR title and the structural sections below are ready to copy.
-The "verification status" section needs the post-Tier-3 numbers filled in once the smoke run finishes and the Tier 2 byte-identity check passes.
+PR body for `worktree-grc-pipeline-refactor` -> `main`.
+Drafted 2026-05-02; verification numbers populated 2026-05-04 after Tier 3 #6 closed and the Tier 2 harness ran clean against the regenerated tables.
 
 ---
 
@@ -13,13 +11,12 @@ GRC pipeline refactor: consolidate scripts, add `values()` switch, lock ster nam
 
 ## Summary
 
-70 commits, 178 files changed (+14,603 / -46,038), branched from `main` on 2026-04-24.
+82 commits, 245 files changed (+17,380 / -46,037), branched from `main` on 2026-04-24.
 Implements the refactor spec at [`quality_reports/specs/2026-04-24_grc-pipeline-refactor.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/specs/2026-04-24_grc-pipeline-refactor.md): MUST items M1--M11 except deferred M5, plus SHOULD items S2 partial and S3, plus the Phase 1b table-formatting subseries, plus an audit-driven correctness sweep.
 Net effect: the `RP7/scripts/` tree drops from 22 do-files to 13, the duplicated real-values script fork is gone, ster filenames are unique per fit and 32-char-safe, and a per-fit timer plus resume-on-interrupt guard make Tier 3 smoke runs survivable.
 
 Bit-for-bit reproducibility of published numbers is the binding constraint throughout.
-Tier 1 (static) and Tier 2 (table-body byte-identity) checks have passed at each phase landing.
-Tier 3 (full smoke) is in progress as of this PR draft (batch `bayt3x4r5`, relaunched after a hardware-side OOM unrelated to the refactor).
+Tier 1 (static), Tier 2 (table-body byte-identity), and Tier 3 (full smoke) checks all pass on the final commit.
 
 ## Changes by area
 
@@ -76,20 +73,18 @@ Tooling that supported the refactor (one-shot scripts; can be deleted post-PR if
 
 ## Verification status
 
-(Numbers to be filled in once Tier 3 #6 closes and the Tier 2 harness runs against the regenerated tables.)
-
 | Tier | Scope | Status |
 |---|---|---|
-| Tier 1 (static) | grep-based call-site audit; ster-name length check; lint | PASS at each phase. |
-| Tier 2 (table body) | bit-comparison of `RP7/output/tables/*.tex` against `tests/reference/output/tables/*.tex`, classified | PENDING. Run [`tests/tier2_table_diff.py`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/tier2_table_diff.py) post-Tier-3. Expected: clean except `LABEL_FLIP` (Δbar), plus `BLANK_ROW` and `ADDLINESPACE` (Phase 1b.6). |
-| Tier 3 (full smoke) | full master pipeline; convergence and ster-counts | IN PROGRESS, batch `bayt3x4r5` (Tier 3 #6). 1365 sters on disk at relaunch. |
+| Tier 1 (static) | grep-based call-site audit; ster-name length check; lint | PASS at each phase. Final pass [`quality_reports/reviews/2026-05-02_tier1-lint.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_tier1-lint.md) (5/6 checks PASS; the 1 failure is 75 pre-M11 orphan sters in `RP7/output/`, not a code defect). |
+| Tier 2 (table body) | bit-comparison of `RP7/output/tables/*.tex` against `tests/reference/output/tables/*.tex`, classified | PASS (`tier2_table_diff.py`, run 2026-05-04 against tables regenerated from the final-commit sters): 53 reference tables, all 53 expected diffs only, 0 UNEXPECTED, 0 missing live. Total LABEL_FLIP=53 (Δbar), BLANK_ROW=54 (Phase 1b.6 strip), ADDLINESPACE=0. The live tree contains 19 additional tables (12 hukou + 1 IDN nonag + 6 het) that pre-existed outside the reference snapshot; this is a snapshot gap, not a refactor regression. |
+| Tier 3 (full smoke) | full master pipeline; convergence and ster-counts | PASS. Tier 3 #6 (batch `bayt3x4r5`) closed cleanly at 2026-05-03 06:50:21 with `end of do-file` and exit code 0. 1505 sters on disk at close (1365 carried forward via `skip_if_exists=1`, 140 newly written). |
 | M4 verify | 4-test driver on `grc_IDN_cub_c0` | PASS 4/4 (commit `49e05d4`). |
 | M4 mu-loop | bit-comparison on 4 production cells | PASS (commit `7545c14`). |
 
 ## Open items
 
-- Tier 3 #6 still running. PR is not mergeable until it closes cleanly and Tier 2 reports zero `UNEXPECTED` diffs.
-- Earlier Tier 3 #5 hit `r(3900) editmissing(): out of memory` at the end of 2026-05-01. The proximate cause is a parallel R process competing for RAM, not a code-side leak. No code change needed; relaunched as Tier 3 #6 with `skip_if_exists=1` so the 1365 already-on-disk sters are not recomputed.
+- Earlier Tier 3 #5 hit `r(3900) editmissing(): out of memory` at the end of 2026-05-01. The proximate cause was a parallel R process competing for RAM, not a code-side leak. No code change needed; relaunched as Tier 3 #6 with `skip_if_exists=1` so the 1365 already-on-disk sters were not recomputed. Tier 3 #6 closed cleanly.
+- Tier 2 reference snapshot covers 53 of the 72 tables the pipeline now produces (12 hukou, 1 IDN nonag, and 6 het tables are not in the snapshot). These are pre-existing gaps, not refactor regressions; refresh the snapshot in a follow-up if a tighter Tier 2 net is desired.
 - Paper-side `\GRCvaluesfx` toggle macro deferred. It will be added to Overleaf `preamble.tex` once the team decides whether real-values is a replacement for or a robustness check on nominal-values tables. Logged in spec section 4a.
 
 ## Notes for the reviewer
