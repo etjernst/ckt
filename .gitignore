@@ -1,10 +1,24 @@
-# Symlinked directories (junctions into Dropbox)
-scripts/
-data/
-output/
+# Top-level junctions into Dropbox RP6 (leading slash anchors to repo root
+# so RP7/scripts, RP7/data, RP7/output are NOT matched by these rules)
+/scripts/
+/data/
+/output/
 
 # Paper (added manually, not symlinked)
 # paper/ is tracked
+
+# RP7 local working copy: track scripts and generated tables/figures,
+# drop binaries, run logs, and the data junction
+RP7/data/
+RP7/scripts/logs/
+RP7/output/*.ster
+RP7/output/**/*.ster
+RP7/output/*.smcl
+RP7/output/**/*.smcl
+RP7/output/*.log
+RP7/output/**/*.log
+RP7/output/*.gph
+RP7/output/**/*.gph
 
 # Stata artifacts
 *.log
@@ -32,6 +46,9 @@ desktop.ini
 
 # Editor
 .vscode/
+
+# Working documents (tracked); skip large PDFs in lit/
+docs/lit/*.pdf
 
 # Claude Code local state
 .claude/state/

@@ -52,6 +52,7 @@ if "`c(username)'"=="maand" {
 	global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
 	* Other worktrees / main tree (uncomment as appropriate):
 	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
 	* global dir = "C:/git/ckt/RP7"
 }
 
@@ -108,3 +109,5 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/15_GrRC_birth.do"
 * Generate heterogeneity tables
 	include			"$dir/scripts/16_heterogeneity_tables.do"
+* Run Verdier-style robust GRC (cluster-residualized instruments)
+	include			"$dir/scripts/17_verdier_robust.do"

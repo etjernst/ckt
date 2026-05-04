@@ -1,0 +1,30 @@
+
+6. Section 7 concludes.
+2D a t a
+We use two datasets provided by the German Federal Employment Agency (BA): i) the
+Establishment History Panel (BHP) and ii) the longitudinal version of the Linked Employer-
+Employee Dataset (LIAB).
+The BHP is a panel containing a 50% random sample of all establishments in Germany with
+at least one employee liable to social security on June 30th of a given year. The data are
+based on social security ﬁlings and exclude government employees and the self-employed.
+Each establishment in the BHP is a company’s unit operating in a distinct county and
+industry.8 For simplicity, we will refer to these units as “ﬁrms” . For each ﬁrm-year pair, the
+dataset contains information on location, average wages, number of employees, and employee
+characteristics (education, age, gender).
+The LIAB data contain records for more than 1.9 million individuals drawn from the In-
+tegrated Employment Biographies (IEB) of the IAB, which cover all individuals that were
+7See Combes et al. (2008) ; Roca and Puga (2017) ; Hicks et al. (2017) ; Lagakos et al. (2020) ; and Card
+et al. (2023) .
+8Since several plants of the same company may operate in the same county and industry, the establish-
+ments in the BHP do not always correspond to plants ( Hethey-Maier and Schmieder (2013) ).
+6
+--- Page 8 ---
+employed subject to social security or received social security beneﬁts. These data are linked
+to information about the ﬁrms at which these individuals work from the BHP. For each
+individual, the data provide the entire employment history for the period 1993-2014, includ-
+ing unemployment periods as long as the individual received unemployment beneﬁts. Each
+observation is an employment or unemployment spell, with exact beginning and end dates
+within a given year. 9 A new spell is recorded each time an individual’s employment status
+changes, for example due to a change in job, wage, or employment status. For individuals
+that do not change employment status, one spell is recorded for the entire year.
+An important variable for our analysis is each worker’s county of residence, reported in the
