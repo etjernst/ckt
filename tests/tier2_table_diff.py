@@ -57,6 +57,11 @@ ADDLINESPACE_RE = re.compile(r"^\s*\\addlinespace\s*$")
 BLANK_ROW_RE = re.compile(
     r"^\s*(?:&\s*)*\\\\\s*(?:\[[^\]]*\])?\s*$"
 )
+# Phase 1b.6 leaves an empty line where each `& & ... \\` row used to be
+# (esttab does not delete the row; it blanks it). The diff hunk is (-1, +1):
+# the removed line matches BLANK_ROW_RE and the added empty line is matched
+# here so both sides of the hunk classify as BLANK_ROW.
+EMPTY_LINE_RE = re.compile(r"^\s*$")
 
 
 def extract_body(path: Path) -> str | None:
@@ -74,7 +79,7 @@ def classify_line(line: str) -> str:
     bare = line[1:] if line and line[0] in "+-" else line
     if ADDLINESPACE_RE.match(bare):
         return "ADDLINESPACE"
-    if BLANK_ROW_RE.match(bare):
+    if BLANK_ROW_RE.match(bare) or EMPTY_LINE_RE.match(bare):
         return "BLANK_ROW"
     if LABEL_OLD in bare or LABEL_NEW in bare:
         return "LABEL_CANDIDATE"
@@ -93,18 +98,32 @@ def classify_hunk(removed: list[str], added: list[str]) -> dict[str, int]:
     remaining_removed = []
     remaining_added = list(added)
 
+    # LABEL_FLIP pairing: split each row at the first `&` (label cell
+    # vs data cells). The data cells must match byte-equal across the
+    # removed/added pair; the label cells must match modulo trailing
+    # whitespace after substituting LABEL_OLD -> LABEL_NEW. esttab right-pads
+    # the label cell to a fixed column width, so when the label contracts
+    # (Average $\Delta$ -> $\bar{\Delta}$) the live line gets extra trailing
+    # spaces in the label cell. A naive byte-equal compare on the full line
+    # therefore misses the flip; the partition + rstrip handles that.
     for r in removed:
         bare_r = r[1:]
-        if LABEL_OLD in bare_r:
-            target = bare_r.replace(LABEL_OLD, LABEL_NEW)
-            matched_idx = None
-            for j, a in enumerate(remaining_added):
-                if a[1:] == target:
-                    matched_idx = j
-                    break
-            if matched_idx is not None:
-                label_flip_pairs.append((r, remaining_added.pop(matched_idx)))
-                continue
+        if LABEL_OLD in bare_r and "&" in bare_r:
+            r_label, sep, r_rest = bare_r.partition("&")
+            if LABEL_OLD in r_label:
+                target_label = r_label.replace(LABEL_OLD, LABEL_NEW).rstrip()
+                matched_idx = None
+                for j, a in enumerate(remaining_added):
+                    bare_a = a[1:]
+                    if "&" not in bare_a:
+                        continue
+                    a_label, _, a_rest = bare_a.partition("&")
+                    if a_label.rstrip() == target_label and a_rest == r_rest:
+                        matched_idx = j
+                        break
+                if matched_idx is not None:
+                    label_flip_pairs.append((r, remaining_added.pop(matched_idx)))
+                    continue
         remaining_removed.append(r)
 
     counts["LABEL_FLIP"] = len(label_flip_pairs)
