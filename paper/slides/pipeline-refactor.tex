@@ -39,8 +39,8 @@
 
 \begin{itemize}\setlength\itemsep{4pt}
     \item Twenty-two numbered .do files; experience and birth families spread across six of them
-    \item A second Dropbox folder, \code{ReplicationPackage6 - real values/}, kept manually in sync with the nominal-values one
-    \item Ster filenames colliding across .do files, with several too long for Stata's internal name limit
+    \item A second Dropbox folder, \code{ReplicationPackage6 - real values/}, kept in sync with the nominal-values one by hand
+    \item Ster filenames collided across .do files; some exceeded Stata's name limit
 \end{itemize}
 
 \bigskip
@@ -124,7 +124,7 @@ We had multiple table-building programs that were 95\% the same code:
 Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 
 \bigskip
-\textcolor{cktblue}{To change how a GRC table renders}---column widths, indicator-row order, postfoot string, decimal precision---edit \code{grc\_tex\_table\_trend} in \code{0\_programs.do}.
+\textcolor{cktblue}{To change column widths, indicator-row order, postfoot string, or decimal precision}, edit \code{grc\_tex\_table\_trend} in \code{0\_programs.do}.
 
 \end{frame}
 
@@ -134,7 +134,7 @@ Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 \textcolor{cktgray}{Before}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Two parallel Dropbox folders
-    \item Every edit propagated by hand
+    \item Every edit propagated to both, by hand
 \end{itemize}
 
 \medskip
@@ -164,8 +164,8 @@ Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 \end{tabular}
 
 \bigskip
-Every ster filename is built from these tokens.
-To find the ster behind a particular cell, assemble the tokens.
+Every ster name is built from these tokens.
+Look up any fit by combining them.
 
 \bigskip
 Full convention in \code{RP7/scripts/STER\_NAMING.md}.
@@ -188,10 +188,10 @@ Full convention in \code{RP7/scripts/STER\_NAMING.md}.
 \end{itemize}
 
 \medskip
-\textcolor{cktblue}{Cosmetic refresh in this round}
+\textcolor{cktblue}{Cosmetic refresh}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Average $\Delta$ row reads $\bar{\Delta}$
-    \item Spurious blank rows from \code{esttab} stripped after output
+    \item Empty \code{esttab} rows now stripped
 \end{itemize}
 
 \end{frame}
