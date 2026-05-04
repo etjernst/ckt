@@ -3035,6 +3035,12 @@ program define grc_tex_table_trend
     removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
         , remove("                    &               &               &               &               &               \BS\BS")
 
+    * Drop the ~15 estimates this call stored. Without cleanup the
+    * stored-estimates namespace fills up after ~20 cells (Stata limit ~300)
+    * and subsequent grc_tex_table_trend calls fail with
+    * "system limit exceeded; you need to drop one or more models".
+    est drop _all
+
 end
 
 * **********************************************************************
