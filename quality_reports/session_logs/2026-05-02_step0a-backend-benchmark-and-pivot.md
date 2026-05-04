@@ -142,3 +142,81 @@ Read [`docs/notes/2026-05-02_step0a-benchmark-and-pivot.md`](file:///C:/git/ckt/
 Open thread: backend pivot is not yet ratified, and the OOM at TZA full scale narrows the viable paths to "absorbed FE first" or "from-scratch BRL".
 Next concrete action: try `feols(..., cluster = "pid")` on the TZA covs_trend design and time `vcovCR` after partialling out trajectory; if that brings the wall time and memory into a workable range, plan rev 4 leads with absorbed FE.
 State to know: the R 11k benchmark process exited; no background work is in flight.
+
+## Sub-session: backend-choice decision plan, four revision cycles
+
+After the empirical pivot above, the work moved entirely into planning: drafting a decision plan for which CR2/CR3/WCB backend takes the LCA F-adjustment to production, then iterating it through four critic-fixer cycles.
+No code ran in this sub-session.
+
+What got produced.
+
+Decision plans, each in [`quality_reports/plans/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/):
+
+- [Rev 1](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-02-backend-choice-for-f-adjustment.md): initial decision plan enumerating paths A--E (Stata absorbed, R absorbed, from-scratch BRL CR2, WCB inversion, hybrid).
+- [Rev 2](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-02-backend-choice-for-f-adjustment-rev2.md): adds reformulation (4) (recoded-design varlist-zero), corrects path C cost arithmetic, reorders to IDN-first, adds path F (literature scan).
+- [Rev 3](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-02-backend-choice-for-f-adjustment-rev3.md): adds path G (CR3) parallel to path C; pins recoded-design construction to first-implementer level with `beta_s_*`/`alpha_d_*` variable mapping; adds AHZ df contingency to pass criteria.
+- [Rev 4](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-02-backend-choice-for-f-adjustment-rev4.md): promotes `summclust` leverage diagnostics to Step 0.5 ahead of backend selection; re-scopes path G to `summclust, vce(jackknife, mse)` as production (not anchor); pins path D to WCU inversion via `boottest, gridpoints(0)`; reframes G+D as the MNW joint pair.
+
+Reviews, each in [`quality_reports/reviews/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/):
+
+- [Rev 1 review](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-02_backend-choice-plan-review.md): 4 Red, 7 Yellow, 3 Green. Headline finding: the Step 0a benchmark tested a varlist-zero on $\beta_{s_4}\ldots\beta_{s_7}$, NOT the actual LCA contrast that mixes $\alpha_s$ and $\beta_s$. Surfaced reformulation (4) (recoded design $z_{is}^{(\phi_0)} = D_{is} - \phi_0 \cdot \mathbb{1}\{\text{traj}=s\}$) as the missing fourth option for the FE-absorption complication.
+- [Rev 2 critique](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-02_rev2-six-dimension-critique.md): 6 Red, 11 Yellow, 4 Green. Surfaced per-$\phi$ vcovCR cost undercount (rev 2 listed "30 fits/cell" without multiplying out), missing CR3 path, and recoded-design under-specification.
+- [Rev 3 critique](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-02_rev3-six-dimension-critique.md): 4 Red, 9 Yellow, 5 Green. Surfaced that `summclust` IS the production CR3 implementation (`vce(jackknife, mse)`), not just an anchor for from-scratch CR3; that `boottest` natively inverts WCU via root-finding without grid-point re-bootstrapping; that leverage diagnostics belong before backend selection per MNW (2023) convention.
+- [Rev 4 critique](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-05-02_rev4-six-dimension-critique.md): 2 Red, 5 Yellow, 6 Green. Surfaced two new Reds rev 4 introduced: the $G^* \ge 30$ kill threshold is fabricated (MNW empirical concern levels are $\sim 6$--$10$, not 30), and `boottest`'s native inversion via `gridpoints(0)` documented for scalar nulls only ($R\beta = r$ with $1 \times k$ row vector $R$), not the multi-parameter joint LCA restriction over scalar $\phi$ that path D actually needs.
+
+Decisions, with the why.
+
+Decision: pivot the rev 1 framing from "Stata vs R" to "how do we compute BRL+AHZ at LCA scale at all".
+Why: the user's pushback on the original Stata-to-R pivot was correct---if R OOM'd at TZA, it cannot scale to IDN ($J \approx 30{,}000$). The "12$\times$ faster" speed argument collapses; what survives is only the architectural argument about constraint-matrix flexibility, which is then itself made moot by reformulation (4).
+
+Decision: adopt reformulation (4) as the methodological linchpin of paths A, B, and G.
+Why: re-coding the design at each grid $\phi_0$ as $z_{is}^{(\phi_0)} = D_{is} - \phi_0 \cdot \mathbb{1}\{\text{traj}_i = s\}$ turns the LCA test into a varlist-zero on the $z$-coefficients. This is native to `test_sandwich`, compatible with `absorb(trajectory)`, and sidesteps the FE-recovery step that makes absorbed-mode paths painful. The pattern is structurally identical to the Davidson-MacKinnon WCB recoding---it is not novel.
+
+Decision: promote `summclust` leverage and $G^*$ diagnostics to Step 0.5 ahead of backend selection.
+Why: the conventional 2026 ordering per MNW (2023) is "diagnose first, choose backend second". If $G^*$ is small at IDN unbalanced, only WCB survives regardless of any backend choice; running the diagnostic first potentially short-circuits Steps 1--4.
+
+Decision: reframe paths G and D as the MNW (2023) joint production-plus-validation pair, not as alternatives.
+Why: MNW recommend computing CV3(J) AND wild cluster bootstrap when leverage flags concern; running both is conventional, not "either/or". This answers the symmetric referee questions ("why not CR3", "why not WCB") in one move.
+
+Approaches rejected and the reason.
+
+Stata-to-R production pivot.
+Why dropped: R OOM'd at $J = 11{,}012$ on TZA; cannot scale to IDN.
+
+R `Wald_test`'s constraint-matrix interface as the architectural advantage over Stata `test_sandwich`.
+Why dropped: once reformulation (4) is in scope, both backends accept varlist-zero contrasts natively; the constraint-matrix argument is moot.
+
+From-scratch CR3 implementation as the default path G.
+Why dropped: `summclust, vce(jackknife)` and `vce(jackknife, mse)` IS the production CR3 implementation. From-scratch CR3 enters only as a fallback if `summclust` does not scale to IDN.
+
+The $G^* \ge 30$ kill rule (rev 4).
+Why dropped (in proposed rev 5): MNW give no such cutoff; published empirical concern levels are $\sim 6$--$10$. Rev 4's threshold was a number the plan invented and would not survive referee review.
+
+Open items and blockers.
+
+Rev 5 not yet written. The two rev 4 Reds (fabricated $G^* \ge 30$ threshold; over-claimed `boottest` one-pass inversion for multi-parameter joint nulls) need to land in rev 5 before the empirical block runs.
+Proposed rev 5 patches sketched in the rev-4 review's "Top recommendations" section: replace $\ge 30$ rule with soft trigger keyed to MNW empirical-concern range; add Step 0.6 (15--30 min `boottest` smoke test for multi-parameter inversion) before relying on path D's one-pass cost; cite MacKinnon (2025) SOTA review at https://arxiv.org/html/2604.02000v1; reframe CV3+CV3J as both reported per MNW; pin WCU variant (WCU13/WCU31/WCU33).
+
+Backend-choice work is not yet committed. Files unstaged at session end:
+
+- 4 plan revisions in [`quality_reports/plans/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/) (rev 1, rev 2, rev 3, rev 4).
+- 4 review reports in [`quality_reports/reviews/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/) (rev-1 review, rev-2/3/4 six-dimension critiques).
+
+User declined to commit yet pending a read of rev 4.
+
+## If you resume
+
+Read this session log and the rev-4 critique first.
+Open thread: rev 4 has 2 Reds; rev 5 is the focused patch (described in the rev-4 critique's top recommendations section).
+Next concrete action depends on whether rev 5 is written first or whether the empirical block proceeds with rev-4-with-known-Reds.
+The first concrete experiment is unchanged across rev 3, rev 4, and (proposed) rev 5: run `summclust` on TZA full-scale and on IDN unbalanced, report $G^*$, partial leverage, influence, cluster-size moments. That single 30--60 minute `summclust` invocation is the first action regardless of rev 5's specifics.
+
+If $G^*$ comes back small ($\sim 6$--$10$) at IDN, the work routes to path D (WCU bootstrap) and the rev-4 Red on `boottest`'s multi-parameter inversion becomes load-bearing immediately---run the Step 0.6 `boottest` smoke test before committing path D's per-cell cost arithmetic.
+If $G^*$ comes back large ($\gg 10$), the joint G+D pair is the production answer and the path-D Red is less urgent (CR3 is the headline; WCB is a robustness row at relaxed wall budget).
+
+State to know.
+
+The benchmark artifacts at [`explorations/python-grc/stata/step0a_fe_absorption/`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0a_fe_absorption/) are reproducible cold from the design `.dta` plus the two benchmark scripts.
+The R `clubSandwich` 0.6.2 install on this machine has not been tested for corrigendum incorporation; that read is still TODO.
+`summclust` has NOT been installed on this machine yet; `ssc install summclust` is the first command of the next session.
+The recoded-design construction is pinned to first-implementer level in rev 3 onward (lines 90--114 of rev 4); the variable mapping is `z_{is}^{(\phi_0)} = beta_s_{s} - \phi_0 \cdot alpha_d_{s}` for $s \in S_R \setminus \{\underline{d}_0\}$, with base trajectories pinned per country/spec (consumption: $\underline{d}_0 = 2$; IDN income: 16; TZA income: 5; CHN income: TBD).
