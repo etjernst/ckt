@@ -13,7 +13,7 @@ This code:
 
 * set log file
 capture log close
-log using "$logs/5_GrRC.log", replace
+log using "$logs/4_GrRC.log", replace
 
 * **********************************************************************
 * Preliminaries

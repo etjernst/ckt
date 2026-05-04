@@ -11,10 +11,10 @@
 * country: 3 chars  CHN | IDN | TZA
 *
 * spec3:   3-char positional triplet <depvar><choice><balance>
-*   cuu = consumption / urban / unbalanced  (5_GrRC.do section 1)
-*   cub = consumption / urban / balanced    (5_GrRC.do section 2)
-*   iuu = income      / urban / unbalanced  (5_GrRC.do section 3)
-*   cnu = consumption / nonag / unbalanced  (6_GrRC_NonAg.do; IDN-only)
+*   cuu = consumption / urban / unbalanced  (4_GrRC.do section 1)
+*   cub = consumption / urban / balanced    (4_GrRC.do section 2)
+*   iuu = income      / urban / unbalanced  (4_GrRC.do section 3)
+*   cnu = consumption / nonag / unbalanced  (5_GrRC_NonAg.do; IDN-only)
 *
 * covs2:   2-char covariate-set abbreviation
 *   c0 = no covariates                            (was covs_0)
@@ -23,7 +23,7 @@
 *   c2 = trend + female + age^2                   (was covs_2)
 *   ca = trend + female + age^2 + edu + edu^2     (was covs_all)
 *   The experience-family suffixes c1/c2/c3/ca keep their meaning
-*   inside 10/11/12/13/14_*.do (different from c1/c2 in 5_GrRC.do).
+*   inside 10/11/12/13/14_*.do (different from c1/c2 in 4_GrRC.do).
 *
 * sfx1:    0--1 char post-estimation marker
 *   <empty> = main GMM result
@@ -32,7 +32,7 @@
 *   d       = per-trajectory Deltas + joint    (was _delta)
 *   g       = population-weighted average      (was _avg)
 *
-* Hukou variant (8_GrRC_hukou.do):
+* Hukou variant (7_GrRC_hukou.do):
 *   grc_<country>_<hukou>_<spec3>_<covs2>
 *   hukou:  rf | uf | ro | uo (rural_first, urban_first, rural_only,
 *                              urban_only). Compresses the prior
@@ -58,7 +58,7 @@
 *   - Worst case: `_est_grc_CHN_uf_iuu_ca_n` = 24 chars + Stata's
 *     5-char `_est_` prefix = 29. Fits Stata's 32-char internal limit
 *     for stored-estimate matrix names.
-*   - Each section in 5_GrRC.do and 8_GrRC_hukou.do gets a unique
+*   - Each section in 4_GrRC.do and 7_GrRC_hukou.do gets a unique
 *     spec3 token, so sections no longer overwrite each other on disk.
 *
 * Note: this scheme is for STER FILENAMES and STORED ESTIMATE NAMES
@@ -2343,7 +2343,7 @@ end
 * Delta_d block and the joint mu test in capture-noisily so small
 * hukou subsamples (the original reason for the separate program)
 * dont crash run_grc; the _d.ster simply isnt written when the block
-* fails. 8_GrRC_hukou.do callers now invoke run_grc directly.
+* fails. 7_GrRC_hukou.do callers now invoke run_grc directly.
 * **********************************************************************
 
 * **********************************************************************
@@ -2907,7 +2907,7 @@ capture program drop grc_tex_table
 *                 hukou path, where country_short already encodes the
 *                 disambiguator, e.g. CHN_rf).
 *   covs2_set --- space-separated list of covs2 column suffixes
-*                 (default: "c0 ct c1 c2 ca", the 5_GrRC.do family).
+*                 (default: "c0 ct c1 c2 ca", the 4_GrRC.do family).
 *                 Pass "c1 c2 c3 ca" for the experience/birth family
 *                 (was: grc_tex_table_trend_exp, _birth).
 * **********************************************************************
@@ -3029,7 +3029,7 @@ program define grc_tex_table_trend
       append substitute(\_ _)
 
     * Phase 1b.6: strip esttab's spurious blank tabular rows.
-    * Same workaround as 1_summaryStats.do, specialized for 6-column GRC
+    * Same workaround as 2_summaryStats.do, specialized for 6-column GRC
     * tables. Removes the literal pattern emitted between fragments by
     * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
     removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
@@ -3095,7 +3095,7 @@ program define extras_tex_table
         exit 198
     }
 
-    * Spec3 -> filename label tokens (matches GRC_extras.do dispatch)
+    * Spec3 -> filename label tokens (matches 9_GRC_extras.do dispatch)
     local choice  ""
     local depvar  ""
     local balance ""
@@ -3133,7 +3133,7 @@ program define extras_tex_table
     * M3 (Phase 2) collapse: birth and experience families now share the
     * unified grc_tex_table_trend, parameterized by covs2_set. The birth
     * variant was byte-identical to _exp; both used the c1/c2/c3/ca
-    * covs2 set distinct from the main 5_GrRC.do family.
+    * covs2 set distinct from the main 4_GrRC.do family.
     grc_tex_table_trend, columns(4)                                             ///
         spec(`spec3'_`fam')                                                      ///
         covs2set(c1 c2 c3 ca)                                                    ///

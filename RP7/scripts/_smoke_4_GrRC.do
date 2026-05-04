@@ -1,6 +1,6 @@
 * **********************************************************************
-* Smoke-test driver for 5_GrRC.do (M8 of the refactor spec).
-* Runs only the 0_* preliminaries + 5_GrRC.do. Skips 1_processData.
+* Smoke-test driver for 4_GrRC.do (M8 of the refactor spec).
+* Runs only the 0_* preliminaries + 4_GrRC.do. Skips 1_processData.
 * Reads processed .dta files from the data junction (Dropbox RP6/data,
 * read-only for this run). Writes .ster and tables to RP7/output/.
 * Do NOT save this file to the production master pipeline.
@@ -18,7 +18,7 @@ include "$scripts/0_programs.do"
 
 global copyOverleaf 0
 
-include "$dir/scripts/5_GrRC.do"
+include "$dir/scripts/4_GrRC.do"
 
 * Print every per-fit timer slot in one place so log readers don't have
 * to scroll through GMM output to find them.

@@ -86,22 +86,22 @@ if "`c(username)'"=="maand" {
 * Set up data
 	include			"$dir/scripts/1_processData.do"
 * Compute & save summary statistics
-	include			"$dir/scripts/1_summaryStats.do"
+	include			"$dir/scripts/2_summaryStats.do"
 * Run OLS & FE regressions
-	include			"$dir/scripts/2_OLS_uGRC.do"
+	include			"$dir/scripts/3_OLS_uGRC.do"
 * Run GRC regressions (Urban)
-	include			"$dir/scripts/5_GrRC.do"
+	include			"$dir/scripts/4_GrRC.do"
 * Run GRC regressions (Non-Ag)
-	include			"$dir/scripts/6_GrRC_NonAg.do"
+	include			"$dir/scripts/5_GrRC_NonAg.do"
 * Run OLS & FE regressions (hukou)
-	include			"$dir/scripts/7_OLS_uGRC_hukou.do"
+	include			"$dir/scripts/6_OLS_uGRC_hukou.do"
 * Run GRC regressions (hukou)
-	include			"$dir/scripts/8_GrRC_hukou.do"
+	include			"$dir/scripts/7_GrRC_hukou.do"
 * Run learning regressions
-	include			"$dir/scripts/9_learning.do"
+	include			"$dir/scripts/8_learning.do"
 * Run GRC regressions (extras: experience-family + IDN birth; 44 stems)
-	include			"$dir/scripts/GRC_extras.do"
+	include			"$dir/scripts/9_GRC_extras.do"
 * Build all GRC LaTeX tables (5/6/8 + heterogeneity) from saved .ster files
-	include			"$dir/scripts/make_tables.do"
+	include			"$dir/scripts/10_make_tables.do"
 * Make all GRC figures (heterogeneity plots + trajectory bar graphs)
-	include			"$dir/scripts/make_figures.do"
+	include			"$dir/scripts/11_make_figures.do"

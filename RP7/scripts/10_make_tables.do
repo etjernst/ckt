@@ -3,7 +3,7 @@ Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
 Version: Apr 2026
 
-make_tables.do --- regenerate ALL LaTeX tables produced by the GRC
+10_make_tables.do --- regenerate ALL LaTeX tables produced by the GRC
 pipeline (main 5_GrRC + 6_NonAg + 8_hukou + 16_heterogeneity) without
 re-running any GMM. Reads existing .ster files from $dir/output/ and
 emits .tex via grc_tex_table_trend / het_table_*.
@@ -28,7 +28,7 @@ sters on disk.
 
 * set log file
 capture log close
-log using "$logs/make_tables.log", replace
+log using "$logs/10_make_tables.log", replace
 
 * Common args reused across all cells
 local reportvars "phi:_cons"
@@ -225,7 +225,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 without re-running GMM. Reads existing .ster files; emits via
 grc_tex_table_trend.
 
-Sibling to 6_GrRC_NonAg.do.
+Sibling to 5_GrRC_NonAg.do.
 *******************************************************************************/
 
 local reportvars "phi:_cons"
@@ -265,7 +265,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 .ster files; emits via grc_tex_table_trend (M3-unified, no spec passed
 since country_short already encodes the disambiguator).
 
-Sibling to 8_GrRC_hukou.do.
+Sibling to 7_GrRC_hukou.do.
 
 Hukou call shape:
   country()  receives the M11-compressed `country_short` (e.g. CHN_rf_cuu)
@@ -619,8 +619,8 @@ initial_values lndepvar,        ///
 local iterations 100
 
 * ************
-* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
-* both to avoid the ster-filename collision with 5_GrRC.do and because
+* GMM estimate is read from 4_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 4_GrRC.do and because
 * the spec is identical (urban, all covariates, time FE). The estimates
 * are loaded below via `estimates use`.
 * ************
@@ -695,8 +695,8 @@ initial_values lndepvar,       ///
 local iterations 100
 
 * ************
-* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
-* both to avoid the ster-filename collision with 5_GrRC.do and because
+* GMM estimate is read from 4_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 4_GrRC.do and because
 * the spec is identical (urban, all covariates, time FE). The estimates
 * are loaded below via `estimates use`.
 * ************
@@ -771,8 +771,8 @@ initial_values lndepvar,       ///
 local iterations 100
 
 * ************
-* GMM estimate is read from 5_GrRC.do's output rather than re-run here,
-* both to avoid the ster-filename collision with 5_GrRC.do and because
+* GMM estimate is read from 4_GrRC.do's output rather than re-run here,
+* both to avoid the ster-filename collision with 4_GrRC.do and because
 * the spec is identical (urban, all covariates, time FE). The estimates
 * are loaded below via `estimates use`.
 * ************
@@ -1005,7 +1005,7 @@ if $copyOverleaf == 1 {
 }
 
 * **********************************************************************
-* Phase 1b.6: extras family tables (44 cells, GRC_extras.do output)
+* Phase 1b.6: extras family tables (44 cells, 9_GRC_extras.do output)
 * Wrapper extras_tex_table reads disambiguated sters
 *   grc_<country>_<spec3>_<fam>_<col>.ster
 * and writes one .tex per cell:

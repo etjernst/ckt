@@ -14,7 +14,7 @@ This code:
 
 * set log file
 capture log close
-log using "$logs/2_OLS_uGRC.log", replace
+log using "$logs/3_OLS_uGRC.log", replace
 
 * **********************************************************************
 * Preliminaries

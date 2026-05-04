@@ -31,7 +31,7 @@ global copyOverleaf 0
     local depvar  consumption
     local balance unb
 
-    * Globals normally set at the top of 5_GrRC.do (lines 42-51).
+    * Globals normally set at the top of 4_GrRC.do (lines 42-51).
     global covs_gmm     "female"
     global covs_gmm2    "$covs_gmm age2"
     global covs_gmm_all "$covs_gmm2 education_max education_max2"
@@ -109,7 +109,7 @@ global copyOverleaf 0
     }
 
     * --------------------------------------------------------------
-    * LaTeX table: same call shape as 5_GrRC.do for TZA, must produce
+    * LaTeX table: same call shape as 4_GrRC.do for TZA, must produce
     * the GRC_TZA_consumption_urban_unb.tex that tests/reference/ has.
     * --------------------------------------------------------------
     local reportvars "phi:_cons"

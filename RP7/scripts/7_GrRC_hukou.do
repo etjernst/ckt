@@ -13,7 +13,7 @@ This code:
 
 * set log file
 capture log close
-log using "$logs/8_GrRC_hukou.log", replace
+log using "$logs/7_GrRC_hukou.log", replace
 
 * **********************************************************************
 * Preliminaries

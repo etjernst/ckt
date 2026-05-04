@@ -6,7 +6,7 @@
 * multi-line `gmm` calls in `run_grc` (110 min stall in one trial vs.
 * 30 min for the FULL pipeline without the wrap).
 *
-* Use during bug-fix iteration. The full smoke (_smoke_5_GrRC.do) is the
+* Use during bug-fix iteration. The full smoke (_smoke_4_GrRC.do) is the
 * end-to-end check; this is the inner-loop test.
 * **********************************************************************
 
@@ -41,7 +41,7 @@ global copyOverleaf 0
     local depvar  consumption
     local balance unb
 
-    * Globals normally set at the top of 5_GrRC.do (lines 42-51).
+    * Globals normally set at the top of 4_GrRC.do (lines 42-51).
     * Inlining here because the smoke skips that prelude.
     global covs_gmm     "female"
     global covs_gmm2    "$covs_gmm age2"
@@ -124,7 +124,7 @@ global copyOverleaf 0
     }
 
     * --------------------------------------------------------------
-    * LaTeX table: same call shape as 5_GrRC.do for IDN
+    * LaTeX table: same call shape as 4_GrRC.do for IDN
     * --------------------------------------------------------------
     local reportvars "phi:_cons"
     local varlab "$\phi$"

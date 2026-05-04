@@ -21,9 +21,9 @@ Disambiguation: the M11 ster-rename pass (Phase 1a) deferred 10-15's
 cross-section collisions to Phase 1b. This file finally fixes them ---
 all 44 stems (220 sters) coexist on disk under unique names.
 
-Tables for these stems are built in make_tables.do (NOT here). Run:
-    1. this file (GRC_extras.do)  to produce the sters
-    2. make_tables.do              to produce the .tex tables
+Tables for these stems are built in 10_make_tables.do (NOT here). Run:
+    1. this file (9_GRC_extras.do)  to produce the sters
+    2. 10_make_tables.do              to produce the .tex tables
 
 Cell coverage (44 stems = 36 + 4 + 4):
     - 36 = 4 families x 3 spec3 x 3 countries  (from 10/11/12/13)
@@ -32,7 +32,7 @@ Cell coverage (44 stems = 36 + 4 + 4):
 *******************************************************************************/
 
 capture log close
-log using "$logs/GRC_extras.log", replace
+log using "$logs/9_GRC_extras.log", replace
 
 * **********************************************************************
 * Family: experience  (regressor = exp; from file 10)

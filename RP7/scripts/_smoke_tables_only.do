@@ -25,7 +25,7 @@ include "$scripts/0_programs.do"
 * still copies via its own global copyOverleaf 1.
 global copyOverleaf 0
 
-include "$scripts/make_tables.do"
+include "$scripts/10_make_tables.do"
 
 display as text "============ tables-only smoke complete ============"
 exit, STATA clear

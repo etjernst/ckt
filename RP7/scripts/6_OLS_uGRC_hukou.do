@@ -14,7 +14,7 @@ This code:
 
 * set log file
 capture log close
-log using "$logs/7_OLS_uGRC_hukou.log", replace
+log using "$logs/6_OLS_uGRC_hukou.log", replace
 
 * **********************************************************************
 * Preliminaries

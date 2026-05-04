@@ -1,6 +1,6 @@
 * set log file
 capture log close
-log using "$logs/make_figures.log", replace
+log using "$logs/11_make_figures.log", replace
 
 /*******************************************************************************
 Project: Returns to Migration

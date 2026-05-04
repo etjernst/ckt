@@ -1,5 +1,5 @@
 * **********************************************************************
-* Smoke driver: 8_GrRC_hukou.do only.
+* Smoke driver: 7_GrRC_hukou.do only.
 *
 * Verification driver for the run_grc_hukou -> run_grc merge (commit
 * 5c3308b). With skip_if_exists 1 and ro/uo subgroup sters deleted
@@ -29,7 +29,7 @@ global copyOverleaf 0
 global skip_if_exists 1
 
 * Run only the hukou regressions.
-include "$dir/scripts/8_GrRC_hukou.do"
+include "$dir/scripts/7_GrRC_hukou.do"
 
 display as text "============ per-fit timer summary ============"
 timer list
