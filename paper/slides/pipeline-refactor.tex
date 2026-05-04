@@ -35,10 +35,10 @@
 \maketitle
 
 % ===============================================================
-\begin{frame}{Pipeline was unwieldy with 22 .do files + lots of duplication}
+\begin{frame}{Pipeline was unwieldy with 17 numbered .do files + lots of duplication}
 
 \begin{itemize}\setlength\itemsep{4pt}
-    \item 22 numbered .do files; experience and birth covariates spread across six of them
+    \item 17 numbered .do files; experience and birth covariates spread across six of them
     \item Parallel Dropbox folder for real-values work, required manual ``syncing''
     \item \code{.ster} filenames (Stata results files) collided across .do files; some exceeded Stata's name limit
 \end{itemize}
@@ -53,7 +53,7 @@ All of this makes the pipeline hard to maintain.
 
 \begin{columns}[T]
 \column{0.48\textwidth}
-\textcolor{cktgray}{Before (RP6, 22 files)}
+\textcolor{cktgray}{Before (RP6, 17 numbered files)}
 \begin{itemize}\setlength\itemsep{0pt}
     \item \code{5\_GrRC.do}
     \item \code{6\_GrRC\_NonAg.do}
@@ -69,7 +69,7 @@ All of this makes the pipeline hard to maintain.
 \end{itemize}
 
 \column{0.48\textwidth}
-\textcolor{cktblue}{After (RP7, 16 files)}
+\textcolor{cktblue}{After (RP7, 11 numbered files)}
 \begin{itemize}\setlength\itemsep{0pt}
     \item \code{1\_processData.do}
     \item \code{2\_summaryStats.do}
