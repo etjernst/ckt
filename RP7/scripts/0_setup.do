@@ -3,7 +3,7 @@
 * Task:             Installs dependencies (user-written Stata programs) 
 * **********************************************************************
 * Dependencies
-    local ssc_install    "estout reghdfe ftools coefplot unique ietoolkit sdecode"
+    local ssc_install    "estout reghdfe ftools coefplot unique ietoolkit sdecode boottest summclust"
     local styles         "schemepack"
 
 * **********************************************************************
