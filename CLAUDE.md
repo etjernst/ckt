@@ -34,7 +34,7 @@
 cd RP7/scripts && stata-mp -b do 0_master.do
 
 # Stata (run single do-file; $dir is set in 0_master.do per c(username))
-cd RP7/scripts && stata-mp -b do 5_GrRC.do
+cd RP7/scripts && stata-mp -b do 4_GrRC.do
 
 # Python
 python scripts/python/analysis.py
@@ -74,7 +74,7 @@ Junctions are Windows directory junctions created with `cmd /c mklink /J`.
   - `initial_values` -- sets initial values for GRC optimization
   - `grc_tex_table` -- formats GRC results into LaTeX tables
   - `heterogeneity_plots` -- generates heterogeneity figures
-- Scripts 1--16 run sequentially: data processing, summary stats, OLS, heterogeneity plots, GRC regressions (main, non-ag, hukou, experience, birth controls), heterogeneity tables.
+- Scripts 1--11 run sequentially: data processing, summary stats, OLS, GRC regressions (main, non-ag, hukou-OLS, hukou-GRC), learning, GRC extras (experience, birth dispatcher), table assembly, figure assembly.
 
 ## Notation and key parameters
 

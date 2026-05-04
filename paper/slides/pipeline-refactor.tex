@@ -38,7 +38,7 @@
 \begin{frame}{The pipeline had drifted into twenty-two .do files we could not audit}
 
 \begin{itemize}\setlength\itemsep{4pt}
-    \item Twenty-two numbered .do files; experience and birth families spread across six of them
+    \item Twenty-two .do files; experience and birth families spread across six of them
     \item A second Dropbox folder, \code{ReplicationPackage6 - real values/}, kept in sync with the nominal-values one by hand
     \item Ster filenames collided across .do files; some exceeded Stata's name limit
 \end{itemize}
@@ -50,7 +50,7 @@ All of it makes the pipeline harder to maintain.
 \end{frame}
 
 % ===============================================================
-\begin{frame}{We collapsed twenty-two .do files into thirteen}
+\begin{frame}{We collapsed twenty-two .do files into sixteen, and renumbered them in run order}
 
 \begin{columns}[T]
 \column{0.48\textwidth}
@@ -70,17 +70,21 @@ All of it makes the pipeline harder to maintain.
 \end{itemize}
 
 \column{0.48\textwidth}
-\textcolor{cktblue}{After (RP7, 13 files)}
+\textcolor{cktblue}{After (RP7, 16 files)}
 \begin{itemize}\setlength\itemsep{0pt}
-    \item \code{5\_GrRC.do}
-    \item \code{6\_GrRC\_NonAg.do}
-    \item \code{8\_GrRC\_hukou.do}
-    \item \code{GRC\_extras.do} (experience family dispatcher)
-    \item \code{make\_tables.do}, \code{make\_figures.do}
-    \item \code{16\_heterogeneity\_tables.do}
+    \item \code{1\_processData.do}
+    \item \code{2\_summaryStats.do}
+    \item \code{3\_OLS\_uGRC.do}
+    \item \code{4\_GrRC.do}
+    \item \code{5\_GrRC\_NonAg.do}
+    \item \code{6\_OLS\_uGRC\_hukou.do}
+    \item \code{7\_GrRC\_hukou.do}
+    \item \code{8\_learning.do}
+    \item \code{9\_GRC\_extras.do}
+    \item \code{10\_make\_tables.do}, \code{11\_make\_figures.do}
 \end{itemize}
 \bigskip
-\textcolor{cktaccent}{Net: $-9$ files, same numbers}
+\textcolor{cktaccent}{Net: $-6$ files, same numbers}
 \end{columns}
 
 \end{frame}
@@ -94,14 +98,14 @@ The five experience .do files plus \code{15\_GrRC\_birth.do} all did the same th
 \textcolor{cktblue}{What changed}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Shared regression logic: \code{run\_grc\_with\_extra\_regressor} in \code{0\_programs.do}
-    \item Per-cell calls: \code{GRC\_extras.do}, one cell per (country, spec3, regressor)
+    \item Per-cell calls: \code{9\_GRC\_extras.do}, one cell per (country, spec3, regressor)
     \item Tables: \code{extras\_tex\_table} reads sters and emits the family .tex files
 \end{itemize}
 
 \medskip
 \textcolor{cktblue}{To add a new family member}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item One cell in \code{GRC\_extras.do}
+    \item One cell in \code{9\_GRC\_extras.do}
     \item One arm in \code{run\_grc\_with\_extra\_regressor}
 \end{itemize}
 
@@ -183,7 +187,7 @@ Full convention in \code{RP7/scripts/STER\_NAMING.md}.
 \medskip
 \textcolor{cktblue}{To change which coefficients appear, label text, or formatting}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item Per-cell options: \code{make\_tables.do}
+    \item Per-cell options: \code{10\_make\_tables.do}
     \item Underlying template: \code{grc\_tex\_table\_trend} in \code{0\_programs.do}
 \end{itemize}
 
