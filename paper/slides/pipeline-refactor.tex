@@ -35,22 +35,21 @@
 \maketitle
 
 % ===============================================================
-\begin{frame}{The pipeline had drifted into twenty-two .do files we could not audit}
+\begin{frame}{Pipeline was unwieldy with 22 .do files + lots of duplication}
 
 \begin{itemize}\setlength\itemsep{4pt}
-    \item Twenty-two .do files; experience and birth families spread across six of them
-    \item A second Dropbox folder, \code{ReplicationPackage6 - real values/}, kept in sync with the nominal-values one by hand
-    \item Ster filenames collided across .do files; some exceeded Stata's name limit
+    \item 22 numbered .do files; experience and birth covariates spread across six of them
+    \item Parallel Dropbox folder for real-values work, required manual ``syncing''
+    \item \code{.ster} filenames (Stata results files) collided across .do files; some exceeded Stata's name limit
 \end{itemize}
 
 \bigskip
-None of this changes the published numbers.
-All of it makes the pipeline harder to maintain.
+All of this makes the pipeline hard to maintain.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{We collapsed twenty-two .do files into sixteen, and renumbered them in run order}
+\begin{frame}{Fewer .do files and programs to keep track of}
 
 \begin{columns}[T]
 \column{0.48\textwidth}
@@ -83,38 +82,35 @@ All of it makes the pipeline harder to maintain.
     \item \code{9\_GRC\_extras.do}
     \item \code{10\_make\_tables.do}, \code{11\_make\_figures.do}
 \end{itemize}
-\bigskip
-\textcolor{cktaccent}{Net: $-6$ files, same numbers}
 \end{columns}
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Experience and birth families: one program, one dispatcher}
+\begin{frame}{Adding a new covariate (or set of covariates)}
 
-The five experience .do files plus \code{15\_GrRC\_birth.do} all did the same thing: GRC regression with one extra regressor.
-
-\medskip
-\textcolor{cktblue}{What changed}
+\textcolor{cktgray}{Before}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item Shared regression logic: \code{run\_grc\_with\_extra\_regressor} in \code{0\_programs.do}
-    \item Per-cell calls: \code{9\_GRC\_extras.do}, one cell per (country, spec3, regressor)
-    \item Tables: \code{extras\_tex\_table} reads sters and emits the family .tex files
+    \item Each new covariate got its own .do file: \code{10\_GrRC\_experience.do}, \code{11\_GrRC\_max\_experience.do}, \dots, \code{15\_GrRC\_birth.do}
 \end{itemize}
 
 \medskip
-\textcolor{cktblue}{To add a new family member}
+\textcolor{cktblue}{Now}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item One cell in \code{9\_GRC\_extras.do}
-    \item One arm in \code{run\_grc\_with\_extra\_regressor}
+    \item All extra-covariate regressions live in \code{9\_GRC\_extras.do}
+    \item One line per (country, spec, covariate)
+    \item Tables: \code{extras\_tex\_table} reads \code{.ster} files and writes the corresponding \code{.tex} tables
 \end{itemize}
+
+\medskip
+\textcolor{cktblue}{To add a new covariate}: add a line in \code{9\_GRC\_extras.do}.
 
 \end{frame}
 
 % ===============================================================
 \begin{frame}{One table-builder for all GRC tables}
 
-We had multiple table-building programs that were 95\% the same code:
+We had multiple table-building programs that did 95\% the same thing:
 
 \medskip
 \begin{itemize}\setlength\itemsep{2pt}
@@ -146,7 +142,7 @@ Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 \begin{itemize}\setlength\itemsep{2pt}
     \item One global, \code{values(nominal|real)}, in \code{0\_path\_config.do}
     \item \code{nominal}: filenames as before
-    \item \code{real}: appends \code{\_r} suffix; both modes coexist in one \code{output/} tree
+    \item \code{real}: appends \code{\_r} suffix; both save to the same \code{output/} folder
 \end{itemize}
 
 \medskip
@@ -155,7 +151,7 @@ Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 \end{frame}
 
 % ===============================================================
-\begin{frame}{How ster filenames are built}
+\begin{frame}{How to read a \code{.ster} filename}
 
 \textcolor{cktblue}{Pattern}: \code{grc\_<country>\_<spec3>\_<covs2>[\_<sfx1>].ster}
 
@@ -168,7 +164,7 @@ Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 \end{tabular}
 
 \bigskip
-Every ster name is built from these tokens.
+Every \code{.ster} name is built from these tokens.
 Look up any fit by combining them.
 
 \bigskip
@@ -177,15 +173,15 @@ Full convention in \code{RP7/scripts/STER\_NAMING.md}.
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Editing the GRC tables}
+\begin{frame}{How to edit GRC tables in the new pipeline}
 
-\textcolor{cktblue}{To change caption, label, or notes}
+\textcolor{cktblue}{Caption, label, or table notes} (now in the paper, not the .do file)
 \begin{itemize}\setlength\itemsep{2pt}
-    \item Edit the \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros in \code{preamble.tex} (the paper)
+    \item Edit the \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros in \code{preamble.tex}
 \end{itemize}
 
 \medskip
-\textcolor{cktblue}{To change which coefficients appear, label text, or formatting}
+\textcolor{cktblue}{Which coefficients appear, label text, decimal formatting}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Per-cell options: \code{10\_make\_tables.do}
     \item Underlying template: \code{grc\_tex\_table\_trend} in \code{0\_programs.do}
@@ -204,14 +200,38 @@ Full convention in \code{RP7/scripts/STER\_NAMING.md}.
 \begin{frame}{What this buys us}
 
 \begin{itemize}\setlength\itemsep{4pt}
-    \item One source of truth for the regression code
-    \item One source of truth for the table caption, label, and notes (in the paper preamble)
-    \item Ster filenames you can read, type, and look up
-    \item Same published numbers as before
+    \item Regression code lives in one place: \code{4\_GrRC.do} for the main regressions, \code{9\_GRC\_extras.do} for extras
+    \item Table caption, label, and notes live in one place: the paper preamble
+    \item \code{.ster} filenames you can read, type, and look up
 \end{itemize}
 
-\bigskip
-The pipeline is now small enough to hold in one head.
+\end{frame}
+
+% ===============================================================
+\begin{frame}{What each .do file does}
+
+\scriptsize
+\begin{tabular}{@{}l p{0.58\textwidth}@{}}
+\textcolor{cktgray}{\textit{Setup (run automatically by 0\_master.do)}} & \\
+\code{0\_master.do}                   & runs all the .do files in sequence \\
+\code{0\_path\_config.do}             & paths, plus the \code{values(nominal|real)} switch \\
+\code{0\_programs.do}                 & shared programs (\code{run\_grc}, table builders, helpers) \\
+\code{0\_setup.do}                    & Stata environment, package installs \\
+\code{0\_CHN\_hukou\_restrictions.do} & CHN datasets with hukou subgroup definitions \\
+\addlinespace
+\textcolor{cktgray}{\textit{Pipeline sequence}} & \\
+\code{1\_processData.do}              & reads raw \code{.dta}, builds processed datasets \\
+\code{2\_summaryStats.do}             & summary statistics tables \\
+\code{3\_OLS\_uGRC.do}                & OLS and FE regressions, all countries \\
+\code{4\_GrRC.do}                     & restricted GRC regressions, all countries \\
+\code{5\_GrRC\_NonAg.do}              & GRC regressions with non-ag as choice (IDN) \\
+\code{6\_OLS\_uGRC\_hukou.do}         & OLS and FE regressions, hukou subgroups (CHN) \\
+\code{7\_GrRC\_hukou.do}              & GRC regressions, hukou subgroups (CHN) \\
+\code{8\_learning.do}                 & returns to learning, rural and urban \\
+\code{9\_GRC\_extras.do}              & GRC with extra covariates (experience, birth) \\
+\code{10\_make\_tables.do}            & builds \code{.tex} tables from \code{.ster} files \\
+\code{11\_make\_figures.do}           & builds figures \\
+\end{tabular}
 
 \end{frame}
 
