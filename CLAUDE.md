@@ -11,7 +11,7 @@
 ## Project identity
 
 - **Paper:** "Selection and Heterogeneity in the Returns to Migration"
-- **Authors:** Cenci, Kleemans, Tjernström
+- **Authors:** Cenci, Kleemans, Tjernström. Cenci and Kleemans do not use git; the user copies `RP7/{scripts,output}/` into Dropbox as `ReplicationPackage7/` when ready to share. Coauthor-facing artifacts (slides, READMEs in the replication package) must never reference git, commits, branches, or PRs.
 - **Description:** Estimates heterogeneous returns to rural-urban migration using a generalized Roy model with panel data from China (CFPS), Indonesia (IFLS), and Tanzania (TZNPS). Reconciles divergent estimates in the literature by showing that standard panel methods (OLS, FE) mask substantial heterogeneity in returns across migration trajectories.
 - **Identification:** Correlated random coefficient (CRC) model cast as a group random coefficient (GRC) model following Suri (2011) and Tjernström (2023). Workers have location-specific skills ($\theta_i^U$, $\theta_i^R$); comparative advantage ($\theta_i^U - \theta_i^R$) drives both sorting and heterogeneous returns. A linear comparative advantage (LCA) restriction ($\Delta_i = \beta + \phi\theta_i$) allows extrapolation from switchers to non-switchers. Estimated via GMM; overidentification tested with Hansen's J-test.
 - **Key estimand:** Trajectory-specific returns to urban location ($\Delta_{\underline{d}}$) for switcher subpopulations, plus extrapolated returns for never-migrants. The slope parameter $\phi$ measures whether migration is "pro-poor" ($\phi < 0$: those with lowest rural consumption gain most) or "pro-rich" ($\phi > 0$).
