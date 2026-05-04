@@ -1,5 +1,9 @@
 # Returns to migration (CKT)
 
+## STOP---READ FIRST
+
+**NEVER edit `main.tex` in the Overleaf-Dropbox folder** (`C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/main.tex`). Not one character. Not a comment fix, not a redirect of an `\input{}` path, not a "harmless" cleanup. Every edit risks silently wiping the user's Overleaf track changes and comments through Dropbox sync, and those cannot be recovered. If something seems to require an edit there, surface it to the user and let them make it on Overleaf themselves. The same caution applies to `CKT.bib` and `preamble.tex` in that folder when they carry coauthor track-changes; ask before editing.
+
 ## Core principles
 
 - Plan first. No substantive file edits without an approved spec and plan.
