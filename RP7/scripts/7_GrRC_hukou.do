@@ -1,14 +1,15 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Nov 2025
+Version: May 2026
 This code:
-    - runs restricted GRC regressions for
-        - all countries: unbalanced sample, urban as choice
-        - all countries: balanced sample, urban as choice
+    - runs restricted GRC regressions for the four CHN hukou subgroups
+        - rural-only / urban-only / rural-first / urban-first
+        - urban as choice; unbalanced and balanced panels
     - outcomes: consumption per capita (adult equivalent: cube) and income
-    - covariates (columns): (1) nothing, (2) add time FE, (3) add female, 
+    - covariates (columns): (1) nothing, (2) add time FE, (3) add female,
                             (4) add age^2, (5) add education (max) & education^2
+    - hukou subgroups are built upstream by 0_CHN_hukou_restrictions.do
 *******************************************************************************/
 
 * set log file
@@ -22,10 +23,10 @@ log using "$logs/7_GrRC_hukou.log", replace
 
 * **********************************************************************
 * Choices for the analysis
-*     Countries:          `country'
-*     Choice variable:    urban / nonag
+*     Countries:          CHN (4 hukou subgroups)
+*     Choice variable:    urban
 *     Dependent variable: consumption / income
-*     Panel structure:    bal / unb 
+*     Panel structure:    bal / unb
 * ********************************************************************
 
 * **********************************************************************

@@ -1,9 +1,10 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Jan 2026
+Version: May 2026
 This code:
 	- create CHN datasets with hukou restrictions
+	  (rural-only, urban-only, rural-first, urban-first subgroups)
 *******************************************************************************/
 
 * set log file

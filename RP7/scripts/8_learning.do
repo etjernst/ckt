@@ -1,7 +1,7 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Jan 2026
+Version: May 2026
 This code:
     - runs regressions for returns to learning in rural and urban areas
 *******************************************************************************/

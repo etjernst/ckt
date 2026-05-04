@@ -5,9 +5,11 @@ log using "$logs/11_make_figures.log", replace
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Aug, 2024
+Version: May 2026
 This code:
-	- Creates coefplot graphs of uGRC estimates
+    - Section 1 (this block): heterogeneity coefplots of GRC switcher Deltas
+      and trajectory mu's, by country x choice x balance, from saved .ster files
+    - Section 2 (below, line ~128): bar graphs of trajectory composition
 *******************************************************************************/
 
 * **********************************************************************
@@ -126,11 +128,11 @@ This code:
 		copyOverleaf "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_Fnocovars.pdf", subdir(figures)	
     }
 /*******************************************************************************
-Project: Returns to Migration
-Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Aug, 2024
-This code:
-	- Creates bar graph of different trajectories
+Section 2 of 11_make_figures.do
+Version: May 2026
+This block:
+	- Creates bar graphs of trajectory composition (counts of switchers,
+	  always-rural, always-urban) per country x choice x balance
 *******************************************************************************/
 
 * **********************************************************************

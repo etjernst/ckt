@@ -1,7 +1,7 @@
 * **********************************************************************
 * Project: Returns to Migration
 * Team: E. Cenci, M. Kleemans, E. Tjernström 
-* Version: Nov 2025
+* Version: May 2026
 * This code:
 * 	Runs all of the do-files
 * 	Set copyOverleaf to 1 to copy tables and figures to Overleaf 
@@ -101,7 +101,7 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/8_learning.do"
 * Run GRC regressions (extras: experience-family + IDN birth; 44 stems)
 	include			"$dir/scripts/9_GRC_extras.do"
-* Build all GRC LaTeX tables (5/6/8 + heterogeneity) from saved .ster files
+* Build all GRC LaTeX tables (main + non-ag + hukou + heterogeneity) from saved .ster files
 	include			"$dir/scripts/10_make_tables.do"
 * Make all GRC figures (heterogeneity plots + trajectory bar graphs)
 	include			"$dir/scripts/11_make_figures.do"

@@ -1,9 +1,10 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: May, 2024
+Version: May 2026
 This code:
-    - Creates summary stats tables
+    - Creates summary statistics tables (means and trajectory differences
+      by country x choice x depvar x balance)
 *******************************************************************************/
 
 *******************************************************************************

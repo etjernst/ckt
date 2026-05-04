@@ -1,14 +1,15 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Apr 2026
+Version: May 2026
 
 10_make_tables.do --- regenerate ALL LaTeX tables produced by the GRC
-pipeline (main 5_GrRC + 6_NonAg + 8_hukou + 16_heterogeneity) without
-re-running any GMM. Reads existing .ster files from $dir/output/ and
-emits .tex via grc_tex_table_trend / het_table_*.
+pipeline (main 4_GrRC + non-ag 5_GrRC_NonAg + hukou 7_GrRC_hukou +
+heterogeneity, the last consolidated into this file) without re-running
+any GMM. Reads existing .ster files from $dir/output/ and emits .tex via
+grc_tex_table_trend / het_table_*.
 
-Replaces:
+Replaces (legacy files, deleted in the GRC pipeline refactor):
   5_GrRC_tables.do          (9 cells, cuu/cub/iuu × IDN/CHN/TZA)
   6_GrRC_NonAg_tables.do    (1 cell, IDN cnu)
   8_GrRC_hukou_tables.do    (12 cells, 4 hukou subgroups × 3 spec3)
@@ -221,8 +222,8 @@ if _rc == 0 & $copyOverleaf == 1 {
 }
 
 /*******************************************************************************
-6_GrRC_NonAg_tables.do --- LaTeX table for IDN cons/nonag/unb (cnu)
-without re-running GMM. Reads existing .ster files; emits via
+Section 2 --- LaTeX table for IDN cons/nonag/unb (cnu) without
+re-running GMM. Reads existing .ster files; emits via
 grc_tex_table_trend.
 
 Sibling to 5_GrRC_NonAg.do.
@@ -260,7 +261,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 }
 
 /*******************************************************************************
-8_GrRC_hukou_tables.do --- LaTeX tables for the 12 hukou-subgroup cells
+Section 3 --- LaTeX tables for the 12 hukou-subgroup cells
 (4 hukou subgroups × 3 spec3) without re-running GMM. Reads existing
 .ster files; emits via grc_tex_table_trend (M3-unified, no spec passed
 since country_short already encodes the disambiguator).

@@ -38,12 +38,14 @@
 *                              urban_only). Compresses the prior
 *                              CHN_rural_first / CHN_urban_first form.
 *
-* Experience / birth families (10--15) include their family token:
+* Experience / birth families (now consolidated in 9_GRC_extras.do)
+* include their family token:
 *   grc_<country>_<spec3>_<family>_<covs2>
 *   family: exp | maxexp | expsh | maxexpsh | birth | nonag_exp -> exp
-*           (14_GrRC_NonAg_experience.do uses cnu_exp; the 4 sections
-*            of file 14 collide on the same estname today, preserved
-*            in Phase 1a; disambiguation lands in Phase 1b's M1+M2.)
+*           (the IDN nonag-experience cells use cnu_exp; cross-section
+*            collisions present in the legacy 10--15 files were resolved
+*            by the M11 ster-rename pass when those files were merged
+*            into 9_GRC_extras.do.)
 *
 * Examples:
 *   grc_IDN_cuu_ca       = main fit, IDN cons/urban/unb, all covariates
