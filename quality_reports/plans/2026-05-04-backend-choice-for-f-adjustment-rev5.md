@@ -59,7 +59,7 @@ The corrigendum updates Theorem 2: the absorbed-FE shortcut holds only for OLS w
 The auxiliary OLS in our setting satisfies that condition exactly.
 
 Three implementation facts shape the rest of the plan.
-First, the per-cluster computation is $O(\sum_j (n_j^2 K + n_j K^2))$ in time and $O(JK^2)$ in memory if we cache per-cluster influence matrices; at our regime ($J \approx 30{,}000$, $K \approx 27$, $\bar{n}_j \approx 3$) the dominant term is $n_j K^2$.
+First, the per-cluster computation is $O(\sum_j (n_j^2 K + n_j K^2))$ in time and $O(JK^2)$ in memory if we cache per-cluster influence matrices; at our regime ($J = 29{,}715$ post-singleton-drop, $K \approx 27$, $\bar{n}_j \approx 3$) the dominant term is $n_j K^2$.
 Second, the HTZ Satterthwaite df recompute per grid $\phi$ scales as $O(JK^2 q + Jq^3)$, roughly $5 \cdot 10^8$ ops per grid point at $K = 27$, $q \approx 25$.
 Third, off-the-shelf packages blow up because of how they organize the computation, not because the computation itself is expensive.
 
@@ -100,10 +100,11 @@ TZA income: $\underline{d}_0 = 5$ (same source).
 CHN income: verify before path D runs on CHN income spec by reading what `define_switcherpars` (or the data-driven base selector at L1511--1524 of `0_programs.do`) returns; if the selector picks a non-default base, document the value in the rev 5 implementation log; otherwise default to $\underline{d}_0 = 2$.
 
 Second, variable mapping.
-$D_{is}$ corresponds to `beta_s_{s}` in the existing GRC code; $\mathbb{1}\{\text{trajectory}_i = s\}$ corresponds to `alpha_d_{s}`.
+$D_{is}$ corresponds to `switcher_{s}_choice` in the existing GRC code; $\mathbb{1}\{\text{trajectory}_i = s\}$ corresponds to `switcher_{s}`.
+These are the names actually generated in [`RP7/scripts/0_programs.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/0_programs.do) at lines 1248--1251; an earlier rev of this plan called them `beta_s_{s}` and `alpha_d_{s}` and was wrong.
 The recoded variable is
 
-$$z_{is}^{(\phi_0)} = \mathtt{beta\_s\_}s - \phi_0 \cdot \mathtt{alpha\_d\_}s,$$
+$$z_{is}^{(\phi_0)} = \mathtt{switcher\_}s\mathtt{\_choice} - \phi_0 \cdot \mathtt{switcher\_}s,$$
 
 constructed for $s \in S_R \setminus \{\underline{d}_0\}$ and tested via joint zero.
 
@@ -173,6 +174,26 @@ Path G is `summclust`'s native CR3 implementation, not a from-scratch reimplemen
 Per MNW (2023), the convention is to report both CV3 and CV3J side by side and flag any disagreement, not to pick one as headline and demote the other.
 Rev 5 reports both in the published table and in any pre-publication diagnostics; agreement to $10^{-3}$ relative is the expected pattern, and any larger gap gets called out in the derivation note.
 
+Pinned syntax (corrects an earlier rev that said `absorb(trajectory)`).
+The IDN $J = 500$ probe at [`explorations/python-grc/stata/step0_5_summclust_preflight/probe_idn_setup.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/probe_idn_setup.do) caught two `summclust` syntax constraints.
+First, `summclust`'s `absorb()` is for cluster-constant FEs only and errors with "Cluster variable not constant within absorb variable. Use fevar instead." (rc=198) when `pid` varies within `trajectory`---which it does in our unbalanced sample because multiple individuals share a trajectory pattern.
+Second, `summclust` does not accept factor-variable expansions (`i.trajectory` errors with rc=101).
+The pinned call is therefore one of:
+
+```stata
+summclust lndepvar z_3 ... z_31 controls period_2 ... period_T, ///
+    cluster(pid) fevar(trajectory) jackknife
+```
+
+or, if `fevar(trajectory)` underperforms in the IDN scaling sweep, manually expand trajectory dummies (`tab trajectory, gen(trajdum_)`) and pass them as columns of $X$:
+
+```stata
+summclust lndepvar z_3 ... z_31 controls trajdum_2 ... trajdum_K period_2 ... period_T, ///
+    cluster(pid) jackknife
+```
+
+Step 0.5 will pick the form that survives the IDN scale; both are equivalent in expectation.
+
 Anchor specification, pinned: `summclust, vce(jackknife)` and `summclust, vce(jackknife, mse)` at $J = 1500$ on the TZA covs_trend recoded design as the small-$J$ self-consistency reference; tolerance $10^{-6}$ relative on the CR3 covariance, $10^{-4}$ on the test statistic, $10^{-3}$ on the df.
 The from-scratch CR3 implementation activates as a fallback only if `summclust` does not scale to IDN unbalanced (the budget is pinned in Step 0.5: 8 GB peak memory or 30 minutes wall).
 Acceptance for the from-scratch fallback: covariance agreement with `summclust` at $J = 1500$ to $10^{-6}$ relative.
@@ -206,7 +227,7 @@ We commit to running Hansen (2025) calculated df as a robustness row in the deri
 The cost-comparison table is the falsifiable core of the plan.
 The "per-fit wall" column is the IDN-scale wall for one $(X, \phi_0)$ vcovCR/jackknife build (paths A, B, G) or one BRL meat build (path C); path D is scoped per cell and conditional on Step 0.6.
 
-| Path | Prototype | TZA full ($J=11{,}012$) per fit | IDN unb. ($J\approx 30{,}000$) per fit | Per-cell wall (30 grid) | 60-cell wall, 4-way parallel | Anchor |
+| Path | Prototype | TZA full ($J=11{,}012$) per fit | IDN unb. ($J=29{,}715$) per fit | Per-cell wall (30 grid) | 60-cell wall, 4-way parallel | Anchor |
 |---|---:|---:|---:|---:|---:|---:|
 | A. `reg_sandwich, absorb` + reform (4) | 2--3 h | unknown | unknown (kill criterion) | 30 $\times$ per-fit | depends | clubSandwich at $J=1500$ |
 | B. `feols` + `vcovCR` + reform (4) | 2 h | unknown | unknown (kill criterion) | 30 $\times$ per-fit | depends | clubSandwich at $J=1500$ |
@@ -230,9 +251,9 @@ Step 0 (30 min). Verify the IDN data-prep pipeline runs end-to-end on `lca-inver
 Step 0.5 (60--90 min). Run `summclust` on TZA full and on IDN unbalanced, with a scaling pre-flight first.
 
 Pre-flight scaling sweep (15--20 min): run `summclust` on the IDN unbalanced cluster pattern at $J \in \{5{,}000, 10{,}000, 20{,}000\}$ subsamples and time + memory-profile each.
-MNW (2023) advertise `summclust`'s computational efficiency for the "large clusters" regime (large $\bar{n}_j$); IDN unbalanced is the opposite case ($J \approx 30{,}000$, $\bar{n}_j \approx 3$), so MNW's scalability claim does not transfer automatically.
-The sweep gives a scaling curve we can extrapolate to $J = 30{,}000$ before committing to the full run.
-If the extrapolation predicts $> 30$ minutes wall or $> 8$ GB peak at $J = 30{,}000$, kick off the from-scratch CR3 prototype in parallel with the full IDN run rather than as a downstream fallback.
+MNW (2023) advertise `summclust`'s computational efficiency for the "large clusters" regime (large $\bar{n}_j$); IDN unbalanced is the opposite case ($J = 29{,}715$ post-singleton-drop, $\bar{n}_j \approx 3$), so MNW's scalability claim does not transfer automatically.
+The sweep gives a scaling curve we can extrapolate to $J = 29{,}715$ before committing to the full run.
+If the extrapolation predicts $> 30$ minutes wall or $> 8$ GB peak at $J = 29{,}715$, kick off the from-scratch CR3 prototype in parallel with the full IDN run rather than as a downstream fallback.
 
 Full run (30--60 min): use `summclust y z_* controls, cluster(pid)` on the recoded-design covs_trend spec at TZA full and IDN unbalanced full.
 Report $G^*$, partial leverage, influence, and cluster-size moments.
