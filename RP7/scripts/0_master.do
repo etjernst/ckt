@@ -9,6 +9,7 @@
 * **********************************************************************
 
 clear all
+version 17
 
 * **********************************************************************
 * Preliminaries
@@ -47,9 +48,11 @@ if "`c(username)'"=="etje0002" {
 	global dir = "C:/Users/etje0002/Desktop/git/ReturnsToMigration"
 }
 if "`c(username)'"=="maand" {
-	* Local RP7 working copy. Active path while the verdier-wrap-up worktree exists:
-	global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
-	* After the branch merges to main, comment the line above and uncomment:
+	* Local RP7 working copy. Active path for the unbalanced-panel-proof-review worktree:
+	global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
+	* Other worktrees / main tree (uncomment as appropriate):
+	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
 	* global dir = "C:/git/ckt/RP7"
 }
 
@@ -74,6 +77,8 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/1_processData.do"
 * Compute & save summary statistics
 	include			"$dir/scripts/1_summaryStats.do"
+* Compute rank-condition diagnostic for unbalanced pooling (Appendix on pooling)
+	include			"$dir/scripts/1b_unbalanced_rank_diagnostic.do"
 * Run OLS & FE regressions
 	include			"$dir/scripts/2_OLS_uGRC.do"
 * Generate heterogeneity graphs
