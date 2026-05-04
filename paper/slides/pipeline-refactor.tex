@@ -53,7 +53,7 @@ All of it makes the pipeline harder to maintain, to onboard a coauthor onto, and
 \end{frame}
 
 % ===============================================================
-\begin{frame}{We collapsed to 13 do-files via three program-level moves}
+\begin{frame}{We collapsed twenty-two do-files into thirteen}
 
 \begin{columns}[T]
 \column{0.48\textwidth}
@@ -89,46 +89,40 @@ All of it makes the pipeline harder to maintain, to onboard a coauthor onto, and
 \end{frame}
 
 % ===============================================================
-\begin{frame}{M1 + M2: the experience and birth families no longer have their own scripts}
+\begin{frame}{Experience and birth families share one regression program}
 
-The five experience-family scripts (10, 11, 12, 13, 14) and \code{15\_GrRC\_birth.do} all did the same thing: take the GRC regression and add one extra regressor (experience, max experience, share of urban experience, max share, birth dummy).
+The five experience-family scripts (old files 10, 11, 12, 13, 14) and \code{15\_GrRC\_birth.do} did the same thing: take the GRC regression and add one extra regressor (experience, max experience, share of urban experience, max share, birth dummy).
 
 \medskip
-\textcolor{cktblue}{New machinery in \code{0\_programs.do}}
-\begin{itemize}
-    \item \code{run\_grc\_with\_extra\_regressor}---one program, takes \code{regressor()} and \code{spec3()} arguments
-    \item \code{GRC\_extras.do}---thin dispatcher; one cell per (country, spec3, regressor) triple
-    \item Sters land at \code{grc\_<country>\_<spec3>\_<fam>\_<col>.ster} (M11 naming)
+The new structure puts the shared logic in one place:
+
+\begin{itemize}\setlength\itemsep{2pt}
+    \item \code{run\_grc\_with\_extra\_regressor} in \code{0\_programs.do}, parameterized by \code{regressor()} and \code{spec3()}
+    \item \code{GRC\_extras.do} dispatcher with one cell per (country, spec3, regressor) triple
+    \item \code{extras\_tex\_table} program assembles the family-specific .tex tables
 \end{itemize}
 
 \medskip
-The \code{extras\_tex\_table} program reads those sters back and emits the family-specific .tex tables.
-The Tier 2 byte-identity check confirms the .tex bodies match what RP6 produced, modulo the two whitelisted refactor patterns (Phase 1b).
+Adding a new family member is now one cell in the dispatcher and one arm in the program, not a whole new script.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{M3: one \code{grc\_tex\_table\_trend} replaces four}
+\begin{frame}{One table-builder replaces four near-duplicates}
 
 \code{grc\_tex\_table\_trend}, \code{grc\_tex\_table\_trend\_exp}, \code{grc\_tex\_table\_trend\_birth}, and \code{grc\_tex\_table\_trend\_hukou} were 95\% the same code with different stored-name lookups and slightly different headers.
 
 \bigskip
-The unified program now takes:
-
-\begin{itemize}
-    \item \code{spec()}---\code{cuu}, \code{cub}, \code{iuu}, \code{cnu}, or empty for hukou (which encodes the spec in \code{country\_short})
-    \item \code{covs2set()}---defaults to \code{c0 ct c1 c2 ca}, overrideable for the experience family
-    \item \code{filename()}, \code{keep()}, \code{varlabel()}, \code{postfoot()}, \code{coeflabels()}, \code{textdepvar()}
-\end{itemize}
+The unified \code{grc\_tex\_table\_trend} now takes spec, country, columns, label, and post-foot arguments.
+Same template, four call signatures.
 
 \bigskip
-A side effect of this consolidation surfaced last night: each call stores roughly fifteen estimates in memory, and Stata's \code{est store} limit is 300, so by the 21st cell the namespace overflowed.
-The fix was a one-line \code{est drop \_all} at the program's tail (commit \code{b7b8313}).
+If you need to change how a GRC table renders---column widths, the \code{varwidth}, the order of indicator rows, the postfoot string---there is one place to edit, not four.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{M4: one switch handles nominal and real values}
+\begin{frame}{One switch handles nominal and real values}
 
 \textcolor{cktgray}{Before:} two parallel Dropbox folders.
 \code{ReplicationPackage6/} ran the pipeline on nominal values; \code{ReplicationPackage6 - real values/} ran the same pipeline on consumption deflated to a base year.
@@ -137,19 +131,19 @@ Every edit had to be propagated to both trees by hand.
 \medskip
 \textcolor{cktblue}{After:} a single \code{values(nominal|real)} global in \code{0\_path\_config.do}.
 
-\begin{itemize}
-    \item \code{nominal} (default): output filenames unchanged, byte-identical to pre-M4 reference
-    \item \code{real}: appends \code{\_r} suffix (\code{\${vsfx}}) to every ster, table, and figure---the two modes coexist in one \code{output/} tree
+\begin{itemize}\setlength\itemsep{2pt}
+    \item \code{nominal} (default): output filenames unchanged, byte-identical to RP6
+    \item \code{real}: appends \code{\_r} suffix to every ster, table, and figure, so the two modes coexist in one \code{output/} tree
     \item \code{RP7/data\_real/} is a new directory junction onto \code{ReplicationPackage6 - real values/data/}; gitignored, set up per machine
 \end{itemize}
 
 \medskip
-A four-test harness (\code{tests/verify\_M4\_values\_switch.do}) confirmed nominal-mode output is bit-identical to RP6's pre-M4 sters on \code{grc\_IDN\_cub\_c0}.
+A four-test harness (\code{tests/verify\_M4\_values\_switch.do}) confirmed nominal-mode output is bit-identical to the original real-values fork on \code{grc\_IDN\_cub\_c0}.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{M11: ster filenames are now unique and 32-char-safe}
+\begin{frame}{Ster filenames are unique, derivable, and 32-char-safe}
 
 The old naming scheme had two flaws:
 
@@ -173,30 +167,31 @@ No name in production exceeds 27 characters.
 \end{frame}
 
 % ===============================================================
-\begin{frame}{M9 + M10: smokes survive interruptions, and every fit times itself}
+\begin{frame}{Smokes survive interruptions, and every fit times itself}
 
-Tier 3 (the full master pipeline) runs roughly thirty wall-clock hours.
+A full pipeline run is roughly thirty wall-clock hours.
 Two changes make that survivable.
 
 \medskip
-\textcolor{cktblue}{M9---per-fit timer.} \code{run\_grc} and its variants record elapsed seconds in \code{e(elapsed\_s)}.
-We can sort sters by run time, spot blown-up cells, and budget the next smoke.
+\textcolor{cktblue}{Per-fit timer.}
+\code{run\_grc} and its variants record elapsed seconds in \code{e(elapsed\_s)}.
+We can sort sters by run time, spot blown-up cells, and budget the next run.
 
 \medskip
-\textcolor{cktblue}{M10---resume-on-interrupt.}
+\textcolor{cktblue}{Resume-on-interrupt.}
 A new global \code{\$skip\_if\_exists} tells \code{run\_grc} to skip cells whose ster is already on disk.
-When the 2026-05-01 OOM killed Tier 3 \#5 mid-run, relaunching with \code{skip\_if\_exists=1} carried 1{,}365 sters forward and re-ran only the missing 140.
-Tier 3 \#6 closed cleanly at 06:50 on 2026-05-03 with 1{,}505 sters.
+When an OOM killed a 2026-05-01 run mid-stream, relaunching with \code{skip\_if\_exists=1} carried 1{,}365 already-converged sters forward and re-ran only the missing 140.
+The relaunch closed cleanly with 1{,}505 sters on disk.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Tables: $\bar{\Delta}$ replaces ``Average $\Delta$'', envelope moves to the paper}
+\begin{frame}{$\bar{\Delta}$ replaces ``Average $\Delta$''; the envelope moves to the paper}
 
-Phase 1b separated paper-side concerns from code-side concerns.
+Table generation now separates paper-side concerns from code-side concerns.
 
 \medskip
-\textcolor{cktblue}{What lives where now}
+\textcolor{cktblue}{What lives where}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Paper preamble: caption text, \code{\textbackslash label\{\}}, and table-notes, wrapped in \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros
     \item Stata output: tabular-only fragment plus the indicator rows (Time FE, Covariates)
@@ -205,12 +200,12 @@ Phase 1b separated paper-side concerns from code-side concerns.
 \medskip
 \textcolor{cktblue}{Cosmetic changes in the fragments themselves}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item Average $\Delta$ row reads $\bar{\Delta}$ (commit \code{5e2277c})
-    \item esttab's blank tabular rows stripped via \code{removeStringFromTex} (commit \code{f68892e})
+    \item Average $\Delta$ row reads $\bar{\Delta}$
+    \item esttab's spurious blank tabular rows are stripped after the fact
 \end{itemize}
 
 \medskip
-The Tier 2 harness whitelists exactly these two patterns (\code{LABEL\_FLIP}, \code{BLANK\_ROW}); every other byte-level diff is \code{UNEXPECTED} and blocks the merge.
+The byte-identity check whitelists exactly these two patterns; every other byte-level diff is flagged and blocks the merge.
 
 \end{frame}
 
@@ -221,23 +216,23 @@ The Tier 2 harness whitelists exactly these two patterns (\code{LABEL\_FLIP}, \c
 \footnotesize
 \begin{tabular}{l l l}
 \toprule
-Tier & Scope & Result \\
+Check & Scope & Result \\
 \midrule
-Tier 1 (static) & call-site audit, ster-name length, lint & 5/6 PASS \\
-Tier 2 (table body) & 53 reference \code{.tex} files, classified diff & 53 expected, 0 unexpected, 0 missing \\
-Tier 3 (full smoke) & full master pipeline, convergence, ster counts & 1{,}505 sters, exit 0 \\
-M4 verify & 4-test driver on \code{grc\_IDN\_cub\_c0} & 4/4 PASS \\
-M4 mu-loop & bit-comparison on 4 production cells & PASS \\
+Static lint & call-site audit, ster-name length, magic numbers & 5/6 PASS \\
+Table byte-check & 53 reference \code{.tex} files, classified diff & 53 expected, 0 unexpected \\
+Full pipeline smoke & end-to-end Stata run, convergence, ster counts & 1{,}505 sters, exit 0 \\
+Real-mode switch & 4-test driver on \code{grc\_IDN\_cub\_c0} & bit-identical to RP6 \\
+mu-loop refactor & bit-comparison on 4 production cells & bit-identical \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \medskip
-The one Tier 1 check that does not PASS flagged 75 pre-M11 orphan sters in \code{RP7/output/}.
-Those are leftover names from earlier in the refactor; they live alongside the new ones, do not feed anything, and will be cleaned up when the branch lands.
+The one static-lint failure flagged 75 leftover sters from earlier stages of the refactor in \code{RP7/output/}.
+They sit alongside the new files, do not feed anything, and will be cleaned up when the branch lands.
 
 \medskip
-Tier 2 byte-identity totals: \code{LABEL\_FLIP=53}, \code{BLANK\_ROW=54}, \code{ADDLINESPACE=0}, \code{UNEXPECTED=0}.
+Byte-check totals: 53 label-flip diffs ($\bar{\Delta}$), 54 blank-row diffs (esttab cleanup), zero unexpected.
 
 \end{frame}
 
@@ -295,7 +290,7 @@ Tier 2 byte-identity totals: \code{LABEL\_FLIP=53}, \code{BLANK\_ROW=54}, \code{
     \item Tier 2 reference snapshot covers 53 of the 72 tables the pipeline now produces.
     The 12 hukou, 1 IDN nonag, and 6 heterogeneity tables sit outside the snapshot---a pre-existing gap, not a refactor regression.
     Worth refreshing post-merge if we want a tighter Tier 2 net
-    \item Paper-side \code{\textbackslash GRCvaluesfx} toggle macro is deferred.
+    \item The paper-side \code{\textbackslash GRCvaluesfx} toggle macro is deferred.
     It will go into Overleaf \code{preamble.tex} once we decide whether real-values is a replacement for the nominal-values tables, or a robustness check that lives alongside them
     \item When this branch lands on \code{main}, copy \code{RP7/\{scripts,output\}/} into Dropbox as \code{ReplicationPackage7/}.
     The Dropbox-side handoff is the only piece that touches the team's shared workspace
