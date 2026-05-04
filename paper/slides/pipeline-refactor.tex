@@ -23,7 +23,6 @@
 \setbeamercolor{title separator}{fg=cktaccent}
 \setbeamercolor{alerted text}{fg=cktaccent}
 
-% Monospace for paths and code-ish snippets
 \newcommand{\code}[1]{\texttt{\small #1}}
 
 \title{Refactoring the GRC pipeline}
@@ -36,24 +35,22 @@
 \maketitle
 
 % ===============================================================
-\begin{frame}{The pipeline had drifted into 22 do-files we could not audit}
+\begin{frame}{The pipeline had drifted into twenty-two .do files we could not audit}
 
-By April 2026, three structural problems had compounded:
-
-\begin{itemize}
-    \item Twenty-two do-files in \code{scripts/}, with the experience and birth tables each living in their own per-country file, even though the regression call was nearly identical
-    \item A parallel folder \code{ReplicationPackage6 - real values/} with a copy of every script, deflating consumption and re-running everything---two trees that drifted whenever either one was edited
-    \item Ster filenames colliding across sections, and a few exceeding Stata's 32-character internal name limit, which surfaced as \code{r(7) invalid name} deep in the call chain
+\begin{itemize}\setlength\itemsep{4pt}
+    \item Twenty-two numbered .do files; experience and birth families spread across six of them
+    \item A second Dropbox folder, \code{ReplicationPackage6 - real values/}, kept manually in sync with the nominal-values one
+    \item Ster filenames colliding across .do files, with several too long for Stata's internal name limit
 \end{itemize}
 
 \bigskip
 None of this changes the published numbers.
-All of it makes the pipeline harder to maintain, to onboard a coauthor onto, and to smoke-test end-to-end.
+All of it makes the pipeline harder to maintain.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{We collapsed twenty-two do-files into thirteen}
+\begin{frame}{We collapsed twenty-two .do files into thirteen}
 
 \begin{columns}[T]
 \column{0.48\textwidth}
@@ -89,211 +86,112 @@ All of it makes the pipeline harder to maintain, to onboard a coauthor onto, and
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Experience and birth families share one regression program}
+\begin{frame}{Experience and birth families: one program, one dispatcher}
 
-The five experience-family scripts (old files 10, 11, 12, 13, 14) and \code{15\_GrRC\_birth.do} did the same thing: take the GRC regression and add one extra regressor (experience, max experience, share of urban experience, max share, birth dummy).
+The five experience .do files plus \code{15\_GrRC\_birth.do} all did the same thing: GRC regression with one extra regressor.
 
 \medskip
-The new structure puts the shared logic in one place:
-
+\textcolor{cktblue}{What changed}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item \code{run\_grc\_with\_extra\_regressor} in \code{0\_programs.do}, parameterized by \code{regressor()} and \code{spec3()}
-    \item \code{GRC\_extras.do} dispatcher with one cell per (country, spec3, regressor) triple
-    \item \code{extras\_tex\_table} program assembles the family-specific .tex tables
+    \item Shared regression logic: \code{run\_grc\_with\_extra\_regressor} in \code{0\_programs.do}
+    \item Per-cell calls: \code{GRC\_extras.do}, one cell per (country, spec3, regressor)
+    \item Tables: \code{extras\_tex\_table} reads sters and emits the family .tex files
 \end{itemize}
 
 \medskip
-Adding a new family member is now one cell in the dispatcher and one arm in the program, not a whole new script.
+\textcolor{cktblue}{To add a new family member}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item One cell in \code{GRC\_extras.do}
+    \item One arm in \code{run\_grc\_with\_extra\_regressor}
+\end{itemize}
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{One table-builder replaces four near-duplicates}
+\begin{frame}{One table-builder for all GRC tables}
 
-\code{grc\_tex\_table\_trend}, \code{grc\_tex\_table\_trend\_exp}, \code{grc\_tex\_table\_trend\_birth}, and \code{grc\_tex\_table\_trend\_hukou} were 95\% the same code with different stored-name lookups and slightly different headers.
+We had multiple table-building programs that were 95\% the same code:
+
+\medskip
+\begin{itemize}\setlength\itemsep{2pt}
+    \item \code{grc\_tex\_table\_trend}
+    \item \code{grc\_tex\_table\_trend\_exp}
+    \item \code{grc\_tex\_table\_trend\_birth}
+    \item \code{grc\_tex\_table\_trend\_hukou}
+\end{itemize}
+
+\medskip
+Now: one \code{grc\_tex\_table\_trend}, four call signatures.
 
 \bigskip
-The unified \code{grc\_tex\_table\_trend} now takes spec, country, columns, label, and post-foot arguments.
-Same template, four call signatures.
-
-\bigskip
-If you need to change how a GRC table renders---column widths, the \code{varwidth}, the order of indicator rows, the postfoot string---there is one place to edit, not four.
+\textcolor{cktblue}{To change how a GRC table renders}---column widths, indicator-row order, postfoot string, decimal precision---edit \code{grc\_tex\_table\_trend} in \code{0\_programs.do}.
 
 \end{frame}
 
 % ===============================================================
 \begin{frame}{One switch handles nominal and real values}
 
-\textcolor{cktgray}{Before:} two parallel Dropbox folders.
-\code{ReplicationPackage6/} ran the pipeline on nominal values; \code{ReplicationPackage6 - real values/} ran the same pipeline on consumption deflated to a base year.
-Every edit had to be propagated to both trees by hand.
-
-\medskip
-\textcolor{cktblue}{After:} a single \code{values(nominal|real)} global in \code{0\_path\_config.do}.
-
+\textcolor{cktgray}{Before}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item \code{nominal} (default): output filenames unchanged, byte-identical to RP6
-    \item \code{real}: appends \code{\_r} suffix to every ster, table, and figure, so the two modes coexist in one \code{output/} tree
-    \item \code{RP7/data\_real/} is a new directory junction onto \code{ReplicationPackage6 - real values/data/}; gitignored, set up per machine
+    \item Two parallel Dropbox folders
+    \item Every edit propagated by hand
 \end{itemize}
 
 \medskip
-A four-test harness (\code{tests/verify\_M4\_values\_switch.do}) confirmed nominal-mode output is bit-identical to the original real-values fork on \code{grc\_IDN\_cub\_c0}.
+\textcolor{cktblue}{Now}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item One global, \code{values(nominal|real)}, in \code{0\_path\_config.do}
+    \item \code{nominal}: filenames as before
+    \item \code{real}: appends \code{\_r} suffix; both modes coexist in one \code{output/} tree
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{To switch modes}: edit \code{global values} in \code{0\_path\_config.do}.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Ster filenames are unique, derivable, and 32-char-safe}
+\begin{frame}{How ster filenames are built}
 
-The old naming scheme had two flaws:
+\textcolor{cktblue}{Pattern}: \code{grc\_<country>\_<spec3>\_<covs2>[\_<sfx1>].ster}
 
-\begin{itemize}\setlength\itemsep{2pt}
-    \item Names like \code{grc\_robust\_vv\_TZA\_onestep\_covs\_trend} (34 chars) tripped Stata's 32-character limit on \code{\_est\_<name>}, throwing \code{r(7)} far from the offending \code{eststo}
-    \item Sections 5, 6, and 8 stored sters under names that could collide in the same session
-\end{itemize}
+\bigskip
+\begin{tabular}{l l}
+\code{country} & \code{IDN}, \code{CHN}, \code{TZA}, or \code{CHN\_hukou\_<subgroup>} \\
+\code{spec3}   & \code{cuu}, \code{cub}, \code{iuu}, \code{cnu} \\
+\code{covs2}   & \code{c0}, \code{ct}, \code{c1}, \code{c2}, \code{ca} \\
+\code{sfx1}    & \code{n} (never), \code{a} (always), \code{d} (delta), \code{g} (average) \\
+\end{tabular}
 
-\medskip
-\textcolor{cktblue}{New convention} (\code{RP7/scripts/STER\_NAMING.md}): \quad \code{grc\_<country>\_<spec3>\_<covs2>[\_<sfx1>]}
+\bigskip
+Every ster filename is built from these tokens.
+To find the ster behind a particular cell, assemble the tokens.
 
-\begin{itemize}\setlength\itemsep{2pt}
-    \item \code{country}: \code{IDN}, \code{CHN}, \code{TZA}, or \code{CHN\_hukou\_<subgroup>}
-    \item \code{spec3}: \code{cuu}, \code{cub}, \code{iuu}, \code{cnu}
-    \item \code{covs2}: \code{c0}, \code{ct}, \code{c1}, \code{c2}, \code{ca}
-    \item \code{sfx1}: \code{n} (never), \code{a} (always), \code{d} (delta), \code{g} (average)
-\end{itemize}
-
-No name in production exceeds 27 characters.
+\bigskip
+Full convention in \code{RP7/scripts/STER\_NAMING.md}.
 
 \end{frame}
 
 % ===============================================================
-\begin{frame}{Smokes survive interruptions, and every fit times itself}
+\begin{frame}{Editing the GRC tables}
 
-A full pipeline run is roughly thirty wall-clock hours.
-Two changes make that survivable.
-
-\medskip
-\textcolor{cktblue}{Per-fit timer.}
-\code{run\_grc} and its variants record elapsed seconds in \code{e(elapsed\_s)}.
-We can sort sters by run time, spot blown-up cells, and budget the next run.
-
-\medskip
-\textcolor{cktblue}{Resume-on-interrupt.}
-A new global \code{\$skip\_if\_exists} tells \code{run\_grc} to skip cells whose ster is already on disk.
-When an OOM killed a 2026-05-01 run mid-stream, relaunching with \code{skip\_if\_exists=1} carried 1{,}365 already-converged sters forward and re-ran only the missing 140.
-The relaunch closed cleanly with 1{,}505 sters on disk.
-
-\end{frame}
-
-% ===============================================================
-\begin{frame}{$\bar{\Delta}$ replaces ``Average $\Delta$''; the envelope moves to the paper}
-
-Table generation now separates paper-side concerns from code-side concerns.
-
-\medskip
-\textcolor{cktblue}{What lives where}
+\textcolor{cktblue}{To change caption, label, or notes}
 \begin{itemize}\setlength\itemsep{2pt}
-    \item Paper preamble: caption text, \code{\textbackslash label\{\}}, and table-notes, wrapped in \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros
-    \item Stata output: tabular-only fragment plus the indicator rows (Time FE, Covariates)
+    \item Edit the \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros in \code{preamble.tex} (the paper)
 \end{itemize}
 
 \medskip
-\textcolor{cktblue}{Cosmetic changes in the fragments themselves}
+\textcolor{cktblue}{To change which coefficients appear, label text, or formatting}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Per-cell options: \code{make\_tables.do}
+    \item Underlying template: \code{grc\_tex\_table\_trend} in \code{0\_programs.do}
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{Cosmetic refresh in this round}
 \begin{itemize}\setlength\itemsep{2pt}
     \item Average $\Delta$ row reads $\bar{\Delta}$
-    \item esttab's spurious blank tabular rows are stripped after the fact
-\end{itemize}
-
-\medskip
-The byte-identity check whitelists exactly these two patterns; every other byte-level diff is flagged and blocks the merge.
-
-\end{frame}
-
-% ===============================================================
-\begin{frame}{Verification holds at every layer}
-
-\begin{table}
-\footnotesize
-\begin{tabular}{l l l}
-\toprule
-Check & Scope & Result \\
-\midrule
-Static lint & call-site audit, ster-name length, magic numbers & 5/6 PASS \\
-Table byte-check & 53 reference \code{.tex} files, classified diff & 53 expected, 0 unexpected \\
-Full pipeline smoke & end-to-end Stata run, convergence, ster counts & 1{,}505 sters, exit 0 \\
-Real-mode switch & 4-test driver on \code{grc\_IDN\_cub\_c0} & bit-identical to RP6 \\
-mu-loop refactor & bit-comparison on 4 production cells & bit-identical \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\medskip
-The one static-lint failure flagged 75 leftover sters from earlier stages of the refactor in \code{RP7/output/}.
-They sit alongside the new files, do not feed anything, and will be cleaned up when the branch lands.
-
-\medskip
-Byte-check totals: 53 label-flip diffs ($\bar{\Delta}$), 54 blank-row diffs (esttab cleanup), zero unexpected.
-
-\end{frame}
-
-% ===============================================================
-\begin{frame}{How to run the pipeline (cheat sheet)}
-
-\textcolor{cktblue}{Full pipeline, nominal values}
-\begin{quote}
-\code{cd RP7/scripts \&\& stata-mp -b do 0\_master.do}
-\end{quote}
-
-\textcolor{cktblue}{Single section (re-runnable, e.g. just the main GRC regressions)}
-\begin{quote}
-\code{cd RP7/scripts \&\& stata-mp -b do 5\_GrRC.do}
-\end{quote}
-
-\textcolor{cktblue}{Tables only---regenerate every \code{.tex} from existing sters, no GMM}
-\begin{quote}
-\code{cd RP7/scripts \&\& stata-mp -b do \_smoke\_tables\_only.do}
-\end{quote}
-
-\textcolor{cktblue}{Tier 2 byte-identity check vs. the snapshot}
-\begin{quote}
-\code{python tests/tier2\_table\_diff.py}
-\end{quote}
-
-\textcolor{cktblue}{Real-values mode}: edit \code{global values "real"} in \code{0\_path\_config.do}, then re-run.
-
-\end{frame}
-
-% ===============================================================
-\begin{frame}{Where things live in \code{RP7/}}
-
-\begin{itemize}
-    \item \code{RP7/scripts/}---13 do-files; all authoritative edits live here
-    \item \code{RP7/data/}---junctioned to the shared Dropbox \code{ReplicationPackage6/data/}; raw \code{.dta} files are immutable
-    \item \code{RP7/data\_real/}---junctioned to \code{ReplicationPackage6 - real values/data/}; only consulted when \code{values=real}
-    \item \code{RP7/output/}---our reruns land here. Subdirs:
-    \begin{itemize}
-        \item \code{tables/}---72 \code{.tex} files (tracked in git)
-        \item \code{figures/}---PDF + PNG (tracked)
-        \item \code{*.ster}---estimation results (gitignored; regeneratable from code)
-    \end{itemize}
-    \item \code{tests/}---verification harnesses, including \code{tier2\_table\_diff.py} and \code{verify\_M4\_*.do}
-    \item \code{quality\_reports/specs/}, \code{docs/plans/}, \code{quality\_reports/session\_logs/}---per-decision documentation, including the spec at \code{2026-04-24\_grc-pipeline-refactor.md}
-\end{itemize}
-
-\end{frame}
-
-% ===============================================================
-\begin{frame}{Open items and handoff}
-
-\begin{itemize}
-    \item PR \#3 is open against \code{main}: 82 commits, 245 files changed
-    \item Tier 2 reference snapshot covers 53 of the 72 tables the pipeline now produces.
-    The 12 hukou, 1 IDN nonag, and 6 heterogeneity tables sit outside the snapshot---a pre-existing gap, not a refactor regression.
-    Worth refreshing post-merge if we want a tighter Tier 2 net
-    \item The paper-side \code{\textbackslash GRCvaluesfx} toggle macro is deferred.
-    It will go into Overleaf \code{preamble.tex} once we decide whether real-values is a replacement for the nominal-values tables, or a robustness check that lives alongside them
-    \item When this branch lands on \code{main}, copy \code{RP7/\{scripts,output\}/} into Dropbox as \code{ReplicationPackage7/}.
-    The Dropbox-side handoff is the only piece that touches the team's shared workspace
+    \item Spurious blank rows from \code{esttab} stripped after output
 \end{itemize}
 
 \end{frame}
@@ -301,17 +199,15 @@ Byte-check totals: 53 label-flip diffs ($\bar{\Delta}$), 54 blank-row diffs (est
 % ===============================================================
 \begin{frame}{What this buys us}
 
-\begin{itemize}
-    \item One source of truth for the regression code (no more script fork to sync)
-    \item One source of truth for the table envelope (in the paper preamble, where it belongs)
-    \item Ster filenames a coauthor can read, type, and grep for
-    \item A Tier 2 byte-identity check that tells us within seconds whether a code change altered a published number
-    \item Smokes that resume after a hardware hiccup, with timing data per fit
+\begin{itemize}\setlength\itemsep{4pt}
+    \item One source of truth for the regression code
+    \item One source of truth for the table caption, label, and notes (in the paper preamble)
+    \item Ster filenames you can read, type, and look up
+    \item Same published numbers as before
 \end{itemize}
 
 \bigskip
-The published numbers are unchanged.
-The pipeline is now small enough to hold in one head, and audited well enough that any further change leaves a clear paper trail.
+The pipeline is now small enough to hold in one head.
 
 \end{frame}
 
