@@ -17,6 +17,10 @@
 clear all
 set more off
 set varabbrev off
+* Suppress graphics --- summclust draws an internal leverage plot
+* (summclust_temp_pb.gph) which on Windows batch mode triggers a
+* "Stata finished"-style popup that exit, STATA clear does not suppress.
+set graphics off
 
 * Path setup mirroring 0_master.do for user maand
 if "`c(username)'" == "maand" {
@@ -30,7 +34,17 @@ quietly {
 
 cd "$logs"
 capture log close
-log using probe_idn_setup_run.log, replace text
+
+* Timestamped log name so successive probe runs do not overwrite each other.
+* c(current_date) is "DD MMM YYYY"; reformat to YYYYMMDD; c(current_time) is "HH:MM:SS".
+local _d  "`c(current_date)'"
+local _dd : word 1 of `_d'
+local _mm : word 2 of `_d'
+local _yy : word 3 of `_d'
+local _t  "`c(current_time)'"
+local _ts = subinstr("`_t'", ":", "", .)
+local _stamp = "`_yy'`_mm'`_dd'_`_ts'"
+log using "probe_idn_setup_run_`_stamp'.log", replace text
 
 capture noisily {
     di as txt _n "=== Step 0.5 probe: IDN consumption recoded-design setup ==="
@@ -138,30 +152,62 @@ capture noisily {
         quietly count if _g
         di as txt "Probe subsample unique pids: " r(N)
 
-        di as txt _n "--- summclust syntax probe ---"
+        * Diagnose which switcher trajectories actually appear in this subsample
+        * and drop z_s columns whose underlying switcher_s_choice is uniformly zero
+        * --- those columns trip "subscript invalid" deep inside summclust.
+        di as txt _n "--- subsample trajectory composition ---"
+        quietly levelsof trajectory, local(traj_in_sample)
+        di as txt "Trajectories present in J=500 subsample: `traj_in_sample'"
+        local zvars_active
+        foreach s of numlist $switchers {
+            if `s' != `base' {
+                quietly sum switcher_`s'_choice
+                if r(sd) > 0 & r(sd) < . {
+                    local zvars_active `zvars_active' z_`s'
+                }
+            }
+        }
+        local n_active : word count `zvars_active'
+        di as txt "Active z's (positive variance in subsample): `n_active' of `n_z'"
+        di as txt "`zvars_active'"
+
+        di as txt _n "--- summclust syntax probe: fevar(trajectory) ---"
+        di as txt "(absorb(trajectory) errored rc=198 in the prior run because"
+        di as txt " pid varies within trajectory; fevar() handles arbitrary FE.)"
         timer clear 1
         timer on 1
-        capture noisily summclust lndepvar `zvars' `periodFE',  ///
-            cluster(pid)                                        ///
-            absorb(trajectory)                                  ///
-            jackknife
-        local sc_rc = _rc
+        capture noisily summclust lndepvar `zvars_active' `periodFE',  ///
+            cluster(pid)                                                ///
+            fevar(trajectory)                                           ///
+            jackknife                                                   ///
+            nograph
+        local sc_rc_fevar = _rc
         timer off 1
         timer list 1
-        di as txt _n "summclust rc = `sc_rc'"
-        if `sc_rc' != 0 {
-            di as err "summclust failed; inspect log for syntax issues"
-            di as txt "Trying without absorb()..."
-            timer clear 2
-            timer on 2
-            capture noisily summclust lndepvar `zvars' `periodFE' i.trajectory,   ///
-                cluster(pid)                                                     ///
-                jackknife
-            local sc_rc2 = _rc
-            timer off 2
-            timer list 2
-            di as txt "summclust (no-absorb) rc = `sc_rc2'"
-        }
+        di as txt _n "summclust fevar(trajectory) rc = `sc_rc_fevar'"
+
+        di as txt _n "--- summclust syntax probe: manual trajectory dummies ---"
+        quietly tab trajectory, gen(trajdum_)
+        * Drop the base dummy to avoid the dummy trap; base is `base'.
+        capture drop trajdum_`base'
+        unab trajdums : trajdum_*
+        di as txt "Manual trajectory dummies (base trajdum_`base' dropped): `trajdums'"
+        timer clear 2
+        timer on 2
+        capture noisily summclust lndepvar `zvars_active' `trajdums' `periodFE',   ///
+            cluster(pid)                                                            ///
+            jackknife                                                               ///
+            nograph
+        local sc_rc_manual = _rc
+        timer off 2
+        timer list 2
+        di as txt _n "summclust manual-dummies rc = `sc_rc_manual'"
+
+        di as txt _n "--- syntax probe summary ---"
+        di as txt "fevar(trajectory): rc=`sc_rc_fevar'"
+        di as txt "manual trajdum_*:  rc=`sc_rc_manual'"
+        di as txt "(both rc=0 means either syntax works; pick whichever is faster"
+        di as txt " or scales cleaner in the J in {5000,10000,20000} sweep.)"
     restore
 
     di as txt _n "=== Probe complete ==="
