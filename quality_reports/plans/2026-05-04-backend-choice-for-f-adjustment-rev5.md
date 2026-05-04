@@ -84,6 +84,11 @@ Reformulation (4) sidesteps FE recovery entirely.
 Its cost is one refit per grid point.
 The CR3 step has to be redone per $\phi$ because $H_{jj}(\phi)$ depends on $\phi$ through the recoded $z$'s; the per-grid CR3 rebuild is the dominant cost.
 
+Two diagnostic guards on the per-grid recoding.
+First, log the condition number of the $z$-block of the design at each grid $\phi_0$; for $\phi_0$ values where the LCA restriction is approximately satisfied in-sample, $z_{is}^{(\phi_0)}$ may be near-collinear with trajectory FE and the per-$\phi$ CR3 build can become numerically unstable.
+A condition number above $10^{12}$ at any grid point flags that point in the output and triggers the contiguous-acceptance fallback rule from the broader F-adjustment plan rev 3 (locked decision 4) when handling disjoint CIs in the inverted test.
+Second, follow that same locked decision when the per-grid p-value series has more than one sign change in $(p - \alpha)$ for a given (country, spec, parameter) cell: fall back to a single-$\widehat\nu$ AHZ critical value evaluated at the OLS point estimate of $\phi$ for that cell.
+
 ## Recoded-design construction, pinned
 
 For first-implementer level specificity, four rules govern the recoded design.
@@ -143,9 +148,11 @@ Path D inverts the wild cluster bootstrap using `boottest`'s native root-finding
 Specification, pinned: WCU31 inversion via `boottest, gridpoints(0)` with `weighttype(rademacher)`, $B = 9999$ as the production default ($B = 999$ for development), root-finder tolerance $10^{-4}$ on $\phi$.
 The WCU31 choice follows MacKinnon (2025) Section 4 recommendations for moderate-to-large $G$ where the unrestricted estimator's residuals dominate the small-sample noise pattern.
 
-If Step 0.6 fails---that is, `boottest, gridpoints(0)` does not pass both parts of the success criterion---path D resolves to one of two named fallbacks.
-First, path D-Julia: invoke `WildBootTests.jl` as a subprocess from Stata or R, which supports multi-parameter joint inversion natively per its 2024 documentation; budget is 1--2 days for the subprocess wrapper (the wider band reflects Windows-side Stata-to-Julia marshaling overhead, which is non-trivial in this stack and may extend the day's work) plus per-cell wall comparable to a single bootstrap pass.
-Second, path D-grid: WCR with grid-point re-bootstrapping in Stata `boottest`, at roughly $30\times$ the per-cell cost of the one-pass variant; this is the rev 3 cost arithmetic and lands per-cell wall back at 5--15 minutes.
+If Step 0.6 fails---that is, `boottest, gridpoints(0)` does not pass both parts of the success criterion---path D resolves to D-grid: WCR with grid-point re-bootstrapping in Stata `boottest`, at roughly $30\times$ the per-cell cost of the one-pass variant.
+This is the rev 3 cost arithmetic and lands per-cell wall back at 5--15 minutes; 60 cells in 5--15 hours total at single-thread, or 1--4 hours with 4-way parallelism via separate Stata sessions.
+
+A `WildBootTests.jl` Julia subprocess path exists in the literature and supports multi-parameter joint inversion natively, but the Stata-to-Julia marshaling on Windows is out of scope for this work; the implementation cost is not justified by the marginal speedup over D-grid.
+If a referee specifically requests one-pass WCU and Step 0.6 has failed, that becomes a separate scoped task.
 
 The published table reports CR3 + AHZ-Satterthwaite as the headline above the soft trigger and WCU bootstrap as a robustness check; below the soft trigger the WCU row gains emphasis but CR3 stays in the table with a caveat.
 
@@ -204,9 +211,8 @@ The "per-fit wall" column is the IDN-scale wall for one $(X, \phi_0)$ vcovCR/jac
 | A. `reg_sandwich, absorb` + reform (4) | 2--3 h | unknown | unknown (kill criterion) | 30 $\times$ per-fit | depends | clubSandwich at $J=1500$ |
 | B. `feols` + `vcovCR` + reform (4) | 2 h | unknown | unknown (kill criterion) | 30 $\times$ per-fit | depends | clubSandwich at $J=1500$ |
 | C. From-scratch CR2 (held in reserve) | 1--2 days | $\sim 30$ s | $\sim 1$ min | $\sim 10$--30 min | 2.5--7.5 h | clubSandwich at $J=1500$ |
-| D-onepass. WCU31 inversion via `boottest, gridpoints(0)` ($B=9999$) | 0.5 day | $<$ 1 min | seconds--minutes | seconds--minutes | $<$ 30 min | published method (conditional on Step 0.6 pass) |
-| D-Julia. WCU31 via `WildBootTests.jl` subprocess | 1--2 days (Stata-to-Julia marshaling on Windows) | $<$ 1 min | seconds--minutes | seconds--minutes | $<$ 30 min + subprocess overhead | published method (Step 0.6 fail fallback) |
-| D-grid. WCR with grid-point re-bootstrapping ($B=9999$) | 0.5 day | $<$ 1 min | seconds--minutes | 5--15 min | 5--15 h | published method (Step 0.6 fail fallback, $\sim 30\times$ D-onepass) |
+| D-onepass. WCU31 inversion via `boottest, gridpoints(0)` ($B=9999$) | 0.5 day | $<$ 1 min | seconds--minutes | seconds--minutes | $<$ 30 min | published method (conditional on Step 0.6 pass; recent `boottest` documentation suggests one-pass CI inversion is for scalar nulls, so this branch may not survive Step 0.6) |
+| D-grid. WCR with grid-point re-bootstrapping ($B=9999$) | 0.5 day | $<$ 1 min | seconds--minutes | 5--15 min | 5--15 h | published method (Step 0.6 fail fallback, $\sim 30\times$ D-onepass; the realistic D variant absent a Step 0.6 surprise) |
 | F. Path-F candidate | 1--2 h F.0 + 2--3 h F.1 | unknown | unknown | TBD | TBD | candidate-dependent |
 | G. `summclust, vce(jackknife)` and `vce(jackknife, mse)` | hours (use as-is) | $\sim 10$ s | $\sim 30$ s | $\sim 10$--30 min | 2.5--7.5 h | self at $J=1500$, $10^{-6}$ relative |
 
@@ -221,10 +227,16 @@ The work breaks into a strictly sequential head followed by a parallel empirical
 
 Step 0 (30 min). Verify the IDN data-prep pipeline runs end-to-end on `lca-inversion`'s RP7.
 
-Step 0.5 (30--60 min). Run `summclust` on TZA full and on IDN unbalanced.
-Use `summclust y z_* controls, cluster(pid)` (or the equivalent `summclust` invocation) on the recoded-design covs_trend spec.
+Step 0.5 (60--90 min). Run `summclust` on TZA full and on IDN unbalanced, with a scaling pre-flight first.
+
+Pre-flight scaling sweep (15--20 min): run `summclust` on the IDN unbalanced cluster pattern at $J \in \{5{,}000, 10{,}000, 20{,}000\}$ subsamples and time + memory-profile each.
+MNW (2023) advertise `summclust`'s computational efficiency for the "large clusters" regime (large $\bar{n}_j$); IDN unbalanced is the opposite case ($J \approx 30{,}000$, $\bar{n}_j \approx 3$), so MNW's scalability claim does not transfer automatically.
+The sweep gives a scaling curve we can extrapolate to $J = 30{,}000$ before committing to the full run.
+If the extrapolation predicts $> 30$ minutes wall or $> 8$ GB peak at $J = 30{,}000$, kick off the from-scratch CR3 prototype in parallel with the full IDN run rather than as a downstream fallback.
+
+Full run (30--60 min): use `summclust y z_* controls, cluster(pid)` on the recoded-design covs_trend spec at TZA full and IDN unbalanced full.
 Report $G^*$, partial leverage, influence, and cluster-size moments.
-This step also verifies that `summclust` itself scales to IDN unbalanced; if `summclust` exceeds 8 GB peak memory or 30 minutes wall, log peak memory and the dominant `summclust` operation, then activate the from-scratch CR3 fallback in path G with a 1-day budget and acceptance criterion of $10^{-6}$ relative agreement against `summclust` at $J = 1500$.
+If `summclust` exceeds the 8 GB peak memory or 30 minutes wall budget at IDN, log peak memory and the dominant operation, then activate the from-scratch CR3 fallback (1-day budget; acceptance: $10^{-6}$ relative agreement against `summclust` at $J = 1500$).
 
 Step 0.5 decision rule (soft trigger, MacKinnon 2025): if $G^*$ at IDN unbalanced lands in the published empirical concern range $\sim 6$--$10$ or below, the rev 5 published table emphasizes the WCU row and reports CR3 with a small-$G^*$ caveat; CR3 stays in the table.
 Above $\sim 10$, report CR3 + WCU as the standard joint pair without caveat.
@@ -235,12 +247,13 @@ The test confirms whether one-pass inversion over scalar $\phi$ is feasible for 
 Success criterion (two parts, both required): (a) `boottest` returns a CI for $\phi$ from a single bootstrap pass on the joint $q$-dim null, with finite endpoints and no convergence warnings; (b) the returned CI corresponds to inversion of the joint Wald statistic, verified by checking that the one-step `boottest` p-value at $\phi_0 = $ each CI endpoint equals $\alpha = 0.05$ to within $10^{-3}$, AND that the test statistic at $\phi_0 = \hat\phi_{\text{point}}$ matches a separately-computed $q$-dim joint Wald.
 The two-part criterion guards against the silent failure mode where `boottest` runs to completion but treats the test as a per-coefficient scalar inversion and returns a non-joint CI that looks plausible but is wrong.
 Failure modes: `boottest` rejects the multi-parameter null specification with a syntax error; `boottest` accepts but the root-finder fails to bracket; `boottest` runs but the joint-Wald cross-check at the CI endpoints disagrees with $\alpha = 0.05$ (the silent per-coefficient case).
-On failure, path D resolves to D-Julia (`WildBootTests.jl` subprocess, preferred) or D-grid (WCR with grid-point re-bootstrapping at roughly $30\times$ cost), and the cost-comparison table's path-D rows pick up the relevant conditional notes.
+On failure, path D resolves to D-grid (WCR with grid-point re-bootstrapping at roughly $30\times$ cost); D-Julia via `WildBootTests.jl` exists in the literature but is out of scope for this work.
 
-Step 1 (1--2 h). Reproduce the clubSandwich OOM under controlled conditions.
+Step 1 (1--2 h, parallelizable with Step 0.5). Reproduce the clubSandwich OOM under controlled conditions.
 Re-run the failed $J = 11{,}012$ TZA design with `tracemalloc` (Python) or `tracemem()` (R) instrumented from process start.
 Verify the profiler is available before committing the budget; flag if the R or Python environment requires a reinstall.
 Success criterion: a `tracemalloc` snapshot at peak with the top 10 allocation sites identified.
+Step 1 has no input-output dependency on Step 0.5 or Step 0.6, so the two can run on separate sessions and finish faster end-to-end.
 
 Step 2 (1--2 h). Path-F literature scan (F.0).
 Niccodemi-Alessie, clubSandwich GitHub dev branch.
