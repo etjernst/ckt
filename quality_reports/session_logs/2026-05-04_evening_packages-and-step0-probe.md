@@ -211,3 +211,42 @@ Read [`quality_reports/session_logs/2026-05-04_evening_packages-and-step0-probe.
 Open thread: rev 5 plan is one variable-name patch and one summclust-syntax patch away from being executable for the IDN scaling sweep.
 Next concrete action: dismiss any leftover Stata popups on the desktop, then patch rev 5 and the probe do-file with `fevar(trajectory)` (or manual dummy expansion---test which one parses on $J = 500$ first, in 30 seconds), then run the scaling sweep at $J \in \{5{,}000, 10{,}000, 20{,}000\}$ writing all artifacts to `explorations/python-grc/stata/step0_5_summclust_preflight/output/`.
 State to know: $\hat\phi_{\text{point}} = -0.30948$ (IDN consumption covs_trend, extracted via `_b[/phi]`); base $\underline{d}_0 = 2$ confirmed; $J = 29{,}715$ unique pids in IDN unb post-singleton; 29 recoded $z$'s in the joint null; `boottest 4.5.2` and `summclust` are installed and `which`-able; $\widehat\phi$ for TZA covs_trend is the next extraction needed (same `_b[/phi]` pattern from `grc_TZA_urban_covs_trend.ster`) for Step 0.6.
+
+## Post-/clear continuation (same evening, after wrap-up)
+
+Picked up where the wrap-up addendum left off.
+Three rev 5 patches applied and committed at `956b629`: variable mapping (`switcher_{s}_choice` / `switcher_{s}`, not the `beta_s_` / `alpha_d_` from an earlier rev), pinned `summclust` syntax with `fevar(trajectory)` (with a manual `trajdum_*` fallback documented), and the $J = 29{,}715$ post-singleton-drop count replacing the $\approx 30{,}000$ estimate in three places.
+
+Probe iterated three times to lock in popup-free, rc=0 behavior at $J = 500$.
+Run 1 ([`probe_idn_setup_run_2026May4_220522.log`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/RP7/scripts/logs/probe_idn_setup_run_2026May4_220522.log)): both `fevar(trajectory)` and manual `trajdum_*` parsed correctly but errored with `<istmt>: 3301 subscript invalid` deep inside `summclust`.
+Hypothesis: only 13 of 32 trajectory levels appear in the $J = 500$ subsample, so 19 of 29 `z_s` columns are uniformly zero and tripped an internal inversion.
+Run 2 confirmed: with an active-z filter (`r(sd) > 0`) that drops zero-variance columns, both syntaxes returned rc=0; 10 of 29 z's survived the filter at $J = 500$.
+Timing at $J = 500$: `fevar(trajectory)` 0.95 s, manual `trajdum_*` 2.81 s --- `fevar` is 3x faster at the probe scale and is the production choice.
+But run 2 still produced a Stata "completion" popup despite reaching `exit, STATA clear` cleanly.
+Adding `nograph` to `summclust` killed the leverage figure but the popup persisted in run 3.
+
+Popup root cause identified.
+The user read it before dismissing: "probe...do has completed.
+Output has been saved..."---the standard Stata batch-mode Windows completion dialog.
+The convention's claim that `exit, STATA clear` suppresses this dialog is wrong on Stata 18/19 Windows.
+The actual fix is the invocation flag: `stata-mp -e do file.do` (execute mode) instead of `stata-mp -b do file.do` (batch mode).
+`-e` runs scripted-batch identically to `-b` but exits without the GUI dialog.
+Verified on the third probe run.
+[`~/.claude/rules/stata-conventions.md`](file:///C:/Users/maand/.claude/rules/stata-conventions.md) updated with the corrected rule and a section on summclust's `nograph` option.
+
+Probe committed at `158d258` with all three fixes (`fevar`, active-z filter, `nograph`) plus timestamped log naming so successive probe runs do not overwrite each other.
+
+Sweep do-file built at [`explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust.do).
+Loops over $J \in \{5{,}000, 10{,}000, 20{,}000\}$, samples J unique pids per cell, applies the active-z filter per cell, times `summclust ..., fevar(trajectory) jackknife nograph` via `timer`, snapshots memory before and after, saves a `.ster` per cell and a per-cell row to a CSV.
+Output goes to `explorations/python-grc/stata/step0_5_summclust_preflight/output/` with timestamped filenames.
+
+Sweep launched at 22:40 via `stata-mp -e` and is running at the time of this log.
+$J = 5{,}000$ completed in 480 s (8 min, rc=0, 28 active z's).
+$J = 10{,}000$ is in progress (28 active z's, $N_{\text{obs}} = 31{,}397$).
+At linear scaling the full sweep is ~30 min wall; at the worse super-linear scaling `summclust` likely follows on unbalanced clusters, the $J = 29{,}715$ extrapolation could exceed the 30-min budget.
+Per rev 5 Step 0.5 decision rule, kick off the from-scratch CR3 prototype in parallel if the extrapolation is over.
+
+Commits this continuation session.
+
+- `956b629` Rev 5 patches from evening session probe findings.
+- `158d258` Probe: fevar(trajectory), nograph, active-z filter, timestamped log.
