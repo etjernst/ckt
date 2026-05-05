@@ -106,3 +106,107 @@ Read this log and the sweep CSVs in [`output/`](file:///C:/git/ckt/.claude/workt
 Wait for the user's call on the stability test (kill now vs. finish 5 replicates), then act accordingly.
 The R comparison plan does not run without explicit user greenlight and a memory-monitored host.
 Step 0.6 (boottest smoke on TZA $J = 1500$) remains TODO and is the next item once the noise question is resolved.
+
+## Wrap-up addendum (pre-/clear)
+
+User called `/wrap-up` at the end of the session.
+This addendum captures the final state of every loose thread.
+
+### Final actions
+
+User decided to kill the in-flight stability test rather than wait for all 5 replicates.
+Why: replicate 1 already came back at 1,167 s vs the 480 s baseline, a 2.4x ratio that establishes "the system is currently noise-dominated" without needing the full distribution.
+Replicate 1 result preserved at [`output/stability_J5000_2026May5_110559.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/output/stability_J5000_2026May5_110559.csv).
+The stability test do-file is ready to re-run cold once the laptop is otherwise idle; same invocation, ~40 min wall budget at the clean baseline.
+
+Bundled commit at `2ef9cce` covers the sweep tooling, no-jack sweep, stability test, R comparison plan, today's session log, and the partial sweep results.
+Twelve files, 897 insertions; `.log` files excluded by `.gitignore` but reproducible from the do-files.
+
+### Decisions, with the why (final tally for this session)
+
+Decision: `stata-mp -e do file.do` is the canonical batch-mode invocation on Windows; `-b` is wrong.
+Why: the `-e` flag suppresses the Windows completion popup that no in-script directive (`exit, STATA clear`, `clear all`, etc.) can suppress on Stata 18/19; verified empirically across multiple runs after the `-b` invocation popped a dialog every time.
+Convention rule at [`~/.claude/rules/stata-conventions.md`](file:///C:/Users/maand/.claude/rules/stata-conventions.md) updated.
+
+Decision: `summclust ..., nograph` is mandatory in batch invocations.
+Why: `set graphics off` is reset internally by `summclust` and the leverage figure pops a graph window on Windows.
+Documented in the same convention rule update.
+
+Decision: kill the $J = 20{,}000$ Stata cell mid-run.
+Why: the $J^4$ scaling implied 36 hours wall on this desktop and the user's reframing (server compute is acceptable) made the smoother extrapolation curve a nice-to-have rather than load-bearing for the production decision.
+
+Decision: pause the no-jackknife wall comparison; do not draw conclusions until the noise problem is resolved.
+Why: 480 vs 613 s (with-jack vs no-jack) is in the wrong mechanical direction (no-jack should be faster, not slower), and the stability test's 1,167 s replicate showed run-to-run variance dwarfs the difference.
+
+Decision: write the R `summclust` comparison as a plan, do NOT run it.
+Why: the prior R `clubSandwich` attempt at TZA scale crashed the workstation with a 13 GB peak-RSS OOM; running R again on the main machine without an external memory monitor and on a dedicated host is unwise.
+
+Decision: defer the from-scratch CR3 prototype.
+Why: the user explicitly asked to defer; the original "Stata too slow" justification weakens once server-class compute is on the table.
+
+### Approaches rejected
+
+Approach: bake `nograph` and `set graphics off` together for double belt-and-suspenders.
+Why dropped: `set graphics off` does nothing useful and adds noise; `nograph` alone is sufficient.
+
+Approach: drop `jackknife` for a 2x speedup.
+Why dropped: empirical no-jack run came in 28% LONGER, not faster, and the J=5000 stability test showed the comparison was noise-dominated.
+Algorithmically `jackknife` adds CV3J on top of CV3 with shared per-cluster machinery; the marginal cost is small.
+
+Approach: run R `summclust::vcov_CR3J.fixest` opportunistically while Stata sweeps run.
+Why dropped: prior R crash on the same machine; need external memory monitor and ideally a different host.
+
+Approach: trust the with-vs-no-jack 480/613 difference and conclude `jackknife` is essentially free.
+Why dropped: the 1,167 s stability replicate at the same $J = 5{,}000$ blew the comparison out of the water.
+
+### Open items and blockers
+
+Stability re-run.
+[`stability_test_J5000.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/stability_test_J5000.do) needs a clean-conditions run; ~40 min wall, 5 reps, CV across reps is the headline number.
+Below 10% means we trust the wall-time comparisons; above means we need a different host (work laptop or MQ HPC).
+
+Sweep re-run after stability is resolved.
+Both [`sweep_idn_summclust.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust.do) and [`sweep_idn_summclust_nojack.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust_nojack.do) need a clean re-run for trustworthy numbers; the existing `2ef9cce` results are anchor data only.
+
+R comparison execution.
+Plan at [`quality_reports/plans/2026-05-05-r-summclust-comparison-plan.md`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-05-r-summclust-comparison-plan.md) is ready; greenlight requires a host decision and the PowerShell memory monitor to be in place.
+
+Server / work-laptop compute scoping.
+User to check (a) MQ HPC access protocol, R version, package install policy, RAM ceiling per job; (b) work laptop's RAM, OS, whether `stata-mp` is licensed there.
+Whichever comes first becomes the host for the clean re-runs and the R comparison.
+
+Step 0.6 (boottest gridpoints(0) smoke on TZA $J = 1500$) is still TODO from the rev 5 plan; same `_b[/phi]` extraction pattern from `grc_TZA_urban_covs_trend.ster`.
+
+### Stale state to be aware of
+
+Two old monitor processes (`boyih0lig` no-jack sweep, `bxzixv18l` stability test) timed out at the end of the session and are no-ops; their underlying Stata processes were killed by `kill 13272` and `kill 20363` respectively.
+No stranded `StataMP-64.exe` processes verified via `ps -ef | grep stata`.
+
+The two sweep CSVs in `output/` (`summclust_scaling_sweep_2026May4_224022.csv` and `summclust_scaling_sweep_nojack_2026May5_104928.csv`) are committed and represent the noise-contaminated baseline.
+The clean re-runs will produce new timestamped CSVs alongside; do not delete or overwrite the existing ones.
+
+### If you resume
+
+Read this log first.
+Next concrete actions in order.
+
+1. (5 min, manual) User confirms when laptop is otherwise idle.
+2. (40 min wall) Re-run [`stability_test_J5000.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/stability_test_J5000.do) via `cd explorations/python-grc/stata/step0_5_summclust_preflight && stata-mp -e do stability_test_J5000.do`; check the resulting `stability_J5000_<stamp>.csv` for CV across the 5 replicates.
+3. (decision branch) If CV < 10%: re-run both sweep variants ([`sweep_idn_summclust.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust.do) and [`sweep_idn_summclust_nojack.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/sweep_idn_summclust_nojack.do)) for the trustworthy with-vs-no-jack comparison.
+If CV >= 10%: defer to a different host before any further benchmarking.
+4. (15--30 min) Step 0.6 boottest smoke on TZA $J = 1500$ once noise is resolved; extracts $\hat\phi_{\text{point}}$ for TZA via `_b[/phi]` from `grc_TZA_urban_covs_trend.ster`.
+5. (deferred) R comparison if step 3 leaves Stata as the production choice and the host scoping work is done.
+
+Cached state.
+$\hat\phi_{\text{point}} = -0.30948$ for IDN consumption covs_trend (extract via `_b[/phi]`).
+Base trajectory $\underline{d}_0 = 2$ for IDN.
+$J = 29{,}715$ unique pids in IDN unb post-singleton.
+29 recoded $z$'s in the joint null; 28 active in the $J = 5{,}000$ subsample.
+`boottest 4.5.2` and `summclust` are installed and `which`-able.
+TZA $\hat\phi$ extraction is the same `_b[/phi]` pattern from `grc_TZA_urban_covs_trend.ster`.
+
+Commits this session bundle.
+
+- `956b629` Rev 5 patches from evening session probe findings.
+- `158d258` Probe: fevar(trajectory), nograph, active-z filter, timestamped log.
+- `2ef9cce` Step 0.5 summclust sweep tooling and noise investigation.
