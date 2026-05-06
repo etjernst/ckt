@@ -1,9 +1,10 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: May, 2024
+Version: May 2026
 This code:
-    - Saves processed datasets
+    - Calls data_setup for each (country x choice x depvar x balance) cell
+      and saves processed datasets to $dirdata/processed/ for downstream use
 *******************************************************************************/
 
 *******************************************************************************

@@ -1,0 +1,9 @@
+M4 (Phase 4) values(nominal|real) switch verification
+Run: 12:52:44
+
+T1 config:       1
+T2 real fit:     1   (N=16391, Delta_avg=-1.375027821370925e-01)
+T3 nominal:      1   (N=16391, Delta_avg=1.538832216497126e-01, mreldif b=0)
+T4 real != nom:  1   (mreldif=.9313816279031929, max|dB|=5.585870917967911e+00)
+
+Pre-M4 reference: N=16391, Delta_avg=1.538832216497126e-01

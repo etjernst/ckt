@@ -15,7 +15,7 @@
 ## Project identity
 
 - **Paper:** "Selection and Heterogeneity in the Returns to Migration"
-- **Authors:** Cenci, Kleemans, Tjernström
+- **Authors:** Cenci, Kleemans, Tjernström. Cenci and Kleemans do not use git; the user copies `RP7/{scripts,output}/` into Dropbox as `ReplicationPackage7/` when ready to share. Coauthor-facing artifacts (slides, READMEs in the replication package) must never reference git, commits, branches, or PRs.
 - **Description:** Estimates heterogeneous returns to rural-urban migration using a generalized Roy model with panel data from China (CFPS), Indonesia (IFLS), and Tanzania (TZNPS). Reconciles divergent estimates in the literature by showing that standard panel methods (OLS, FE) mask substantial heterogeneity in returns across migration trajectories.
 - **Identification:** Correlated random coefficient (CRC) model cast as a group random coefficient (GRC) model following Suri (2011) and Tjernström (2023). Workers have location-specific skills ($\theta_i^U$, $\theta_i^R$); comparative advantage ($\theta_i^U - \theta_i^R$) drives both sorting and heterogeneous returns. A linear comparative advantage (LCA) restriction ($\Delta_i = \beta + \phi\theta_i$) allows extrapolation from switchers to non-switchers. Estimated via GMM; overidentification tested with Hansen's J-test.
 - **Key estimand:** Trajectory-specific returns to urban location ($\Delta_{\underline{d}}$) for switcher subpopulations, plus extrapolated returns for never-migrants. The slope parameter $\phi$ measures whether migration is "pro-poor" ($\phi < 0$: those with lowest rural consumption gain most) or "pro-rich" ($\phi > 0$).
@@ -38,7 +38,7 @@
 cd RP7/scripts && stata-mp -b do 0_master.do
 
 # Stata (run single do-file; $dir is set in 0_master.do per c(username))
-cd RP7/scripts && stata-mp -b do 5_GrRC.do
+cd RP7/scripts && stata-mp -b do 4_GrRC.do
 
 # Python
 python scripts/python/analysis.py
@@ -52,9 +52,10 @@ scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # READ-ONLY view into coa
 data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/ (gitignored)
 output/  -> Dropbox/.../ReplicationPackage6/output/     # coauthor's .ster, tables/, figures/ (gitignored)
 
-RP7/                # local working copy (tracked in git) --- edit here, not in the junctions
+RP7/                # local working copy (tracked in git); edit here, not in the junctions
   scripts/          # real copy of RP6 scripts as of 2026-04-24. Our edits live here.
-  data/ -> Dropbox/.../ReplicationPackage6/data/   # junctioned; raw data stays shared (immutable)
+  data/      -> Dropbox/.../ReplicationPackage6/data/                # junctioned; nominal-values data
+  data_real/ -> Dropbox/.../ReplicationPackage6 - real values/data/  # junctioned; deflated-values data (M4)
   output/           # fresh empty dir; our reruns land here. tables/ and figures/ tracked; .ster ignored.
 
 docs/               # specs, plans, session_logs, reviews
@@ -77,7 +78,7 @@ Junctions are Windows directory junctions created with `cmd /c mklink /J`.
   - `initial_values` -- sets initial values for GRC optimization
   - `grc_tex_table` -- formats GRC results into LaTeX tables
   - `heterogeneity_plots` -- generates heterogeneity figures
-- Scripts 1--16 run sequentially: data processing, summary stats, OLS, heterogeneity plots, GRC regressions (main, non-ag, hukou, experience, birth controls), heterogeneity tables.
+- Scripts 1--11 run sequentially: data processing, summary stats, OLS, GRC regressions (main, non-ag, hukou-OLS, hukou-GRC), learning, GRC extras (experience, birth dispatcher), table assembly, figure assembly.
 
 ## Notation and key parameters
 
@@ -94,7 +95,6 @@ Junctions are Windows directory junctions created with `cmd /c mklink /J`.
 
 ## Known issues
 
-- `define_switcherpars` in `0_programs.do` is hardcoded to `base(2)`. This is wrong for income specs with IDN (base=16) and TZA (base=5). Consumption results are unaffected.
 - Hansen's J-test rejects in pooled CHN sample. Splitting by hukou status (rural-first vs urban-first) resolves rejection, suggesting institutional heterogeneity rather than model failure. Separate $\phi$ estimates needed per hukou regime.
 
 ## Sync protocol

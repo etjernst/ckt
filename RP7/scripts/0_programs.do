@@ -4,6 +4,71 @@
 * (not a problem for balanced specifications since unbalanced varis empty?)
 
 * **********************************************************************
+* Locked-in shorthand for GRC ster filenames and stored estimate names
+* ----------------------------------------------------------------------
+* Format:  grc_<country>_<spec3>_<covs2>_<sfx1>
+*
+* country: 3 chars  CHN | IDN | TZA
+*
+* spec3:   3-char positional triplet <depvar><choice><balance>
+*   cuu = consumption / urban / unbalanced  (4_GrRC.do section 1)
+*   cub = consumption / urban / balanced    (4_GrRC.do section 2)
+*   iuu = income      / urban / unbalanced  (4_GrRC.do section 3)
+*   cnu = consumption / nonag / unbalanced  (5_GrRC_NonAg.do; IDN-only)
+*
+* covs2:   2-char covariate-set abbreviation
+*   c0 = no covariates                            (was covs_0)
+*   ct = trend (time FE only)                     (was covs_trend)
+*   c1 = trend + female                           (was covs_1)
+*   c2 = trend + female + age^2                   (was covs_2)
+*   ca = trend + female + age^2 + edu + edu^2     (was covs_all)
+*   The experience-family suffixes c1/c2/c3/ca keep their meaning
+*   inside 10/11/12/13/14_*.do (different from c1/c2 in 4_GrRC.do).
+*
+* sfx1:    0--1 char post-estimation marker
+*   <empty> = main GMM result
+*   n       = Delta_never  extrapolation       (was _never)
+*   a       = Delta_always extrapolation       (was _always)
+*   d       = per-trajectory Deltas + joint    (was _delta)
+*   g       = population-weighted average      (was _avg)
+*
+* Hukou variant (7_GrRC_hukou.do):
+*   grc_<country>_<hukou>_<spec3>_<covs2>
+*   hukou:  rf | uf | ro | uo (rural_first, urban_first, rural_only,
+*                              urban_only). Compresses the prior
+*                              CHN_rural_first / CHN_urban_first form.
+*
+* Experience / birth families (now consolidated in 9_GRC_extras.do)
+* include their family token:
+*   grc_<country>_<spec3>_<family>_<covs2>
+*   family: exp | maxexp | expsh | maxexpsh | birth | nonag_exp -> exp
+*           (the IDN nonag-experience cells use cnu_exp; cross-section
+*            collisions present in the legacy 10--15 files were resolved
+*            by the M11 ster-rename pass when those files were merged
+*            into 9_GRC_extras.do.)
+*
+* Examples:
+*   grc_IDN_cuu_ca       = main fit, IDN cons/urban/unb, all covariates
+*   grc_IDN_cuu_ct_n     = Delta_never, IDN cons/urban/unb, trend-only
+*   grc_CHN_rf_cuu_c0_g  = Delta_avg, CHN rural-first hukou, cons/urban/unb, no covs
+*   grc_IDN_cuu_exp_ca_d = per-trajectory Deltas, IDN exp regressor
+*
+* Why this scheme:
+*   - Disk filenames and in-memory `estimates store` names use the
+*     same string. Drops the prior Option-B "long disk / short memory"
+*     bridge (`urban_` -> `u_`, `nonag_` -> `n_`).
+*   - Worst case: `_est_grc_CHN_uf_iuu_ca_n` = 24 chars + Stata's
+*     5-char `_est_` prefix = 29. Fits Stata's 32-char internal limit
+*     for stored-estimate matrix names.
+*   - Each section in 4_GrRC.do and 7_GrRC_hukou.do gets a unique
+*     spec3 token, so sections no longer overwrite each other on disk.
+*
+* Note: this scheme is for STER FILENAMES and STORED ESTIMATE NAMES
+* only. The .tex output filenames (e.g. GRC_IDN_consumption_urban_unb.tex)
+* keep their existing verbose form -- they are what the paper reads.
+* **********************************************************************
+
+* **********************************************************************
 * List of programs
     * copyOverleaf						copies files to Overleaf
 	* data_setup						combines below programs
@@ -29,13 +94,86 @@
 	* grc_tex_table						creates country-specific LaTeX table for GRC
 
 * **********************************************************************
+* assert_merge_clean
+* Audit-2026-04-28 M3: a small helper to validate a Stata merge against
+* an expected set of _merge values, print a one-line diagnostic showing
+* the actual breakdown, and drop _merge so it doesn't conflict downstream.
+*
+* Usage:
+*     merge 1:1 pid year using "$dirdata/foo.dta"
+*     assert_merge_clean, allow(1 3) label("hhsize merge")
+*
+*   allow()  --- list of _merge values that are OK (1=master only,
+*                2=using only, 3=matched). Defaults to "3" (must-match-all).
+*   label()  --- string for the diagnostic line. Defaults to "merge".
+*   drop_unmatched(string) --- which side(s) to drop after the check.
+*                Pass "1" to drop master-only, "2" to drop using-only,
+*                "1 2" to drop both, or "" to keep all rows. Defaults to "".
+*
+* Always drops _merge at the end so callers don't have to remember.
+* **********************************************************************
+capture program drop assert_merge_clean
+program define assert_merge_clean
+    syntax , [allow(numlist integer min=1 max=3) label(string asis) ///
+              drop_unmatched(string)]
+
+    if "`allow'" == "" {
+        local allow "3"
+    }
+    if `"`label'"' == "" {
+        local label "merge"
+    }
+
+    qui count
+    local n_total = r(N)
+    qui count if _merge == 1
+    local n_master = r(N)
+    qui count if _merge == 2
+    local n_using = r(N)
+    qui count if _merge == 3
+    local n_matched = r(N)
+
+    di as text "[`label'] _merge breakdown: master-only=`n_master', using-only=`n_using', matched=`n_matched' (total `n_total')"
+
+    foreach v of numlist 1 2 3 {
+        local in_allow = strpos(" `allow' ", " `v' ")
+        if !`in_allow' {
+            local n = cond(`v'==1, `n_master', cond(`v'==2, `n_using', `n_matched'))
+            if `n' > 0 {
+                di as error "[`label'] FAIL: _merge==`v' has `n' rows but is not in allow(`allow')"
+                exit 459
+            }
+        }
+    }
+
+    if "`drop_unmatched'" != "" {
+        foreach v of numlist `drop_unmatched' {
+            qui count if _merge == `v'
+            if r(N) > 0 {
+                di as text "[`label'] dropping `r(N)' rows with _merge==`v'"
+                qui drop if _merge == `v'
+            }
+        }
+    }
+
+    drop _merge
+end
+
+* **********************************************************************
+* copyOverleaf
+* **********************************************************************
 capture program drop copyOverleaf
 program define copyOverleaf
 	syntax anything(name=fileName1), SUBdir(string asis)
+
+	* Skip silently if no Overleaf path was set for this user.
+	if ("$overleaf" == "") {
+		exit
+	}
+
 	* Make all slashes forward slashes
-	
 	local 	betterFileName1 = subinstr(`fileName1', "\", "/", .)
-	
+
 	local 	destDir = "$overleaf/`subdir'"
 
 * Make destination filepath
@@ -133,7 +271,7 @@ end
 * **********************************************************************
 * Open data
 * **********************************************************************
-cap program drop use_data
+capture program drop use_data
 program define use_data
     args country
     use "$dirdata/countries/`country'", clear
@@ -142,7 +280,7 @@ end
 * **********************************************************************
 * Set choice variable
 * **********************************************************************
-cap program drop handle_choice
+capture program drop handle_choice
 program define handle_choice
     args choice
     clonevar choice = `choice'
@@ -155,7 +293,7 @@ end
 * **********************************************************************
 * Set dependent variable
 * **********************************************************************
-cap program drop handle_depvar
+capture program drop handle_depvar
 program define handle_depvar
     args depvar
     clonevar depvar = `depvar'
@@ -173,7 +311,7 @@ end
 * **********************************************************************
 * Declare panel, impose balance if balance = bal
 * **********************************************************************
-cap program drop handle_balance
+capture program drop handle_balance
 program define handle_balance
     args balance
     xtset pid period
@@ -192,7 +330,7 @@ end
 * **********************************************************************
 * Handle trajectory groups
 * **********************************************************************
-cap program drop handle_trajectory_groups
+capture program drop handle_trajectory_groups
 program define handle_trajectory_groups
   preserve
 	* Keep relevant observations and variables
@@ -229,7 +367,8 @@ program define handle_trajectory_groups
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj trajectory
@@ -254,7 +393,7 @@ end
 * **********************************************************************
 * Handle trajectory groups with at least 2 waves
 * **********************************************************************
-cap program drop handle_trajectory_groups_2waves
+capture program drop handle_trajectory_groups_2waves
 program define handle_trajectory_groups_2waves
   preserve
 	* Keep relevant observations and variables
@@ -288,7 +427,8 @@ program define handle_trajectory_groups_2waves
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups_2waves")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj_2waves trajectory_2waves
@@ -312,7 +452,7 @@ end
 * **********************************************************************
 * Handle trajectory groups with at least 3 waves
 * **********************************************************************
-cap program drop handle_trajectory_groups_3waves
+capture program drop handle_trajectory_groups_3waves
 program define handle_trajectory_groups_3waves
   preserve
 	* Keep relevant observations and variables
@@ -346,7 +486,8 @@ program define handle_trajectory_groups_3waves
 	
 	* Restore original data and merge with trajectories
 	restore
-	merge m:1 pid using `traj', nogen
+	merge m:1 pid using `traj'
+	assert_merge_clean, allow(1 3) label("handle_trajectory_groups_3waves")
 
 	* Verify the trajectories (missing indicates unbalanced observations)
 	rename traj_3waves trajectory_3waves
@@ -369,7 +510,7 @@ end
 * **********************************************************************
 * Time trend
 * **********************************************************************
-cap program drop gen_time_trend
+capture program drop gen_time_trend
 program define gen_time_trend
     sum year if period == 1
     gen trend = year - r(min)
@@ -403,7 +544,7 @@ end
 * Covariate management
 * **********************************************************************
 
-cap program drop set_covariates
+capture program drop set_covariates
 program define set_covariates
   args 			depvar country
 	gen 			loghhsize = log(hhsize)	
@@ -458,7 +599,7 @@ end
 * **********************************************************************
 * Variable labels
 * **********************************************************************
-cap program drop 	fix_varlabels
+capture program drop 	fix_varlabels
 program define 		fix_varlabels
 	lab variable          baseline_age 		"Age at baseline (years)"
 	lab variable          baseline_age2 	"Age at baseline (years) squared"
@@ -475,7 +616,7 @@ end
 * Custom LaTeX table (for summary stats by country)
 * **********************************************************************
 * Create a custom LaTeX table
-cap program 		drop sumstats_table
+capture program 		drop sumstats_table
 program 				define sumstats_table
 	syntax, TABle_notes(string asis) COUNTRY(string asis) OUTputdir(string asis) FILEname(string asis) BALance(string asis)
 	
@@ -496,8 +637,10 @@ program 				define sumstats_table
 	* Clear any existing file handle
 	file close _all
 
-  * Construct the full file path using the output directory
-  local filepath "`outputdir'/`filename'.tex"
+  * Construct the full file path using the output directory.
+  * M4: append ${vsfx} (empty for nominal, "_r" for real) so nominal/real
+  * artifacts coexist without clobbering.
+  local filepath "`outputdir'/`filename'${vsfx}.tex"
 	local table_label "tab:`filename'"
 
   file open myfile using "`filepath'", write replace
@@ -549,7 +692,7 @@ end
 * **********************************************************************
 * Summary stats table prep
 * **********************************************************************
-cap program drop		country_summary_stats
+capture program drop		country_summary_stats
 program define			country_summary_stats
 args								country choice depvar balance
 	
@@ -582,17 +725,18 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'.csv, clear	
-	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'.csv"
+
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
 	drop in 1/3
@@ -617,7 +761,7 @@ end
 * **********************************************************************
 * Summary stats table prep - at least 2 waves
 * **********************************************************************
-cap program drop		country_summary_stats_2waves
+capture program drop		country_summary_stats_2waves
 program define			country_summary_stats_2waves
 args								country choice depvar balance
 	
@@ -651,16 +795,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_2waves.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_2waves.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_2waves.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_2waves.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_2waves.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -686,7 +831,7 @@ end
 * **********************************************************************
 * Summary stats table prep - at least 3 waves
 * **********************************************************************
-cap program drop		country_summary_stats_3waves
+capture program drop		country_summary_stats_3waves
 program define			country_summary_stats_3waves
 args								country choice depvar balance
 	
@@ -720,16 +865,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		rural ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_3waves.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_3waves.csv") replace  ///
 					groupvar(urban) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_3waves.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_3waves.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_3waves.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -756,7 +902,7 @@ end
 * Summary stats table prep for ag/nonag 
 *   - should instead make the main one more robust but no time
 * **********************************************************************
-cap program drop		country_summary_stats_nonag
+capture program drop		country_summary_stats_nonag
 program define			country_summary_stats_nonag
 args								country choice depvar balance
 	
@@ -789,16 +935,17 @@ args								country choice depvar balance
 	local non_switchers			= r(mean)*100
 	local non_switchers_formatted : display %6.1f `non_switchers' "\%"	
 			
-* Create summary stats table, export as .csv file	
+* Create summary stats table, export as .csv file (transient; erased after import)
 	iebaltab 		ag ln_consumption ln_income female age 	          ///
 					education_max hhsize, ///
-					savecsv("summary_stats_`country'_`balance'_nonag.csv") replace  ///
+					savecsv("$logs/summary_stats_`country'_`balance'_nonag.csv") replace  ///
 					groupvar(nonag) total ///
 					totallabel(All) format(%9.2fc) ///
 					rowvarlabels stats(desc(sd)) nonote
-	
-* Import the saved CSV file
-	import delimited using summary_stats_`country'_`balance'_nonag.csv, clear	
+
+* Import the saved CSV file, then erase the on-disk intermediate.
+	import delimited using "$logs/summary_stats_`country'_`balance'_nonag.csv", clear
+	erase "$logs/summary_stats_`country'_`balance'_nonag.csv"
 	
 * Drop unnecessary columns & rows
 	drop v2 v4 v6 v8
@@ -841,7 +988,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table
 * **********************************************************************
-cap program drop create_panel_tex_table
+capture program drop create_panel_tex_table
 program define create_panel_tex_table
     syntax , 	Panels(integer) COLumns(integer) FILEname(string asis) 	///
 				COUNTRIES(string asis) Keep(varlist) 	///
@@ -904,7 +1051,7 @@ program define create_panel_tex_table
         }
         
         esttab `ests'                          ///
-        using "$output/tables/`filename'.tex", ///
+        using "$output/tables/`filename'${vsfx}.tex", ///
 		se b(%8.3f)                            ///           
         keep(`keep') fragment booktabs         ///
         collabels("")                          ///
@@ -925,7 +1072,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table - learning IDN
 * **********************************************************************
-cap program drop create_panel_tex_table_learn_IDN
+capture program drop create_panel_tex_table_learn_IDN
 program define create_panel_tex_table_learn_IDN
     syntax , 	COLumns(integer) FILEname(string asis) 	///
 				Keep(varlist) 	///
@@ -960,7 +1107,7 @@ program define create_panel_tex_table_learn_IDN
     }
         
     esttab `ests'                          ///
-    using "$output/tables/`filename'.tex", ///
+    using "$output/tables/`filename'${vsfx}.tex", ///
 	se b(%8.3f)                            ///           
     keep(`keep') fragment booktabs         ///
     collabels("")                          ///
@@ -979,7 +1126,7 @@ end
 * **********************************************************************
 * Create three-part LaTeX table - learning CHN
 * **********************************************************************
-cap program drop create_panel_tex_table_learn_CHN
+capture program drop create_panel_tex_table_learn_CHN
 program define create_panel_tex_table_learn_CHN
     syntax , 	COLumns(integer) FILEname(string asis) 	///
 				Keep(varlist) 	///
@@ -1014,7 +1161,7 @@ program define create_panel_tex_table_learn_CHN
     }
         
     esttab `ests'                          ///
-    using "$output/tables/`filename'.tex", ///
+    using "$output/tables/`filename'${vsfx}.tex", ///
 	se b(%8.3f)                            ///           
     keep(`keep') fragment booktabs         ///
     collabels("")                          ///
@@ -1033,7 +1180,7 @@ end
 * **********************************************************************
 * OLS regressions
 * **********************************************************************
-cap program drop reghdfe_regressions
+capture program drop reghdfe_regressions
 program define reghdfe_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
@@ -1060,7 +1207,7 @@ end
 * **********************************************************************
 * OLS regressions (learning)
 * **********************************************************************
-cap program drop reghdfe_regressions_learn_IDN
+capture program drop reghdfe_regressions_learn_IDN
 program define reghdfe_regressions_learn_IDN
     args country depvar balance
     * OLS / FE regressions using reghdfe
@@ -1148,7 +1295,7 @@ program define reghdfe_regressions_learn_IDN
 		
 end
 
-cap program drop reghdfe_regressions_learn_CHN
+capture program drop reghdfe_regressions_learn_CHN
 program define reghdfe_regressions_learn_CHN
     args country depvar balance
     * OLS / FE regressions using reghdfe
@@ -1224,7 +1371,7 @@ end
 * Get ready for GRC
 * **********************************************************************
 
-cap program drop setup_grc_estimation
+capture program drop setup_grc_estimation
 program define setup_grc_estimation
     global 		never 1
     qui: tab 			trajectory
@@ -1255,7 +1402,7 @@ end
 * **********************************************************************
 * Make heterogeneity figures
 * **********************************************************************
-cap program drop heterogeneity_plots
+capture program drop heterogeneity_plots
 program define heterogeneity_plots
 	args country choice depvar balance
 	if "`country'" == "IDN" {
@@ -1351,7 +1498,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_dts_`country'_covars' (p-value: `p_dts_`country'_covars')", size(small) pos(6) span) ///
 		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
 	
-		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fcovars${vsfx}.pdf", replace
 	
 	coefplot ///
 		(covars_`country', keep(`interaction_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
@@ -1364,7 +1511,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_dts_`country'_nocovars' (p-value: `p_dts_`country'_nocovars')", size(small) pos(6) span) ///
 		saving(hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
 	
-		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+		graph save "$output/figures/hetplotDelta_`depvar'_`choice'_`balance'_`country'_Fnocovars${vsfx}.pdf", replace
 	
 * Plot them for \mu, sorting by size
 	coefplot ///
@@ -1378,7 +1525,7 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_mus_`country'_covars' (p-value: `p_mus_`country'_covars')", size(small) pos(6) span) ///
 		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars, replace)
 	
-		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars.pdf", replace
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fcovars${vsfx}.pdf", replace
 	
 	coefplot ///
 		(covars_`country', keep(`mu_coefs') msymb(S) mcolor(lavender%100) ciopts(lwidth(thick) lcolor(lavender%100)))  	///
@@ -1391,27 +1538,36 @@ program define heterogeneity_plots
 		note("F-stat (all equal): `F_mus_`country'_nocovars' (p-value: `p_mus_`country'_nocovars')", size(small) pos(6) span) ///
 		saving(hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars, replace)
 	
-		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars.pdf", replace
+		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars${vsfx}.pdf", replace
 
 end
 
 * **********************************************************************
 * uGRC regressions
 * **********************************************************************
-cap program drop ugrc_regressions
+capture program drop ugrc_regressions
 program define ugrc_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
-	* Run col 7 first as it has the smallest sample, then use e(sample)
-    eststo reg7_`country': reghdfe lndepvar choice 					///
-				$covs_all trend 							///
-				, vce(cluster pid) absorb(pid)
-	gen regression_sample = e(sample)
-	
-	eststo reg7_`country': reghdfe lndepvar i.trajectory 			///
-				i($switchers).trajectory#i.choice 					///
-				i.unbalanced#i.choice $covs_all trend		///
-				, vce(cluster pid)
+    * Audit-2026-04-28 M7: the first reghdfe runs ONLY to define the
+    * common sample (smallest-sample col-7-equivalent fixed-effects
+    * specification). It is not the result that goes into the table ---
+    * it used to be stored under reg7_`country' and was silently
+    * overwritten by the trajectory-decomposed regression below, losing
+    * the sample-defining regression. Now we run it 'quietly' without
+    * eststo, capture e(sample), and apply 'if regression_sample' to
+    * EVERY estimated column including col 7, so the uGRC table reports
+    * cols 1-7 on a common sample (matching reghdfe_regressions's pattern).
+    quietly reghdfe lndepvar choice                                  ///
+                $covs_all trend                                      ///
+                , vce(cluster pid) absorb(pid)
+    gen regression_sample = e(sample)
+
+    eststo reg7_`country': reghdfe lndepvar i.trajectory             ///
+                i($switchers).trajectory#i.choice                    ///
+                i.unbalanced#i.choice $covs_all trend                ///
+                if regression_sample                                 ///
+                , vce(cluster pid)
 	
 	
     eststo reg1_`country': reghdfe lndepvar choice 						///
@@ -1477,12 +1633,7 @@ program define initial_values, rclass
     
     * Add kappa-coeff for initial values
 		local initial "`initial' kappa: kappa"
-    
-    * Accumulate mu-coeffs for initial values
-    foreach s of numlist $switchers {
-			local initial "`initial' mu:switcher_`s' mu_`s'"
-		}	
-    
+
 		return local initial "`initial'"
 		
 		* If print option is specified, display the scalars in formatted output
@@ -1517,7 +1668,7 @@ program define initial_values, rclass
 			scalar N_`s' = r(N)
 			
 			* Check if condition N_s / T > 5 is met
-			if N_`s' / T > 5 {
+			if N_`s' / T > $grc_min_switchers_per_wave {
 				* Check if the current t-value is the largest
 				if abs(`=scalar(t_`s')') > `max_t' {
 					local max_t = abs(`=scalar(t_`s')')
@@ -1604,9 +1755,6 @@ program define initial_values_robust, rclass
         local initial "`initial' mu:switcher_`s' mu_`s'"
     }
     local initial "`initial' kappa: kappa"
-    foreach s of numlist $switchers {
-        local initial "`initial' mu:switcher_`s' mu_`s'"
-    }
 
     * Append beta_dev initial values, one per non-baseline cluster.
     * Guard against unidentified coefficients (e.g., collinear vchoice_v
@@ -1647,7 +1795,7 @@ program define initial_values_robust, rclass
         scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
         quietly sum trajectory if trajectory == `s'
         scalar N_`s' = r(N)
-        if N_`s' / T > 5 {
+        if N_`s' / T > $grc_min_switchers_per_wave {
             if abs(`=scalar(t_`s')') > `max_t' {
                 local max_t = abs(`=scalar(t_`s')')
                 local base = `s'
@@ -1689,7 +1837,20 @@ capture program drop run_grc
 program define run_grc
 
     * Syntax to accept user-specified covariates and estname
-    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
+
+    * Resume-on-interrupt. If ${skip_if_exists} == "1" and the last-written
+    * ster for this estname exists (the _g subgroup, saved at the end of
+    * run_grc), skip the whole block. Lets an interrupted master pipeline
+    * pick up from the next missing cell on relaunch. To force a fresh run,
+    * either delete `$output/`estname'*.ster` or unset ${skip_if_exists}.
+    if "${skip_if_exists}" == "1" {
+        capture confirm file "$output/`estname'_g${vsfx}.ster"
+        if _rc == 0 {
+            di as text "run_grc: SKIP `estname' (`estname'_g${vsfx}.ster present)"
+            exit
+        }
+    }
 
     * Construct the covariates string for the regression and instruments
 		if "`balance'" == "unb" {
@@ -1715,6 +1876,25 @@ program define run_grc
 		di as text "run_grc: base trajectory = `base'"
 		di as text "run_grc: phi initial value = `phistart'"
 
+    * M9: time the GMM fit + post-estimation. Each call uses a fresh
+    * sequential timer slot (1, 2, 3, ...) so all per-fit times survive
+    * for `timer list` at the end of the session, in addition to being
+    * stashed into the ster as a custom scalar `runtime` via `estadd`.
+    *
+    * Stata's `timer` only accepts slot numbers 1-100. Pipelines with
+    * more than 100 fits in one Stata session (e.g. full Tier 3 has
+    * ~200 fits) hit `r(198) invalid syntax` at slot 101. Wrap the
+    * counter back to 1 after 100. Each fit's runtime is read via
+    * r(t<n>) and saved to the ster via estadd BEFORE the next fit
+    * touches the slot, so reuse is safe. The session-end `timer list`
+    * loses pre-wrap timings but the per-fit ster scalars retain them.
+    if "${grc_timer_slot}" == "" global grc_timer_slot 0
+    global grc_timer_slot = ${grc_timer_slot} + 1
+    if ${grc_timer_slot} > 100 global grc_timer_slot 1
+    local _tslot = ${grc_timer_slot}
+    timer clear `_tslot'
+    timer on `_tslot'
+
     * Run the GMM estimation
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
 									- {Delta_base}*choice  																///
@@ -1729,21 +1909,31 @@ program define run_grc
 									) 																										///
                       vce(cluster pid) 																	///
 											from(`initial') 																	///
-											quickderivatives nolog						                ///
 											iterate(`iterate')
       
-      * Joint test for mus
-	  local mu_test ""
-	  local s0 : word 1 of $switchers
-	  local mu_test "[mu]switcher_`s0'"
-	  foreach s of numlist $switchers {
-		if `s' != `s0'{
-			local mu_test "`mu_test' = [mu]switcher_`s'"
-		}
+      * Joint test for mus.
+      * Wrapped in capture-noisily so small subsamples (e.g. CHN hukou
+      * splits) where the mu equality test is rank-deficient don't
+      * crash run_grc; the joint_chi2/joint_p scalars are simply not
+      * stored when the test fails. Audit-2026-04-30 (run_grc_hukou
+      * merge: hukou cells previously skipped this block entirely).
+	  capture noisily {
+	      local mu_test ""
+	      local s0 : word 1 of $switchers
+	      local mu_test "[mu]switcher_`s0'"
+	      foreach s of numlist $switchers {
+		      if `s' != `s0'{
+			      local mu_test "`mu_test' = [mu]switcher_`s'"
+		      }
+	      }
+	      test `mu_test'
+	      estadd scalar joint_chi2 = r(chi2), replace   : `estname'
+	      estadd scalar joint_p    = r(p),    replace   : `estname'
 	  }
-	  test `mu_test'
-	  estadd scalar joint_chi2 = r(chi2), replace   : `estname' 
-	  estadd scalar joint_p    = r(p),    replace   : `estname' 
+	  if _rc != 0 {
+	      di as text "run_grc: joint mu test failed for `estname' (rc=" _rc ")"
+	      di as text "         joint_chi2 / joint_p NOT stored on main ster"
+	  }
 	  
 	  * Add J-stat estimates from Hansen's J-test  
       estat overid 
@@ -1752,45 +1942,64 @@ program define run_grc
       estadd sca Jpval    = r(J_p)    , replace   : `estname'  
 	  local converged_str = cond(e(converged)==1, "Y", "N")
 	  estadd local converged_str "`converged_str'", replace : `estname'
-	  
+
+	  * M9: stop timer; record GMM-fit wall-clock seconds in e(runtime).
+	  timer off `_tslot'
+	  qui timer list `_tslot'
+	  estadd scalar runtime = r(t`_tslot'), replace : `estname'
+	  estadd scalar timer_slot = `_tslot', replace : `estname'
+	  di as text "run_grc: `estname' fit in " %7.2f r(t`_tslot') " sec  (timer slot `_tslot')"
+
 	  * Save results
-      estimates save "$dir/output/`estname'", replace
+      estimates save "$dir/output/`estname'${vsfx}", replace
       
       * Compute Delta_never
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
       * Save results
-      estimates save "$dir/output/`estname'_never", replace
+      estimates save "$dir/output/`estname'_n${vsfx}", replace
            
       * Compute Delta_always (average Delta for always-urban)
       estimates restore `estname'   // make sure the results are in memory
       nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
       * Save results
-      estimates save "$dir/output/`estname'_always", replace
+      estimates save "$dir/output/`estname'_a${vsfx}", replace
       
-      * Compute all switcher Deltas
-	  estimates restore `estname'   // make sure the results are in memory
-	  local nlcom_expr ""
-	  foreach s of numlist $switchers {
-	  	local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
-      }
-	  nlcom `nlcom_expr', post
-	  * Joint test for Deltas
-	  local d_test ""
-	  local s0 : word 1 of $switchers
-	  local d_test "Delta_`s0'"
-	  foreach s of numlist $switchers {
-		if `s' != `s0'{
-			local d_test "`d_test' = Delta_`s'"
-		}
+      * Compute all switcher Deltas.
+      * Wrapped in capture-noisily so small subsamples (hukou splits,
+      * sparse switcher trajectories) that can't compute every per-
+      * trajectory Delta don't crash run_grc; the main / _n / _a / _g
+      * sters are saved regardless. If this block fails the _d.ster is
+      * simply not written. Audit-2026-04-30 (run_grc_hukou merge:
+      * hukou cells previously skipped this entire block).
+	  capture noisily {
+	      estimates restore `estname'
+	      local nlcom_expr ""
+	      foreach s of numlist $switchers {
+	  	      local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
+          }
+	      nlcom `nlcom_expr', post
+	      * Joint test for Deltas
+	      local d_test ""
+	      local s0 : word 1 of $switchers
+	      local d_test "Delta_`s0'"
+	      foreach s of numlist $switchers {
+		      if `s' != `s0'{
+			      local d_test "`d_test' = Delta_`s'"
+		      }
+	      }
+	      test `d_test'
+	      estadd scalar joint_chi2 = r(chi2), replace
+	      estadd scalar joint_p    = r(p),    replace
+          * Save results
+          estimates save "$dir/output/`estname'_d${vsfx}", replace
 	  }
-	  test `d_test'
-	  estadd scalar joint_chi2 = r(chi2), replace
-	  estadd scalar joint_p    = r(p),    replace
-      * Save results
-      estimates save "$dir/output/`estname'_delta", replace
+	  if _rc != 0 {
+	      di as text "run_grc: per-trajectory Delta_d block failed for `estname' (rc=" _rc ")"
+	      di as text "         _d.ster NOT saved (typical cause: small subsample with empty switchers)"
+	  }
 	  
 	  * Compute Delta_avg (average Delta for all switchers)
 	  local first_loop = 1
@@ -1810,8 +2019,177 @@ program define run_grc
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
       * Save results
-      estimates save "$dir/output/`estname'_avg", replace
+      estimates save "$dir/output/`estname'_g${vsfx}", replace
 
+end
+
+* **********************************************************************
+* run_grc_with_extra_regressor
+* Phase 1b.6: extracts the per-stem GMM logic of files 10/11/12/13/14/15
+* (now deleted) into a single program. One call estimates ONE STEM
+* (country x spec3 x extra-regressor family) and writes 5 sters per
+* stem under fully disambiguated names:
+*     grc_<country>_<spec3>_<fam>_{c1,c2,c3,ca}     (main)
+*     grc_<country>_<spec3>_<fam>_<col>_n           (never subgroup; via run_grc)
+*     grc_<country>_<spec3>_<fam>_<col>_g           (group-avg; via run_grc)
+*
+* This finally fixes the "preserve prior cross-section ster collisions"
+* deferred from M11 (Phase 1a). All 44 stems now coexist on disk.
+*
+* Args:
+*   country(IDN|CHN|TZA)
+*   spec3(cuu|cub|iuu|cnu)
+*   regressor(varname)        e.g. exp, exp_max, exp_share, exp_max_share, urbanbirth
+*   [iterate(integer 100)]
+*   [data_path_override(string)]   override resolved dataset path
+*
+* Internal lookup regressor -> family-name token used in ster filenames:
+*   exp           -> exp
+*   exp_max       -> maxexp
+*   exp_share     -> expsh
+*   exp_max_share -> maxexpsh
+*   urbanbirth    -> birth
+*
+* spec3 dispatch (sets choice/depvar/balance for the table label and
+* picks the dataset+lndepvar handling that matches the original 10-15
+* per-section code):
+*   cuu -> choice=urban, depvar=consumption, balance=unb,
+*          dataset=<country>_unb.dta,  lndepvar=log(consumption/hhsize_cube)
+*   cub -> choice=urban, depvar=consumption, balance=bal,
+*          dataset=<country>_bal.dta,  lndepvar=log(consumption/hhsize_cube)
+*   iuu -> choice=urban, depvar=income,      balance=unb,
+*          dataset=<country>_unb_income.dta, lndepvar already log(income/hhsize_cube)
+*          on disk (no replace)
+*   cnu -> choice=nonag, depvar=consumption, balance=unb,
+*          dataset=<country>_unb_nonag.dta,  lndepvar=log(consumption/hhsize_cube)
+*
+* data_path_override is for the one cell from file 15 sec 4 where the
+* original code opened the urban dataset (IDN_unb.dta) but labeled the
+* output as cnu in the filename. Faithful replication preserves that
+* historical behavior; pass data_path_override("...IDN_unb.dta") when
+* needed.
+* **********************************************************************
+capture program drop run_grc_with_extra_regressor
+program define run_grc_with_extra_regressor
+    syntax , country(string) spec3(string) regressor(name)            ///
+        [ iterate(integer 100) data_path_override(string) ]
+
+    * --- 1. Family token lookup ---
+    local fam ""
+    if "`regressor'" == "exp"           local fam "exp"
+    if "`regressor'" == "exp_max"       local fam "maxexp"
+    if "`regressor'" == "exp_share"     local fam "expsh"
+    if "`regressor'" == "exp_max_share" local fam "maxexpsh"
+    if "`regressor'" == "urbanbirth"    local fam "birth"
+    if "`fam'" == "" {
+        di as error "run_grc_with_extra_regressor: unknown regressor `regressor'"
+        exit 198
+    }
+
+    * --- 2. Spec3 dispatch ---
+    local choice  ""
+    local depvar  ""
+    local balance ""
+    if "`spec3'" == "cuu" {
+        local choice  urban
+        local depvar  consumption
+        local balance unb
+    }
+    else if "`spec3'" == "cub" {
+        local choice  urban
+        local depvar  consumption
+        local balance bal
+    }
+    else if "`spec3'" == "iuu" {
+        local choice  urban
+        local depvar  income
+        local balance unb
+    }
+    else if "`spec3'" == "cnu" {
+        local choice  nonag
+        local depvar  consumption
+        local balance unb
+    }
+    else {
+        di as error "run_grc_with_extra_regressor: unknown spec3 `spec3'"
+        exit 198
+    }
+
+    * --- 3. Resolve dataset path ---
+    if "`data_path_override'" != "" {
+        local dpath "`data_path_override'"
+    }
+    else if "`spec3'" == "iuu" {
+        local dpath "$dirdata/processed/`country'_`balance'_income.dta"
+    }
+    else if "`spec3'" == "cnu" {
+        local dpath "$dirdata/processed/`country'_`balance'_`choice'.dta"
+    }
+    else {
+        local dpath "$dirdata/processed/`country'_`balance'.dta"
+    }
+
+    * --- 4. Open data; build lndepvar (skip for iuu --- already on disk) ---
+    use "`dpath'", clear
+    if "`spec3'" != "iuu" {
+        replace lndepvar = log(`depvar'/hhsize_cube)
+    }
+    sum ln*
+
+    * --- 5. GMM-side variable construction (uses dataset's `choice' column) ---
+    setup_grc_estimation
+
+    * Keep only relevant variables (speeds up estimation). Mirrors the
+    * original keepvars from 10-15. The $lnsize global referenced in
+    * 10-15 was vestigial scaffolding from David's old OLS code that
+    * was never assigned in the current pipeline; removed 2026-04-29.
+    keep lndepvar trajectory choice pid `regressor'         ///
+         period unbalanced* switcher non_switcher           ///
+         female age age2 education_max education_max2 trend ///
+         always always_choice never switcher_*
+
+    * --- 6. Period fixed effects ---
+    tab period, gen(period_)
+    local periodFE "period_2 - period_`r(r)'"
+
+    * --- 7. Initial values ---
+    initial_values lndepvar,         ///
+        switchers($switchers)        ///
+        balance(`balance')           ///
+        estname(initial_`country')
+    local base    "`r(base)'"
+    local initial "`r(initial)'"
+
+    * --- 8. Per-fit covariate strings (locals; no global pollution) ---
+    local covs1   "`regressor'"
+    local covs2   "`regressor' female"
+    local covs3   "`regressor' female age2"
+    local covsall "`regressor' female age2 education_max education_max2"
+
+    * --- 9. Four fits with progressive covariates ---
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c1)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs1')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c2)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs2')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_c3)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covs3')                                  ///
+        iterate(`iterate')
+
+    run_grc, estname(grc_`country'_`spec3'_`fam'_ca)               ///
+        switchers($switchers) base(`base') initial(`initial')      ///
+        balance(`balance')                                          ///
+        covars(`periodFE' `covsall')                                ///
+        iterate(`iterate')
 end
 
 * **********************************************************************
@@ -1828,7 +2206,7 @@ end
 capture program drop run_grc_onestep
 program define run_grc_onestep
 
-    syntax , estname(string) switchers(numlist) base(numlist) balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+    syntax , estname(string) switchers(numlist) base(numlist) balance(string) [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     if "`balance'" == "unb" {
         local covarlist "`covars' unbalanced unbalanced_choice"
@@ -1849,6 +2227,18 @@ program define run_grc_onestep
     di as text "run_grc_onestep: base trajectory = `base'"
     di as text "run_grc_onestep: phi initial value = `phistart'"
 
+    * M9: same sequential-slot timer scheme as run_grc; all slots survive
+    * for `timer list` at the end of the session. Wrap at 100 because
+    * Stata's timer only accepts slots 1-100; runtime is saved to the
+    * ster before the slot is reused, so wrapping is safe. (See run_grc
+    * for the full rationale.)
+    if "${grc_timer_slot}" == "" global grc_timer_slot 0
+    global grc_timer_slot = ${grc_timer_slot} + 1
+    if ${grc_timer_slot} > 100 global grc_timer_slot 1
+    local _tslot = ${grc_timer_slot}
+    timer clear `_tslot'
+    timer on `_tslot'
+
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                    ///
                             - {Delta_base}*choice                                    ///
                             - {phi=`phistart'}*(`switcherpars')                      ///
@@ -1864,7 +2254,6 @@ program define run_grc_onestep
                              winitial(unadjusted, independent)                       ///
                              onestep                                                 ///
                              from(`initial')                                         ///
-                             quickderivatives nolog                                  ///
                              iterate(`iterate')
 
     local mu_test ""
@@ -1891,17 +2280,17 @@ program define run_grc_onestep
     local converged_str = cond(e(converged)==1, "Y", "N")
     estadd local converged_str "`converged_str'", replace : `estname'
 
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -1920,7 +2309,7 @@ program define run_grc_onestep
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -1938,104 +2327,26 @@ program define run_grc_onestep
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
 * **********************************************************************
-* GMM regression
+* run_grc_hukou (DELETED 2026-04-30)
 * **********************************************************************
-capture program drop run_grc_hukou
-program define run_grc_hukou
-
-    * Syntax to accept user-specified covariates and estname
-    syntax , estname(string) switchers(numlist) base(numlist)  balance(string) [covars(varlist) iterate(numlist) initial(string)] 
-
-    * Construct the covariates string for the regression and instruments
-		if "`balance'" == "unb" {
-			local covarlist "`covars' unbalanced unbalanced_choice"
-		}
-		else {
-			capture drop covar_cons
-			gen covar_cons = 0
-			local covarlist "`covars' covar_cons"
-		}
-
-		* Initialize a local to hold switcher variables
-		local switcher_traj
-		
-		* Loop through switchers and add them to local
-		foreach s of numlist `switchers' {
-			local switcher_traj "`switcher_traj' switcher_`s'"
-		}
-		
-		* Build switcherpars internally — guarantees same base everywhere
-		define_switcherpars, switchers(`switchers') base(`base')
-		local switcherpars `r(switcherpars)'
-		di as text "run_grc: base trajectory = `base'"
-		
-    * Run the GMM estimation
-    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
-									- {Delta_base}*choice  																///
-									- {phi=-1}*(`switcherpars')				 										///
-									- ({kappa}+{phi}*({kappa} 										        ///
-									- {mu: switcher_`base'}))*(always#1.choice)           ///
-									- {xb: `covarlist'})  																///
-									, instruments(  																			///
-									`covarlist'  																					///
-									never `switcher_traj' choice 													///
-									always_choice switcher_*_choice, nocons								///
-									) 																										///
-                      vce(cluster pid) 																	///
-											from(`initial') 																	///
-											quickderivatives nolog						                ///
-											iterate(`iterate')
-      
-      * Add J-stat estimates from Hansen's J-test  
-      estat overid 
-      estadd sca Jstat    = r(J)      , replace   : `estname' 
-      estadd sca Jdf      = r(J_df)   , replace   : `estname'  
-      estadd sca Jpval    = r(J_p)    , replace   : `estname'  
-	  local converged_str = cond(e(converged)==1, "Y", "N")
-	  estadd local converged_str "`converged_str'", replace : `estname'
-	  
-	  * Save results
-      estimates save "$dir/output/`estname'", replace
-      
-      * Compute Delta_never
-      nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
-            (_b[mu:never] - _b[mu:switcher_`base']))), post
-      * Save results
-      estimates save "$dir/output/`estname'_n", replace
-           
-      * Compute Delta_always (average Delta for always-urban)
-      estimates restore `estname'   // make sure the results are in memory
-      nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
-            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post           
-      * Save results
-      estimates save "$dir/output/`estname'_a", replace
-	  
-	  * Compute Delta_avg (average Delta for all switchers)
-	  local first_loop = 1
-	  local Delta_avg_nlcom ""
-	  foreach s of numlist $switchers {
-	  	estimates restore `estname'   // make sure the results are in memory
-        sum 1.switcher_`s' if e(sample)
-        local num_`s' = r(mean)   // proportion of sample in this trajectory
-		if `first_loop' == 0 {
-			local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-		}
-		else if `first_loop' == 1 {
-			local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-			local first_loop = 0
-		}
-      }
-	  estimates restore `estname'   // make sure the results are in memory
-	  nlcom (Delta_avg: `Delta_avg_nlcom'), post
-      * Save results
-      estimates save "$dir/output/`estname'_avg", replace
-
-end
+* run_grc_hukou was a near-duplicate of run_grc, missing only:
+*   1. The skip_if_exists guard.
+*   2. The joint test for mu coefficients.
+*   3. The per-trajectory Delta_d block (and the _d.ster).
+* The gmm equation, post-estimation Delta_never/Delta_always/Delta_avg
+* logic, and timer scheme were byte-identical to run_grc.
+*
+* Folded into run_grc on 2026-04-30 by wrapping the per-trajectory
+* Delta_d block and the joint mu test in capture-noisily so small
+* hukou subsamples (the original reason for the separate program)
+* dont crash run_grc; the _d.ster simply isnt written when the block
+* fails. 7_GrRC_hukou.do callers now invoke run_grc directly.
+* **********************************************************************
 
 * **********************************************************************
 * run_grc_robust: Verdier (2020) Section F robust extrapolation
@@ -2057,7 +2368,7 @@ program define run_grc_robust
 
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -1)]
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
 
     * ----------------------------------------------------------------
     * Build vfirst + vchoice_* (idempotent; initial_values_robust may
@@ -2169,7 +2480,6 @@ program define run_grc_robust
                                  winitial(unadjusted, independent)                   ///
                                  onestep                                             ///
                                  from(`initial')                                     ///
-                                 quickderivatives nolog                              ///
                                  iterate(`iterate')
     }
     else {
@@ -2198,7 +2508,6 @@ program define run_grc_robust
                                  winitial(unadjusted, independent)                   ///
                                  onestep                                             ///
                                  from(`initial')                                     ///
-                                 quickderivatives nolog                              ///
                                  iterate(`iterate')
     }
 
@@ -2240,7 +2549,7 @@ program define run_grc_robust
     estadd scalar V_supp     = `V_supp',      replace : `estname'
 
     * Save main .ster
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_never: cluster-share-weighted aggregate over V_supp
@@ -2279,7 +2588,7 @@ program define run_grc_robust
     nlcom (Delta_never: `beta_agg_expr' + _b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base'])), post
     estadd scalar V_never_supp = `V_supp', replace
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_always (baseline-cluster beta; proper aggregation in P2)
@@ -2287,7 +2596,7 @@ program define run_grc_robust
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Per-switcher Deltas (baseline-cluster beta) + joint test
@@ -2310,7 +2619,7 @@ program define run_grc_robust
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Delta_avg: trajectory-share-weighted average across switchers
@@ -2332,7 +2641,7 @@ program define run_grc_robust
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
@@ -2405,7 +2714,7 @@ program define run_grc_robust_vv
 
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -1) ///
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1) ///
          ONEstep TWOstep]
 
     * ----------------------------------------------------------------
@@ -2633,7 +2942,7 @@ program define run_grc_robust_vv
     qui count if `pid_tag' == 1
     estadd scalar n_indiv = r(N), replace : `estname'
 
-    estimates save "$dir/output/`estname'", replace
+    estimates save "$dir/output/`estname'${vsfx}", replace
 
     * ----------------------------------------------------------------
     * Standard nlcoms (Delta_never, Delta_always, per-switcher Delta,
@@ -2643,12 +2952,12 @@ program define run_grc_robust_vv
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
             (_b[mu:never] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_never", replace
+    estimates save "$dir/output/`estname'_n${vsfx}", replace
 
     estimates restore `estname'
     nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] *  ///
             (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_always", replace
+    estimates save "$dir/output/`estname'_a${vsfx}", replace
 
     estimates restore `estname'
     local nlcom_expr ""
@@ -2668,7 +2977,7 @@ program define run_grc_robust_vv
     test `d_test'
     estadd scalar joint_chi2 = r(chi2), replace
     estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_delta", replace
+    estimates save "$dir/output/`estname'_d${vsfx}", replace
 
     local first_loop = 1
     local Delta_avg_nlcom ""
@@ -2686,110 +2995,66 @@ program define run_grc_robust_vv
     }
     estimates restore `estname'
     nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_avg", replace
+    estimates save "$dir/output/`estname'_g${vsfx}", replace
 
 end
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results
+* (Deprecated grc_tex_table program removed 2026-04-29. Pre-trend
+* variant; not called by any numbered .do file. Use grc_tex_table_trend
+* instead. Old definition preserved in git history.)
 * **********************************************************************
-cap program drop grc_tex_table
-program define grc_tex_table
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string asis) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
-    }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_prehead 	""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
-
-    * Empty locals to store estimates
-    local ests_never = "" 
-	local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
-      foreach estname in covs_0 covs_1 covs_2 covs_all covs_trend {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-		local ests_avg = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-	  varlabels(`keep' "`varlabel'")         ///
-      append substitute(\_ _)
-   
-end
+capture program drop grc_tex_table
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
+* grc_tex_table_trend (Phase 2 / M3-unified)
+*
+* Builds the standard country-level GRC LaTeX table (3 coefficient rows:
+* Delta_never, Delta_avg, phi/extra-regressor) by reading 5 sters per
+* covs2 column (main, _n, _g) from $dir/output/.
+*
+* Phase 1b: produces a SLIM tabular-only output (no \begin{table},
+* \caption, \label, or tablenotes). The paper-side macros (\GRCtable /
+* \GRCexptable / \GRChukoutable in preamble.tex) wrap the \input with
+* the table envelope, caption, label, and notes. Caller's POSTfoot now
+* holds ONLY the indicator rows; the program adds \cmidrule prefix and
+* \bottomrule\end{tabular} suffix.
+*
+* Phase 2 / M3 collapse: replaces three former program variants
+* (grc_tex_table_trend_hukou, grc_tex_table_trend_exp,
+* grc_tex_table_trend_birth) by parameterizing the two axes that
+* differed across them:
+*   spec      --- when supplied, ster lookup is grc_<country>_<spec>_<c>;
+*                 when empty, lookup is grc_<country>_<c> (the former
+*                 hukou path, where country_short already encodes the
+*                 disambiguator, e.g. CHN_rf).
+*   covs2_set --- space-separated list of covs2 column suffixes
+*                 (default: "c0 ct c1 c2 ca", the 4_GrRC.do family).
+*                 Pass "c1 c2 c3 ca" for the experience/birth family
+*                 (was: grc_tex_table_trend_exp, _birth).
 * **********************************************************************
-cap program drop grc_tex_table_trend
+capture program drop grc_tex_table_trend
 program define grc_tex_table_trend
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis) ///
-				[ESTPrefix(string)]
+    syntax , COLumns(integer) FILEname(string asis)            ///
+             COUNTRY(string asis) KEEP(string) varlabel(string) ///
+             POSTfoot(string asis)                              ///
+             COEFLABels(string asis) TEXTdepvar(string asis)    ///
+             [SPEC(string) COVS2set(string)]
 
-    * Default ester prefix matches the main GRC pipeline.
-    * Pass estprefix(grc_robust_vv_) (or similar) to point at robust-version
-    * ester files saved under a different prefix without colliding with main.
-    if "`estprefix'" == "" local estprefix "grc_"
+    if "`covs2set'" == "" {
+        local covs2set "c0 ct c1 c2 ca"
+    }
+
+    * Build ster path stem and stored-name stem. Diverges based on whether
+    * the spec disambiguator is supplied (hukou path leaves it empty).
+    if "`spec'" != "" {
+        local _stem "grc_`country'_`spec'"
+        local _label "`country'/`spec'"
+    }
+    else {
+        local _stem "grc_`country'"
+        local _label "`country'"
+    }
 
     // Split the panel names, prehead, and postfoot strings into tokens
 
@@ -2801,30 +3066,51 @@ program define grc_tex_table_trend
     }
     local cmid = `columns' + 1
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Empty locals to store estimates
+    * Phase 1b.5b: load estimates from disk inside the program, so callers
+    * don't need to do `estimates use/store` boilerplate. This means a
+    * tables-only driver can re-emit the .tex from existing sters without
+    * any other setup.
+    * Skip-and-warn if a required ster is missing (e.g. running tables-only
+    * on a cell whose regression hasn't completed yet).
+    local first_covs : word 1 of `covs2set'
+    capture confirm file "$dir/output/`_stem'_`first_covs'${vsfx}.ster"
+    if _rc != 0 {
+        di as error "grc_tex_table_trend: SKIP `_label' (sters missing on disk)"
+        exit
+    }
+      foreach estname in `covs2set' {
+        estimates use "$dir/output/`_stem'_`estname'${vsfx}"
+        estimates store `_stem'_`estname'
+        estimates use "$dir/output/`_stem'_`estname'_n${vsfx}"
+        estimates store `_stem'_`estname'_n
+        estimates use "$dir/output/`_stem'_`estname'_g${vsfx}"
+        estimates store `_stem'_`estname'_g
+      }
+
+    * Empty locals to store estimate-name lists for esttab
     local ests_never = ""
 	local ests_avg = ""
     local ests = ""
 
-    * Generate the list of stored estimates for the current panel
-      foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
-        local ests_never     = "`ests_never' `estprefix'`country'_`estname'_never"
-        local ests_avg = "`ests_avg' `estprefix'`country'_`estname'_avg"
-        local ests           = "`ests' `estprefix'`country'_`estname'"
+    * Generate the list of stored estimates for the current panel.
+    * After M11, ster filenames and stored-estimate names use the same
+    * `grc_<country>_<spec3>_<covs2>{,_n,_a,_d,_g}` shorthand, so no
+    * Option-B "long disk / short memory" bridge is needed.
+      foreach estname in `covs2set' {
+        local ests_never = "`ests_never' `_stem'_`estname'_n"
+        local ests_avg   = "`ests_avg' `_stem'_`estname'_g"
+        local ests       = "`ests' `_stem'_`estname'"
       }
-        
+
       * Output Delta-never row
       esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+      using "$output/tables/`filename'${vsfx}.tex", ///
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
@@ -2834,23 +3120,23 @@ program define grc_tex_table_trend
       posthead(`table_posthead')             ///
       coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
       replace substitute(\_ _)
-        
+
       * Output Delta average row
       esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+      using "$output/tables/`filename'${vsfx}.tex", ///
+	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
+      coeflabels(Delta_avg "$\bar{\Delta}$") ///
       append substitute(\_ _)
-    
+
     * Output other estimates
       esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
+      using "$output/tables/`filename'${vsfx}.tex", ///
+	  se b(%8.3f)                            ///
       keep(`keep')                           ///
       varlabels(`keep' "`varlabel'")         ///
       eqlabels(none)				         ///
@@ -2863,6 +3149,19 @@ program define grc_tex_table_trend
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
+
+    * Phase 1b.6: strip esttab's spurious blank tabular rows.
+    * Same workaround as 2_summaryStats.do, specialized for 6-column GRC
+    * tables. Removes the literal pattern emitted between fragments by
+    * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
+    removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
+        , remove("                    &               &               &               &               &               \BS\BS")
+
+    * Drop the ~15 estimates this call stored. Without cleanup the
+    * stored-estimates namespace fills up after ~20 cells (Stata limit ~300)
+    * and subsequent grc_tex_table_trend calls fail with
+    * "system limit exceeded; you need to drop one or more models".
+    est drop _all
 
 end
 
@@ -2957,292 +3256,155 @@ program define grc_tex_table_trend_robust
 end
 
 * **********************************************************************
-* Create country-specific LaTeX table with GRC results
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-cap program drop grc_tex_table_trend_hukou
-program define grc_tex_table_trend_hukou
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
-    // Split the panel names, prehead, and postfoot strings into tokens
+* extras_tex_table
+* Phase 1b.6: per-cell wrapper that builds ONE family-table for the
+* extras specs (matches run_grc_with_extra_regressor's GMM cells 1:1).
+* Looks up everything --- file suffix, fam_token, postfoot label, and
+* depvar/choice/balance for the filename --- from the same (country,
+* spec3, regressor) arg triple as the GMM call. Reads disambiguated
+* sters from disk (grc_<country>_<spec3>_<fam>_<col>.ster).
+*
+* Args identical to run_grc_with_extra_regressor:
+*   country(IDN|CHN|TZA)
+*   spec3(cuu|cub|iuu|cnu)
+*   regressor(varname)
 
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
+* **********************************************************************
+capture program drop extras_tex_table
+program define extras_tex_table
+    syntax , country(string) spec3(string) regressor(name)
+
+    * Family token (ster name) and file suffix (filename)
+    local fam ""
+    local file_suffix ""
+    local fam_label   ""
+    if "`regressor'" == "exp" {
+        local fam         exp
+        local file_suffix exp
+        local fam_label   "Experience"
     }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_prehead 	""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
-
-    * Empty locals to store estimates
-    local ests_never = ""
-    local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
-      foreach estname in c0 ct c1 c2 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_n"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-   
-end
-
-* **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-cap program drop grc_tex_table_trend_exp
-program define grc_tex_table_trend_exp
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
+    if "`regressor'" == "exp_max" {
+        local fam         maxexp
+        local file_suffix exp_max
+        local fam_label   "Max Experience"
     }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_prehead 	""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
-
-    * Empty locals to store estimates
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
-      foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-   
-end
-
-* **********************************************************************
-* Create country-specific LaTeX table with GRC results 
-*	==> FOR TREND FIRST DO FILE
-* **********************************************************************
-cap program drop grc_tex_table_trend_birth
-program define grc_tex_table_trend_birth
-    syntax , COLumns(integer) FILEname(string asis) 	///
-				COUNTRY(string asis) KEEP(string) varlabel(string) 	///
-				PREhead(string asis) POSTfoot(string asis) ///
-				COEFLABels(string asis) TEXTdepvar(string asis)
-	
-    // Split the panel names, prehead, and postfoot strings into tokens
-
-    local num_panels `panels'
-    local ccc ""
-    * Loop to concatenate "c" the number of times specified in `columns'
-    forval i = 1/`columns' {
-        local ccc "`ccc'c"
+    if "`regressor'" == "exp_share" {
+        local fam         expsh
+        local file_suffix exp_sh
+        local fam_label   "Experience Share"
     }
-    local cmid = `columns' + 1
-		local colnumbers ""
-		local table_prehead 	""
-		local table_postfoot 	""
-		local posthead 			""
-    local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    if "`regressor'" == "exp_max_share" {
+        local fam         maxexpsh
+        local file_suffix exp_m_sh
+        local fam_label   "Max Experience Share"
+    }
+    if "`regressor'" == "urbanbirth" {
+        local fam         birth
+        local file_suffix birth
+        local fam_label   "Urban Birth"
+    }
+    if "`fam'" == "" {
+        di as error "extras_tex_table: unknown regressor `regressor'"
+        exit 198
+    }
 
-    * Empty locals to store estimates
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""       
-		
-    * Generate the list of stored estimates for the current panel
-      foreach estname in c1 c2 c3 ca {
-        local ests_never  = "`ests_never' grc_`country'_`estname'_never"
-        local ests_avg  = "`ests_avg' grc_`country'_`estname'_avg"
-        local ests        = "`ests' grc_`country'_`estname'"
-      }
-        
-      * Output Delta-never row
-      esttab `ests_never'                    ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles `colnumbers'         ///
-      prehead(`table_prehead')               ///
-      posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
-      replace substitute(\_ _)
-        
-      * Output Delta average row
-      esttab `ests_avg'   		             ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      fragment booktabs noobs                ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      varwidth(20) 	                         ///
-      nolines nomtitles nonum 		         ///
-      coeflabels(Delta_avg "Average $\Delta$") ///
-      append substitute(\_ _)
-    
-    * Output other estimates
-      esttab `ests'	                         ///
-      using "$output/tables/`filename'.tex", ///
-	  se b(%8.3f)                            ///           
-      keep(`keep')                           ///
-      varlabels(`keep' "`varlabel'")         ///
-      eqlabels(none)				         ///
-      fragment booktabs                      ///
-      collabels("")                          ///
-      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
-      varwidth(20)                           ///
-      nolines nomtitles nonum                ///
-      postfoot("`table_postfoot'")           ///
-      append substitute(\_ _)
-   
+    * Spec3 -> filename label tokens (matches 9_GRC_extras.do dispatch)
+    local choice  ""
+    local depvar  ""
+    local balance ""
+    if "`spec3'" == "cuu" {
+        local choice  urban
+        local depvar  consumption
+        local balance unb
+    }
+    else if "`spec3'" == "cub" {
+        local choice  urban
+        local depvar  consumption
+        local balance bal
+    }
+    else if "`spec3'" == "iuu" {
+        local choice  urban
+        local depvar  income
+        local balance unb
+    }
+    else if "`spec3'" == "cnu" {
+        local choice  nonag
+        local depvar  consumption
+        local balance unb
+    }
+    else {
+        di as error "extras_tex_table: unknown spec3 `spec3'"
+        exit 198
+    }
+
+    local reportvars "phi:_cons"
+    local varlab "$\phi$"
+
+    * "Time FE Y Y Y Y" indicator + family covariate labels (per 10-15 convention)
+    local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & `fam_label' & \& Female & \& Age$^2$ & All \\
+
+    * M3 (Phase 2) collapse: birth and experience families now share the
+    * unified grc_tex_table_trend, parameterized by covs2_set. The birth
+    * variant was byte-identical to _exp; both used the c1/c2/c3/ca
+    * covs2 set distinct from the main 4_GrRC.do family.
+    grc_tex_table_trend, columns(4)                                             ///
+        spec(`spec3'_`fam')                                                      ///
+        covs2set(c1 c2 c3 ca)                                                    ///
+        country(`country')                                                       ///
+        filename(GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix')       ///
+        keep(`reportvars')                                                       ///
+        varlabel(`varlab')                                                       ///
+        postfoot(`postfoot_str')                                                 ///
+        coeflabels(choice "Urban")                                               ///
+        textdepvar( log(`depvar') )
+
+    if $copyOverleaf == 1 {
+        capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix'.tex"
+        if _rc == 0 {
+            copyOverleaf                                                                              ///
+                "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_`file_suffix'.tex"          ///
+                , subdir(tables)
+        }
+    }
 end
 
 * **********************************************************************
 * Make heterogeneity tables for Delta estimates
 * **********************************************************************
-cap program drop het_table_delta
+capture program drop het_table_delta
 program define het_table_delta
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper: \GRChetDeltatable (TBD).
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local ccc "c"		// one column
     local cmid = 2
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
 		local table_prefoot		"\addlinespace"
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Stored estimates
-    local ests_delta = "grc_`country'_covs_all_delta"
-	
+    * Phase 1b.5b: load estimate from disk inside the program.
+    * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
+    * max-cov set = ca, Delta-per-trajectory suffix = d.
+    capture confirm file "$dir/output/grc_`country'_cuu_ca_d${vsfx}.ster"
+    if _rc != 0 {
+        di as error "het_table_delta: SKIP `country' (sters missing on disk)"
+        exit
+    }
+    estimates use "$dir/output/grc_`country'_cuu_ca_d${vsfx}"
+    estimates store grc_`country'_cuu_ca_d
+    local ests_delta = "grc_`country'_cuu_ca_d"
+
 	* Output Deltas and mus
 	esttab `ests_delta'						 ///
-    using "$output/tables/`filename'.tex",   ///
+    using "$output/tables/`filename'${vsfx}.tex",   ///
 	se b(%8.3f)                              ///  
     keep(`keep') 							 ///
     coeflabels(`coeflabels') 				 ///
@@ -3265,32 +3427,40 @@ end
 * **********************************************************************
 * Make heterogeneity tables for mu estimates
 * **********************************************************************
-cap program drop het_table_mu
+capture program drop het_table_mu
 program define het_table_mu
     syntax , FILEname(string asis) COUNTRY(string asis) KEEP(string)	///
-				htb(string) PREhead(string asis) POSTfoot(string asis) ///
+				POSTfoot(string asis) ///
 				COEFLABels(string asis) TEXTdepvar(string asis)
-	
+	* Phase 1b: SLIM tabular-only output. See grc_tex_table_trend header
+	* comment for details. Paper-side wrapper: \GRChetMutable (TBD).
+
     // Split the panel names, prehead, and postfoot strings into tokens
 
     local ccc "c"		// one column
     local cmid = 2
 		local colnumbers ""
-		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
 		local table_prefoot		"\addlinespace"
-    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
-    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+    local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
 
-    * Stored estimates
-    local ests = "grc_`country'_covs_all"
-	
+    * Phase 1b.5b: load estimate from disk inside the program.
+    * Heterogeneity tables are always urban-spec (M11 spec3 = cuu),
+    * max-cov set = ca; main fit has empty sfx1.
+    capture confirm file "$dir/output/grc_`country'_cuu_ca${vsfx}.ster"
+    if _rc != 0 {
+        di as error "het_table_mu: SKIP `country' (sters missing on disk)"
+        exit
+    }
+    estimates use "$dir/output/grc_`country'_cuu_ca${vsfx}"
+    estimates store grc_`country'_cuu_ca
+    local ests = "grc_`country'_cuu_ca"
+
 	* Output Deltas and mus
 	esttab `ests'							 ///
-    using "$output/tables/`filename'.tex",   ///
+    using "$output/tables/`filename'${vsfx}.tex",   ///
 	se b(%8.3f)                              ///  
     keep(`keep') 							 ///
     coeflabels(`coeflabels') 				 ///

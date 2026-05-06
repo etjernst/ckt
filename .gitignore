@@ -8,8 +8,11 @@
 # paper/ is tracked
 
 # RP7 local working copy: track scripts and generated tables/figures,
-# drop binaries, run logs, and the data junction
+# drop binaries, run logs, and the data junctions (M4: data_real points
+# at the Dropbox real-values data folder for the values(nominal|real)
+# switch in 0_path_config.do)
 RP7/data/
+RP7/data_real/
 RP7/scripts/logs/
 RP7/output/*.ster
 RP7/output/**/*.ster
@@ -19,6 +22,9 @@ RP7/output/*.log
 RP7/output/**/*.log
 RP7/output/*.gph
 RP7/output/**/*.gph
+
+# Transient test artifacts (e.g. addlinespace investigation, minimal repros)
+RP7/output/test_*
 
 # Stata artifacts
 *.log
