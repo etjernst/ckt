@@ -1,0 +1,52 @@
+---
+title: "GRC results overview"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    df-print: kable
+  gfm:
+    df-print: kable
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| label: setup
+import sys
+from pathlib import Path
+ROOT = Path.cwd()
+sys.path.insert(0, str(ROOT))
+
+from compare import comparison_table, coefplot, render_table
+```
+
+## Balanced vs unbalanced---IDN consumption, urban
+
+The five covariate sets fan across the columns; balanced and unbalanced versions are grouped under the column spanners.
+Stars: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
+Standard errors in parentheses.
+
+```{python}
+#| label: idn-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-bal-vs-unb-coefplot
+#| fig-cap: "Point estimates with 95% CI by covariate set, balanced and unbalanced offset within each row."
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+The corresponding sters live in [RP7/output/](../../RP7/output/) under the names `grc_IDN_cuu_*.ster` (unbalanced) and `grc_IDN_cub_*.ster` (balanced).
+Each cell loads five sters (main + `_n` + `_a` + `_d` + `_g`).
