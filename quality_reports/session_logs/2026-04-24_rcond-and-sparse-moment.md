@@ -188,3 +188,50 @@ Cost: $100 \times 5 = 500$ Python fits $\times 12$ min $= 100$ hours. Heavy. Red
 ## Tangentially (Stream A capacity-building from earlier today)
 
 User pulled an accidentally-included `paper/main.pdf` from a commit (was inadvertently staged at some point); reverted with `git reset --soft HEAD~1` + `git restore --staged paper/main.pdf` + recommit. Clean now.
+
+## Stream A side-quest: three-country LCA inversion table + Verdier discussion
+
+After the sparse-moment work landed, ran `run_all_countries_inversion.py` in the lca-inversion worktree to produce the IDN/CHN/TZA × 5-spec table the empirical paper needs (commit `7b9ae93`). Cross-checked against fresh Stata reruns (`rerun_chn_tza_5gr.do`, written to local workdir not Dropbox); fresh values match the published `.tex` tables to 3-4 decimals.
+
+Three substantive findings worth flagging in the paper writeup:
+1. **CHN: inversion CI is empty for every spec** including covs_all. Pooled-sample LCA is genuinely incompatible with the data --- hukou splits are not optional.
+2. **TZA: inversion CI narrower than sandwich** at covs_trend/1/2 (width ratio 0.80--0.83). Only $J_R = 4$ restrictions, so the inversion has more localizing power.
+3. **IDN: width ratio grows 1.5x → 3x with controls.** covs_all 95% CI right endpoint at $-0.010$; $\phi = 0$ barely outside.
+
+Discussed how the LCA inversion would extend to the Verdier-robust spec (`run_grc_robust_vv`, in the user's parallel Verdier track). Standard combined approach for small-$G$ weak-ID-robust GMM inference is wild cluster bootstrap of the AR-style test statistic at each grid point. Citations gathered (Stock-Wright 2000, Kleibergen 2005, Cameron-Gelbach-Miller 2008, Davidson-MacKinnon 2010, Roodman et al. 2019, Finlay-Magnusson 2009). Added as a TODO in `docs/TODO.md` (commit `234e2e3`); gated on Verdier P3 sign-off because the village-demeaned LCA restriction is still being finalized.
+
+## Open / next steps (organized by stream)
+
+### Stream A --- LCA inversion CI (lca-inversion worktree)
+
+1. **Production wiring (Stage 8f) --- UNBLOCKED.** The ster-rename PR (`ff9a665` on lca-inversion) landed today, so each script now writes uniquely-named ster files. Wire `lca_inversion_ci` into `5_GrRC.do` so every spec gets `e(inv_ci95_lo)` / `e(inv_ci95_hi)` scalars. Then update `grc_tex_table_trend` to add the inversion CI as a row in the LaTeX tables. **Highest-leverage next step.**
+2. **Critic fixes #4, #5, #2** to `lca_inversion.py` (effective-rank dof in `pinv`, symmetric sparse drop, Stata-style cluster correction).
+3. **CHN hukou splits via inversion** --- whether the rural-first / urban-first splits each admit a CI (the empty pooled-CHN CI suggests the hukou splits are essential, not optional).
+4. **Island detection** in the LCA inversion (TODO already tracked).
+5. **Extend LCA inversion to `run_grc_robust_vv`** --- WCB-augmented Wald, vfirst clustering. TODO already tracked; gated on Verdier P3.
+
+### Stream B --- Python GMM port (main worktree)
+
+6. **Validate `_drop_sparse_moments` on CHN and TZA covs_all.** Today's threshold=2 test was IDN-only.
+7. **Document the Python-vs-Stata basin-switching as a feature** in a future `docs/reviews/` memo (the always-treated fit agrees to 0.01; the $(\phi, \kappa)$ decomposition is what differs).
+
+### Stream C --- Simulation (not yet scaffolded)
+
+8. **Update `SIMULATION_PLAN.md`** to incorporate (a) per-replication LCA inversion alongside sandwich CI, (b) Stream B's sparse-moment drop convention, (c) the secondary multistart-basin diagnostic from the TODO above.
+9. **Stage A0 scaffolding** --- the directory layout in the plan, smoke-test runner.
+
+### Verdier track (parallel, user-led)
+
+- **Verdier P2:** roll out `run_grc_robust_vv` to all 3 countries x 5 covs.
+- **Verdier P3:** LCA-overid test --- unblocks the Stream A WCB-augmented inversion TODO above.
+
+### Cross-cutting
+
+10. **Send the coauthor email** about ster-filename collision --- the rename PR landed but the coauthors should know what happened so they don't re-introduce the bug. Draft is at `docs/communications/2026-04-23_ster-filename-collision-email.md`.
+11. **Paper writeup item:** position the LCA inversion as the primary CI for $\phi$ in the inference subsection. Especially flag (a) the CHN-pooled empty CI, (b) the IDN covs_all razor-thin upper bound at $-0.010$.
+
+### Recommended order for the next session
+
+(1) production wiring --- unblocked, highest payoff.
+(10) coauthor email --- quick and overdue.
+Then either Stream A items 2-4 or pivot to Stream C scaffolding.

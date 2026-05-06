@@ -2678,18 +2678,90 @@ end
 capture program drop run_grc_robust_vv
 program define run_grc_robust_vv
 
+    * ============================================================
+    * Purpose:  GRC GMM with Verdier (2020 JAE) cluster-residualized
+    *           switcher instruments and SEs clustered at vfirst.
+    *           Used by 17_verdier_robust.do for the paper's
+    *           "Allowing location-specific trajectory intercepts"
+    *           subsection.
+    *
+    * Key differences from run_grc (audit memo A1-A10, C1-C8):
+    *   - Switcher instruments swd_switcher_*_choice are residuals
+    *     from regressing switcher_s_choice on i.vfirst within
+    *     trajectory s (first stage below).
+    *   - No always-urban instrument: always_choice is a constant
+    *     among always==1 workers, so the demeaned version would
+    *     be identically zero (audit C1, smoke-test verified).
+    *   - vce(cluster vfirst), winitial(unadjusted, independent).
+    *   - Default: onestep GMM (matching VV's setting).
+    *
+    * SIDE EFFECT: drops observations with missing vfirst from the
+    * loaded data. The drop persists across calls within the same
+    * `use'. Driver `17_verdier_robust.do' reloads per country, so
+    * cross-country contamination is avoided. Reload before unrelated
+    * estimation if reusing the program elsewhere (audit C2).
+    *
+    * Output (.ster files in $dir/output):
+    *   <estname>          -- main GMM fit
+    *   <estname>_never    -- nlcom Delta_never
+    *   <estname>_always   -- nlcom Delta_always
+    *   <estname>_delta    -- nlcom per-switcher Delta + joint test
+    *   <estname>_avg      -- nlcom Delta_avg
+    *
+    * Full audit at:
+    *   quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md
+    * ============================================================
+
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
+        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1) ///
+         ONEstep TWOstep]
+
+    * ----------------------------------------------------------------
+    * Resume-on-interrupt. If ${skip_if_exists} == "1" and the
+    * last-written .ster for this estname exists (the _avg subgroup,
+    * saved at the very end of run_grc_robust_vv), skip the whole block.
+    * Lets an interrupted master pipeline pick up from the next missing
+    * cell on relaunch. To force a fresh run, either delete
+    * $output/`estname'*.ster or unset ${skip_if_exists}.
+    * Pattern ported from grc-pipeline-refactor branch's run_grc.
+    * ----------------------------------------------------------------
+    if "${skip_if_exists}" == "1" {
+        capture confirm file "$dir/output/`estname'_avg.ster"
+        if _rc == 0 {
+            di as text "run_grc_robust_vv: SKIP `estname' (`estname'_avg.ster present)"
+            exit
+        }
+    }
+
+    * ----------------------------------------------------------------
+    * Resolve onestep vs twostep (default: onestep, matching VV's setting)
+    * ----------------------------------------------------------------
+    if "`onestep'" != "" & "`twostep'" != "" {
+        di as error "run_grc_robust_vv: cannot specify both onestep and twostep"
+        exit 198
+    }
+    if "`twostep'" != "" {
+        local stepopt "twostep"
+    }
+    else {
+        local stepopt "onestep"
+    }
+    di as text "run_grc_robust_vv: GMM step option = `stepopt'"
 
     * ----------------------------------------------------------------
     * Build vfirst + drop missing-vfirst obs
     * ----------------------------------------------------------------
     gen_vfirst, vname(`vindex') genname(vfirst)
+    qui count
+    local n_pre_drop = r(N)
     qui count if missing(vfirst)
-    if r(N) > 0 {
-        di as text "run_grc_robust_vv: dropping " r(N) " obs with missing vfirst"
-    }
+    local n_dropped_vfirst = r(N)
+    local pct_dropped = cond(`n_pre_drop' > 0, ///
+        100*`n_dropped_vfirst'/`n_pre_drop', 0)
+    di as text "run_grc_robust_vv: vfirst missing -> dropping " ///
+        `n_dropped_vfirst' " of " `n_pre_drop' " obs (" ///
+        %5.2f `pct_dropped' "%)"
     qui drop if missing(vfirst)
 
     qui levelsof vfirst, local(vvals)
@@ -2718,17 +2790,36 @@ program define run_grc_robust_vv
         local swd_list "`swd_list' swd_switcher_`s'_choice"
     }
 
-    * Demean always_choice on i.vfirst among always-urban workers.
-    * Always-urban have choice=1 in every period so within-person
-    * variation is zero; BUT cross-person variation in always-urban
-    * status within a cluster contributes. Same pattern as VV.
-    capture drop swd_always_choice
-    tempvar tmpy tmpresid
-    qui gen `tmpy' = always_choice if always == 1
-    qui reg `tmpy' i.vfirst if always == 1
-    qui predict `tmpresid' if always == 1, resid
-    qui gen swd_always_choice = `tmpresid'
-    qui replace swd_always_choice = 0 if missing(swd_always_choice)
+    * Per-trajectory rank diagnostic (audit C7): a (cluster, trajectory)
+    * cell with very few workers absorbs almost everything into i.vfirst
+    * and produces residuals near zero, leaving residual variance from a
+    * smaller effective sample than counts suggest. Print nonzero-residual
+    * counts per trajectory so weak first stages are visible in the log.
+    foreach s of numlist `switchers' {
+        qui count if switcher_`s' == 1
+        local n_traj_`s' = r(N)
+        qui count if switcher_`s' == 1 & swd_switcher_`s'_choice != 0
+        local nz_traj_`s' = r(N)
+        di as text "  trajectory `s': nonzero residuals = " ///
+            `nz_traj_`s'' " / " `n_traj_`s''
+    }
+
+    * No always-urban instrument is constructed.
+    * Earlier code residualized always_choice on i.vfirst among workers
+    * with always==1 to mirror VV's switcher residualization. But always-
+    * urban have choice==1 in every period by construction, so always_choice
+    * is identically 1 within that subsample; demeaning a constant on
+    * cluster dummies gives residuals identically zero. The resulting
+    * instrument added a zero column to the moment system. The smoke test
+    * at tests/verify_C1_swd_always.do verified this empirically across
+    * all three countries (IDN, TZA, CHN: 0 nonzero values out of 92,738 /
+    * 29,864 / 109,535 observations) and showed that dropping the
+    * instrument from CHN covs_all onestep changed point estimates and
+    * standard errors by zero to machine precision. kappa is identified
+    * through the cross-equation restrictions in the moment formula
+    * (always # 1.choice term) plus the existing instrument set.
+    * See quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md
+    * (finding C1) for the full audit.
 
     * ----------------------------------------------------------------
     * Cluster-support diagnostics (brief)
@@ -2769,12 +2860,21 @@ program define run_grc_robust_vv
     di as text "run_grc_robust_vv: base trajectory = `base'"
     di as text "run_grc_robust_vv: phi initial value = `phistart'"
 
+    * Initial-values option is declared optional; only attach from(...)
+    * to the gmm call when the caller actually supplied starting values.
+    * Empty from() would otherwise leave the option present but blank.
+    local fromopt
+    if "`initial'" != "" local fromopt "from(`initial')"
+
     * ----------------------------------------------------------------
     * GMM: same moment equation as run_grc, BUT instruments
-    * swd_switcher_*_choice replace switcher_*_choice, and
-    * swd_always_choice replaces always_choice. vce(cluster vfirst),
+    * swd_switcher_*_choice replace switcher_*_choice. vce(cluster vfirst),
     * winitial unadjusted independent, onestep (VV's settings).
     * Parameter count identical to run_grc -- no beta_dev.
+    * No always-urban instrument (the demeaned version would be identically
+    * zero; see comment block above and audit memo C1). kappa is identified
+    * through the moment equation's always#1.choice term combined with the
+    * standard instruments (never, switcher_traj, choice).
     * ----------------------------------------------------------------
     eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                   ///
                             - {Delta_base}*choice                                   ///
@@ -2785,12 +2885,13 @@ program define run_grc_robust_vv
                            , instruments(                                           ///
                             `covarlist'                                             ///
                             never `switcher_traj' choice                            ///
-                            swd_always_choice `swd_list', nocons                    ///
+                            `swd_list', nocons                                      ///
                            )                                                        ///
                              vce(cluster vfirst)                                    ///
                              winitial(unadjusted, independent)                      ///
-                             onestep                                                ///
-                             from(`initial')                                        ///
+                             `stepopt'                                              ///
+                             `fromopt'                                              ///
+                             quickderivatives nolog                                 ///
                              iterate(`iterate')
 
     * ----------------------------------------------------------------
@@ -2808,6 +2909,12 @@ program define run_grc_robust_vv
     estadd scalar joint_chi2 = r(chi2), replace : `estname'
     estadd scalar joint_p    = r(p),    replace : `estname'
 
+    * Note (audit C6): under one-step GMM, Stata's behavior is version-
+    * dependent -- some versions return rc != 0, others return rc == 0
+    * with r(J) missing. Either path leaves Jstat unset / missing on the
+    * ster, which renders as a blank cell in the table -- the desired
+    * behavior under onestep. Worth knowing if a future Stata version
+    * starts populating these cells with a non-missing value.
     capture estat overid
     if _rc == 0 {
         estadd sca Jstat = r(J),    replace : `estname'
@@ -2815,12 +2922,25 @@ program define run_grc_robust_vv
         estadd sca Jpval = r(J_p),  replace : `estname'
     }
     else {
-        di as text "run_grc_robust_vv: estat overid unavailable (onestep GMM) -- Jstat not computed"
+        di as text "run_grc_robust_vv: estat overid unavailable (`stepopt' GMM) -- Jstat not computed"
     }
     local converged_str = cond(e(converged)==1, "Y", "N")
     estadd local converged_str "`converged_str'", replace : `estname'
     estadd scalar V_clusters = `V',           replace : `estname'
     estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
+    estadd scalar n_dropped_vfirst = `n_dropped_vfirst', replace : `estname'
+
+    * ----------------------------------------------------------------
+    * Individual-count scalar: e(N_clust) under vce(cluster vfirst) is
+    * the location count, NOT the individual count. Compute the true
+    * count of unique pids in the GMM's e(sample) and store it as a
+    * separate scalar so the table program can show Individuals AND
+    * Locations as distinct rows. Audit memo C8.
+    * ----------------------------------------------------------------
+    tempvar pid_tag
+    qui egen `pid_tag' = tag(pid) if e(sample)
+    qui count if `pid_tag' == 1
+    estadd scalar n_indiv = r(N), replace : `estname'
 
     estimates save "$dir/output/`estname'${vsfx}", replace
 
@@ -3046,6 +3166,96 @@ program define grc_tex_table_trend
 end
 
 * **********************************************************************
+* Create LaTeX table for the Verdier-style robust GRC results.
+* Differs from grc_tex_table_trend in the bottom stats block: shows
+* Individuals (n_indiv = unique pid count in e(sample)) AND Locations
+* (N_clust = vfirst cluster count under vce(cluster vfirst)) as
+* separate rows. The main GRC tables only need one count row because
+* their vce(cluster pid) makes N_clust == individual count; the
+* Verdier tables need both because clusters are locations, not pids.
+* **********************************************************************
+cap program drop grc_tex_table_trend_robust
+program define grc_tex_table_trend_robust
+    syntax , COLumns(integer) FILEname(string asis) 	///
+					COUNTRY(string asis) KEEP(string) varlabel(string) 	///
+					htb(string) PREhead(string asis) POSTfoot(string asis) ///
+					COEFLABels(string asis) TEXTdepvar(string asis) ///
+					[ESTPrefix(string)]
+
+    if "`estprefix'" == "" local estprefix "vv_"
+
+    local num_panels `panels'
+    local ccc ""
+    forval i = 1/`columns' {
+        local ccc "`ccc'c"
+    }
+    local cmid = `columns' + 1
+		local colnumbers ""
+		local table_prehead 	""
+		local table_postfoot 	""
+		local posthead 			""
+    local table_prehead1 "`"\begin{table}[`htb'] \centering \begin{threeparttable}"'"
+    local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
+    local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
+
+    local ests_never = ""
+    local ests_avg = ""
+    local ests = ""
+
+    foreach estname in covs_0 covs_trend covs_1 covs_2 covs_all {
+        local ests_never = "`ests_never' `estprefix'`country'_`estname'_never"
+        local ests_avg   = "`ests_avg' `estprefix'`country'_`estname'_avg"
+        local ests       = "`ests' `estprefix'`country'_`estname'"
+    }
+
+    * Delta_never row
+    esttab `ests_never'                    ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    fragment booktabs noobs                ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    varwidth(20)                           ///
+    nolines nomtitles `colnumbers'         ///
+    prehead(`table_prehead')               ///
+    posthead(`table_posthead')             ///
+    coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+    replace substitute(\_ _)
+
+    * Average Delta row
+    esttab `ests_avg'                      ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    fragment booktabs noobs                ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    varwidth(20)                           ///
+    nolines nomtitles nonum                ///
+    coeflabels(Delta_avg "Average $\Delta$") ///
+    append substitute(\_ _)
+
+    * Phi row + bottom stats: Individuals, Locations, Observations,
+    * J-stat, J-stat p-value, Converged.
+    esttab `ests'                          ///
+    using "$output/tables/`filename'.tex", ///
+    se b(%8.3f)                            ///
+    keep(`keep')                           ///
+    varlabels(`keep' "`varlabel'")         ///
+    eqlabels(none)                         ///
+    fragment booktabs                      ///
+    collabels("")                          ///
+    starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+    s(n_indiv N N_clust Jstat Jpval converged_str, label( "Individuals" "Observations" "Locations" "J-stat" "J-stat (p-value)" "Converged") ///
+    fmt(%9.0fc %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+    varwidth(20)                           ///
+    nolines nomtitles nonum                ///
+    postfoot("`table_postfoot'")           ///
+    append substitute(\_ _)
+
+end
+
+* **********************************************************************
 * extras_tex_table
 * Phase 1b.6: per-cell wrapper that builds ONE family-table for the
 * extras specs (matches run_grc_with_extra_regressor's GMM cells 1:1).
@@ -3058,6 +3268,7 @@ end
 *   country(IDN|CHN|TZA)
 *   spec3(cuu|cub|iuu|cnu)
 *   regressor(varname)
+
 * **********************************************************************
 capture program drop extras_tex_table
 program define extras_tex_table

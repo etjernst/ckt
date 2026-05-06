@@ -2,6 +2,11 @@
 * Project:          Returns to migration
 * Task:             Set sub-directory globals + project-wide constants
 * **********************************************************************
+* Suppress the --more-- prompt project-wide. Set here (not in 0_master.do)
+* so alternate entry points (e.g. _smoke_full.do) that bypass master still
+* run non-interactively.
+  set more off
+
 * values switch (M4 / Phase 4): nominal (default) reads $dir/data; real
 * reads $dir/data_real (which junctions to the deflated-values data folder
 * in Dropbox). $vsfx is appended to ster, CSV, and LaTeX filenames so

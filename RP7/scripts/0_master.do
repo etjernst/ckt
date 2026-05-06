@@ -10,11 +10,11 @@
 
 clear all
 version 17
-set more off
 
-* Project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave) are
-* set in 0_path_config.do (included below) so that alternate entry points
-* (e.g. _smoke_full.do) which bypass this file still see them.
+* Project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave) and
+* `set more off` are configured in 0_path_config.do (included below) so
+* alternate entry points (e.g. _smoke_full.do) which bypass this file
+* still see them.
 
 * **********************************************************************
 * Preliminaries
@@ -60,7 +60,9 @@ if "`c(username)'"=="etje0002" {
 if "`c(username)'"=="maand" {
 	* Path varies by worktree. Pick ONE --- uncomment the active line.
 	global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
 	* global dir = "C:/git/ckt/RP7"
 	* Overleaf-Dropbox lives in Monash Enterprise Dropbox (not Personal).
 	global overleaf = "C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean"
@@ -87,6 +89,8 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/1_processData.do"
 * Compute & save summary statistics
 	include			"$dir/scripts/2_summaryStats.do"
+* Compute rank-condition diagnostic for unbalanced pooling (Appendix on pooling)
+	include			"$dir/scripts/1b_unbalanced_rank_diagnostic.do"
 * Run OLS & FE regressions
 	include			"$dir/scripts/3_OLS_uGRC.do"
 * Run GRC regressions (Urban)
@@ -105,3 +109,5 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/10_make_tables.do"
 * Make all GRC figures (heterogeneity plots + trajectory bar graphs)
 	include			"$dir/scripts/11_make_figures.do"
+* Run Verdier-style robust GRC (cluster-residualized instruments)
+	include			"$dir/scripts/17_verdier_robust.do"
