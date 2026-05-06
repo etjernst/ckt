@@ -210,3 +210,57 @@ Commits this session bundle.
 - `956b629` Rev 5 patches from evening session probe findings.
 - `158d258` Probe: fevar(trajectory), nograph, active-z filter, timestamped log.
 - `2ef9cce` Step 0.5 summclust sweep tooling and noise investigation.
+
+## Evening addendum: stability re-run reveals thermal throttling
+
+Picked up after a ~3.5 hour idle gap.
+User confirmed laptop was reasonably idle; launched [`stability_test_J5000.do`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/stability_test_J5000.do) cold.
+
+### Run 1 (background `bay4mwdbv`, results at [`stability_J5000_2026May5_161425.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/output/stability_J5000_2026May5_161425.csv))
+
+| Rep | Wall (s) |
+|-----|---------:|
+| 1   |   447.6  |
+| 2   | 1,462.3  |
+| 3   | 1,553.3  |
+| 4   | 1,458.8  |
+| 5   | 1,502.4  |
+
+Pooled CV across all 5 reps: ~36.5%, well above the 10% trust threshold.
+But the structure is not random scatter: rep 1 lands at the clean baseline (~448 s), reps 2--5 cluster tightly at ~1,494 s (CV ~3% across reps 2--5 alone).
+A step change after rep 1, not white noise.
+
+### Run 2 (background `b75v6ds97`, in flight at log time, results at [`stability_J5000_2026May5_194819.csv`](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/output/stability_J5000_2026May5_194819.csv))
+
+Re-run with no other changes to test whether something background was running during run 1.
+
+| Rep | Wall (s) |
+|-----|---------:|
+| 1   |   406.5  |
+| 2   | 1,489.0  |
+| 3   | 1,515.5  |
+| 4   | (in flight) |
+| 5   | (in flight) |
+
+Same step change. Rep 1 even faster than run 1's rep 1 (laptop had ~3.5 hours to cool fully).
+Reps 2--3 land in the same ~1,500 s regime as run 1 reps 2--5.
+
+### Hypothesis update
+
+Thermal throttling is now the leading explanation by a wide margin.
+The pattern reproduces across two independent runs separated by hours of idle: cold rep 1 fast, then a sustained-load regime change at ~1,500 s.
+Yesterday's anomalous 1,167 s replicate is no longer anomalous; it sits between the cold regime (~430 s) and the throttled regime (~1,500 s) and was probably caught mid-transition.
+The original 480 s "baseline" was the unusually fast rep, not the typical one.
+
+### Implications for the production decision
+
+The relevant production wall on this laptop is the throttled regime (~1,500 s at $J = 5{,}000$), not the cold-rep baseline.
+At empirical $J^4$ scaling, that implies $\approx 24{,}000$ s ($\approx 6.7$ hours) at $J = 10{,}000$ and $\approx 384{,}000$ s ($\approx 4.4$ days) at $J = 20{,}000$ on this hardware.
+The IDN production scale is $J = 29{,}715$.
+That makes the case for moving the production benchmark off this desktop materially stronger than it looked yesterday.
+
+### Open items
+
+Wait for run 2 reps 4--5 to complete (notification will fire).
+Decide between (a) accepting ~1,500 s as the operative wall and re-running sweeps in that regime, (b) moving to a quieter host (work laptop or MQ HPC) before further benchmarking, or (c) investigating whether throttling can be mitigated (CPU power profile, cooling pad, etc.).
+The from-scratch CR3 prototype and the R `summclust` head-to-head plan remain deferred pending host scoping.

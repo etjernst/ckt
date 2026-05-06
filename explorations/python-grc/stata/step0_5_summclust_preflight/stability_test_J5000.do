@@ -48,7 +48,7 @@ log using "stability_J5000_`stamp'.log", replace text
 
 local csvfile "stability_J5000_`stamp'.csv"
 file open csvfh using "`csvfile'", write replace
-file write csvfh "rep,J_target,J_actual,N_obs,n_active_z,wall_seconds,rc" _n
+file write csvfh "rep,J_target,J_actual,N_obs,n_active_z,wall_seconds,rc,start_clock,end_clock" _n
 file close csvfh
 
 capture noisily {
@@ -139,6 +139,7 @@ capture noisily {
         local n_active : word count `zvars_active'
         di as txt "Replicate `rep': J_actual=`J_actual', N_obs=`N_obs', active z=`n_active'"
 
+        local start_clock = "`c(current_date)' `c(current_time)'"
         timer clear 1
         timer on 1
         capture noisily summclust lndepvar `zvars_active' `periodFE',  ///
@@ -148,12 +149,13 @@ capture noisily {
             nograph
         local sc_rc = _rc
         timer off 1
+        local end_clock = "`c(current_date)' `c(current_time)'"
         quietly timer list 1
         local t_wall = r(t1)
-        di as txt _n "Replicate `rep' rc=`sc_rc'  wall=`t_wall'"
+        di as txt _n "Replicate `rep' rc=`sc_rc'  wall=`t_wall'  start=`start_clock'  end=`end_clock'"
 
         file open csvfh using "`csvfile'", write append
-        file write csvfh "`rep',`J',`J_actual',`N_obs',`n_active',`t_wall',`sc_rc'" _n
+        file write csvfh "`rep',`J',`J_actual',`N_obs',`n_active',`t_wall',`sc_rc',`start_clock',`end_clock'" _n
         file close csvfh
     }
 
