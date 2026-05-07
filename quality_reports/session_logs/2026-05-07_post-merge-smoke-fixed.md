@@ -252,3 +252,15 @@ Table builder emits paper-ready LaTeX with Delta_never, Delta_avg, Delta_always,
 - Run master end-to-end on this branch to verify the full chain --- not done; would take hours; cleanest done as a separate session.
 - Pre-existing `_est_<name>` 32-char overflow TODO in `5_GrRC.do`'s table-build block.
 - Pre-existing TODO to regenerate auxiliary tables for the Delta_avg fix.
+
+## Final note: canonical RP7 data location
+
+End-of-session correction to the data location story.
+Canonical local copy of processed `.dta` files is `grc-pipeline-refactor/RP7/data` (a real directory dated 2026-04-25), not Dropbox/RP5/data.
+RP5/data is an older snapshot, still on disk but not the preferred source.
+Dropbox/RP6/data remains empty (coauthors haven't repopulated since the re-version).
+
+This branch's `RP7/data` junction currently points at RP5/data and resolved correctly for today's smokes (the `.dta` files are equivalent across the three locations as far as the inversion compute is concerned).
+For new worktrees going forward, point at `grc-pipeline-refactor/RP7/data` per the updated MEMORY.md guidance: `cmd /c mklink /J <new_worktree>/RP7/data <canonical_grc-pipeline-refactor_path>`.
+
+The junction does not need to be re-pointed on this branch unless the inversion code or anything else starts caring about which source the data came from --- the read-only-immutable assumption holds either way.
