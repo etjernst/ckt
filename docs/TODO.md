@@ -8,6 +8,27 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Refine LCA inversion grid spacing for paper-final CIs
+**Added:** 2026-05-07.
+**Branch:** lca-inversion.
+**Context:** `lca_inversion.attach_inversion_for_stata` evaluates the test statistic on coarse grids: $\phi \in [-3, 1]$ step 0.01, $\Delta_N$ and $\Delta_{\text{avg}} \in [-1.5, 1.5]$ step 0.01, $\Delta_T \in [-5, 5]$ step 0.02.
+CI endpoints are reported as the convex hull of grid points where the bootstrap $p$-value is $\geq \alpha$, so endpoints can only land on grid points by construction.
+This produces visually round numbers (e.g., $[-1.230, -0.010]$) and makes neighboring covs specs collapse onto identical endpoints whenever the true rejection-region boundary sits between adjacent grid points.
+Fine for the qualitative claim; problematic for paper-grade narrow CIs.
+**Action:** for paper-final production, refine the grids.
+Two paths: (a) drop the step to 0.001 globally (10x more grid evaluations, single-cell wall time goes up roughly proportionally); (b) keep the current 0.01 grid for the bulk and use bracketed bisection around each estimated boundary to recover four-digit precision (cheaper).
+Implement as kwargs on `attach_inversion_for_stata` so the production pipeline can swap grids without code changes.
+**Estimated cost:** small implementation; the cost is the $\sim$10x compute hit at paper-final time.
+
+### Defer LCA inversion CIs on robustness specs until main results are committed
+**Added:** 2026-05-07.
+**Branch:** lca-inversion.
+**Context:** `5b_inversion.do` currently runs only the urban / consumption / unbalanced mainline (`spec3 = cuu`) across 3 countries x 5 covs specs = 15 cells (60 ster updates).
+Robustness checks are NOT covered: CHN hukou subsamples, IDN non-ag choice variable, balanced sample, income outcome, M4 real values.
+**Action:** keep main-results focus until the mainline tables are finalized.
+Then extend `5b_inversion.do` (or add a `5c_inversion_robustness.do`) to cover the robustness specs whose tables would carry inversion CI rows.
+Decision deferred until the main results are committed.
+
 ### Resolve `_est_<name>` 32-char overflow in 5_GrRC.do's table-build block
 **Added:** 2026-05-01.
 **Branch:** lca-inversion.
