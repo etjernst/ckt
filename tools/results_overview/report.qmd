@@ -64,6 +64,26 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
+## Balanced vs unbalanced | TZA consumption, urban
+
+```{python}
+#| label: tza-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "TZA", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: tza-bal-vs-unb-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
 ## Main vs experience | IDN consumption, urban (unbalanced)
 
 This table compares our main results for Indonesia to a version that adds years of working experience as a covariate in all columns.
@@ -86,6 +106,94 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
+## Main vs max experience | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds maximum years of working experience (the running max of experience over the panel) as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-maxexp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "max experience": {"family": "maxexp"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-maxexp-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs experience share | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds the experience share (years of experience normalized by potential working years) as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-expsh-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "experience share": {"family": "expsh"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-expsh-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs max experience share | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds the running max of experience share as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-maxexpsh-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "max experience share": {"family": "maxexpsh"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-maxexpsh-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban birth | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds an indicator for being born in an urban location as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-birth-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban birth": {"family": "birth"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-birth-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
 ## Main vs rural-first hukou | CHN consumption, urban (unbalanced)
 
 This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is rural.
@@ -104,6 +212,72 @@ print("```")
 
 ```{python}
 #| label: chn-main-vs-rf-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs rural-only hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose recorded hukou stays rural in every wave.
+
+```{python}
+#| label: chn-main-vs-ro-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "rural-only": {"hukou": "ro"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-main-vs-ro-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban-only hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose recorded hukou stays urban in every wave.
+
+```{python}
+#| label: chn-main-vs-uo-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban-only": {"hukou": "uo"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-main-vs-uo-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban-first hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is urban.
+
+```{python}
+#| label: chn-main-vs-uf-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban-first": {"hukou": "uf"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-main-vs-uf-coefplot
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
