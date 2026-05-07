@@ -301,4 +301,198 @@ State to know:
 - Render time ~4:43 for 6 sections; pystata's `estimates use` is the floor.
 - All visual elements (panel tints, +exp row, coefplot step axis) verified against the rendered HTML.
 
+## Continuation segment 3 (later 2026-05-07): one-dim comparisons + log-scraped real-values bank
+
+Picked back up after a `/clear`. The session log close noted "more comparison axes" and "M4 real-values" as the next two unblocked threads; this segment finished the first and built the framework for the second from log scraping rather than re-estimation.
+
+### Eight more one-dim comparisons | `e5c9033`
+
+Added all the obvious one-dim variations the framework already supported but the qmd hadn't exercised:
+
+- TZA balanced vs unbalanced (consumption, urban).
+- Three more CHN hukou variants vs main: rural-only, urban-only, urban-first (joining the existing rural-first section).
+- Four more IDN family extras vs main: max experience, experience share, max experience share, urban birth (joining the existing experience section).
+
+Total of eight new sections, all at consumption/urban/unbalanced for the hukou and family-extras axes (matching the user's "vary one dimension at a time" rule).
+Section labels for family extras went via the `fam_label` strings in `0_programs.do` (`Max Experience`, `Experience Share`, `Max Experience Share`, `Urban Birth`).
+
+### Why we ended up scraping logs instead of copying RP6-real sters
+
+User asked whether we could copy in real-value sters from `Dropbox/.../ReplicationPackage6 - real values/output/`.
+Initial inspection showed 215 sters there with old-style naming (`grc_CHN_c1.ster`, `_always/_avg/_delta/_never` subgroup suffixes) instead of the new spec3 + family + hukou + `_r` convention.
+Could in principle be renamed; the blocker was that the do-files reuse estnames *across cells* without a spec3 in the filename, so within a single script several cells overwrite each other's outputs:
+
+- `5_GrRC.do` reuses `grc_<COUNTRY>_covs_X` across three cells (cuu, cub, iuu).
+  Cell 3 ran last, so the surviving sters on disk are *income*, not consumption.
+- `10/11/12/13_GrRC_*.do` (family extras) all share `grc_<COUNTRY>_c<X>` with no family token.
+  `15_GrRC_birth.do` ran last (Apr 27 19:16), wiping the four prior families.
+
+Diagnosed via the log timestamps + log-trace of save lines.
+The ster filenames simply do not encode enough information to be re-tagged by hand.
+
+User then asked whether we could scrape from `.log` files instead, since each script writes its own log file (`5_GrRC.log`, `10_GrRC_experience.log`, ...) and the logs preserve everything --- even for cells whose sters were overwritten.
+Yes, in principle: the headline numbers we need (`phi:_cons`, `Delta_never`, `Delta_avg`, `J_p`, `N`) all print to the log when `run_grc` finishes.
+
+User's framing for the call: "we're setting up infrastructure to make it easier to review tons of results, not actually reviewing them for accuracy at the moment".
+So the scraped values are placeholders; we re-run M4 real-mode locally for the canonical values eventually.
+
+### Decision: estname vs log-filename clarification
+
+In the middle of the diagnosis I conflated two distinct concerns and the user called it out.
+
+- `.ster` files (estimation results, what `compare.py` reads): RP7 already uses fully-qualified estnames so no two cells overwrite each other.
+- `.log` files (Stata text audit trail): each script writes one log keyed on the script name, with `, replace`, so each rerun blows away the prior log; cells inside a script share that one log.
+
+The collision problem is purely an RP6-real artifact and is already fixed in RP7.
+No new RP7 hardening needed; just re-run M4 real-mode locally to land the `_r`-suffix sters cleanly.
+Updated [MEMORY.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/MEMORY.md) implicitly by writing the session log; nothing to add to project memory yet.
+
+### Log scraper: `tools/results_overview/scrape_logs.py` | `7dc3f38`
+
+Walks RP6-real Stata logs line-by-line.
+For each fit, captures:
+
+- Section header (`. * 1. Consumption | Urban | Unbalanced | GRC | <optional tag>`) --- gives spec3 + (for hukou) the variant tag.
+- Main GMM table `Number of obs = N` --- yields N.
+- `phi |` block header followed by `_cons | b se ...` --- yields `phi:_cons`.
+- `Hansen's J chi2(K) = V (p = P)` --- yields J_p.
+- Save line `file .../grc_X_Y.ster saved` (no subgroup suffix) --- pins the main fit's output stem.
+- `Delta_never | b se ...` (sub-fit table) --- yields Delta_never b/se.
+- `Delta_avg   | b se ...` --- yields Delta_avg b/se.
+
+Stata writes `.` for missing scalars; a `_safe_float` helper maps that and `.a/.b/.c` to None instead of raising.
+A handful of `urban-only x iuu` hukou fits are degenerate (phi SE in the thousands; no Hansen line); those land in the bank with phi/J_p as None and render as empty cells in the comparison table --- correct behavior for non-converged fits.
+
+Output: `tools/results_overview/scraped_real.json`, keyed by the new-naming stem with `_r` suffix.
+First pass landed 201 fits from `5_GrRC` + family extras 10/11/12/13/15.
+Second pass added `6_GrRC_NonAg.log` (5 fits, single cnu cell, IDN-only) and `8_GrRC_hukou.log` (60 fits, 4 hukou variants x 3 spec3 cells x CHN, with cov tokens already in new naming).
+Section-regex extension to capture the trailing `| <hukou-tag>` field handled the long-form hukou names (`rural hukou first` -> `rf`, etc.).
+Adding `cnu` to the SPEC3_FROM_HEADER table also picked up an extra cell in `15_GrRC_birth.log` (cuu -> cub -> iuu -> *cnu*) that previously fell through with `spec3=None`, so birth went 12 -> 16 entries.
+Bank now at **270 entries**, 265 complete, 5 degenerate.
+
+`14_GrRC_NonAg_experience.log` skipped: it's the cnu x family axis, only matters once that combination is exercised in the comparison render (no current section uses it).
+
+### `compare.py` extension: values axis with bank fallback | `7dc3f38`
+
+Added a `values` key to `fix`/`override` dicts.
+When `values: "real"`, the version's filename stem gets `_r` appended via a new `_vsfx(cfg)` helper.
+`_discover_covs(stem, output_dir, vsfx)` first globs the disk; if the disk has nothing AND `vsfx` is `_r`, it falls back to scanning the bank for keys matching `{stem}_<cov>_r`.
+`load_fit(stem, output_dir, vsfx)` mirrors the same pattern: try disk first, then synthesize a `Fit` from bank values.
+
+The synthetic-Fit path uses a thin shim that constructs `SterRecord` objects with just the three index entries `Fit.headline()` reads (`phi:_cons` on `main`, `Delta_never` on `n_rec`, `Delta_avg` on `g_rec`) plus `J_p` and `N` on `main.`
+`a_rec` and `d_rec` are None; `runtime_s` is None (logs don't record it).
+The `runtime` row in the comparison table renders as empty for real columns, which is the correct visual signal that these are placeholder values.
+
+`comparison_table` and `coefplot` thread the per-version `vsfx` through unchanged otherwise.
+The whole new path is opt-in: existing `versus = {"unbalanced": "cuu", "balanced": "cub"}` calls don't pass `values` and behave exactly as before.
+
+### Eleven nominal-vs-real demo sections | `75c5f55` + `be1ef40`
+
+A new top-level `# Real values` group at the end of `report.qmd` with eleven sections covering all the major axes the bank now reaches:
+
+- Three countries x main consumption spec (cuu): IDN, CHN, TZA.
+- IDN income (iuu).
+- IDN consumption with experience and urban-birth family extras.
+- IDN nonag (cnu).
+- Four CHN hukou variants (rf / ro / uf / uo) on consumption/urban.
+
+Eleven sections, paired with on-disk nominal sters where they exist (which they do for every case here).
+Each section is one declarative `compare()` call with `versus = {"nominal": {}, "real": {"values": "real"}}` --- the framework picks up the `_r` suffix and bank fallback automatically.
+
+## Decisions and the why (this segment)
+
+Decision: scrape logs to populate a JSON bank rather than re-run M4 real-mode estimation.
+Why: user said explicitly "our task here is getting ALL comparisons set up nicely, not having the right numbers in there".
+The render is wiring at the moment; canonical values come from a re-run later.
+Trade: brittle text parsing now, recoupable when the M4 re-run lands and replaces the bank with `_r`-suffix sters automatically (the disk path takes precedence over the bank in `load_fit`).
+
+Decision: synthetic Fit shim instead of writing fake `.ster` binary files.
+Why: `.ster` is Stata's binary estimation-results format; `pystata.estimates use` is the only well-defined way to read it.
+A handwritten shim that quacks like `SterRecord` for the three headline reads is cleaner than reverse-engineering Stata's binary format.
+
+Decision: bank fallback only when `vsfx` is non-empty.
+Why: the bank is opt-in for real-values lookups; the nominal path (no `vsfx`) remains pure on-disk.
+This means existing rendered sections cannot accidentally pull from bank.
+
+Decision: keep degenerate `urban-only x iuu` fits in the bank (rather than filter).
+Why: the comparison table renders empty cells for missing values, which is the correct signal that the fit didn't converge.
+Filtering would silently hide them; the empty cell makes the issue visible in the rendered output.
+
+Decision: drop the `_avg` suffix from the canonical save-line regex; rely on the `Delta_avg |` coefficient table to attribute the average value to the pending main stem.
+Why: `8_GrRC_hukou.log` uses a hybrid suffix scheme (`_n / _a / _avg`) where `_avg` is old-style, while `5_GrRC.log` uses the fully-old (`_never / _always / _delta / _avg`) and the family-extras logs match.
+Walking the coefficient tables is suffix-agnostic.
+
+Decision: skip `14_GrRC_NonAg_experience.log` for now.
+Why: it's the cnu x family combination axis; the comparison render currently has no section that uses both nonag treatment and a family extra simultaneously.
+Adding the parser without a corresponding section would write entries to the bank that nothing reads.
+
+Decision: `_safe_float` helper rather than try/except in each parsing site.
+Why: Stata's missing-value sentinel `.` (and `.a/.b/.c`) appears in J_p, sometimes in phi for degenerate fits, and would crash the parser.
+A small helper centralizes the handling.
+
+## Approaches rejected and the reason (this segment)
+
+Rejected: heuristic rename of the RP6-real `.ster` files (assume the surviving ones are cuu, label sections "tentative").
+Reason: the surviving sters are demonstrably *not* cuu in the cases that matter --- 5_GrRC's cell 3 was iuu, not cuu, and the family-extras scripts overwrite each other so 10/11/12/13 are entirely lost.
+Mislabeling would silently put income numbers in a "consumption" column.
+
+Rejected: write the scraped values out as actual `.ster` files using `estimates restore` + `estimates save` round-trip in pystata.
+Reason: would require rebuilding Stata's full eqname-aware coefficient matrices in Python from text, which is exactly the brittleness we're trying to avoid.
+The bank fallback achieves the same end with less surface area.
+
+Rejected: scrape `_a / _d` save lines (always / delta) too.
+Reason: `Fit.headline()` only reads Delta_never (n) and Delta_avg (g); a / d are present in the disk-loaded Fit but unused by the comparison table.
+Adding them to the bank would be effort with no consumer.
+
+Rejected: add `8_GrRC_hukou` and `6_GrRC_NonAg` to the bank as a single first-pass change.
+Reason: their cell structures differ from `5_GrRC` and the family-extras scripts.
+Doing them as a follow-up commit (after the main pipeline worked end-to-end) kept the diffs reviewable and the smoke-tests narrowly scoped.
+
+## Open items at end of this segment
+
+1. M4 real-values local re-run remains the canonical path.
+   Once `RP7/output/grc_*_r.ster` files exist, the disk path takes precedence and the bank becomes a no-op fallback.
+   Bank file can stay around as belt-and-suspenders or be deleted.
+2. `report.html` on disk reflects the 20-section state (the render that finished mid-segment).
+   The current qmd has 25 sections (14 nominal-only + 11 nominal-vs-real); needs a fresh render to match.
+   Render time ~4-5 minutes for the 20-section state; the new sections are bank-fed (cheap) so total should be ~5-6 min.
+3. `14_GrRC_NonAg_experience.log` not scraped --- defer until a `cnu x family` section is added.
+4. Five degenerate fits in the bank (`grc_CHN_uo_iuu_*_r`) have phi or J_p as None.
+   These render as empty cells; if the user wants to flag them more visibly, could add a `note: degenerate fit` annotation in the table.
+5. Bank file (`scraped_real.json`, ~75 KB committed) is small enough to keep in git; can revisit if it grows.
+6. `report.quarto_ipynb` is the cached jupyter intermediate from `quarto render`; not committed (correctly), implicitly gitignored or ignored as untracked.
+
+## Picking back up
+
+If you resume:
+
+Read this log + the morning + afternoon segments above for full continuity.
+The S1 brief is still the canonical design reference at [docs/plans/2026-05-06-s1-brief.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-05-06-s1-brief.md).
+
+Five commits landed this segment, in order:
+
+- [`e5c9033`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): eight new one-dim comparison sections (TZA bal/unb, 3 CHN hukou, 4 IDN family extras).
+- [`7dc3f38`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): scrape_logs.py for 5_GrRC + family extras (201 fits), compare.py extension with values axis and bank fallback.
+- [`75c5f55`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): six nominal-vs-real demo sections (IDN/CHN/TZA cuu, IDN iuu, IDN cuu+exp, IDN cuu+birth).
+- [`1a3f489`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): scraper extension for 6_GrRC_NonAg + 8_GrRC_hukou + `_safe_float` helper (bank now 270 fits).
+- [`be1ef40`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): five more nominal-vs-real sections (IDN cnu + 4 CHN hukou).
+
+Concrete next actions, in rough priority:
+
+1. Re-render the report to capture the 25-section state (the 20-section render that finished mid-segment is now stale).
+   `cd tools/results_overview && quarto render report.qmd --to html`.
+2. M4 real-values local re-run.
+   Set `global values "real"` and run the pipeline end-to-end on `RP7/data_real/`; produces `_r`-suffix sters in `RP7/output/`.
+   The scraped bank's role downgrades to fallback once that lands.
+3. Open `report.html` after re-render and verify the new sections look sensible (real columns populated, runtime row empty where bank-fed, panel tints alternate, coefplot legend correctly placed).
+
+State to know:
+
+- `tools/results_overview/scrape_logs.py` is the log parser; `tools/results_overview/scraped_real.json` is its output bank (committed).
+- `tools/results_overview/compare.py` now has a `values` axis: `versus = {"nominal": {}, "real": {"values": "real"}}` is the canonical pattern.
+- 11 of the 25 report sections are nominal-vs-real; the remaining 14 are nominal-only and unaffected by the new framework.
+- Bank load is `lru_cache(maxsize=1)`, so first lookup pays the ~75 KB JSON parse; subsequent lookups are dict reads.
+- voice.md and manuscript-writing.md were Read this session, so the prose-rules-enforcer flag is set; resets next session.
+- The 20-section render that finished at the very end of this segment shows the morning + afternoon work but predates the 5 final hukou + nonag real-values sections; the html is structurally correct but not current.
+
 with Claude
