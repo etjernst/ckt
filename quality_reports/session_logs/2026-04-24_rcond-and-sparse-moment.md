@@ -213,7 +213,7 @@ Discussed how the LCA inversion would extend to the Verdier-robust spec (`run_gr
 ### Stream B --- Python GMM port (main worktree)
 
 6. **Validate `_drop_sparse_moments` on CHN and TZA covs_all.** Today's threshold=2 test was IDN-only.
-7. **Document the Python-vs-Stata basin-switching as a feature** in a future `docs/reviews/` memo (the always-treated fit agrees to 0.01; the $(\phi, \kappa)$ decomposition is what differs).
+7. **Document the Python-vs-Stata basin-switching as a feature** in a future `quality_reports/reviews/` memo (the always-treated fit agrees to 0.01; the $(\phi, \kappa)$ decomposition is what differs).
 
 ### Stream C --- Simulation (not yet scaffolded)
 

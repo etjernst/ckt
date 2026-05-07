@@ -1,6 +1,6 @@
 """
 Parse all GrRC log files under scripts/logs/ and produce a per-run convergence
-table. Writes docs/reviews/2026-04-22-gmm-convergence-audit.md.
+table. Writes quality_reports/reviews/2026-04-22-gmm-convergence-audit.md.
 
 For each `run_grc` invocation in each log, we record:
   - source log

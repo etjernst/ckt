@@ -575,7 +575,7 @@ Proposed phase order, each with its own PR-sized commit set:
 **Status as of 2026-04-29: NOT STARTED.** One-line edit in `grc_tex_table_trend`; gated by the regression test.
 
 ### Audit-driven side workstream (separate from this spec).
-The 2026-04-28 best-practices audit ([docs/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/reviews/2026-04-28_pipeline-best-practices.md)) and its action plan ([docs/plans/2026-04-29-audit-action-plan.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-04-29-audit-action-plan.md)) drove the cleanup work in the 2026-04-29 session.
+The 2026-04-28 best-practices audit ([quality_reports/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_pipeline-best-practices.md)) and its action plan ([docs/plans/2026-04-29-audit-action-plan.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-04-29-audit-action-plan.md)) drove the cleanup work in the 2026-04-29 session.
 Status: nearly closed.
 Pending: `m8` (graph-save in cwd), `m13` (`data_path_override`---likely TRIVIA / SKIP), `m14` (schemepack install bug), `m16` (hardcoded panel headers).
 Plus the data-creation findings (`DC-M1` through `DC-m7`) deferred by the user to a later session.
@@ -614,7 +614,7 @@ Tier 3 #6 smoke run is still in flight; Tier 2 byte-identity check is parked unt
 | M9: per-fit timer (`e(runtime)`) | section 2 M9 | `1cce1e9` | `estadd scalar runtime` at `0_programs.do:1947`; populates the S1 scraper's runtime column. |
 | M10: resume-on-interrupt guard | section 2 M10 | `1cce1e9` | `${skip_if_exists}` global; the M10 guard is what makes the post-OOM Tier 3 #6 relaunch viable (1365 sters already on disk). |
 | M11: unique 32-char-safe ster naming | section 2 M11 | `ddb3886` plus follow-ups | `grc_<country>_<spec3>_<covs2>[_<sfx1>]`; verified by Tier 1 lint at [`quality_reports/reviews/2026-05-02_tier1-lint.md`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-02_tier1-lint.md). |
-| S3: program-caller map | section 3 S3 | Phase 2 (caller map at `docs/reviews/2026-04-30_program-caller-map.md`) | No deletions yet; the map is the input. |
+| S3: program-caller map | section 3 S3 | Phase 2 (caller map at `quality_reports/reviews/2026-04-30_program-caller-map.md`) | No deletions yet; the map is the input. |
 | Phase 1b table-formatting series | not in original spec | `cceb9cb` ... `f68892e` | Caption / label / tablenotes moved to Overleaf preamble macros; tabular-only table output; blank rows stripped. |
 | Hukou merge into `run_grc` | not in original spec | `5c3308b` | Option B from M11; eliminates the duplicated `run_grc_hukou` program. |
 | Mu-loop dedup in `initial_values{,_robust}` | not in original spec | `d2b0c73` | M4-internal cleanup; bit-identical on 4 production cells (verification at `quality_reports/reviews/2026-04-30_M4-verification.md`). |

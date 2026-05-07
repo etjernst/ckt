@@ -51,7 +51,7 @@ Set up a Claude Code workspace for the CKT paper ("Selection and Heterogeneity i
 
 ### Review fixes implemented (15 total)
 
-Implemented all fixes from `docs/reviews/2026-03-12_proposed-fixes.md` and `docs/reviews/2026-03-12_second-pass-review.md` into `paper/main.tex`. Plan saved to `~/.claude/plans/virtual-wishing-kahan.md`.
+Implemented all fixes from `quality_reports/reviews/2026-03-12_proposed-fixes.md` and `quality_reports/reviews/2026-03-12_second-pass-review.md` into `paper/main.tex`. Plan saved to `~/.claude/plans/virtual-wishing-kahan.md`.
 
 Mechanical fixes:
 - Fix 1 (C1): Deleted duplicate equation block (old lines 397--405) with triple-duplicate labels
@@ -91,7 +91,7 @@ After initial implementation, user reviewed each change in the IDE and requested
 - **i.i.d./myopic paragraph (Fix 8):** User flagged last sentence as "damning." Investigated whether persistent shocks bias $\phi$ toward zero (attenuation argument). Worked through algebra in detail: argument fails because both numerator and denominator of $\phi$ ratio scale by same attenuation factor. Paragraph still under discussion for final wording.
 - **Covariates footnote (Fix 11):** User dislikes footnotes on equations. Moved explanation into the introductory sentence instead.
 - **$\beta_t^R$ time subscript (Fix 2):** User noted the subscript needs to disappear eventually. Reverted to $\beta^R$ in both equations and added a note that period effects absorb the time variation.
-- **Symmetric covariates testability (Fix 9):** User felt the testability language was "damning"---handing referee a stick. Reverted to original one-sentence assumption statement. Wrote separate `docs/reviews/gamma_equality_test.md` with full Stata implementation recipe for if a referee asks.
+- **Symmetric covariates testability (Fix 9):** User felt the testability language was "damning"---handing referee a stick. Reverted to original one-sentence assumption statement. Wrote separate `quality_reports/reviews/gamma_equality_test.md` with full Stata implementation recipe for if a referee asks.
 - **Assumptions inventory (Fix 10):** Moved from before unrestricted GRC to before estimation paragraph (Option B). Dropped A3 (no state dependence)---it's a consequence of A1+A2, not independent. Reformatted as `enumerate` environment with (A1)--(A5) labels. Replaced "A3--A5 are testable" with specific pointer to J-test only, since A3 ($\beta$ constant) and A4 ($\gamma^U=\gamma^R$) are not actually tested in the paper.
 - **$\tau_i$ sentence (Fix 6):** User wanted less detail. Cut from two sentences with formal conditional expectation to one sentence: "Since $\tau_i$ does not affect location choices, trajectory-specific differences in $\mu_{\underline{d}}$ identify differences in average comparative advantage."
 - **Always-urban bridging (Fix 14):** Fixed incorrect semicolon. Saved semicolon usage rule to memory.
@@ -123,15 +123,15 @@ Edited line 731 to tie the J-test discussion back to assumption (A5): "...and th
 
 Launched three review agents against the paper and Stata code:
 
-1. **Econometrics-critic** ([2026-03-25_results-review.md](../../docs/reviews/2026-03-25_results-review.md)): 3 CRITICAL (text/table number mismatches throughout, duplicate non-ag GRC table), 7 MAJOR (China $\phi$ insignificant in preferred spec, J-test caveats, income results contradict consumption, thin robustness section, TZA col 1 non-convergence, overstated conclusion), 4 MINOR.
+1. **Econometrics-critic** ([2026-03-25_results-review.md](../../quality_reports/reviews/2026-03-25_results-review.md)): 3 CRITICAL (text/table number mismatches throughout, duplicate non-ag GRC table), 7 MAJOR (China $\phi$ insignificant in preferred spec, J-test caveats, income results contradict consumption, thin robustness section, TZA col 1 non-convergence, overstated conclusion), 4 MINOR.
 
-2. **Stata-critic** ([2026-03-25_stata-review.md](../../docs/reviews/2026-03-25_stata-review.md)): 3 CRITICAL (missing files in RP4, `define_switcherpars` base mismatch, duplicate mu loop), 9 MAJOR (unconditional unbalanced controls, nonsensical `periodFE` variable, no `version` declaration, no master log, suppressed merge diagnostics, hardcoded trajectory enumeration, invisible `hhsize_cube`, undefined `$dir`, silent singleton drop), 5 MINOR.
+2. **Stata-critic** ([2026-03-25_stata-review.md](../../quality_reports/reviews/2026-03-25_stata-review.md)): 3 CRITICAL (missing files in RP4, `define_switcherpars` base mismatch, duplicate mu loop), 9 MAJOR (unconditional unbalanced controls, nonsensical `periodFE` variable, no `version` declaration, no master log, suppressed merge diagnostics, hardcoded trajectory enumeration, invisible `hhsize_cube`, undefined `$dir`, silent singleton drop), 5 MINOR.
 
-3. **Alignment-critic** ([2026-03-25_alignment-review.md](../../docs/reviews/2026-03-25_alignment-review.md)): 1 CRITICAL (OLS "time fixed effects" are actually a single arithmetic variable, not period dummies), 2 MAJOR (`define_switcherpars` base(2) mismatch, `5_GrRC.do` missing), 3 MINOR.
+3. **Alignment-critic** ([2026-03-25_alignment-review.md](../../quality_reports/reviews/2026-03-25_alignment-review.md)): 1 CRITICAL (OLS "time fixed effects" are actually a single arithmetic variable, not period dummies), 2 MAJOR (`define_switcherpars` base(2) mismatch, `5_GrRC.do` missing), 3 MINOR.
 
 ### RP5 comparison
 
-Discovered ReplicationPackage5 exists in Dropbox. Checked all CRITICAL and MAJOR issues against RP5 code ([2026-03-25_rp5-comparison.md](../../docs/reviews/2026-03-25_rp5-comparison.md)):
+Discovered ReplicationPackage5 exists in Dropbox. Checked all CRITICAL and MAJOR issues against RP5 code ([2026-03-25_rp5-comparison.md](../../quality_reports/reviews/2026-03-25_rp5-comparison.md)):
 
 - **FIXED (2):** Missing files (C-1, Alignment 3)---all do-files now present.
 - **PARTIALLY FIXED (2):** `define_switcherpars` program body now accepts `base()` correctly, but all call sites still hardcode `base(2)`. More usernames in `$dir` block but no guard.
@@ -142,7 +142,7 @@ Discovered ReplicationPackage5 exists in Dropbox. Checked all CRITICAL and MAJOR
 Compared `gen_time_fe` across original RP, RP4, and RP5:
 - **Original RP:** No `gen_time_fe` at all. Used a linear time trend (`trend = year - min_year`).
 - **RP4/RP5:** DB added `gen_time_fe` on 2025-11-24 to replace trends with period FE. Implementation is wrong: `gen periodFE = period_2 - period_`r(r)'` creates a single arithmetic variable (one contrast), not the full set of T-1 period dummies. GRC scripts do it correctly using a local macro varlist range.
-- Drafted RA message explaining the bug and two fix options ([2026-03-25_ra-message-time-fe.md](../../docs/reviews/2026-03-25_ra-message-time-fe.md)).
+- Drafted RA message explaining the bug and two fix options ([2026-03-25_ra-message-time-fe.md](../../quality_reports/reviews/2026-03-25_ra-message-time-fe.md)).
 
 ### `define_switcherpars` base(2) reassessment
 

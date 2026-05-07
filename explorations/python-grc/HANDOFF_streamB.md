@@ -117,7 +117,7 @@ Stata-side:
 We need element-wise diff tables for CHN/cons/urban/unb/covs_all and TZA/cons/urban/unb/covs_all to confirm the always-treated fit agrees to 0.01 there too.
 Stata reruns are already done; CSVs in `rerun_workdir/` on the `lca-inversion` branch. Or rerun locally.
 
-2. **Document basin-switching as a feature.** Memo in `docs/reviews/` summarizing the 2026-04-24 finding, framed as direct empirical evidence of weak identification of $\phi$ (consistent with the eigenstructure decomposition in [`FINDINGS_SE_phi.md`](file:///C:/git/ckt/explorations/python-grc/FINDINGS_SE_phi.md)).
+2. **Document basin-switching as a feature.** Memo in `quality_reports/reviews/` summarizing the 2026-04-24 finding, framed as direct empirical evidence of weak identification of $\phi$ (consistent with the eigenstructure decomposition in [`FINDINGS_SE_phi.md`](file:///C:/git/ckt/explorations/python-grc/FINDINGS_SE_phi.md)).
 Feeds the paper's inference-section writeup.
 
 ### Medium priority

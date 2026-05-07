@@ -1,6 +1,6 @@
 # Audit action plan (2026-04-29)
 
-Tracks user decisions on every finding in [docs/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/reviews/2026-04-28_pipeline-best-practices.md).
+Tracks user decisions on every finding in [quality_reports/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_pipeline-best-practices.md).
 Status legend: NOW = do this session; POST-T3 = do after Tier 3 finishes; TODO = backlog; WAIT = needs user input; SKIP = won't do.
 
 ## RP7 pipeline findings

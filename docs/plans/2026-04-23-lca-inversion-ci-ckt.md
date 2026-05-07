@@ -174,7 +174,7 @@ Run on the IDN data (the spec we have been debugging all session). Expectations:
 | 8c | Implement `run_lca_inversion.py`. First-pass IDN run. | 1 h |
 | 8d | Diagnose any IDN issues. Fine-grid second pass. | 1 h |
 | 8e | CHN and TZA runs. | 1 h (mostly compute) |
-| 8f | Writeup `docs/reviews/2026-04-XX-lca-inversion-ci-results.md`. Plot (phi, p) curves; tabulate CIs alongside sandwich SEs. | 1 h |
+| 8f | Writeup `quality_reports/reviews/2026-04-XX-lca-inversion-ci-results.md`. Plot (phi, p) curves; tabulate CIs alongside sandwich SEs. | 1 h |
 | **Total** | | **~1 day** |
 
 ## 9. Approved decisions (2026-04-23)
