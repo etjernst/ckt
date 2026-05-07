@@ -3097,7 +3097,13 @@ program define grc_tex_table_trend
 		local table_postfoot 	""
 		local posthead 			""
     local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
+    * Tablenote explaining multi-island CIs. The Delta_always inversion
+    * CI splits into two intervals at the singularity phi = -1 in the
+    * LCA mapping; the inversion CI strings emit the union form
+    * `[$-\infty$, x] $\cup$ [y, $+\infty$]` for those cells, and this
+    * note tells readers what that union notation means.
+    local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.}"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \bottomrule \end{tabular}"
 
     * Phase 1b.5b: load estimates from disk inside the program, so callers
     * don't need to do `estimates use/store` boilerplate. This means a
@@ -3118,50 +3124,83 @@ program define grc_tex_table_trend
         estimates store `_stem'_`estname'_n
         estimates use "$dir/output/`_stem'_`estname'_g${vsfx}"
         estimates store `_stem'_`estname'_g
+        estimates use "$dir/output/`_stem'_`estname'_a${vsfx}"
+        estimates store `_stem'_`estname'_a
       }
 
     * Empty locals to store estimate-name lists for esttab
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""
+    local ests_never  = ""
+	local ests_avg    = ""
+    local ests_always = ""
+    local ests        = ""
 
     * Generate the list of stored estimates for the current panel.
     * After M11, ster filenames and stored-estimate names use the same
     * `grc_<country>_<spec3>_<covs2>{,_n,_a,_d,_g}` shorthand, so no
     * Option-B "long disk / short memory" bridge is needed.
       foreach estname in `covs2set' {
-        local ests_never = "`ests_never' `_stem'_`estname'_n"
-        local ests_avg   = "`ests_avg' `_stem'_`estname'_g"
-        local ests       = "`ests' `_stem'_`estname'"
+        local ests_never  = "`ests_never' `_stem'_`estname'_n"
+        local ests_avg    = "`ests_avg' `_stem'_`estname'_g"
+        local ests_always = "`ests_always' `_stem'_`estname'_a"
+        local ests        = "`ests' `_stem'_`estname'"
       }
 
-      * Output Delta-never row
+      * Output Delta-never row plus its LCA inversion CI rows (90% and
+      * 95%). The CI rows consume pre-formatted bracketed string macros
+      * set on each _n ster by attach_inversion_ci.
       esttab `ests_never'                    ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      stats(inv_dN_ci90_str inv_dN_ci95_str, ///
+            fmt(s s)                         ///
+            labels("90\% LCA inv. CI ($\Delta_{\text{never}}$)" ///
+                   "95\% LCA inv. CI ($\Delta_{\text{never}}$)")) ///
       varwidth(20) 	                         ///
       nolines nomtitles `colnumbers'         ///
       prehead(`table_prehead')               ///
       posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$") ///
       replace substitute(\_ _)
 
-      * Output Delta average row
+      * Output Delta-average row plus its LCA inversion CI rows.
       esttab `ests_avg'   		             ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      stats(inv_davg_ci90_str inv_davg_ci95_str, ///
+            fmt(s s)                         ///
+            labels("90\% LCA inv. CI ($\bar{\Delta}$)" ///
+                   "95\% LCA inv. CI ($\bar{\Delta}$)")) ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "$\bar{\Delta}$") ///
       append substitute(\_ _)
 
-    * Output other estimates
+      * Output Delta-always row plus its LCA inversion CI rows. The
+      * Delta_always inversion CI is the one most likely to render as
+      * a multi-island union --- see the M\"obius tablenote in postfoot.
+      esttab `ests_always'   		         ///
+      using "$output/tables/`filename'${vsfx}.tex", ///
+	  se b(%8.3f)                            ///
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      stats(inv_dT_ci90_str inv_dT_ci95_str, ///
+            fmt(s s)                         ///
+            labels("90\% LCA inv. CI ($\Delta_{\text{always}}$)" ///
+                   "95\% LCA inv. CI ($\Delta_{\text{always}}$)")) ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_always "$\Delta_{\text{always}}$") ///
+      append substitute(\_ _)
+
+    * Output other estimates plus phi inversion CI rows and existing
+    * diagnostics. The phi CI rows ride on the parent (unsuffixed) ster.
       esttab `ests'	                         ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
@@ -3171,8 +3210,12 @@ program define grc_tex_table_trend
       fragment booktabs                      ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      s(inv_phi_ci90_str inv_phi_ci95_str    ///
+        N_clust N Jstat Jpval converged_str, ///
+        label("90\% LCA inv. CI ($\phi$)"    ///
+              "95\% LCA inv. CI ($\phi$)"    ///
+              "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
+        fmt(s s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc)) ///
       varwidth(20)                           ///
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
