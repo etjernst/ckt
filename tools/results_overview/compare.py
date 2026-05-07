@@ -12,6 +12,7 @@ stars, SE in parentheses on the next row).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +22,18 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 from scrape import SterRecord, load_ster
+
+
+@lru_cache(maxsize=None)
+def _cached_load_ster(path_str: str, mtime_ns: int) -> SterRecord:
+    """Cache `load_ster` keyed on (path, mtime_ns).
+
+    The mtime in the key invalidates the cache automatically whenever Stata
+    rewrites the `.ster` file, so re-renders after a fresh estimation run
+    never serve stale values. Within one render this also dedupes the
+    `comparison_table` -> `coefplot` double-load (~2x speedup).
+    """
+    return load_ster(Path(path_str))
 
 
 COV_ORDER = ["c0", "ct", "c1", "c2", "c3", "ca"]
@@ -33,17 +46,13 @@ COV_LABELS = {
     "ca": "+edu",
 }
 
-# Family-extras fits start the ladder at c1 = `<extra> + period FE` (no `c0` /
-# `ct`). The covariate-set tokens carry different meanings, so the labels are
-# overridden when a family is specified.
-COV_LABELS_FAMILY = {
-    "c1": "+extra",
-    "c2": "+female",
-    "c3": "+age<sup>2</sup>",
-    "ca": "+edu",
-}
-
 CANONICAL_COV_ORDER = ["c0", "ct", "c1", "c2", "c3", "ca"]
+
+# Plain-text step labels for matplotlib axes. Order is the canonical
+# progression that holds across both main (`c0` -> `ca`) and family-extras
+# (`c1` -> `ca`) ladders. Any "+<extra>" label slots between "trend" and
+# "+female" --- handled in `_step_order()`.
+STANDARD_STEPS_TEXT = ["none", "trend", "+female", "+age²", "+edu"]
 
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "RP7" / "output"
 
@@ -106,8 +115,44 @@ def _normalize_versus(versus: dict) -> dict[str, dict]:
 
 
 def _cov_labels_for(version_cfg: dict) -> dict[str, str]:
-    """Return the cov-label map appropriate for a version (main vs family)."""
-    return COV_LABELS_FAMILY if version_cfg.get("family") else COV_LABELS
+    """Return the cov-label map for a version.
+
+    Main fits use the canonical progression `none / trend / +female /
+    +age² / +edu`. Family-extras fits replace the leftmost rung with the
+    actual extra-regressor name (`+exp`, `+maxexp`, `+expsh`, etc.) so a
+    glance at the column header tells you what is being added.
+    """
+    family = version_cfg.get("family")
+    if not family:
+        return COV_LABELS
+    return {
+        "c1": f"+{family}",
+        "c2": "+female",
+        "c3": "+age<sup>2</sup>",
+        "ca": "+edu",
+    }
+
+
+def _step_order(seen: list[str]) -> list[str]:
+    """Order step labels canonically: none, trend, [extras], +female, +age², +edu.
+
+    `seen` is a list of step labels (with HTML stripped) collected across
+    versions. Family-extra labels (`+exp`, `+maxexp`, etc.) are anything
+    not in `STANDARD_STEPS_TEXT`; they slot in after "trend".
+    """
+    out: list[str] = []
+    for s in STANDARD_STEPS_TEXT:
+        if s in seen:
+            out.append(s)
+    extras = [s for s in seen if s not in STANDARD_STEPS_TEXT]
+    # Insert extras after "trend" if present, else at the front.
+    insert_at = (out.index("trend") + 1) if "trend" in out else 0
+    return out[:insert_at] + sorted(extras) + out[insert_at:]
+
+
+def _strip_html(label: str) -> str:
+    """Drop HTML tags from a cov label so it can be used in matplotlib."""
+    return label.replace("<sup>2</sup>", "²").replace("<sub>", "").replace("</sub>", "").replace("<i>", "").replace("</i>", "")
 
 
 @dataclass
@@ -155,13 +200,20 @@ def load_fit(stem: str, output_dir: Path = OUTPUT_DIR) -> Fit:
 
     Stem is the filename without `.ster` (e.g. `grc_IDN_cuu_ca`).
     Missing subgroup files are tolerated; the corresponding fields are None.
+
+    All loads route through `_cached_load_ster` keyed on (path, mtime_ns), so
+    repeat calls within a render hit the cache, but a Stata refit that
+    updates the file mtime invalidates the entry on the next call.
     """
+    def _load(p: Path) -> SterRecord:
+        return _cached_load_ster(str(p), p.stat().st_mtime_ns)
+
     main_path = output_dir / f"{stem}.ster"
-    main = load_ster(main_path)
+    main = _load(main_path)
 
     def _maybe(suffix: str) -> SterRecord | None:
         p = output_dir / f"{stem}_{suffix}.ster"
-        return load_ster(p) if p.exists() else None
+        return _load(p) if p.exists() else None
 
     return Fit(
         main=main,
@@ -323,20 +375,24 @@ def coefplot(
         for cov in covs:
             fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir)
 
-    # y-axis: union of cov sets across versions, in canonical order.
-    cov_union = [c for c in CANONICAL_COV_ORDER
-                 if any(c in version_covs[v] for v in versions)]
-    n_cov = len(cov_union)
+    # y-axis: union of *step labels* (e.g. "+female", "+exp") across
+    # versions, ordered canonically. This is robust to family-extras
+    # versions whose c1 token is "+exp" rather than "+female", so each
+    # version's marker lands on the row matching what was added.
+    per_version_steps: dict[str, list[str]] = {}
+    for v in versions:
+        cov_lbl = _cov_labels_for(version_cfgs[v])
+        per_version_steps[v] = [_strip_html(cov_lbl[c]) for c in version_covs[v]]
+    seen_steps: list[str] = []
+    for v in versions:
+        for s in per_version_steps[v]:
+            if s not in seen_steps:
+                seen_steps.append(s)
+    step_axis = _step_order(seen_steps)
+    n_steps = len(step_axis)
+    step_pos = {s: i for i, s in enumerate(step_axis)}
 
-    # Per-version cov labels can disagree (main vs family). For the shared
-    # y-axis we display the *main* convention if any version is non-family,
-    # otherwise the family convention.
-    any_main = any(not version_cfgs[v].get("family") for v in versions)
-    label_map = COV_LABELS if any_main else COV_LABELS_FAMILY
-    cov_labels = [label_map.get(c, c).replace("<sup>2</sup>", "²")
-                  for c in cov_union]
-
-    figsize = figsize or (2.8 * len(coefs), 1.8 + 0.32 * n_cov)
+    figsize = figsize or (2.8 * len(coefs), 1.8 + 0.32 * n_steps)
     fig, axes = plt.subplots(1, len(coefs), figsize=figsize, sharey=True)
     if len(coefs) == 1:
         axes = [axes]
@@ -347,14 +403,12 @@ def coefplot(
     for ax, coef in zip(axes, coefs):
         for v_idx, v_label in enumerate(versions):
             ys, xs, errs = [], [], []
-            for cov_idx, cov in enumerate(cov_union):
-                if cov not in version_covs[v_label]:
-                    continue
+            for cov, step in zip(version_covs[v_label], per_version_steps[v_label]):
                 fit = fits[(v_label, cov)]
                 b, se = fit.headline().get(coef, (None, None))
                 if b is None or se is None:
                     continue
-                ys.append(cov_idx + offsets[v_idx])
+                ys.append(step_pos[step] + offsets[v_idx])
                 xs.append(b)
                 errs.append(1.96 * se)
             ax.errorbar(
@@ -365,8 +419,8 @@ def coefplot(
                 label=v_label,
             )
         ax.axvline(0, color="grey", linewidth=0.6, linestyle=":")
-        ax.set_yticks(range(n_cov))
-        ax.set_yticklabels(cov_labels)
+        ax.set_yticks(range(n_steps))
+        ax.set_yticklabels(step_axis)
         ax.set_title(_COEF_DISPLAY.get(coef, coef))
         ax.invert_yaxis()
         ax.grid(True, axis="x", alpha=0.25, linewidth=0.5)
@@ -407,12 +461,11 @@ def render_table(table: pd.DataFrame) -> str:
     for v in table.columns.get_level_values(0):
         width_per_version[v] += 1
 
-    # Per-version background shade. The first version (canonically the
-    # baseline / "main") gets a near-white tint; the second gets a soft
-    # neutral grey. Mild contrast on purpose---enough to chunk visually,
-    # gentle enough not to fight the data. Extra versions cycle through
-    # the same two tints.
-    panel_shades = ["#fafafa", "#eef1f4"]
+    # Per-version background shade. Tints derived from the matplotlib
+    # default cycle (#1f77b4 steel-blue and #ff7f0e orange) so the table
+    # panels echo the coefplot markers. Lightness is high enough to keep
+    # text legible; saturation is low enough not to fight the data.
+    panel_shades = ["#eaf2f9", "#fdefe1"]
     bg_for: dict[str, str] = {
         v: panel_shades[i % len(panel_shades)] for i, v in enumerate(versions)
     }

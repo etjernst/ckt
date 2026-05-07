@@ -21,11 +21,10 @@ sys.path.insert(0, str(ROOT))
 from compare import comparison_table, coefplot, render_table
 ```
 
-## Balanced vs unbalanced---IDN consumption, urban
-
-The five covariate sets fan across the columns; balanced and unbalanced versions are grouped under the column spanners.
-Stars: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
+Stars throughout: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
 Standard errors in parentheses.
+
+## Balanced vs unbalanced---IDN consumption, urban
 
 ```{python}
 #| label: idn-bal-vs-unb-table
@@ -41,15 +40,11 @@ print("```")
 
 ```{python}
 #| label: idn-bal-vs-unb-coefplot
-#| fig-cap: "Point estimates with 95% CI by covariate set, balanced and unbalanced offset within each row."
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
 
 ## Balanced vs unbalanced---CHN consumption, urban
-
-Same comparison for China.
-Hansen's $J$-test is known to reject in the pooled CHN sample; splitting by hukou status is the documented fix and is not yet wired into this view.
 
 ```{python}
 #| label: chn-bal-vs-unb-table
@@ -65,16 +60,13 @@ print("```")
 
 ```{python}
 #| label: chn-bal-vs-unb-coefplot
-#| fig-cap: "Point estimates with 95% CI by covariate set, balanced and unbalanced offset within each row."
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
 
-## Main vs experience-extras---IDN consumption, urban (unbalanced)
+## Main vs experience---IDN consumption, urban (unbalanced)
 
-The "main" side fans across the standard five covariate sets.
-The "experience" side runs the GMM with `exp` (years of work experience) added as an extra regressor in every column, so its ladder is c1 (extra+period FE) through ca (extra+female+age$^2$+edu).
-Different cov-set lengths sit side-by-side: 5 columns for main, 4 for experience.
+This table compares our main results for Indonesia to a version that adds years of working experience as a covariate in all columns.
 
 ```{python}
 #| label: idn-main-vs-exp-table
@@ -90,22 +82,19 @@ print("```")
 
 ```{python}
 #| label: idn-main-vs-exp-coefplot
-#| fig-cap: "Point estimates with 95% CI. Cov-set rows on the y-axis use the main convention; experience markers appear only on rows it has."
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
 
-## Pooled vs rural-first hukou---CHN consumption, urban (unbalanced)
+## Main vs rural-first hukou---CHN consumption, urban (unbalanced)
 
-CHN sample split by hukou regime.
-"pooled" is the headline CHN spec; "rural-first" restricts to individuals whose initial recorded hukou is rural.
-The hukou-split sters share the same five-covariate ladder as the main fits, so the columns line up one-for-one.
+This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is rural.
 
 ```{python}
-#| label: chn-pooled-vs-rf-table
+#| label: chn-main-vs-rf-table
 #| output: asis
 fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
-versus = {"pooled": {}, "rural-first": {"hukou": "rf"}}
+versus = {"main": {}, "rural-first": {"hukou": "rf"}}
 
 table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
@@ -114,8 +103,51 @@ print("```")
 ```
 
 ```{python}
-#| label: chn-pooled-vs-rf-coefplot
-#| fig-cap: "Point estimates with 95% CI. Hansen's $J$-test should sit in a more reasonable range under the rural-first split."
+#| label: chn-main-vs-rf-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main (urban) vs non-agricultural---IDN consumption (unbalanced)
+
+This table compares our main results for Indonesia to a version that uses non-agricultural employment instead of urban location as the treatment.
+
+```{python}
+#| label: idn-main-vs-nonag-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "balance": "unbalanced"}
+versus = {"main": {"choice": "urban"}, "non-ag": {"choice": "nonag"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-nonag-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main (consumption) vs income---IDN urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that uses log per-capita income as the dependent variable instead of log per-capita consumption.
+
+```{python}
+#| label: idn-main-vs-income-table
+#| output: asis
+fix    = {"country": "IDN", "choice": "urban", "balance": "unbalanced"}
+versus = {"consumption": {"depvar": "consumption"}, "income": {"depvar": "income"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-income-coefplot
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
