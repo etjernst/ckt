@@ -24,7 +24,7 @@ from compare import comparison_table, coefplot, render_table
 Stars throughout: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
 Standard errors in parentheses.
 
-## Balanced vs unbalanced---IDN consumption, urban
+## Balanced vs unbalanced | IDN consumption, urban
 
 ```{python}
 #| label: idn-bal-vs-unb-table
@@ -44,7 +44,7 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Balanced vs unbalanced---CHN consumption, urban
+## Balanced vs unbalanced | CHN consumption, urban
 
 ```{python}
 #| label: chn-bal-vs-unb-table
@@ -64,7 +64,7 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Main vs experience---IDN consumption, urban (unbalanced)
+## Main vs experience | IDN consumption, urban (unbalanced)
 
 This table compares our main results for Indonesia to a version that adds years of working experience as a covariate in all columns.
 
@@ -86,7 +86,7 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Main vs rural-first hukou---CHN consumption, urban (unbalanced)
+## Main vs rural-first hukou | CHN consumption, urban (unbalanced)
 
 This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is rural.
 
@@ -108,7 +108,7 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Main (urban) vs non-agricultural---IDN consumption (unbalanced)
+## Main (urban) vs non-agricultural | IDN consumption (unbalanced)
 
 This table compares our main results for Indonesia to a version that uses non-agricultural employment instead of urban location as the treatment.
 
@@ -130,7 +130,7 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Main (consumption) vs income---IDN urban (unbalanced)
+## Main (consumption) vs income | IDN urban (unbalanced)
 
 This table compares our main results for Indonesia to a version that uses log per-capita income as the dependent variable instead of log per-capita consumption.
 
