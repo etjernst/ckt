@@ -325,3 +325,129 @@ print("```")
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
+
+# Real values
+
+The sections below compare nominal (default) results to the same specification estimated on real (deflated) values of the dependent variable.
+Nominal columns load from on-disk `.ster` files; real columns currently pull headline values from a bank scraped from the RP6-real Stata logs (see `tools/results_overview/scrape_logs.py`).
+Once we re-run the M4 real pipeline locally, the bank fallback will be replaced with on-disk `_r`-suffix `.ster` files, and the `runtime` row will populate.
+
+## Nominal vs real | IDN consumption, urban (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN consumption, urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | TZA consumption, urban (unbalanced)
+
+```{python}
+#| label: tza-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "TZA", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: tza-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN income, urban (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-iuu-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "income", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-nom-vs-real-iuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN consumption, urban, experience family (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-exp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "family": "exp"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-exp-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN consumption, urban, urban-birth family (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-birth-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "family": "birth"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-birth-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
