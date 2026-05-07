@@ -11,6 +11,7 @@ stars, SE in parentheses on the next row).
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -56,6 +57,25 @@ STANDARD_STEPS_TEXT = ["none", "trend", "+female", "+age²", "+edu"]
 
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "RP7" / "output"
 
+# Bank of headline values scraped from RP6-real Stata logs (see
+# scrape_logs.py). Used as a synthetic-fit fallback when a `_r`-suffix
+# `.ster` file is missing on disk, so the nominal-vs-real comparison
+# view can render before we re-run the M4 real pipeline locally.
+SCRAPED_BANK = Path(__file__).resolve().parent / "scraped_real.json"
+
+
+@lru_cache(maxsize=1)
+def _load_bank() -> dict[str, dict]:
+    if not SCRAPED_BANK.exists():
+        return {}
+    return json.loads(SCRAPED_BANK.read_text(encoding="utf-8"))
+
+
+def _vsfx(cfg: dict) -> str:
+    """Return the values-axis suffix: empty for nominal, `_r` for real."""
+    return "_r" if cfg.get("values") == "real" else ""
+
+
 import re as _re
 
 _SPEC3_REV = {
@@ -85,14 +105,33 @@ def _stem_for(cfg: dict) -> str:
     return "_".join(parts)
 
 
-def _discover_covs(stem: str, output_dir: Path) -> list[str]:
-    """Glob for `{stem}_<cov>.ster` and return cov tokens in canonical order."""
-    pattern = _re.compile(rf"^{_re.escape(stem)}_(c[0-9ta])\.ster$")
+def _discover_covs(stem: str, output_dir: Path, vsfx: str = "") -> list[str]:
+    """Glob for `{stem}_<cov>{vsfx}.ster` and return cov tokens in order.
+
+    `vsfx` is the values-axis suffix (`""` for nominal, `"_r"` for real).
+    For real fits that lack on-disk `.ster` files, the bank of scraped
+    headline values (see `_load_bank`) supplies cov coverage instead.
+    """
+    pattern = _re.compile(
+        rf"^{_re.escape(stem)}_(c[0-9ta]){_re.escape(vsfx)}\.ster$"
+    )
     found: set[str] = set()
-    for p in output_dir.glob(f"{stem}_*.ster"):
+    for p in output_dir.glob(f"{stem}_*{vsfx}.ster"):
         m = pattern.match(p.name)
         if m:
             found.add(m.group(1))
+
+    # If real and the disk has nothing, look in the scraped bank.
+    if vsfx and not found:
+        bank = _load_bank()
+        prefix = f"{stem}_"
+        for key in bank:
+            if not key.startswith(prefix) or not key.endswith(vsfx):
+                continue
+            cov = key[len(prefix): -len(vsfx)]
+            if cov in CANONICAL_COV_ORDER:
+                found.add(cov)
+
     return [c for c in CANONICAL_COV_ORDER if c in found]
 
 
@@ -195,33 +234,81 @@ class Fit:
         return out
 
 
-def load_fit(stem: str, output_dir: Path = OUTPUT_DIR) -> Fit:
+def _synthetic_fit_from_bank(stem: str, vsfx: str, vals: dict) -> Fit:
+    """Build a Fit out of scraped-bank headline values.
+
+    Only the three headline reads in `Fit.headline()` (`phi:_cons` on
+    main, `Delta_never` on n_rec, `Delta_avg` on g_rec) plus `J_p`/`N`
+    on main need to work. The synthetic SterRecords carry just those
+    indices; everything else is None.
+    """
+    fake_path = OUTPUT_DIR / f"{stem}{vsfx}.ster"
+
+    def _rec(b_index: dict[str, float], se_index: dict[str, float]) -> SterRecord:
+        return SterRecord(
+            path=fake_path,
+            country="", spec3="", depvar="", choice="", balance="",
+            covs2="", covariates="",
+            b=pd.Series(b_index, dtype=float),
+            se=pd.Series(se_index, dtype=float),
+            N=vals.get("N"),
+            J=None, J_df=None, J_p=vals.get("J_p"),
+            runtime_s=None,
+        )
+
+    main = _rec(
+        {"phi:_cons": vals.get("phi_b")},
+        {"phi:_cons": vals.get("phi_se")},
+    )
+    n_rec = _rec(
+        {"Delta_never": vals.get("Dn_b")},
+        {"Delta_never": vals.get("Dn_se")},
+    )
+    g_rec = _rec(
+        {"Delta_avg": vals.get("Dg_b")},
+        {"Delta_avg": vals.get("Dg_se")},
+    )
+    return Fit(main=main, n_rec=n_rec, a_rec=None, d_rec=None, g_rec=g_rec)
+
+
+def load_fit(stem: str, output_dir: Path = OUTPUT_DIR, vsfx: str = "") -> Fit:
     """Load a main ster and its four subgroup sters by stem.
 
     Stem is the filename without `.ster` (e.g. `grc_IDN_cuu_ca`).
+    `vsfx` is the values-axis suffix (`""` nominal, `"_r"` real).
     Missing subgroup files are tolerated; the corresponding fields are None.
 
-    All loads route through `_cached_load_ster` keyed on (path, mtime_ns), so
-    repeat calls within a render hit the cache, but a Stata refit that
-    updates the file mtime invalidates the entry on the next call.
+    Disk lookups route through `_cached_load_ster` keyed on (path, mtime_ns).
+    For `_r`-suffix stems whose `.ster` files are not on disk, the bank of
+    scraped headline values supplies a synthetic Fit so the comparison
+    table can still render before we re-run the M4 real pipeline locally.
     """
     def _load(p: Path) -> SterRecord:
         return _cached_load_ster(str(p), p.stat().st_mtime_ns)
 
-    main_path = output_dir / f"{stem}.ster"
-    main = _load(main_path)
+    main_path = output_dir / f"{stem}{vsfx}.ster"
+    if main_path.exists():
+        main = _load(main_path)
 
-    def _maybe(suffix: str) -> SterRecord | None:
-        p = output_dir / f"{stem}_{suffix}.ster"
-        return _load(p) if p.exists() else None
+        def _maybe(suffix: str) -> SterRecord | None:
+            p = output_dir / f"{stem}_{suffix}{vsfx}.ster"
+            return _load(p) if p.exists() else None
 
-    return Fit(
-        main=main,
-        n_rec=_maybe("n"),
-        a_rec=_maybe("a"),
-        d_rec=_maybe("d"),
-        g_rec=_maybe("g"),
-    )
+        return Fit(
+            main=main,
+            n_rec=_maybe("n"),
+            a_rec=_maybe("a"),
+            d_rec=_maybe("d"),
+            g_rec=_maybe("g"),
+        )
+
+    if vsfx:
+        bank = _load_bank()
+        key = f"{stem}{vsfx}"
+        if key in bank:
+            return _synthetic_fit_from_bank(stem, vsfx, bank[key])
+
+    raise FileNotFoundError(main_path)
 
 
 def _stars(b: float, se: float) -> str:
@@ -270,7 +357,7 @@ def comparison_table(
     """
     versus_norm = _normalize_versus(versus)
 
-    # Per-version: merged config, stem, available cov tokens, fits.
+    # Per-version: merged config, stem, values-suffix, available cov tokens, fits.
     version_cfgs: dict[str, dict] = {}
     version_covs: dict[str, list[str]] = {}
     fits: dict[tuple[str, str], Fit] = {}
@@ -278,14 +365,16 @@ def comparison_table(
         cfg = {**fix, **override}
         version_cfgs[label] = cfg
         stem = _stem_for(cfg)
-        covs = _discover_covs(stem, output_dir)
+        vsfx = _vsfx(cfg)
+        covs = _discover_covs(stem, output_dir, vsfx)
         if not covs:
             raise FileNotFoundError(
-                f"no '{stem}_<cov>.ster' files found in {output_dir}"
+                f"no '{stem}_<cov>{vsfx}.ster' files (or bank entries) "
+                f"found for version '{label}' in {output_dir}"
             )
         version_covs[label] = covs
         for cov in covs:
-            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir)
+            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir, vsfx)
 
     coef_rows = ["Delta_never", "phi", "Delta_avg"]
     coef_labels = {
@@ -370,10 +459,11 @@ def coefplot(
         cfg = {**fix, **override}
         version_cfgs[label] = cfg
         stem = _stem_for(cfg)
-        covs = _discover_covs(stem, output_dir)
+        vsfx = _vsfx(cfg)
+        covs = _discover_covs(stem, output_dir, vsfx)
         version_covs[label] = covs
         for cov in covs:
-            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir)
+            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir, vsfx)
 
     # y-axis: union of *step labels* (e.g. "+female", "+exp") across
     # versions, ordered canonically. This is robust to family-extras
