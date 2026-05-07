@@ -392,26 +392,6 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-## Nominal vs real | IDN income, urban (unbalanced)
-
-```{python}
-#| label: idn-nom-vs-real-iuu-table
-#| output: asis
-fix    = {"country": "IDN", "depvar": "income", "choice": "urban", "balance": "unbalanced"}
-versus = {"nominal": {}, "real": {"values": "real"}}
-
-table = comparison_table(fix=fix, versus=versus)
-print("```{=html}")
-print(render_table(table))
-print("```")
-```
-
-```{python}
-#| label: idn-nom-vs-real-iuu-coefplot
-#| out-width: "100%"
-coefplot(fix=fix, versus=versus);
-```
-
 ## Nominal vs real | IDN consumption, urban, experience family (unbalanced)
 
 ```{python}
