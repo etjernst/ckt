@@ -233,5 +233,3 @@ capture log close
 if `saved_rc' != 0 {
     di as error ">>> 17_verdier_robust FAILED with rc=`saved_rc'"
 }
-* Suppress the Windows batch-mode "Stata finished" popup.
-exit, STATA clear

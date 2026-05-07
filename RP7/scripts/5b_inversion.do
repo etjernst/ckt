@@ -156,4 +156,3 @@ capture noisily {
 local rc = _rc
 capture log close
 if `rc' != 0 di as error ">>> 5b_inversion FAILED rc=`rc'"
-exit, STATA clear

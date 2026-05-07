@@ -121,6 +121,3 @@ run_grc_with_extra_regressor, country(IDN) spec3(cnu) regressor(urbanbirth) ///
     data_path_override("$dirdata/processed/IDN_unb.dta")
 
 log close
-
-* Suppress the Windows batch-mode "Stata finished" popup.
-exit, STATA clear
