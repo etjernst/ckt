@@ -50,3 +50,32 @@ coefplot(fix=fix, versus=versus);
 
 The corresponding sters live in [RP7/output/](../../RP7/output/) under the names `grc_IDN_cuu_*.ster` (unbalanced) and `grc_IDN_cub_*.ster` (balanced).
 Each cell loads five sters (main + `_n` + `_a` + `_d` + `_g`).
+
+Side note on the `c0` column.
+Both samples report $\Delta_{\text{never}} = 0.304$ to three decimals.
+The actual values differ at the fourth decimal (0.30439 unbalanced, 0.30419 balanced); the apparent identity is a display-rounding artifact, not a bug.
+With any covariate set richer than `c0` the gap widens to 0.03--0.04, as expected once the moments stop being independent across subgroups.
+
+## Balanced vs unbalanced---CHN consumption, urban
+
+Same comparison for China.
+Hansen's $J$-test is known to reject in the pooled CHN sample; splitting by hukou status is the documented fix and is not yet wired into this view.
+
+```{python}
+#| label: chn-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-bal-vs-unb-coefplot
+#| fig-cap: "Point estimates with 95% CI by covariate set, balanced and unbalanced offset within each row."
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
