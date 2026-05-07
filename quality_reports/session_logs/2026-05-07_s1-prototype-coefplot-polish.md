@@ -496,3 +496,46 @@ State to know:
 - The 20-section render that finished at the very end of this segment shows the morning + afternoon work but predates the 5 final hukou + nonag real-values sections; the html is structurally correct but not current.
 
 with Claude
+
+## Wrap-up tail (end of 2026-05-07 working day)
+
+Short addendum after segment 3.
+The user invoked `/wrap-up` while a fresh re-render was running.
+
+### What happened after segment 3 was written
+
+- Committed segment 3 itself as [`8758226`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): "Session log: 2026-05-07 segment 3".
+- Kicked off a 25-section quarto re-render in the background (task id `b05tsejhp`); still running at /wrap-up time.
+  Output file unchanged from the 20-section render at the start of /wrap-up.
+- No code or qmd edits since segment 3.
+  Bank, scraper, compare.py, and report.qmd are all in the state segment 3 describes.
+
+### Working tree at /wrap-up
+
+```
+M  .claude/settings.local.json
+?? .claude/scheduled_tasks.lock
+?? RP7/output/tier2_diffs/
+?? tools/results_overview/report.quarto_ipynb
+```
+
+`.claude/settings.local.json` modified is harmless local-permission state.
+`scheduled_tasks.lock`, `tier2_diffs/`, and `report.quarto_ipynb` are all transient artifacts (lock file, smoke-output dir, quarto's jupyter cache); none belongs in git.
+
+### Picking back up (delta-only)
+
+Segment 3's "Picking back up" section is still the canonical hand-off; the only deltas are:
+
+1. The 25-section re-render is in flight as `b05tsejhp` and may have finished by next session.
+   Check `tools/results_overview/report.html` mtime --- if it is past 16:00 on 2026-05-07, the render landed.
+   Otherwise re-kick `cd tools/results_overview && quarto render report.qmd --to html`.
+2. The new `report.html` (once it lands) is currently uncommitted; per prior precedent (commit [`6e450ca`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor) earlier in this branch) we have been committing the rendered html.
+   Decide whether to keep that pattern or switch to gitignoring the html.
+
+### One last thing before /clear
+
+The new `report.html` is the visible artifact of an entire day of work; opening it in a browser and eyeballing the eleven new "Real values" sections is the single most useful five-minute sanity check before clearing.
+The render is bank-fed for the real columns and pystata-cache-fed for the nominal columns, so any number that looks wrong is a wiring issue, not an estimation issue.
+That kind of structural bug is much easier to fix while the session context is warm.
+
+with Claude
