@@ -14,14 +14,22 @@ version 19
 clear all
 set more off
 set varabbrev off
+set linesize 250
 capture log close
 
 global dir "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
-global dropbox "C:/Users/maand/Dropbox (Personal)/Returns to migration/ReplicationPackage6"
-global dirdata "$dropbox/data"
-global scripts "$dir/scripts"
-global logs    "$dir/output"
-global output  "$dir/output"
+
+* Source 0_path_config.do for $dirdata, $output, and the project-wide
+* constants ($grc_max_iter, $grc_min_switchers_per_wave) that the
+* GRC programs assume are set. This mirrors how 0_master.do bootstraps
+* the pipeline; bypassing it left $grc_min_switchers_per_wave empty,
+* which made initial_values' "if N_s / T > $grc_min_switchers_per_wave"
+* parse as "if N_s / T > " and error with r(198) "T> invalid name".
+quietly include "$dir/scripts/0_path_config.do"
+
+* Override $logs so the smoke log lands beside $output, not in
+* $dir/scripts/logs (where 0_path_config.do points it).
+global logs "$dir/output"
 
 if "${inversion_sterdir}" == "" {
     global inversion_sterdir "$dir/output/smoke"
