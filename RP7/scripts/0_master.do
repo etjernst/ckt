@@ -95,6 +95,9 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/3_OLS_uGRC.do"
 * Run GRC regressions (Urban)
 	include			"$dir/scripts/4_GrRC.do"
+* Attach LCA inversion CIs to the urban-mainline sters (decoupled from 4_GrRC.do
+* so re-running the inversion does not re-run the GMM)
+	include			"$dir/scripts/5b_inversion.do"
 * Run GRC regressions (Non-Ag)
 	include			"$dir/scripts/5_GrRC_NonAg.do"
 * Run OLS & FE regressions (hukou)
