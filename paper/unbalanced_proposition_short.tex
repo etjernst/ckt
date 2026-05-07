@@ -1,0 +1,74 @@
+%==============================================================================
+%  SHORT VERSION --- half-page alternative to unbalanced_proposition.tex
+%
+%  Not yet wired into main.tex. To substitute:
+%    \input{unbalanced_proposition_short}  % instead of unbalanced_proposition
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%
+%  Pulls auto-generated rank-condition shares (\unbShareCHN, \unbShareIDN,
+%  \unbShareTZA) from RP7/scripts/1b_unbalanced_rank_diagnostic.do.
+%==============================================================================
+
+\input{tables/unbalanced_rank_macros}
+
+This appendix formalizes how we incorporate individuals observed in fewer than $T_c$ waves into the restricted GRC of Section~\ref{subsec:restricted-grc-model}.
+The trajectory label $\underline d_i \in \mathcal D$ of Section~\ref{subsec:empirical-model} is defined only for individuals observed in all $T_c$ waves, so these unbalanced individuals cannot be placed in the balanced-sample trajectory cells.
+We augment Equation~\eqref{eq:restricted-GRC} with a single pooled cell:
+\begin{equation}
+\label{eq:restricted-grc-unbalanced}
+\begin{aligned}
+y_{it} =\; &
+\sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm 1\{\underline d_i=\underline d\}
++ \mu_{\mathrm{unb}}\,U_i
++ \Delta_{\underline d_0}\,D_{it} \\
+& + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
+    \phi\,(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,
+    \mathbbm 1\{\underline d_i=\underline d\} \\
+& + \kappa_T\,D_{it}\,
+    \mathbbm 1\{\underline d_i=d_T\}
++ \big(\Delta_{\mathrm{unb}}-\Delta_{\underline d_0}\big)\,U_i\,D_{it}
++ x_{it}'\gamma + \varepsilon_{it},
+\end{aligned}
+\end{equation}
+where $U_i = 1$ if $i$ is observed in strictly fewer than $T_c$ waves and $U_i = 0$ otherwise, $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$ are free parameters specific to the pooled cell, and $\kappa_T \equiv \mu_{d_T} + \phi(\mu_{d_T}-\mu_{\underline d_0})$ is the composite always-urban coefficient from Equation~\eqref{eq:restricted-GRC}.
+On the balanced subsample, Equation~\eqref{eq:restricted-grc-unbalanced} collapses to the restricted GRC of Section~\ref{subsec:restricted-grc-model}; on the unbalanced subsample, the trajectory indicators drop out and the equation collapses to $y_{it} = \mu_{\mathrm{unb}} + \Delta_{\mathrm{unb}} D_{it} + x_{it}'\gamma + \varepsilon_{it}$.
+
+The pooled-cell specification rests on two substantive conditions.
+The first is an observed-period orthogonality condition on the unbalanced stratum: at the true parameter the residual has zero conditional mean given treatment and covariates, $E[\varepsilon_{it}(\theta_0) \mid U_i=1, D_{it}, x_{it}] = 0$; equivalently, the pooled-cell specification is correctly specified on the unbalanced stratum.
+This is weaker than the standard missing-at-random restriction on attrition because the free pair $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$ absorbs any stratum-level difference in mean rural consumption and mean urban return between the balanced and unbalanced samples; what the condition requires is that, within the unbalanced cell, treatment assignment is exogenous given covariates.
+The second is a common-covariate-effects condition across strata: Equation~\eqref{eq:restricted-grc-unbalanced} uses a single coefficient vector $\gamma$ for both balanced and unbalanced person-periods.
+The second condition is directly testable by replacing $x_{it}'\gamma$ with $x_{it}'\gamma + U_i\,x_{it}'\delta$ and testing $\delta=0$.
+
+\citet{verdierAverageTreatmentEffects2020a} studies GMM estimation of correlated random coefficient models on unbalanced panels (Appendix~G) under a standard missing-at-random condition, using an individual-fixed-effects parameterization that differs from our trajectory-cell structure.
+We adopt the pooled-cell specification instead because it preserves the trajectory-cell structure of Section~\ref{subsec:restricted-grc-model}, yielding $\{\Delta_{\underline d}\}_{\underline d \in \mathcal D_S}$ as direct estimation outputs rather than post-estimation averages over individual fixed effects.
+The same estimation principles apply to~\eqref{eq:restricted-grc-unbalanced}: the moment system aggregates within person across observed periods and then across individuals, the orthogonality and common-covariate-effects conditions above deliver moment validity on both strata, and standard non-linear GMM arguments \citep{hansen1982gmm,neweyMcFadden1994} deliver the result below.
+The trajectory-block moments identify $(\Delta_{\underline d_0}, \phi, \{\mu_{\underline d}\}_{\underline d \in \mathcal D \setminus \{d_T\}}, \kappa_T)$ as in Section~\ref{subsec:restricted-grc-model}; the $(U_i, U_iD_{it})$ moments identify $(\mu_{\mathrm{unb}}, \Delta_{\mathrm{unb}})$ under the rank condition; and the $x_{it}$ moments identify $\gamma$ under the common-covariate-effects condition.
+We stack individual-period moment functions within person and treat them as i.i.d.\ across individuals, so $V$ is cluster-robust at the individual level, consistent with the main paper's inference procedure.
+
+\begin{proposition}[Pooling balanced and unbalanced individuals]
+\label{prop:pooling}
+Under (A1)--(A5) of Section~\ref{subsec:empirical-model}, the orthogonality and common-covariate-effects conditions stated above, the rank condition that $D_{it}$ takes both values within the unbalanced stratum, and standard regularity conditions for non-linear GMM, as $n \to \infty$,
+\[
+\sqrt n\,(\hat\theta - \theta_0) \xrightarrow{d} \mathcal N(0,V),
+\]
+where $\theta_0 = (\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\}_{\underline d \in \mathcal D \setminus \{d_T\}},\kappa_T,\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}},\gamma)$ and $V$ is the efficient two-step GMM asymptotic variance.
+\end{proposition}
+
+The switcher returns $\Delta_{\underline d} = \Delta_{\underline d_0} + \phi(\mu_{\underline d}-\mu_{\underline d_0})$ for $\underline d \in \mathcal D_S$ inherit consistency and asymptotic normality by the delta method.
+For the always-urban cell, the LCA restriction $\Delta_{d_T} = \Delta_{\underline d_0} + \phi(\mu_{d_T}-\mu_{\underline d_0})$ combined with the definition of $\kappa_T$ inverts to
+\[
+\mu_{d_T} = \frac{\kappa_T + \phi\,\mu_{\underline d_0}}{1+\phi}, \qquad \Delta_{d_T} = \Delta_{\underline d_0} + \phi(\mu_{d_T}-\mu_{\underline d_0}),
+\]
+which is smooth in $(\kappa_T, \phi, \mu_{\underline d_0})$ provided $\phi \neq -1$; consistency and asymptotic normality of $(\hat\mu_{d_T}, \hat\Delta_{d_T})$ follow by the delta method on the inversion.
+Because the balanced-only moment system is a strict subset of the pooled system, the pooled asymptotic variance of every common sub-vector is weakly smaller than the balanced-only analogue \citep{hansen1982gmm}.
+The improvement is strict for $\gamma$ when the unbalanced stratum contributes residual variation in $x_{it}$ after partialling out $(U_i,U_iD_{it})$, and strict for the trajectory-block parameters $(\Delta_{\underline d_0}, \phi, \{\mu_{\underline d}\}_{\underline d \in \mathcal D \setminus \{d_T\}}, \kappa_T)$ when additionally the trajectory scores covary with the covariate scores.
+Identification of $\Delta_{\mathrm{unb}}$ requires variation in $D_{it}$ among unbalanced person-periods after partialling out $x_{it}$: if $D_{it}$ is collinear with $(U_i, x_{it})$ on the unbalanced stratum, the $U_iD_{it}$ moment carries no residual signal and $\Delta_{\mathrm{unb}}$ drops out.
+The marginal share of unbalanced person-periods with $D=1$ is \unbUrbanRateCHN\% in China, \unbUrbanRateIDN\% in Indonesia, and \unbUrbanRateTZA\% in Tanzania, well inside $(0,1)$ in every sample.
+With $x_{it}$ matched to the main-estimation covariate vector, $D_{it}$ retains \unbResidShareCHN\% of its within-stratum variation in China, \unbResidShareIDN\% in Indonesia, and \unbResidShareTZA\% in Tanzania after partialling out $x_{it}$---ample residualized variation to identify $\Delta_{\mathrm{unb}}$.
+A complementary diagnostic, useful for assessing the credibility of $\Delta_{\mathrm{unb}}$ under partial misspecification of the orthogonality condition rather than its identification, is the share of unbalanced individuals observed with both $D=0$ and $D=1$ across their own waves: \unbShareCHN\% in China, \unbShareIDN\% in Indonesia, and \unbShareTZA\% in Tanzania.
+The smaller within-switch shares for China and Tanzania mean $\Delta_{\mathrm{unb}}$ is identified primarily off between-individual variation in those samples; in Indonesia about a quarter of unbalanced individuals contribute within-individual variation directly.
+Section~\ref{sec:robustness} compares balanced-only and pooled estimates as a joint sensitivity check on the two conditions.

@@ -204,6 +204,36 @@ The active production wrapper is `lca_inversion_ci.ado` (103 lines), which deleg
 The two MAJOR bugs the 2026-04-29 stata-critic flagged (string-`if` evaluating numeric, and the `post` scalar-reference bug) are real but moot under archive.
 **Estimated cost:** ~5 min.
 
+### Extend LCA inversion CI to the Verdier-robust (run_grc_robust_vv) spec
+**Added:** 2026-04-24
+**Context:** Verdier-style robust GRC (`run_grc_robust_vv`, committed today on the lca-inversion worktree's RP7 setup) uses village-demeaned optimal instruments per VV, with cluster-robust SEs at `vfirst` (first-wave province; $G \in \{13, 19, 22\}$). Early TZA result is $\hat\phi = -1.00$ (vs $-0.72$ for plain `run_grc` covs_all on TZA), tightening the pro-poor pattern. The LCA inversion CI is the natural inference companion---but small $G$ makes the asymptotic $\chi^2$ for the cluster-robust Wald under-cover.
+**Standard approach for this exact case:** wild cluster bootstrap (WCB) of the Wald statistic at each $\phi$ on the inversion grid, with critical values from the bootstrap distribution. CI = $\{\phi : p_{\text{boot}}(\phi) \geq \alpha\}$. Citations:
+- Stock & Wright (2000) "GMM with Weak Identification", *Econometrica*---the AR-style S-statistic.
+- Kleibergen (2005) "Testing Parameters in GMM without Assuming that They are Identified", *Econometrica*---the K-statistic.
+- Cameron, Gelbach & Miller (2008) "Bootstrap-Based Improvements for Inference with Clustered Errors", *ReStat* 90(3)---WCB for clustered errors.
+- Davidson & MacKinnon (2010) "Wild Bootstrap Tests for IV Regression", *J Bus Econ Stat* 28(1).
+- Finlay & Magnusson (2009) "Implementing Weak-Instrument Robust Tests for a General Class of Instrumental-Variables Models", *Stata J* 9(3)---the basis for `weakiv`; combines AR-style inversion with bootstrap critical values.
+- Roodman, Nielsen, MacKinnon & Webb (2019) "Fast and Wild: Bootstrap Inference in Stata Using boottest", *Stata J* 19(1)---explicitly endorses WCB combined with AR-type tests in IV and GMM.
+**Action:** extend `lca_inversion.py`:
+1. Add `cluster_var` argument (default `"pid"`; for Verdier-robust, pass `"vfirst"`).
+2. Auto-include `vfirst` fixed-effects as controls in the auxiliary OLS (mirrors VV's within-village demeaning).
+3. Revise `drop_sparse_switchers` to count by `cluster_var` not `pid` (asks: is the switcher observed in enough vfirsts?).
+4. Wrap the per-grid-point Wald computation in a wild cluster bootstrap (B=999, Rademacher at the cluster level, residuals from the LCA-restricted fit). Cost: $\sim 30$ min per spec.
+5. Validate against `boottest` after `gmm` on a synthetic dataset where the answer is known.
+**Dependency:** Verdier P3 sign-off (the conceptual LCA-restriction derivation in the village-demeaned framework is still in flux; current derivation memo §5 explicitly flags the asymptotic-vs-finite-sample equivalence as needing revision).
+**Estimated cost:** $\sim 1$--2 days once dependency clears.
+
+### Multistart GMM-basin diagnostic simulation
+**Added:** 2026-04-24
+**Context:** On IDN/cons/urban/unb covs_all, Python iterated GMM and Stata twostep land at meaningfully different points on the $(\phi, \kappa)$ ridge---Stata $\hat\phi = -0.526$, Python $\hat\phi = -0.707$---but agree to 0.01 on the always-treated fit $\kappa + \phi(\kappa - \mu_{\text{base}})$. Same model, same data, different decomposition into the unidentified $(\phi, \kappa)$ components. Both lie inside the LCA-inversion 95% CI of $[-1.23, -0.01]$.
+**Concern:** the proposed paper sentence about basin-switching is based on a single dataset. A systematic check is needed to know how common this is.
+**Action:** secondary simulation exercise (after the main coverage simulation):
+1. **Pilot:** $R = 30$ synthetic data sets at CKT calibration, $K = 3$ Python multistarts per data set. Tabulate: distribution of $\hat\phi$, within-sample basin spread $\max\hat\phi - \min\hat\phi$, and the always-treated fit (should be invariant on the ridge). $\sim 18$ hours.
+2. **If pilot shows basin-switching is common:** scale to $R = 100, K = 5$ ($\sim 100$ hours).
+3. **Optional Stata-Python cross-check:** run Stata GMM on $R_{\text{cross}} = 10$ data sets to confirm the cross-language pattern matches the within-Python multistart pattern. $\sim 4$ hours.
+**Deliverable:** histogram or table of basin-switching frequency, supporting (or refining) the paper's weak-identification claim.
+**Status:** decided, deferred until Stream C primary simulation is in flight.
+
 ---
 
 ## Completed

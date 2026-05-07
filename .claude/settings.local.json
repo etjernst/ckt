@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/maand/Dropbox \\(Personal\\)/Returns to migration/ReplicationPackage4/**)",
+      "Read(//c/Users/maand/.claude/**)",
+      "Read(//c/Users/maand/Dropbox \\(Personal\\)/Returns to migration/Data/**)",
+      "Read(//c/git/ckt/scripts/**)",
+      "Read(//c/Users/maand/Dropbox \\(Personal\\)/Returns to migration/ReplicationPackage4/scripts/**)",
+      "Skill(humanizer)",
+      "Skill(humanizer:*)",
+      "Read(//c/Users/maand/Dropbox \\(Personal\\)/Returns to migration/ReplicationPackage/scripts/**)",
+      "Bash(\"C:/Program Files/StataNow19/StataMP-64.exe\" -b do verify_stata.do)",
+      "WebSearch",
+      "Bash(mv 0_inspect_vars.log explorations/verdier/)",
+      "Bash(mv 1_cluster_support.log explorations/verdier/)",
+      "Bash(mv 2_cluster_support_v2.log explorations/verdier/2_cluster_support_v2_older.log)",
+      "Bash(rm stata.log)",
+      "Bash(diff -w --strip-trailing-cr /tmp/rp6_baseline/0_programs.do \"C:/Users/maand/Dropbox \\(Personal\\)/Returns to migration/ReplicationPackage6/scripts/0_programs.do\")",
+      "Read(//tmp/**)",
+      "Bash(tasklist)",
+      "Bash(tasklist //FO CSV)",
+      "Bash(awk -F',' '{print $1, \"\\(\", $5, \"\\)\"}')",
+      "Bash(wmic logicaldisk *)",
+      "Bash(grep -n 'estimates use \"\\\\$dir/output/grc_' RP7/scripts/5_GrRC.do)"
+    ],
+    "additionalDirectories": [
+      "C:\\git\\ckt",
+      "C:\\git\\ckt\\docs\\lit"
+    ]
+  }
+}

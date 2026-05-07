@@ -1,0 +1,117 @@
+%==============================================================================
+%  Appendix: proof of Proposition 2 (equivalence under cluster pooling).
+%  Included from main.tex in the appendix block.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{lemma}{Lemma}
+%==============================================================================
+
+\section{Proof of Proposition~\ref{prop:robust-equivalence}}\label{app:robust-equivalence}
+
+This appendix proves that our trajectory-pooled estimator $\hat\phi^{\mathrm{rob}}$ and Verdier's worker-level estimator $1/\hat\alpha_1$ have the same probability limit equal to the LCA slope $\phi$ under (A1)--(A5) of Section~\ref{subsec:empirical-model} and Assumption~\ref{ass:cluster-pooling}.
+The argument has four steps.
+Step~1 sets out the population objects for both estimators and writes down the moment systems they solve.
+Step~2 establishes consistency of Verdier's worker-level estimator for $1/\phi$.
+Step~3 establishes consistency of the trajectory-pooled estimator for $\phi$.
+Step~4 combines the two and remarks on what each step buys.
+For the rest of the appendix we suppress covariates $x_{it}$ and period effects, which enter both estimators identically and are absorbed in the residual $\varepsilon_{it}$ without affecting the LCA argument.
+
+To accommodate cluster-level heterogeneity not absorbed by trajectory or treatment, we work with the generalization of Equation~\eqref{eq:generalized-consumption-eq-simple} that adds a cluster-level intercept $c(v_i)$:
+\begin{equation}\label{eq:generalized-with-cluster}
+y_{it} = \alpha_i + c(v_i) + \Delta_i\, D_{it} + \varepsilon_{it},
+\qquad \Delta_i = \beta + \phi\,\theta_i,
+\end{equation}
+with $E[\varepsilon_{it}\mid v_i,\underline d_i,D_{it}] = 0$.
+Setting $c(v_i) \equiv 0$ recovers the baseline model used in Section~\ref{subsec:empirical-model}; the cluster-residualized estimator's reason for existence is that consistency does not require $c(v_i) \equiv 0$.
+
+\subsection*{Step 1.  Population objects and moment systems.}
+
+For each worker $i$, define the within-individual conditional means
+\[
+a_i \equiv E[y_{it}\mid D_{it}=0,\,i] = \alpha_i + c(v_i),
+\qquad
+\Delta_i^w \equiv E[y_{it}\mid D_{it}=1,\,i] - a_i = \Delta_i.
+\]
+Substituting the LCA $\Delta_i = \beta + \phi\theta_i$ into the projection of $\theta_i$ onto $a_i - c(v_i) = \alpha_i$ within cluster $v_i$ delivers
+\begin{equation}\label{app:eq:worker-lca}
+\Delta_i^w = \beta + \phi\,a_i + \xi_i,
+\qquad E[\xi_i \mid v_i] = 0,
+\end{equation}
+where $\xi_i$ is the projection residual.
+The cluster-conditional zero-mean property in \eqref{app:eq:worker-lca} follows from the within-cluster projection that defines $\xi_i$ together with (A1) (time-invariance of $\theta_i,\tau_i$).
+
+Verdier's worker-level estimator $\hat\alpha_1$ solves the just-identified GMM moment
+\begin{equation}\label{app:eq:vv-moment}
+E\!\big[\tilde z_i\,(a_i - \alpha_0 - \alpha_1 \Delta_i^w)\big] = 0,
+\end{equation}
+where $\tilde z_i$ is a vector of village-demeaned period-treatment indicators: for each $t$, $\tilde z_{it} = D_{it} - E[D_{it}\mid v_i]$, with $\tilde z_i$ collecting the $T$ entries (or any subset that achieves identification under (A4)).
+
+Our trajectory-pooled estimator $\hat\phi^{\mathrm{rob}}$ solves the GMM moment of Equation~\eqref{eq:restricted-grc-unbalanced} with the cluster-residualized instruments of Section~\ref{subsec:verdier-robustness}, i.e.,
+\begin{equation}\label{app:eq:rob-moment}
+E\!\big[\tilde D_{it}^{\,\underline d}\,\varepsilon_{it}^{\mathrm{rob}}\big] = 0
+\quad\text{for every}\ \underline d \in \mathcal D_S,
+\end{equation}
+where $\tilde D_{it}^{\,\underline d} = D_{it}\mathbbm 1\{\underline d_i = \underline d\} - E[D_{it}\mathbbm 1\{\underline d_i = \underline d\}\mid v_i,\underline d_i = \underline d]$ and $\varepsilon_{it}^{\mathrm{rob}}$ is the residual from \eqref{eq:restricted-grc-unbalanced}.
+
+\subsection*{Step 2.  Consistency of $\hat\alpha_1$ for $1/\phi$.}
+
+\begin{lemma}\label{app:lem:vv}
+Under (A1)--(A5) and Assumption~\ref{ass:cluster-pooling}, $\hat\alpha_1 \xrightarrow{p} 1/\phi$ as $N \to \infty$.
+\end{lemma}
+
+Solving the just-identified moment \eqref{app:eq:vv-moment} at the population gives
+\[
+\alpha_1 = \frac{E[\tilde z_i\,a_i]}{E[\tilde z_i\,\Delta_i^w]}
+\]
+when $\tilde z_i$ has mean zero, which it does by construction.
+Substituting \eqref{app:eq:worker-lca} into the denominator,
+\[
+E[\tilde z_i\,\Delta_i^w] = \phi\, E[\tilde z_i\,a_i] + E[\tilde z_i\,\xi_i] = \phi\, E[\tilde z_i\,a_i],
+\]
+where the second equality uses $E[\tilde z_i\xi_i] = 0$.
+This identity follows from iterated expectations: $E[\tilde z_i\xi_i] = E\!\big[E[\tilde z_i \mid v_i]\,E[\xi_i\mid v_i]\big] = 0$, since $\tilde z_i$ has mean zero within each $v_i$ by construction and $E[\xi_i\mid v_i] = 0$ by \eqref{app:eq:worker-lca}.
+Hence $\alpha_1 = 1/\phi$, and standard non-linear GMM consistency arguments \citep{hansen1982large} deliver $\hat\alpha_1 \xrightarrow{p} 1/\phi$ provided the rank condition $E[\tilde z_i\,a_i] \neq 0$ holds, which is implied by (A4). $\hfill\square$
+
+\subsection*{Step 3.  Consistency of $\hat\phi^{\mathrm{rob}}$ for $\phi$.}
+
+\begin{lemma}\label{app:lem:rob}
+Under (A1)--(A5) and Assumption~\ref{ass:cluster-pooling}, $\hat\phi^{\mathrm{rob}} \xrightarrow{p} \phi$ as $N \to \infty$.
+\end{lemma}
+
+Plugging \eqref{eq:generalized-with-cluster} into the residual of Equation~\eqref{eq:restricted-grc-unbalanced} and using the LCA $\Delta_i = \beta + \phi\theta_i$, the residual for a switcher-$\underline d$ worker decomposes as
+\begin{equation}\label{app:eq:residual-decomp}
+\varepsilon_{it}^{\mathrm{rob}} = \big(\alpha_i + c(v_i) - \mu_{\underline d}\big) + \phi\,(\theta_i - m_{\underline d})\,D_{it} + \xi_i^{\,*}\,D_{it} + \varepsilon_{it},
+\end{equation}
+where $m_{\underline d} \equiv E[\theta_i\mid \underline d_i = \underline d]$ and $\xi_i^{\,*}$ is a worker-level residual that is mean zero conditional on $\underline d_i$ by construction of the trajectory means.
+
+We show that the moment \eqref{app:eq:rob-moment} holds at $\phi$ by checking each term in \eqref{app:eq:residual-decomp} against $\tilde D_{it}^{\,\underline d}$.
+
+The first term, $\alpha_i + c(v_i) - \mu_{\underline d}$, has expectation $E[\tilde D_{it}^{\,\underline d}\cdot c(v_i)] = 0$ because $\tilde D_{it}^{\,\underline d}$ is mean zero conditional on $(v_i, \underline d_i = \underline d)$ by construction; the remaining piece $E[\tilde D_{it}^{\,\underline d}(\alpha_i - \mu_{\underline d})] = 0$ holds by Assumption~\ref{ass:cluster-pooling}, which renders the cluster distribution of $\alpha_i$ within trajectory $\underline d$ independent of $\underline d$.\footnote{Concretely, Assumption~\ref{ass:cluster-pooling} implies $E[\alpha_i \mid \underline d_i = \underline d, v_i = v] = E[\alpha_i \mid v_i = v]$, and so the within-trajectory deviation $\alpha_i - \mu_{\underline d}$ has the same within-cluster distribution as in the marginal sample. The cluster demeaning of $\tilde D_{it}^{\,\underline d}$ then sweeps the within-cluster average of this term to zero.}
+
+The second term, $\phi(\theta_i - m_{\underline d})\,D_{it}$, is the LCA payload.
+By construction $\theta_i - m_{\underline d}$ is mean zero conditional on $\underline d_i$.
+Under Assumption~\ref{ass:cluster-pooling} the conditional distribution of $\theta_i - m_{\underline d}$ given $(v_i, \underline d_i = \underline d)$ matches its unconditional distribution given $\underline d_i = \underline d$.
+Hence $E[\tilde D_{it}^{\,\underline d}\cdot \phi(\theta_i - m_{\underline d})\,D_{it}] = \phi\,E[\tilde D_{it}^{\,\underline d}\cdot D_{it}\cdot E[\theta_i - m_{\underline d} \mid v_i,\underline d_i = \underline d]] = 0$.
+
+The third term, $\xi_i^{\,*}\,D_{it}$, has $E[\tilde D_{it}^{\,\underline d}\,\xi_i^{\,*}\,D_{it}] = 0$ by (A2)--(A4): treatment is exogenous within cluster.
+
+The fourth term, $\varepsilon_{it}$, has $E[\tilde D_{it}^{\,\underline d}\,\varepsilon_{it}] = 0$ by the conditional mean condition imposed in \eqref{eq:generalized-with-cluster}.
+
+Hence the population moment \eqref{app:eq:rob-moment} holds at $\phi$.
+The rank condition for identification --- that $\tilde D_{it}^{\,\underline d}$ has non-trivial within-cluster variation across switcher trajectories --- is implied by (A4).
+Standard non-linear GMM consistency \citep{hansen1982large} delivers $\hat\phi^{\mathrm{rob}} \xrightarrow{p} \phi$. $\hfill\square$
+
+\subsection*{Step 4.  Combination and remarks.}
+
+Combining Lemmas~\ref{app:lem:vv} and \ref{app:lem:rob}, the worker-level estimator is consistent for $1/\phi$ and the trajectory-pooled robust estimator is consistent for $\phi$.
+Both target the same population LCA slope $\phi$ of \eqref{eq:LCA-restriction} up to the directional convention; reporting $1/\hat\alpha_1$ and $\hat\phi^{\mathrm{rob}}$ as estimators of $\phi$ is equivalent in probability limit, completing the proof of Proposition~\ref{prop:robust-equivalence}. $\hfill\blacksquare$
+
+The two estimators have different asymptotic variances in general, since they aggregate moments at different levels (trajectory versus worker) and impose different efficient weightings.
+Standard cluster asymptotics deliver $\sqrt V$-rate convergence at the village level for both estimators; the variance comparison depends on the within-cluster cross-distribution of trajectories and is not addressed here.
+
+Where Assumption~\ref{ass:cluster-pooling} fails, the first-term argument in Step 3 breaks: $E[\tilde D_{it}^{\,\underline d}(\alpha_i + c(v_i) - \mu_{\underline d})]$ no longer vanishes when the within-cluster distribution of $\alpha_i$ varies systematically across trajectories.
+Tracing through the algebra recovers the cluster-pooling bias formula reported in Equation~\eqref{eq:cluster-pooling-bias}.
+The worker-level argument in Step 2 is unaffected because it operates within cluster.
+This is the formal counterpart to the diagnostic argument in Section~\ref{subsec:verdier-robustness}: a material gap between $\hat\phi^{\mathrm{rob}}$ and $1/\hat\alpha_1$ signals failure of Assumption~\ref{ass:cluster-pooling}, while near-equality is consistent with the assumption holding.

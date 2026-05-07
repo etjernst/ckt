@@ -349,13 +349,50 @@ Tracked in `docs/TODO.md`.
 
 Committed in worktree `lca-inversion` as `8122fe3`.
 
-## Open / next steps (revised again)
+## Stream reorganization (end of session)
 
-1. **Run CHN and TZA** at all 5 covariate specs to complete the country panel. The Stata wrapper is the natural vehicle now --- write a `demo_lca_inversion_ci_chn_tza.do` (or extend the IDN demo) once the user decides the ster-rename strategy.
+User flagged that the LCA inversion has grown beyond a one-off diagnostic into its own stream of work. Current structure:
+
+| Stream | Purpose | Consumers | Worktree |
+|---|---|---|---|
+| **A: LCA inversion** | Weak-ID-robust CI for $\phi$ via test inversion. Reusable tool. | Empirical paper (via Stata wrapper) AND simulation (via Python). | `lca-inversion` |
+| **B: Python GMM port** | Cross-language replication of `run_grc`; engine for the simulation. | Simulation. Independently a cross-language check. | `main` (WIP) |
+| **C: Simulation** | The original goal: coverage / power / selection-bias evidence at CKT calibration. | Paper appendix. | (not yet) |
+
+Dependencies: $C$ depends on $A$ (inversion called from Python in the simulation loop) and $B$ (Python GMM as the per-replication estimator). $A$ and $B$ are independent and can proceed in parallel.
+
+### Decision: include LCA inversion in the simulation
+
+Originally the simulation plan (`explorations/SIMULATION_PLAN.md` Exercise 1) was framed around sandwich CI coverage. With Stream A in hand, the natural extension is to evaluate **both** sandwich and inversion coverage at every replication. Marginal cost is small (inversion is seconds, GMM is minutes per replication). Payoff is a clean empirical statement for the paper, e.g., "sandwich CI covers at $X\%$, inversion CI covers at $\sim 95\%$." Without simulation evidence, the inversion's nominal coverage is just a claim.
+
+Action item for Stream C: when `SIMULATION_PLAN.md` is updated, add a "CI coverage" subsection to Exercise 1 covering both procedures. Bootstrap can be a third arm later if useful.
+
+## Naming convention update
+
+`CLAUDE.md` now requires session logs to follow `YYYY-MM-DD_short-topic.md` (mandatory topic suffix). Earlier topic-less files (`2026-04-23.md`, `2026-04-24.md`) renamed to `_verdier.md` and `_verdier-p1.md` respectively to disambiguate parallel streams.
+
+## Open / next steps (revised, by stream)
+
+**Stream A (LCA inversion):**
+
+1. **Run CHN and TZA** at all 5 covariate specs to complete the empirical-paper picture. The Stata wrapper is the vehicle.
 2. **Apply critic fixes 4, 5, 2** (effective-rank dof in pinv; symmetric sparse drop; Stata-style cluster correction). Re-run IDN to see if the 0.06--0.07 $\phi$ gap closes.
-3. **TODO (separate effort):** port the rcond fix into Python `_robust_inv` for the GMM port (Stream B).
-4. **TODO (deferred):** island detection in LCA inversion CI (relevant for CHN under hukou heterogeneity).
-5. **TODO (deferred from earlier):** cluster bootstrap for empirical paper headline objects.
-6. **User decision:** when to send the email to coauthors. Consider sending after the rename PR is prepared so they have the full picture.
-7. **Paper writeup item:** in the inference subsection, document the LCA inversion as the primary CI for $\phi$ and the sandwich SE as a sensitivity. Especially flag the covs_all 95% CI nearly touching $\phi = 0$ (right endpoint $-0.010$).
-8. **Production integration (Stage 8f, future):** wire `lca_inversion_ci` into `5_GrRC.do`, `6_GrRC_NonAg.do`, the experience family, and `8_GrRC_hukou.do`; update `grc_tex_table_trend` to emit the inversion CI as a table row.
+3. **Island detection** in the LCA inversion (relevant for CHN under hukou heterogeneity). `docs/TODO.md`.
+4. **Production integration (Stage 8f):** wire `lca_inversion_ci` into `5_GrRC.do`, `6_GrRC_NonAg.do`, the experience family, and `8_GrRC_hukou.do`; update `grc_tex_table_trend` to emit the inversion CI as a table row. **Blocked** on the ster-rename PR landing.
+
+**Stream B (Python GMM port):**
+
+5. Port the rcond fix into Python `_robust_inv` and re-validate against Stata SEs. Closes the SE-$\phi$ gap that motivated this entire investigation.
+
+**Stream C (Simulation):**
+
+6. Update `explorations/SIMULATION_PLAN.md` to (a) add the inversion CI inside the per-replication loop, (b) make the dependency on Streams A and B explicit. Then start scaffolding once A and B stabilize.
+
+**Empirical paper / coordination:**
+
+7. **User decision:** when to send the coauthor email re: ster-filename collision. Consider sending after the rename PR is prepared so they have the full picture.
+8. **Paper writeup item:** in the inference subsection, document the LCA inversion as the primary CI for $\phi$ and the sandwich SE as a sensitivity. Especially flag the covs_all 95% CI right endpoint of $-0.010$.
+
+**Deferred:**
+
+9. **Cluster bootstrap CIs for headline objects.** Lower priority now that the inversion CI exists; can be a third sensitivity if a referee asks.

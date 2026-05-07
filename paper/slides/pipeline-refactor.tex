@@ -1,0 +1,238 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% ---------------------------------------------------------------
+% Theme and typography (XeLaTeX + metropolis defaults: Fira Sans)
+% ---------------------------------------------------------------
+\usetheme{metropolis}
+\metroset{progressbar=frametitle,numbering=fraction,block=fill,sectionpage=progressbar}
+
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bbm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\hypersetup{pdfpagemode=UseNone}
+
+% CKT-style colors (matching verdier-modification.tex)
+\definecolor{cktblue}{HTML}{1F4E79}
+\definecolor{cktaccent}{HTML}{C0504D}
+\definecolor{cktgray}{HTML}{595959}
+\definecolor{cktgreen}{HTML}{2E7D32}
+\setbeamercolor{frametitle}{bg=cktblue,fg=white}
+\setbeamercolor{progress bar}{fg=cktaccent,bg=cktblue!20}
+\setbeamercolor{title separator}{fg=cktaccent}
+\setbeamercolor{alerted text}{fg=cktaccent}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\title{Refactoring the GRC pipeline}
+\subtitle{What changed in RP7, and why}
+\author{Emilia Tjernstr{\"o}m}
+\date{2026-05-04}
+
+\begin{document}
+
+\maketitle
+
+% ===============================================================
+\begin{frame}{Pipeline was unwieldy with 17 numbered .do files + lots of duplication}
+
+\begin{itemize}\setlength\itemsep{4pt}
+    \item 17 numbered .do files; experience and birth covariates spread across six of them
+    \item Parallel Dropbox folder for real-values work, required manual ``syncing''
+    \item \code{.ster} filenames (Stata results files) collided across .do files; some exceeded Stata's name limit
+\end{itemize}
+
+\bigskip
+All of this makes the pipeline hard to maintain.
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{Fewer .do files and programs to keep track of}
+
+\begin{columns}[T]
+\column{0.48\textwidth}
+\textcolor{cktgray}{Before (RP6, 17 numbered files)}
+\begin{itemize}\setlength\itemsep{0pt}
+    \item \code{5\_GrRC.do}
+    \item \code{6\_GrRC\_NonAg.do}
+    \item \code{8\_GrRC\_hukou.do}
+    \item \code{10\_GrRC\_experience.do}
+    \item \code{11\_GrRC\_max\_experience.do}
+    \item \code{12\_GrRC\_experience\_share.do}
+    \item \code{13\_GrRC\_max\_experience\_share.do}
+    \item \code{14\_GrRC\_NonAg\_experience.do}
+    \item \code{15\_GrRC\_birth.do}
+    \item \code{16\_heterogeneity\_tables.do}
+    \item \dots
+\end{itemize}
+
+\column{0.48\textwidth}
+\textcolor{cktblue}{After (RP7, 11 numbered files)}
+\begin{itemize}\setlength\itemsep{0pt}
+    \item \code{1\_processData.do}
+    \item \code{2\_summaryStats.do}
+    \item \code{3\_OLS\_uGRC.do}
+    \item \code{4\_GrRC.do}
+    \item \code{5\_GrRC\_NonAg.do}
+    \item \code{6\_OLS\_uGRC\_hukou.do}
+    \item \code{7\_GrRC\_hukou.do}
+    \item \code{8\_learning.do}
+    \item \code{9\_GRC\_extras.do}
+    \item \code{10\_make\_tables.do}, \code{11\_make\_figures.do}
+\end{itemize}
+\end{columns}
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{Adding a new covariate (or set of covariates)}
+
+\textcolor{cktgray}{Before}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Each new covariate got its own .do file: \code{10\_GrRC\_experience.do}, \code{11\_GrRC\_max\_experience.do}, \dots, \code{15\_GrRC\_birth.do}
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{Now}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item All extra-covariate regressions live in \code{9\_GRC\_extras.do}
+    \item One line per (country, spec, covariate)
+    \item Tables: \code{extras\_tex\_table} reads \code{.ster} files and writes the corresponding \code{.tex} tables
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{To add a new covariate}: add a line in \code{9\_GRC\_extras.do}.
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{One table-builder for all GRC tables}
+
+We had multiple table-building programs that did 95\% the same thing:
+
+\medskip
+\begin{itemize}\setlength\itemsep{2pt}
+    \item \code{grc\_tex\_table\_trend}
+    \item \code{grc\_tex\_table\_trend\_exp}
+    \item \code{grc\_tex\_table\_trend\_birth}
+    \item \code{grc\_tex\_table\_trend\_hukou}
+\end{itemize}
+
+\medskip
+Now: one \code{grc\_tex\_table\_trend}, four call signatures.
+
+\bigskip
+\textcolor{cktblue}{To change column widths, indicator-row order, postfoot string, or decimal precision}, edit \code{grc\_tex\_table\_trend} in \code{0\_programs.do}.
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{One switch handles nominal and real values}
+
+\textcolor{cktgray}{Before}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Two parallel Dropbox folders
+    \item Every edit propagated to both, by hand
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{Now}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item One global, \code{values(nominal|real)}, in \code{0\_path\_config.do}
+    \item \code{nominal}: filenames as before
+    \item \code{real}: appends \code{\_r} suffix; both save to the same \code{output/} folder
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{To switch modes}: edit \code{global values} in \code{0\_path\_config.do}.
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{How to read a \code{.ster} filename}
+
+\textcolor{cktblue}{Pattern}: \code{grc\_<country>\_<spec3>\_<covs2>[\_<sfx1>].ster}
+
+\bigskip
+\begin{tabular}{l l}
+\code{country} & \code{IDN}, \code{CHN}, \code{TZA}, or \code{CHN\_hukou\_<subgroup>} \\
+\code{spec3}   & \code{cuu}, \code{cub}, \code{iuu}, \code{cnu} \\
+\code{covs2}   & \code{c0}, \code{ct}, \code{c1}, \code{c2}, \code{ca} \\
+\code{sfx1}    & \code{n} (never), \code{a} (always), \code{d} (delta), \code{g} (average) \\
+\end{tabular}
+
+\bigskip
+Every \code{.ster} name is built from these tokens.
+Look up any fit by combining them.
+
+\bigskip
+Full convention in \code{RP7/scripts/STER\_NAMING.md}.
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{How to edit GRC tables in the new pipeline}
+
+\textcolor{cktblue}{Caption, label, or table notes} (now in the paper, not the .do file)
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Edit the \code{\textbackslash GRCtable\{\}} and \code{\textbackslash GRChukoutable\{\}} macros in \code{preamble.tex}
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{Which coefficients appear, label text, decimal formatting}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Per-cell options: \code{10\_make\_tables.do}
+    \item Underlying template: \code{grc\_tex\_table\_trend} in \code{0\_programs.do}
+\end{itemize}
+
+\medskip
+\textcolor{cktblue}{Cosmetic refresh}
+\begin{itemize}\setlength\itemsep{2pt}
+    \item Average $\Delta$ row reads $\bar{\Delta}$
+    \item Empty \code{esttab} rows now stripped
+\end{itemize}
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{What this buys us}
+
+\begin{itemize}\setlength\itemsep{4pt}
+    \item Regression code lives in one place: \code{4\_GrRC.do} for the main regressions, \code{9\_GRC\_extras.do} for extras
+    \item Table caption, label, and notes live in one place: the paper preamble
+    \item \code{.ster} filenames you can read, type, and look up
+\end{itemize}
+
+\end{frame}
+
+% ===============================================================
+\begin{frame}{What each .do file does}
+
+\scriptsize
+\begin{tabular}{@{}l p{0.58\textwidth}@{}}
+\textcolor{cktgray}{\textit{Setup (run automatically by 0\_master.do)}} & \\
+\code{0\_master.do}                   & runs all the .do files in sequence \\
+\code{0\_path\_config.do}             & paths, plus the \code{values(nominal|real)} switch \\
+\code{0\_programs.do}                 & shared programs (\code{run\_grc}, table builders, helpers) \\
+\code{0\_setup.do}                    & Stata environment, package installs \\
+\code{0\_CHN\_hukou\_restrictions.do} & CHN datasets with hukou subgroup definitions \\
+\addlinespace
+\textcolor{cktgray}{\textit{Pipeline sequence}} & \\
+\code{1\_processData.do}              & reads raw \code{.dta}, builds processed datasets \\
+\code{2\_summaryStats.do}             & summary statistics tables \\
+\code{3\_OLS\_uGRC.do}                & OLS and FE regressions, all countries \\
+\code{4\_GrRC.do}                     & restricted GRC regressions, all countries \\
+\code{5\_GrRC\_NonAg.do}              & GRC regressions with non-ag as choice (IDN) \\
+\code{6\_OLS\_uGRC\_hukou.do}         & OLS and FE regressions, hukou subgroups (CHN) \\
+\code{7\_GrRC\_hukou.do}              & GRC regressions, hukou subgroups (CHN) \\
+\code{8\_learning.do}                 & returns to learning, rural and urban \\
+\code{9\_GRC\_extras.do}              & GRC with extra covariates (experience, birth) \\
+\code{10\_make\_tables.do}            & builds \code{.tex} tables from \code{.ster} files \\
+\code{11\_make\_figures.do}           & builds figures \\
+\end{tabular}
+
+\end{frame}
+
+\end{document}
