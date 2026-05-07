@@ -3551,6 +3551,14 @@ program define attach_inversion_ci, eclass
              [STERdir(string asis)]                              ///
              [THReshold(integer 5)]
 
+    * `string asis' preserves outer double quotes from callers like
+    * `sterdir("${inversion_sterdir}")', which would otherwise produce a
+    * malformed path when concatenated. Strip them so subsequent
+    * `confirm file' / `estimates use' / `estimates save' calls see a
+    * plain path. File paths on Windows and POSIX cannot contain `"', so
+    * a blanket subinstr is safe here.
+    local sterdir = subinstr(`"`sterdir'"', `"""', "", .)
+
     * estbase is the (country, spec) cell base name without suffix under
     * the STER_NAMING.md convention, e.g. "grc_IDN_cuu_ca". The program
     * looks for and updates the four sters {estbase}.ster, {estbase}_n.ster,
