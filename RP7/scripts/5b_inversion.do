@@ -1,23 +1,24 @@
 /*******************************************************************************
 Project: Returns to Migration
 Team: E. Tjernström, M. Kleemans, E. Cenci
-Version: Apr 2026
+Version: May 2026
 This code:
     - attaches weak-ID-robust LCA inversion CIs (90% and 95%) for phi
       and the three trajectory-specific deltas to the .ster files
-      produced by 5_GrRC.do for the urban / consumption / unbalanced
-      mainline.
-    - decoupled from 5_GrRC.do so re-running the inversion does not
-      re-run the (slow) GMM. Run after 5_GrRC.do, before tables get
-      built by grc_tex_table_trend.
+      produced by 4_GrRC.do for the urban / consumption / unbalanced
+      mainline (spec3 = cuu).
+    - decoupled from 4_GrRC.do so re-running the inversion does not
+      re-run the (slow) GMM. Run after 4_GrRC.do, before tables get
+      built by 10_make_tables.do.
 
 Output:
-    Updates the four .sters per (country, spec):
-        grc_<country>_urban_<spec>.ster        (parent: phi inversion)
-        grc_<country>_urban_<spec>_never.ster  (Delta_never inversion)
-        grc_<country>_urban_<spec>_avg.ster    (Delta_avg inversion)
-        grc_<country>_urban_<spec>_always.ster (Delta_always inversion)
+    Updates the four .sters per (country, covs2):
+        grc_<country>_cuu_<covs2>.ster    (parent: phi inversion)
+        grc_<country>_cuu_<covs2>_n.ster  (Delta_never inversion)
+        grc_<country>_cuu_<covs2>_g.ster  (Delta_avg inversion)
+        grc_<country>_cuu_<covs2>_a.ster  (Delta_always inversion)
     by re-saving with the inversion CI scalars and macros attached.
+    See RP7/scripts/STER_NAMING.md for the spec3 / covs2 / sfx1 convention.
 
 Set ${inversion_sterdir} ahead of running this file to redirect to a
 non-default location (e.g., explorations/python-grc/rerun_workdir/output
@@ -32,7 +33,7 @@ log using 5b_inversion.log, replace
 capture noisily {
 
     * **********************************************************************
-    * Choices for the analysis (mirror 5_GrRC.do mainline)
+    * Choices for the analysis (mirror 4_GrRC.do mainline; spec3 = cuu)
     *     Countries:          IDN / TZA / CHN
     *     Choice variable:    urban
     *     Dependent variable: consumption
@@ -41,16 +42,17 @@ capture noisily {
     local choice  urban
     local depvar  consumption
     local balance unb
+    local spec3   cuu
 
     * Resolve where the .ster files live. Defaults to $output (the standard
-    * 5_GrRC.do destination); override with `global inversion_sterdir ...`
+    * 4_GrRC.do destination); override with `global inversion_sterdir ...`
     * before invoking this script for a test run against existing sters.
     if "${inversion_sterdir}" == "" {
         global inversion_sterdir "$output"
     }
     di as text "Inversion writes to: " as result "${inversion_sterdir}"
 
-    * GMM covariates (mirror 5_GrRC.do)
+    * GMM covariates (mirror 4_GrRC.do)
     global covs_gmm     "female"
     global covs_gmm2    "$covs_gmm age2"
     global covs_gmm_all "$covs_gmm2 education_max education_max2"
@@ -87,27 +89,34 @@ capture noisily {
         local base `r(base)'
         di as text "  base trajectory = `base'"
 
-        * --- attach inversion CIs to each (spec, suffix) cell
+        * --- attach inversion CIs to each (covs2, suffix) cell
         foreach spec in covs_0 covs_trend covs_1 covs_2 covs_all {
 
-            * Map spec names to controls (mirror 5_GrRC.do)
+            * Map spec names to controls (mirror 4_GrRC.do) and to the
+            * 2-char covs2 token used in the new ster naming convention
+            * (see RP7/scripts/STER_NAMING.md).
             if "`spec'" == "covs_0" {
                 local controls ""
+                local covs2    c0
             }
             else if "`spec'" == "covs_trend" {
                 local controls `periodFE'
+                local covs2    ct
             }
             else if "`spec'" == "covs_1" {
                 local controls `periodFE' $covs_gmm
+                local covs2    c1
             }
             else if "`spec'" == "covs_2" {
                 local controls `periodFE' $covs_gmm2
+                local covs2    c2
             }
             else if "`spec'" == "covs_all" {
                 local controls `periodFE' $covs_gmm_all
+                local covs2    ca
             }
 
-            local estbase grc_`country'_`choice'_`spec'
+            local estbase grc_`country'_`spec3'_`covs2'
 
             * --- skip-if-exists guard at cell level. If the parent ster
             * already carries e(inv_phi_ci95_lo) and ${skip_if_exists}=1,

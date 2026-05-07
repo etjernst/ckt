@@ -3520,8 +3520,8 @@ end
 * Re-saves the .ster so the scalars persist.
 *
 * Decoupled from run_grc: callers run the GMM pipeline first (writes
-* _avg/_never/_always sters), then call attach_inversion_ci on each
-* saved ster. This keeps the (slow) GMM step independent of the
+* _g/_n/_a sters per STER_NAMING.md), then call attach_inversion_ci on
+* each saved ster. This keeps the (slow) GMM step independent of the
 * inversion pass, so the latter can be re-run on its own when the
 * inference machinery changes (F adjustment, bootstrap calibration,
 * etc.) without redoing the GMM.
@@ -3551,13 +3551,13 @@ program define attach_inversion_ci, eclass
              [STERdir(string asis)]                              ///
              [THReshold(integer 5)]
 
-    * estbase is the (country, spec) cell base name without suffix,
-    * e.g. "grc_IDN_urban_covs_all". The program looks for and updates
-    * the four sters {estbase}.ster, {estbase}_never.ster, {estbase}_avg.ster,
-    * {estbase}_always.ster --- attaching the same inversion macros
-    * to each via a single python compute, since the inversion math is
-    * identical across suffixes (the four sters all rest on the same
-    * underlying GMM fit).
+    * estbase is the (country, spec) cell base name without suffix under
+    * the STER_NAMING.md convention, e.g. "grc_IDN_cuu_ca". The program
+    * looks for and updates the four sters {estbase}.ster, {estbase}_n.ster,
+    * {estbase}_g.ster, {estbase}_a.ster (parent / never / avg / always)
+    * --- attaching the same inversion macros to each via a single python
+    * compute, since the inversion math is identical across suffixes (the
+    * four sters all rest on the same underlying GMM fit).
 
     * 1. fv-expand controls so the python helper sees plain variable names
     local ctrl_list `controls'
@@ -3571,8 +3571,13 @@ program define attach_inversion_ci, eclass
 
     * 3. iterate over the four suffixes, ereturn-ing the macros and
     * re-saving each ster. Skips suffixes whose .ster does not exist.
+    * Suffix tokens follow the post-refactor naming in STER_NAMING.md:
+    *   ""  parent (main GMM result)
+    *   _n  Delta_never extrapolation (was _never)
+    *   _g  Delta_avg average across switchers (was _avg)
+    *   _a  Delta_always extrapolation (was _always)
     local n_attached = 0
-    foreach suffix in "" "_never" "_avg" "_always" {
+    foreach suffix in "" "_n" "_g" "_a" {
         local target "`sterdir'/`estbase'`suffix'.ster"
         capture confirm file "`target'"
         if _rc != 0 {

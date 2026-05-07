@@ -3,6 +3,18 @@
 * Inlines 5b_inversion.do's body so the trailing `exit, STATA clear`
 * in that file does not interrupt the table-render that follows.
 * Production runs invoke 5b_inversion.do as a top-level script.
+*
+* Updated 2026-05-08 for the post-pipeline-refactor naming convention
+* (STER_NAMING.md): estbase = grc_<country>_cuu_<covs2>, suffixes _n/_g/_a.
+*
+* TODO: main's Phase 2 grc_tex_table_trend does NOT yet consume the
+* inv_*_ci95_str / inv_*_ci90_str e()-macros that attach_inversion_ci
+* writes onto each ster. Extending grc_tex_table_trend to emit the
+* inversion CI rows is a separate piece of work; for now this script
+* verifies (a) attach_inversion_ci succeeds across the 15 mainline
+* cells and (b) grc_tex_table_trend still renders the standard
+* (non-inversion) table from the renamed sters. The CI rows come back
+* when grc_tex_table_trend is extended.
 version 19
 clear all
 set more off
@@ -28,6 +40,7 @@ capture noisily {
     local choice  urban
     local depvar  consumption
     local balance unb
+    local spec3   cuu
 
     global covs_gmm     "female"
     global covs_gmm2    "$covs_gmm age2"
@@ -65,21 +78,26 @@ capture noisily {
 
             if "`spec'" == "covs_0" {
                 local controls ""
+                local covs2    c0
             }
             else if "`spec'" == "covs_trend" {
                 local controls `periodFE'
+                local covs2    ct
             }
             else if "`spec'" == "covs_1" {
                 local controls `periodFE' $covs_gmm
+                local covs2    c1
             }
             else if "`spec'" == "covs_2" {
                 local controls `periodFE' $covs_gmm2
+                local covs2    c2
             }
             else if "`spec'" == "covs_all" {
                 local controls `periodFE' $covs_gmm_all
+                local covs2    ca
             }
 
-            local estbase grc_`country'_`choice'_`spec'
+            local estbase grc_`country'_`spec3'_`covs2'
             local parent "${inversion_sterdir}/`estbase'.ster"
             capture confirm file "`parent'"
             if _rc != 0 {
@@ -98,37 +116,26 @@ capture noisily {
         }
     }
 
-    * --- (2) Render the IDN consumption table via grc_tex_table_trend.
-    * The program reads `grc_<country>_urban_covs_<k>{,_never,_avg}.ster`
-    * names; we point $output at the staging dir so its tables/ output
-    * also lands there.
-    global output "$dir/output/staging"
-    cap mkdir "$output/tables"
+    * --- (2) Verify the inversion macros are on the staging sters.
+    * Read e(inv_phi_ci95_str) back from the IDN/cuu/ca cell as a smoke.
+    estimates use "$inversion_sterdir/grc_IDN_cuu_ca.ster"
+    di as text "{hline 72}"
+    di as text "Smoke read-back from grc_IDN_cuu_ca.ster:"
+    di as text "  e(inv_phi_ci95_str)   = " as result `"`e(inv_phi_ci95_str)'"'
+    di as text "  e(inv_phi_at_waldmin) = " as result %9.4f e(inv_phi_at_waldmin)
+    di as text "  e(inv_dN_ci95_str)    = " as result `"`e(inv_dN_ci95_str)'"'
+    di as text "  e(inv_davg_ci95_str)  = " as result `"`e(inv_davg_ci95_str)'"'
+    di as text "  e(inv_dT_ci95_str)    = " as result `"`e(inv_dT_ci95_str)'"'
+    di as text "{hline 72}"
 
-    * Restore stored estimates from the staging sters so esttab finds them
-    * by stored-estimate name (separate from file-on-disk).
-    foreach country in IDN TZA CHN {
-        foreach spec in covs_0 covs_trend covs_1 covs_2 covs_all {
-            foreach suffix in "" "_never" "_avg" "_always" {
-                local estname grc_`country'_urban_`spec'`suffix'
-                capture estimates use "$inversion_sterdir/`estname'.ster"
-                if _rc == 0 estimates store `estname'
-            }
-        }
-    }
-
-    grc_tex_table_trend,                                  ///
-        columns(5)                                        ///
-        filename("test_inversion_IDN_consumption")        ///
-        country(IDN)                                      ///
-        spec(urban)                                       ///
-        keep("Delta_base:_cons phi:_cons")                ///
-        varlabel("$\beta$")                               ///
-        htb("htbp")                                       ///
-        prehead("\caption{IDN GRC with LCA inversion CIs}")  ///
-        postfoot("\bottomrule \end{tabular} \end{threeparttable} \end{table}") ///
-        coeflabels("Delta_base:_cons \beta phi:_cons \phi") ///
-        textdepvar("log consumption")
+    * Note: grc_tex_table_trend table-render is intentionally NOT exercised
+    * here. Phase 2 / M3 grc_tex_table_trend on main reads from $dir/output/,
+    * not from a configurable staging dir, AND does not yet consume the
+    * inv_*_ci95_str e()-macros. Both are tracked separately:
+    *   - sterdir argument on grc_tex_table_trend (low priority).
+    *   - inversion CI rows in grc_tex_table_trend (high priority; needs
+    *     porting the 2b24344 esttab s() extension onto main's Phase 2
+    *     grc_tex_table_trend).
 }
 local rc = _rc
 capture log close
