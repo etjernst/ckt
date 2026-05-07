@@ -8,6 +8,17 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Port Delta_always block + inversion CI rows to grc_tex_table_trend_robust
+**Added:** 2026-05-07.
+**Branch:** lca-inversion.
+**Context:** `grc_tex_table_trend` (main results) now emits a Delta_always coefficient row below Delta_avg, with attached LCA inversion CI rows (90% / 95%) for $\Delta_T$.
+The Verdier-Vella robust variant `grc_tex_table_trend_robust` (used by `17_verdier_robust.do`) still has only the old two-block structure (Delta_never, Delta_avg) and lacks Delta_always entirely.
+The inversion CIs do not apply to the robust path (`attach_inversion_ci` only writes to `grc_*` sters, not `vv_*`), so the robust variant only needs the structural Delta_always block, no CI rows.
+**Action:** add a third esttab block to `grc_tex_table_trend_robust` for `_a` sters with `coeflabels(Delta_always "$\Delta_{\text{always}}$")`.
+Separate concern: `17_verdier_robust.do` (lines 167--172) still loads `_never` / `_avg` from disk but `run_grc_robust_vv` saves to `_n` / `_g`, so the robust pipeline appears to be broken end-to-end on the post-refactor naming.
+Fix that disk-naming inconsistency in the same pass.
+**Estimated cost:** 30 minutes for the table-builder port; another 30 minutes to chase the disk-naming bug and run an end-to-end VV smoke.
+
 ### Refine LCA inversion grid spacing for paper-final CIs
 **Added:** 2026-05-07.
 **Branch:** lca-inversion.
