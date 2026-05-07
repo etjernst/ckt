@@ -23,16 +23,91 @@ import matplotlib.pyplot as plt
 from scrape import SterRecord, load_ster
 
 
-COV_ORDER = ["c0", "ct", "c1", "c2", "ca"]
+COV_ORDER = ["c0", "ct", "c1", "c2", "c3", "ca"]
 COV_LABELS = {
     "c0": "none",
     "ct": "trend",
     "c1": "+female",
     "c2": "+age<sup>2</sup>",
+    "c3": "+age<sup>2</sup>",
     "ca": "+edu",
 }
 
+# Family-extras fits start the ladder at c1 = `<extra> + period FE` (no `c0` /
+# `ct`). The covariate-set tokens carry different meanings, so the labels are
+# overridden when a family is specified.
+COV_LABELS_FAMILY = {
+    "c1": "+extra",
+    "c2": "+female",
+    "c3": "+age<sup>2</sup>",
+    "ca": "+edu",
+}
+
+CANONICAL_COV_ORDER = ["c0", "ct", "c1", "c2", "c3", "ca"]
+
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "RP7" / "output"
+
+import re as _re
+
+_SPEC3_REV = {
+    "consumption": "c", "income": "i",
+    "urban":       "u", "nonag":  "n",
+    "unbalanced":  "u", "balanced": "b",
+}
+
+
+def _spec3_from_fix(cfg: dict) -> str:
+    """Build the 3-char spec3 token from semantic fix keys."""
+    if "spec3" in cfg:
+        return cfg["spec3"]
+    return (_SPEC3_REV[cfg["depvar"]]
+            + _SPEC3_REV[cfg["choice"]]
+            + _SPEC3_REV[cfg["balance"]])
+
+
+def _stem_for(cfg: dict) -> str:
+    """Build the filename stem (without `_<cov>.ster`) from a config dict."""
+    parts = ["grc", cfg["country"]]
+    if cfg.get("hukou"):
+        parts.append(cfg["hukou"])
+    parts.append(_spec3_from_fix(cfg))
+    if cfg.get("family"):
+        parts.append(cfg["family"])
+    return "_".join(parts)
+
+
+def _discover_covs(stem: str, output_dir: Path) -> list[str]:
+    """Glob for `{stem}_<cov>.ster` and return cov tokens in canonical order."""
+    pattern = _re.compile(rf"^{_re.escape(stem)}_(c[0-9ta])\.ster$")
+    found: set[str] = set()
+    for p in output_dir.glob(f"{stem}_*.ster"):
+        m = pattern.match(p.name)
+        if m:
+            found.add(m.group(1))
+    return [c for c in CANONICAL_COV_ORDER if c in found]
+
+
+def _normalize_versus(versus: dict) -> dict[str, dict]:
+    """Convert legacy spec3-string values into override dicts.
+
+    Accepts:
+      `{"unbalanced": "cuu", "balanced": "cub"}`     (legacy: spec3 string)
+      `{"main": {}, "experience": {"family":"exp"}}` (modern: override dict)
+    """
+    out: dict[str, dict] = {}
+    for label, val in versus.items():
+        if isinstance(val, dict):
+            out[label] = dict(val)
+        elif isinstance(val, str) and len(val) == 3 and val[0] in "ci":
+            out[label] = {"spec3": val}
+        else:
+            raise ValueError(f"versus value {val!r} not recognized")
+    return out
+
+
+def _cov_labels_for(version_cfg: dict) -> dict[str, str]:
+    """Return the cov-label map appropriate for a version (main vs family)."""
+    return COV_LABELS_FAMILY if version_cfg.get("family") else COV_LABELS
 
 
 @dataclass
@@ -122,28 +197,44 @@ def _fmt(b: float | None, se: float | None, decimals: int = 3) -> tuple[str, str
 
 def comparison_table(
     fix: dict[str, str],
-    versus: dict[str, str],
+    versus: dict[str, str | dict],
     output_dir: Path = OUTPUT_DIR,
 ) -> pd.DataFrame:
     """Return the formatted comparison table.
 
-    `fix`     pins country / depvar / choice (e.g. {'country':'IDN', 'depvar':'consumption', 'choice':'urban'}).
-    `versus`  maps display label -> spec3 token (e.g. {'unbalanced':'cuu', 'balanced':'cub'}).
+    `fix`     pins shared dimensions (country, depvar, choice, balance, plus
+              optionally hukou or family). Country is required; the rest are
+              required only if `versus` does not override them.
+    `versus`  maps display label to either:
+                - a 3-char spec3 token (legacy: `'cuu'`), or
+                - an override dict (`{'family': 'exp'}`, `{'hukou': 'rf'}`,
+                  `{'balance': 'balanced'}`, etc.).
+              Each version's filename stem is built by merging `fix` with the
+              version's overrides.
 
-    The five covariate sets (`c0`, `ct`, `c1`, `c2`, `ca`) fan across the columns automatically.
+    Each version's covariate-set list is auto-discovered from disk, so a main
+    fit (5 cov sets: c0/ct/c1/c2/ca) can sit next to a family-extras fit
+    (4 cov sets: c1/c2/c3/ca) without forcing a common axis.
     """
-    country = fix["country"]
+    versus_norm = _normalize_versus(versus)
 
-    # Assemble fits: versions × covariates.
+    # Per-version: merged config, stem, available cov tokens, fits.
+    version_cfgs: dict[str, dict] = {}
+    version_covs: dict[str, list[str]] = {}
     fits: dict[tuple[str, str], Fit] = {}
-    for version_label, spec3 in versus.items():
-        for cov in COV_ORDER:
-            stem = f"grc_{country}_{spec3}_{cov}"
-            fits[(version_label, cov)] = load_fit(stem, output_dir)
+    for label, override in versus_norm.items():
+        cfg = {**fix, **override}
+        version_cfgs[label] = cfg
+        stem = _stem_for(cfg)
+        covs = _discover_covs(stem, output_dir)
+        if not covs:
+            raise FileNotFoundError(
+                f"no '{stem}_<cov>.ster' files found in {output_dir}"
+            )
+        version_covs[label] = covs
+        for cov in covs:
+            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir)
 
-    # Headline coefficient rows. Labels use Unicode + HTML so the table
-    # does not depend on a math renderer (MathJax is not invoked inside
-    # Quarto raw-HTML blocks).
     coef_rows = ["Delta_never", "phi", "Delta_avg"]
     coef_labels = {
         "Delta_never": "<i>&Delta;</i><sub>never</sub>",
@@ -152,26 +243,28 @@ def comparison_table(
     }
 
     # Each coefficient occupies two display rows (estimate + SE).
-    rows: list[tuple[str, str]] = []
+    rows_idx: list[str] = []
     for c in coef_rows:
-        rows.append((coef_labels[c], "b"))
-        rows.append(("", f"se_{c}"))
-    rows.append(("<i>J</i> p", "scalar"))
-    rows.append(("<i>N</i>", "scalar"))
-    rows.append(("runtime", "scalar"))
+        rows_idx.append(coef_labels[c])
+        rows_idx.append("")
+    rows_idx.append("<i>J</i> p")
+    rows_idx.append("<i>N</i>")
+    rows_idx.append("runtime")
 
-    columns = pd.MultiIndex.from_product(
-        [list(versus.keys()), [COV_LABELS[c] for c in COV_ORDER]],
-        names=["version", "covariates"],
-    )
+    # Build column tuples version-by-version (variable width per version).
+    column_tuples: list[tuple[str, str]] = []
+    for label in versus_norm:
+        cov_lbl_map = _cov_labels_for(version_cfgs[label])
+        for cov in version_covs[label]:
+            column_tuples.append((label, cov_lbl_map[cov]))
+    columns = pd.MultiIndex.from_tuples(column_tuples, names=["version", "covariates"])
 
-    data = []
-    # Coefficient rows.
+    data: list[list[str]] = []
     for c in coef_rows:
         b_row, se_row = [], []
-        for version_label in versus.keys():
-            for cov in COV_ORDER:
-                fit = fits[(version_label, cov)]
+        for label in versus_norm:
+            for cov in version_covs[label]:
+                fit = fits[(label, cov)]
                 b_se = fit.headline().get(c, (None, None))
                 b_str, se_str = _fmt(*b_se)
                 b_row.append(b_str)
@@ -179,11 +272,10 @@ def comparison_table(
         data.append(b_row)
         data.append(se_row)
 
-    # J p, N, runtime.
     jp_row, n_row, rt_row = [], [], []
-    for version_label in versus.keys():
-        for cov in COV_ORDER:
-            fit = fits[(version_label, cov)]
+    for label in versus_norm:
+        for cov in version_covs[label]:
+            fit = fits[(label, cov)]
             jp_row.append(f"{fit.main.J_p:.3f}" if fit.main.J_p is not None else "")
             n_row.append(f"{fit.main.N:,}" if fit.main.N is not None else "")
             rt_row.append(f"{fit.main.runtime_s:.0f}s" if fit.main.runtime_s is not None else "")
@@ -191,11 +283,7 @@ def comparison_table(
     data.append(n_row)
     data.append(rt_row)
 
-    row_index = pd.Index(
-        [r[0] for r in rows],
-        name="",
-    )
-    return pd.DataFrame(data, index=row_index, columns=columns)
+    return pd.DataFrame(data, index=pd.Index(rows_idx, name=""), columns=columns)
 
 
 _COEF_DISPLAY = {
@@ -207,30 +295,46 @@ _COEF_DISPLAY = {
 
 def coefplot(
     fix: dict[str, str],
-    versus: dict[str, str],
+    versus: dict[str, str | dict],
     output_dir: Path = OUTPUT_DIR,
     coefs: tuple[str, ...] = ("Delta_never", "phi", "Delta_avg"),
     figsize: tuple[float, float] | None = None,
 ) -> plt.Figure:
     """Side-by-side coefplot for the same comparison `comparison_table` builds.
 
-    One subplot per coefficient. y-axis: covariate sets (5 ticks). x-axis:
-    point estimate with 95% CI as horizontal whiskers. Versions are
-    offset on the y-axis so their CIs are visible side-by-side.
+    One subplot per coefficient. y-axis: union of covariate sets seen across
+    versions, in canonical order. x-axis: point estimate with 95% CI. Versions
+    are offset on the y-axis so their CIs are visible side-by-side. A version
+    that lacks a particular cov set simply has no marker on that row.
     """
-    country = fix["country"]
-    n_cov = len(COV_ORDER)
-    versions = list(versus.keys())
+    versus_norm = _normalize_versus(versus)
+    versions = list(versus_norm.keys())
     n_ver = len(versions)
-    cov_labels = [COV_LABELS[c] for c in COV_ORDER]
-    # CSS-style label substitution for matplotlib (no HTML in mpl).
-    cov_labels = [c.replace("<sup>2</sup>", "²") for c in cov_labels]
 
+    version_cfgs: dict[str, dict] = {}
+    version_covs: dict[str, list[str]] = {}
     fits: dict[tuple[str, str], Fit] = {}
-    for v_label, spec3 in versus.items():
-        for cov in COV_ORDER:
-            stem = f"grc_{country}_{spec3}_{cov}"
-            fits[(v_label, cov)] = load_fit(stem, output_dir)
+    for label, override in versus_norm.items():
+        cfg = {**fix, **override}
+        version_cfgs[label] = cfg
+        stem = _stem_for(cfg)
+        covs = _discover_covs(stem, output_dir)
+        version_covs[label] = covs
+        for cov in covs:
+            fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir)
+
+    # y-axis: union of cov sets across versions, in canonical order.
+    cov_union = [c for c in CANONICAL_COV_ORDER
+                 if any(c in version_covs[v] for v in versions)]
+    n_cov = len(cov_union)
+
+    # Per-version cov labels can disagree (main vs family). For the shared
+    # y-axis we display the *main* convention if any version is non-family,
+    # otherwise the family convention.
+    any_main = any(not version_cfgs[v].get("family") for v in versions)
+    label_map = COV_LABELS if any_main else COV_LABELS_FAMILY
+    cov_labels = [label_map.get(c, c).replace("<sup>2</sup>", "²")
+                  for c in cov_union]
 
     figsize = figsize or (2.8 * len(coefs), 1.8 + 0.32 * n_cov)
     fig, axes = plt.subplots(1, len(coefs), figsize=figsize, sharey=True)
@@ -243,7 +347,9 @@ def coefplot(
     for ax, coef in zip(axes, coefs):
         for v_idx, v_label in enumerate(versions):
             ys, xs, errs = [], [], []
-            for cov_idx, cov in enumerate(COV_ORDER):
+            for cov_idx, cov in enumerate(cov_union):
+                if cov not in version_covs[v_label]:
+                    continue
                 fit = fits[(v_label, cov)]
                 b, se = fit.headline().get(coef, (None, None))
                 if b is None or se is None:
@@ -288,9 +394,30 @@ def render_table(table: pd.DataFrame) -> str:
     GFM (GitHub renders inline HTML tables) targets. The wrapping
     ``{=html}`` raw block in the qmd ensures pandoc does not touch it.
     """
-    versions = list(table.columns.get_level_values(0).unique())
-    n_per_version = len(table.columns) // len(versions)
-    cov_labels = list(table.columns.get_level_values(1))[:n_per_version]
+    # Preserve column order (a MultiIndex with non-unique level-0 values
+    # like ['main','main','exp','exp'] needs ordered, not deduplicated, keys).
+    seen: list[str] = []
+    for v in table.columns.get_level_values(0):
+        if v not in seen:
+            seen.append(v)
+    versions = seen
+
+    # Width per version: how many cov columns sit under each spanner.
+    width_per_version: dict[str, int] = {v: 0 for v in versions}
+    for v in table.columns.get_level_values(0):
+        width_per_version[v] += 1
+
+    # Per-version background shade. The first version (canonically the
+    # baseline / "main") gets a near-white tint; the second gets a soft
+    # neutral grey. Mild contrast on purpose---enough to chunk visually,
+    # gentle enough not to fight the data. Extra versions cycle through
+    # the same two tints.
+    panel_shades = ["#fafafa", "#eef1f4"]
+    bg_for: dict[str, str] = {
+        v: panel_shades[i % len(panel_shades)] for i, v in enumerate(versions)
+    }
+    # Map each ordered (version, cov) column tuple to its background.
+    column_bgs: list[str] = [bg_for[v] for v in table.columns.get_level_values(0)]
 
     # The diagnostic-row index identifies where to drop a thicker rule.
     diagnostic_labels = {"<i>J</i> p", "<i>N</i>", "runtime"}
@@ -299,18 +426,19 @@ def render_table(table: pd.DataFrame) -> str:
     rows: list[str] = []
     rows.append("<table class='results-overview'>")
     rows.append("<thead>")
-    # Span row: a thin midrule under each version label, broken in the
-    # gap between the two contrasts. The rule sits on an inner <div>
-    # with horizontal margin so adjacent cells' rules do not touch.
+    # Span row: a thin midrule under each version label. The shaded panel
+    # background does the contrast work; the rule keeps the version name
+    # visually attached to its columns.
     span_cells = "<th></th>" + "".join(
-        f"<th colspan='{n_per_version}' style='text-align:center;'>"
+        f"<th colspan='{width_per_version[v]}' style='text-align:center; background:{bg_for[v]};'>"
         f"<div style='border-bottom:1px solid #444; margin:0 18px; padding-bottom:2px;'>"
         f"{v}</div></th>"
         for v in versions
     )
     rows.append(f"<tr>{span_cells}</tr>")
     cov_cells = "<th></th>" + "".join(
-        f"<th style='text-align:right;'>{c}</th>" for c in cov_labels * len(versions)
+        f"<th style='text-align:right; background:{column_bgs[i]};'>{c}</th>"
+        for i, c in enumerate(table.columns.get_level_values(1))
     )
     rows.append(f"<tr>{cov_cells}</tr>")
     rows.append("</thead><tbody>")
@@ -323,7 +451,8 @@ def render_table(table: pd.DataFrame) -> str:
         else:
             tr_style = ""
         body = "".join(
-            f"<td style='text-align:right;'>{v}</td>" for v in row.values
+            f"<td style='text-align:right; background:{column_bgs[i]};'>{v}</td>"
+            for i, v in enumerate(row.values)
         )
         rows.append(f"<tr{tr_style}><td>{idx}</td>{body}</tr>")
     rows.append("</tbody></table>")

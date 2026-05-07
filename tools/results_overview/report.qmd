@@ -6,8 +6,6 @@ format:
     toc-depth: 2
     embed-resources: true
     df-print: kable
-  gfm:
-    df-print: kable
 execute:
   echo: false
   warning: false
@@ -48,14 +46,6 @@ print("```")
 coefplot(fix=fix, versus=versus);
 ```
 
-The corresponding sters live in [RP7/output/](../../RP7/output/) under the names `grc_IDN_cuu_*.ster` (unbalanced) and `grc_IDN_cub_*.ster` (balanced).
-Each cell loads five sters (main + `_n` + `_a` + `_d` + `_g`).
-
-Side note on the `c0` column.
-Both samples report $\Delta_{\text{never}} = 0.304$ to three decimals.
-The actual values differ at the fourth decimal (0.30439 unbalanced, 0.30419 balanced); the apparent identity is a display-rounding artifact, not a bug.
-With any covariate set richer than `c0` the gap widens to 0.03--0.04, as expected once the moments stop being independent across subgroups.
-
 ## Balanced vs unbalanced---CHN consumption, urban
 
 Same comparison for China.
@@ -76,6 +66,56 @@ print("```")
 ```{python}
 #| label: chn-bal-vs-unb-coefplot
 #| fig-cap: "Point estimates with 95% CI by covariate set, balanced and unbalanced offset within each row."
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs experience-extras---IDN consumption, urban (unbalanced)
+
+The "main" side fans across the standard five covariate sets.
+The "experience" side runs the GMM with `exp` (years of work experience) added as an extra regressor in every column, so its ladder is c1 (extra+period FE) through ca (extra+female+age$^2$+edu).
+Different cov-set lengths sit side-by-side: 5 columns for main, 4 for experience.
+
+```{python}
+#| label: idn-main-vs-exp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "experience": {"family": "exp"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-main-vs-exp-coefplot
+#| fig-cap: "Point estimates with 95% CI. Cov-set rows on the y-axis use the main convention; experience markers appear only on rows it has."
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Pooled vs rural-first hukou---CHN consumption, urban (unbalanced)
+
+CHN sample split by hukou regime.
+"pooled" is the headline CHN spec; "rural-first" restricts to individuals whose initial recorded hukou is rural.
+The hukou-split sters share the same five-covariate ladder as the main fits, so the columns line up one-for-one.
+
+```{python}
+#| label: chn-pooled-vs-rf-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"pooled": {}, "rural-first": {"hukou": "rf"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-pooled-vs-rf-coefplot
+#| fig-cap: "Point estimates with 95% CI. Hansen's $J$-test should sit in a more reasonable range under the rural-first split."
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
