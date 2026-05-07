@@ -144,4 +144,161 @@ State to know:
 - prose-rules-enforcer post-edit scanner caught two em-dash-with-spaces violations during the session (in the brief and the qmd); both fixed.
 - Quarto 1.7.22, pystata bundled at `C:/Program Files/StataNow19/utilities/pystata`, all 10 prototype IDN sters confirmed on disk under `RP7/output/`.
 
+## Continuation segment (afternoon, 2026-05-07)
+
+After the morning prototype landed, the session resumed at the user's prompt "what do we have left to do for S1?".
+The discussion picked up the open items from the morning log; we settled on a working priority of (5)→(4)→(2)→(3) but actually shipped (5), several flavors of (4), and skipped (2) and (3) per user redirect.
+
+### Open item 5: c0 $\Delta_{\text{never}}$ identity --- resolved, not a bug
+
+`grc_IDN_cuu_c0_n.ster` and `grc_IDN_cub_c0_n.ster` differ at the byte level (cmp shows mismatch at byte 62), so the identity wasn't a file-aliasing artifact.
+Scraping the actual values: unbalanced 0.30439 vs balanced 0.30419, SE 0.05394 vs 0.05393.
+Both round to `0.304 (0.054)` at the display precision of three decimals, hence the apparent identity.
+With richer covariate sets (`ct`, `c1`, `c2`, `ca`) the gap widens to 0.03--0.04, confirming the c0 near-identity is structural (the never-migrant moment is identified mostly off the same subpool in both samples) rather than a load bug.
+Resolved: not a bug, structural feature.
+
+### Framework generalization: `versus` axis can be any filename token
+
+Original `versus` accepted only spec3 strings (`{"unbalanced": "cuu"}`).
+Refactored to accept arbitrary axis-key dicts (`{"main": {}, "experience": {"family": "exp"}}`, `{"pooled": {}, "rural-first": {"hukou": "rf"}}`).
+Legacy spec3-string form preserved via a normalize step.
+Each version's covariate-set list is now auto-discovered by globbing for `{stem}_<cov>.ster`, so a 5-column main panel sits cleanly next to a 4-column family-extras panel without forcing a common axis.
+The `_step_order` helper places step labels canonically across versions: "none", "trend", any "+\<extra\>" labels, "+female", "+age²", "+edu".
+
+### Coefplot fix: family extras get their own y-axis row
+
+Previously the y-axis was indexed by canonical cov tokens (`c0`, `c1`, `c2`, ...) and one shared label list, which meant family `c1` (extra-regressor only) and main `c1` (+female) collided on the same y-row with the wrong label.
+Switched to step-label alignment: each row is the *content description* ("+exp", "+female", etc.), versions place markers on whichever rows they actually have.
+Family-experience now shows a `+exp` row above `+female`, no overwriting.
+
+### Cosmetic: panel tints from coefplot palette
+
+Replaced the neutral grey panel shading (`#fafafa` / `#eef1f4`) with faint tints of the matplotlib default cycle: `#eaf2f9` (steel-blue) and `#fdefe1` (orange).
+Subtle visual link between the table panels and the coefplot markers, requested by the user as "a subtle design element to make everything prettier".
+
+### `+extra` → `+<family-token>` in cell labels
+
+User wanted `+exp` rather than the generic `+extra`.
+Made `_cov_labels_for` look up the family token (`exp`, `maxexp`, `expsh`, `maxexpsh`, `birth`) and substitute it into the leftmost rung of the family ladder.
+Cell labels and coefplot rows both pick this up.
+
+### `lru_cache` on `_cached_load_ster`, keyed on (path, mtime_ns)
+
+Pystata's `estimates use` is the floor for render time --- each ster load is ~600ms.
+Within a single render, `comparison_table` and `coefplot` were both loading the same sters independently, doubling the load count.
+Wrapped `load_ster` in an `lru_cache` keyed on `(path_str, mtime_ns)`.
+Same path within a render: cache hit, returns in microseconds.
+Stata refits a ster: mtime changes, cache key changes, next call reloads.
+Effectively safe across renders (Windows mtime resolution is 100 ns, so an in-place rewrite with the same mtime is essentially impossible).
+Verified: first call ~590ms, second call ~0ms.
+Mentioned to user; user explicitly flagged the staleness concern, so we routed through (path, mtime_ns) rather than just (path).
+
+### GFM target dropped from `report.qmd` frontmatter
+
+Original frontmatter had both `html` and `gfm` formats.
+Quarto's GFM writer mangles inline-HTML tables (re-converts to markdown, re-escapes), so the `.md` looked worse than the `.html` even on the same data.
+More importantly, the dual-target render seemed to destabilize the `embed-resources` HTML output --- the 12:19 render of the 4-section qmd produced a 49 KB unstyled HTML (user described it as "an early 2000s home-made website") instead of the expected ~1.5 MB themed one.
+Hypothesis: pandoc's resource-embedding step interacted badly with the dual writer pass.
+Removing the `gfm:` block fixed it; the HTML-only render produced the expected 1.5 MB themed output.
+
+### Comparison sections shipped this segment (six total in current `report.qmd`)
+
+1. Balanced vs unbalanced | IDN consumption, urban (existed before; now restyled)
+2. Balanced vs unbalanced | CHN consumption, urban (added in `fd292d0`)
+3. Main vs experience | IDN consumption, urban (unbalanced) (`68eb85c`)
+4. Main vs rural-first hukou | CHN consumption, urban (unbalanced) (`68eb85c`)
+5. Main (urban) vs non-agricultural | IDN consumption (unbalanced) (`e1d8ae1`)
+6. Main (consumption) vs income | IDN urban (unbalanced) (`e1d8ae1`)
+
+The user-suggested `main (nominal) vs real consumption` view is blocked: no `_r`-suffix sters on disk yet.
+
+### Cosmetic: `---` em-dash in headings → ` | ` (pipe)
+
+Pandoc was rendering `## Balanced vs unbalanced---IDN...` as an em-dash, which the user found visually heavy in the section heading.
+Replaced with ` | ` (space-pipe-space) so the comparison name and the slice descriptor read as visually-distinct fields.
+Edit landed in the source but not yet rendered (user said don't re-render, just update the code).
+The next render will pick it up.
+
+## Decisions and the why (this segment)
+
+Decision: drop GFM rather than fix the GFM table-rendering issue.
+Why: the rendered `.md` looked worse than the HTML on the same data, and the dual-target render was destabilizing the HTML output too.
+GFM's value (browse on GitHub directly) doesn't outweigh the cost (mangled tables + unstyled HTML).
+The user agreed explicitly when re-asked.
+
+Decision: cache `load_ster` calls keyed on (path, mtime_ns) rather than path alone.
+Why: the user flagged the staleness concern unprompted ("we should just make sure to check that the cache is fresh, right?").
+A pure path-keyed cache would serve stale values after a Stata refit; the mtime-in-key pattern is automatically self-invalidating without needing manual invalidation calls.
+
+Decision: add the comparison sections directly to `report.qmd` rather than build a generator.
+Why: each section is one declarative `compare()` call (5--7 lines plus boilerplate).
+The marginal cost of a new section is low and the contents are different enough (prose, fix dict, versus dict) that templating wouldn't save much.
+Re-evaluate if the section count grows past ~12.
+
+Decision: skip the catalogue table and caterpillar/spec-curve plots per user redirect.
+Why: user said "honestly let's skip this" for caterpillar, "we can save this for later" for spec curve, and "not sure I understand" for the catalogue (which I then explained but the user didn't pivot back).
+Took the redirects at face value.
+
+Decision: pick CHN over TZA for the second balanced/unbalanced view.
+Why: bigger sample, more thematically loaded (hukou story), and the rural-first comparison naturally chains off it.
+TZA can be added later as a one-line copy.
+
+## Approaches rejected and the reason (this segment)
+
+Rejected: combining the family axis with the cov axis into a single 16-column panel (4 family variants × 4 cov sets).
+Reason: too wide for any reasonable display.
+The user's "main + 4 columns of all-experience" was clearer interpreted as one family variant per section, not all four at once.
+
+Rejected: hardcoding the cov-set list per family/spec3 combination.
+Reason: brittle if new combinations land on disk.
+Auto-discovery via glob is one extra IO per version but gracefully handles asymmetric ster sets.
+
+Rejected: parallelizing pystata `estimates use` calls across cores.
+Reason: pystata holds a single Stata kernel that serializes `estimates use`.
+Real speedup would need either a direct ster-format parser (significant work) or a fork-per-load harness (not worth it for a 4--5 minute render).
+Caching gets most of the easy speedup.
+
+Rejected: configuring MathJax to process content inside Quarto raw-HTML blocks.
+Reason: from morning, still applies.
+Heavyweight for decorative typography in a results table.
+
+## Open items at end of this segment
+
+1. M4 real-values sters not on disk yet --- user-suggested `main (nominal) vs real consumption` comparison can't be built.
+   Once the real-values pipeline runs to completion, the corresponding sters will land under `cuu_*_r.ster` and the section drops in with one `compare()` call.
+2. Catalogue table at top of report --- user redirected away from this; left explicitly deferred.
+3. Caterpillar plot for trajectory-specific $\Delta_{\underline{d}}$ --- skipped this segment.
+4. Specification curve plot --- explicitly deferred.
+5. Decision still pending on whether to commit `report.html` or gitignore.
+   Currently uncommitted; the brief leans gitignore.
+6. `report.md` was renamed-deleted when GFM was dropped; the empty file from the failed first render no longer exists.
+7. Em-dash → pipe change in headings is in source but unrendered (user opted to skip the render).
+8. Render time still ~4--5 minutes for 6 sections.
+   Cache helps within-render but pystata `estimates use` is the floor.
+   Worth a session sometime if the section count grows.
+9. Other comparison axes the user mentioned but didn't ask for: TZA balanced/unbalanced, the other CHN hukou variants (`ro`, `uo`, `uf`), the other family extras (`maxexp`, `expsh`, `maxexpsh`, `birth`).
+   All mechanical to add now that the framework is general.
+
+## Picking back up
+
+If you resume:
+
+Read this log and the morning segment in this same file end to end first.
+The S1 brief lives at [docs/plans/2026-05-06-s1-brief.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-05-06-s1-brief.md) and is the canonical design reference.
+
+Three commits landed this segment:
+
+- [`fd292d0`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): CHN balanced vs unbalanced section.
+- [`68eb85c`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): family + hukou comparison axes, panel shading, drop GFM, two new sections (IDN main vs experience, CHN main vs rural-first).
+- [`e1d8ae1`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor): nonag + income sections, `+exp` coefplot row, mtime-keyed cache.
+
+Uncommitted at end of segment: heading-em-dash → pipe edit in `report.qmd` (heading style change, user said don't re-render).
+
+State to know:
+
+- `tools/results_overview/compare.py` is the framework module; `comparison_table()`, `coefplot()`, `render_table()`, `_cached_load_ster()`, `_step_order()`, `_cov_labels_for()` are the public surface.
+- 6 comparison sections in `report.qmd` covering bal/unb (IDN, CHN), main/experience (IDN), main/hukou (CHN), main/nonag (IDN), main/income (IDN).
+- Render time ~4:43 for 6 sections; pystata's `estimates use` is the floor.
+- All visual elements (panel tints, +exp row, coefplot step axis) verified against the rendered HTML.
+
 with Claude
