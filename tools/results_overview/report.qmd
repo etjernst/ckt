@@ -451,3 +451,103 @@ print("```")
 #| out-width: "100%"
 coefplot(fix=fix, versus=versus);
 ```
+
+## Nominal vs real | IDN consumption, non-agricultural (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cnu-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "nonag", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: idn-nom-vs-real-cnu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN rural-first hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-rf-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "rf"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-nom-vs-real-rf-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN rural-only hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-ro-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "ro"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-nom-vs-real-ro-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN urban-first hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-uf-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "uf"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-nom-vs-real-uf-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN urban-only hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-uo-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "uo"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+```
+
+```{python}
+#| label: chn-nom-vs-real-uo-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
