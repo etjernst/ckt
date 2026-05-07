@@ -21,7 +21,8 @@
       "Bash(tasklist //FO CSV)",
       "Bash(awk -F',' '{print $1, \"\\(\", $5, \"\\)\"}')",
       "Bash(wmic logicaldisk *)",
-      "Bash(grep -n 'estimates use \"\\\\$dir/output/grc_' RP7/scripts/5_GrRC.do)"
+      "Bash(grep -n 'estimates use \"\\\\$dir/output/grc_' RP7/scripts/5_GrRC.do)",
+      "Bash(git cherry-pick *)"
     ],
     "additionalDirectories": [
       "C:\\git\\ckt",
