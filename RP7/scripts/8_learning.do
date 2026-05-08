@@ -124,7 +124,7 @@ COEFlabels(string asis):	How to label vars (if different from var label)
 					
 * Copy table to Overleaf
   if $copyOverleaf == 1 {
-    copyOverleaf "$output/tables/OLS_IDN_`depvar'_`choice'_`balance'.tex", subdir(tables)		
+    copyOverleaf "$output/tables/OLS_IDN_`depvar'_learning_`balance'.tex", subdir(tables)
   }
 
 * **********************************************************************
@@ -215,7 +215,7 @@ COEFlabels(string asis):	How to label vars (if different from var label)
 					
 * Copy table to Overleaf
   if $copyOverleaf == 1 {
-    copyOverleaf "$output/tables/OLS_CHN_`depvar'_`choice'_`balance'.tex", subdir(tables)		
+    copyOverleaf "$output/tables/OLS_CHN_`depvar'_learning_`balance'.tex", subdir(tables)
   }
 
 * **********************************************************************
