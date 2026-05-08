@@ -539,3 +539,110 @@ The render is bank-fed for the real columns and pystata-cache-fed for the nomina
 That kind of structural bug is much easier to fix while the session context is warm.
 
 with Claude
+
+---
+
+## Segment 4: full pipeline launch + assert_merge_clean bug (evening)
+
+User asked to run the full pipeline (nominal only).
+Launched [`RP7/scripts/0_master.do`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/0_master.do) via `stata-mp -e`.
+
+### First launch crashed in `1_processData.do` (IDN urban/consumption/unb)
+
+`r(133)` "unknown function" inside `assert_merge_clean`'s diagnostic `di` line.
+
+Root cause: the helper at [`0_programs.do:117`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/0_programs.do) was declared with `label(string asis)`.
+With `asis`, the literal double quotes from the call site (`label("handle_trajectory_groups")`) are kept in the macro, so the diagnostic line at L136
+
+```
+di as text "[`label'] _merge breakdown: ..."
+```
+
+expanded to `di as text "["handle_trajectory_groups"] ..."`.
+Stata parsed the embedded `handle_trajectory_groups` as a function expression, didn't find one, and threw r(133).
+
+### Why this stayed latent for ~9 days
+
+`assert_merge_clean` was added in [`f2f392c`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor) on 2026-04-29 (audit batch 2, M3) and retrofitted into the three `handle_trajectory_groups*` programs in [`ac8f3f6`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor) (audit batch 4, m6) the same day.
+The retrofit's commit message asserted "no behavioral change" reasoning from the helper's logic on paper.
+
+Every smoke run since then went through [`_smoke_full.do`](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/_smoke_full.do), which explicitly excludes data prep (`* NOT included this run: 1_processData.do, 0_CHN_hukou_restrictions.do --- would save`).
+Verified by grepping `_smoke_full.log`: the diagnostic message `[handle_trajectory_groups] _merge breakdown:` appears only on the program-define source-echo line, never as actual execution output.
+Today's `0_master.do` launch was the first time the helper was actually invoked end-to-end.
+
+The lesson is the obvious one: "no behavioral change" claims need a runtime test, not just code-reading.
+The `_smoke_full.do` harness was tuned for GRC verification and skips the entire data-prep stack on purpose, so any regression in `0_programs.do`'s data-prep helpers is invisible to it.
+
+### Fix and relaunch
+
+One-line fix: dropped `asis` from the `label()` option spec in `assert_merge_clean`.
+This is the conventional Stata pattern and is enough because none of the three call sites pass a label with embedded quotes that would actually need `asis` preservation.
+
+Relaunched `0_master.do`.
+Helper now firing cleanly across all data-prep cells (live monitor showing `[handle_trajectory_groups] _merge breakdown: master-only=N, using-only=0, matched=M` at every call).
+Pipeline is past `1_processData.do`, `2_summaryStats.do`, `1b_unbalanced_rank_diagnostic.do`, and into `4_GrRC.do` --- the long GRC stretch.
+Estimated end time: well over an hour from launch given the full GRC + non-ag + hukou + extras + verdier sequence.
+
+### Open
+
+- Pipeline still running in background (`bh1uqavm4`); monitor `bcmg8rfuh` armed.
+- Once complete, decide whether to commit the one-line `asis` fix on its own or bundle with whatever else lands in `RP7/scripts/`.
+
+with Claude
+
+---
+
+## Segment 5: pipeline run continues + diagnostic adventures
+
+### Bash-tool harness killed the first relaunch at 10 min
+
+After the `assert_merge_clean` fix, relaunched `0_master.do` via `Bash(run_in_background=true, timeout=600000)`.
+Bash tool's timeout is capped at 10 min (600000 ms is the max value, not 10 hours as I'd assumed).
+At 21:25 the harness sent SIGKILL to its child shell.
+The Stata child got orphaned (not killed at OS level), kept running on its own for a while, then exited.
+
+### Detached relaunch via PowerShell
+
+Used `Start-Process -FilePath "C:\Program Files\StataNow19\StataMP-64.exe" -ArgumentList "-e","do","0_master.do" -WorkingDirectory ... -PassThru -WindowStyle Hidden` so the Stata process is fully detached from the harness and can run as long as it needs.
+PID 38876, started 21:35:30.
+
+### False alarm: 45-minute log "freeze"
+
+At 22:17 noticed log mtime stuck at 21:45 with no advance.
+Log tail showed Step 2 iteration 5 of `grc_IDN_cuu_c0` — i.e., halfway through GMM Step 2 of the very first IDN cell.
+CPU usage on PID 38876 was ~21%, working set hovering 300--400 MB, window title stuck on "82% complete".
+Convinced myself the process was hung.
+
+Also noticed a SECOND `StataMP-64.exe` process (PID 48912) and initially worried about contention.
+Used `Get-CimInstance Win32_Process` to check parents: PID 48912's parent is a separate `bash.exe` running `stata-mp -e do smoke_18_CHN.do` in the **`worktree-vanilla-vv`** worktree --- unrelated work running in parallel on the other branch, no contention.
+
+User asked me to verify "stuck" before killing.
+While double-checking, the log finally flushed: 48 minutes of buffered output appeared at once.
+The "freeze" was actually Stata computing the **delta-method standard error on `Delta_avg` via `nlcom`** --- a single `nlcom` expression summing 30 weighted switcher contributions of `_b[Delta_base:_cons] + _b[phi:_cons]*(_b[mu:switcher_k] - _b[mu:switcher_2])`.
+That symbolic-Hessian gradient is roughly `O(K² × n)` (K parameters, n obs) and on the IDN-unbalanced sample with 31 trajectories it takes ~45 min single-threaded.
+Hence: low CPU (single-core nlcom, MP build can't parallelize the Hessian), unchanging window title (Stata's progress bar on that one command), frozen log (output buffered until command exits).
+
+Lesson: Stata `gmm` followed by `nlcom Delta_avg = (giant_30term_expression)` will look hung but is fine.
+For future runs: open a per-fit log inside `run_grc` so the buffer flushes more often, OR add a `qui` wrapper with periodic `_dots` to make progress visible.
+
+Did NOT kill the process.
+
+### Cell timings so far (IDN unbalanced consumption-urban)
+
+| Cell | Spec | Wall time |
+|------|------|-----------|
+| `grc_IDN_cuu_c0` | base | ~55 min (21:35 → 22:30) |
+| `grc_IDN_cuu_ct` | + time FE | ~50 min (3000.92 sec per timer slot 2) |
+| `grc_IDN_cuu_c1` | + time FE + female | in progress at 23:34 (Step 2 iter 6) |
+
+Each cell saves 5 sters: main + `_a` (always-rural extrapolation) + `_d` (delta_d block) + `_g` (Get/extrapolated) + `_n` (never-migrants).
+Total today's ster count: 10 so far (cuu_c0 + cuu_ct).
+
+### Open
+
+- Pipeline still running detached as PID 38876.
+- IDN-unbalanced cells dominate runtime (~50 min each); CHN and TZA cells should be much faster because they have far fewer switcher trajectories.
+- Full pipeline ETA: many hours --- will overflow this session.
+- Decision deferred: whether to commit the one-line `asis` fix on its own once the run completes, or bundle.
+
+with Claude
