@@ -114,7 +114,7 @@
 * **********************************************************************
 capture program drop assert_merge_clean
 program define assert_merge_clean
-    syntax , [allow(numlist integer min=1 max=3) label(string asis) ///
+    syntax , [allow(numlist integer min=1 max=3) label(string) ///
               drop_unmatched(string)]
 
     if "`allow'" == "" {
