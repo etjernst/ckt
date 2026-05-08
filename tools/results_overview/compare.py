@@ -426,6 +426,7 @@ def comparison_table(
         rows_idx.append(coef_labels[c])
         rows_idx.append("")
     rows_idx.append("<i>J</i> p")
+    rows_idx.append("converged")
     rows_idx.append("<i>N</i>")
     rows_idx.append("runtime")
 
@@ -450,14 +451,19 @@ def comparison_table(
         data.append(b_row)
         data.append(se_row)
 
-    jp_row, n_row, rt_row = [], [], []
+    jp_row, conv_row, n_row, rt_row = [], [], [], []
     for label in versus_norm:
         for cov in version_covs[label]:
             fit = fits[(label, cov)]
             jp_row.append(f"{fit.main.J_p:.3f}" if fit.main.J_p is not None else "")
+            if fit.main.converged is None:
+                conv_row.append("")
+            else:
+                conv_row.append("Y" if fit.main.converged == 1 else "<b>N</b>")
             n_row.append(f"{fit.main.N:,}" if fit.main.N is not None else "")
             rt_row.append(f"{fit.main.runtime_s:.0f}s" if fit.main.runtime_s is not None else "")
     data.append(jp_row)
+    data.append(conv_row)
     data.append(n_row)
     data.append(rt_row)
 

@@ -85,6 +85,7 @@ class SterRecord:
     J_df: int | None = None
     J_p: float | None = None
     runtime_s: float | None = None
+    converged: int | None = None
 
 
 def parse_filename(path: Path) -> dict:
@@ -144,6 +145,7 @@ def load_ster(path: str | Path) -> SterRecord:
     J_df = _scalar("Jdf")
     J_p = _scalar("Jpval")
     runtime_s = _scalar("runtime")
+    converged = _scalar("converged")
 
     return SterRecord(
         path=path,
@@ -164,6 +166,7 @@ def load_ster(path: str | Path) -> SterRecord:
         J_df=int(J_df) if J_df is not None else None,
         J_p=J_p,
         runtime_s=runtime_s,
+        converged=int(converged) if converged is not None else None,
     )
 
 
