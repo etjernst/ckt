@@ -64,6 +64,36 @@ Append dated entries. Move completed items to the bottom with a strike-through o
 **Deliverable:** histogram or table of basin-switching frequency, supporting (or refining) the paper's weak-identification claim.
 **Status:** decided, deferred until Stream C primary simulation is in flight.
 
+### Switch vanilla VV implementation from `vfirst` to fine-grained sub-province cluster
+**Added:** 2026-05-08
+**Context:** The vanilla VV port currently clusters at `vfirst` (first-wave province). Mistaken reading of Verdier (2020): we saw "province" in his Step 1 covariates and missed that $v_i$ in his Step 2 robust IV is *village* (~94 villages, ~12 farmers each in Suri-Kenya), one administrative level *below* province. Audit of our processed `.dta` files (2026-05-08) finds we have direct village-equivalents:
+- **CHN**: `cid` (community), ~4,066 distinct, ~16 workers each.
+- **IDN**: `keca` (kecamatan / subdistrict), ~1,669 distinct, ~22 workers each.
+- **TZA**: `ward`, ~135 distinct, ~152 workers each.
+**Action:** rewire `_vv_firststage_projection` and `run_vv_vanilla` (in `RP7/scripts/0_programs.do`) to take a cluster-variable argument; set the analog of Verdier's village ($v_i$) per country; rerun the V1 sweep at the corrected granularity. Province ($\texttt{vfirst}$) can stay as a covariate (province$\times$year FE in Step 1) per VV §4.1.
+**Cost:** ~1 day of plumbing + reruns.
+**Why it matters:** the current `vfirst` clustering is one administrative level coarser than VV's. If the V1 results disagreed with CKT-vv at the wrong granularity, the disagreement may be a clustering-level artifact, not an identification issue.
+
+### Counterfactual experiments leveraging CKT's two-skill structure
+**Added:** 2026-05-08
+**Context:** CKT's structural model decomposes outcomes into rural / urban skills $\theta_i^R$ and $\theta_i^U$ separately, with location-specific prices $b_R, b_U$. Verdier's framework is agnostic about the structural origin of $a_i$ and $b_i$ and cannot decompose returns into skill prices vs skill quantities. **This is a substantive advantage of our model that is not currently emphasized in the paper.**
+**Action:** brainstorm and document concrete counterfactual policy experiments that require the two-skill decomposition:
+- *Urban skill premium policy*: e.g., what if $b_U$ rose by $X\%$ (urban wage compression policies)? CKT's model predicts how $\Delta_i$ changes; VV's reduced form cannot.
+- *Rural skill upgrading*: e.g., what if $\theta_i^R$ rose for low-skill workers (rural training programs)? Predicts effect on $\Delta_i$.
+- *Differential migration costs*: a policy that lowers the migration cost for low-$\theta^R$ workers vs high-$\theta^R$ workers.
+- *Asymmetric education effects*: schooling that raises urban skill more than rural skill.
+**Why it matters:** referees may ask "why not just adopt VV's estimator?" The clean answer is that CKT's structural model lets us run counterfactual policy experiments that VV's reduced-form framework cannot. This is potentially a major paper-level argument.
+**Status:** decided as a high-priority follow-up after the methodology section is locked.
+
+### Empirical hint of A3 (trajectory-pooling) validity
+**Added:** 2026-05-08
+**Context:** A3 ("trajectory pooling") says $E[\theta_i \mid \underline d_i = s, v_i = v]$ is the same across clusters $v$ within trajectory $s$. $\theta_i$ is unobservable, so no exact test exists. But in CKT's single-skill reduction, $\theta_i$ tracks rural baseline $a_i$, and we have an existing alpha-pooling diagnostic (`docs/reviews/2026-04-24_alpha-pooling-diagnostic-results.md`) that probes this.
+**Action:** surface and consolidate three forms of A3 diagnostic into a single section of the paper / appendix:
+1. **Hansen J / overid test** from `run_vv_vanilla` and `run_grc_robust_vv` (already produced; under-publicized).
+2. **Trajectory-by-cluster mean comparison.** For each switcher trajectory $d$, regress $\hat a_i$ on cluster dummies; F-test the joint significance of the dummies. Repeat for $\hat\Delta_i$. Report by country and trajectory.
+3. **Visual scatter** of $(\hat\mu_{d,v}, \hat\Delta_{d,v})$ trajectory-cluster cell means, faceted by trajectory. Drift across clusters within a trajectory hints A3 fails.
+**Why it matters:** A3 is the load-bearing assumption for CKT-vv (and CKT-main). When A3 fails, CKT estimators pick up bias; VV's worker-level stays consistent. Some empirical hint that A3 is approximately true would substantially strengthen the case for CKT-vv vs adopting VV directly.
+
 ---
 
 ## Completed
