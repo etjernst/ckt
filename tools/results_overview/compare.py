@@ -71,6 +71,37 @@ def _load_bank() -> dict[str, dict]:
     return json.loads(SCRAPED_BANK.read_text(encoding="utf-8"))
 
 
+# Sidecar CSV produced by `fix_delta_avg_scaling.do`. Each row carries
+# the buggy Delta_avg (= switcher_frac * E[Delta | switcher]) saved in
+# the corresponding `_g.ster` plus the rescaled headline value.
+# `Fit.headline()` substitutes the rescaled value when the on-disk
+# ster still matches `b_buggy` --- so re-fits done under the corrected
+# `0_programs.do` (where `_g.ster` no longer carries the bug) bypass
+# the override automatically. See [delta_avg_rescaled.csv] for the
+# full row set.
+DELTA_RESCALED_CSV = OUTPUT_DIR / "delta_avg_rescaled.csv"
+
+
+@lru_cache(maxsize=None)
+def _cached_rescaled(path_str: str, mtime_ns: int) -> dict[str, dict[str, float]]:
+    df = pd.read_csv(path_str)
+    return {
+        row.estname: {
+            "b_buggy": float(row.b_buggy),
+            "se_buggy": float(row.se_buggy),
+            "b_rescaled": float(row.b_rescaled),
+            "se_rescaled": float(row.se_rescaled),
+        }
+        for row in df.itertuples(index=False)
+    }
+
+
+def _load_rescaled() -> dict[str, dict[str, float]]:
+    if not DELTA_RESCALED_CSV.exists():
+        return {}
+    return _cached_rescaled(str(DELTA_RESCALED_CSV), DELTA_RESCALED_CSV.stat().st_mtime_ns)
+
+
 def _vsfx(cfg: dict) -> str:
     """Return the values-axis suffix: empty for nominal, `_r` for real."""
     return "_r" if cfg.get("values") == "real" else ""
@@ -225,9 +256,15 @@ class Fit:
             out["phi"] = (None, None)
 
         if self.g_rec is not None and "Delta_avg" in self.g_rec.b.index:
-            out["Delta_avg"] = (
-                self.g_rec.b["Delta_avg"], self.g_rec.se["Delta_avg"]
-            )
+            b = float(self.g_rec.b["Delta_avg"])
+            se = float(self.g_rec.se["Delta_avg"])
+            rescaled = _load_rescaled().get(self.stem)
+            if rescaled is not None and (
+                abs(b - rescaled["b_buggy"]) < 1e-9
+                and abs(se - rescaled["se_buggy"]) < 1e-9
+            ):
+                b, se = rescaled["b_rescaled"], rescaled["se_rescaled"]
+            out["Delta_avg"] = (b, se)
         else:
             out["Delta_avg"] = (None, None)
 

@@ -9,6 +9,7 @@ format:
 execute:
   echo: false
   warning: false
+  error: true
 ---
 
 ```{python}
