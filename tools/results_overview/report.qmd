@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path.cwd()
 sys.path.insert(0, str(ROOT))
 
-from compare import comparison_table, coefplot, render_table
+from compare import comparison_table, coefplot, render_table, comparison_dates
 ```
 
 Stars throughout: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
@@ -36,6 +36,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -56,6 +57,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -76,6 +78,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -98,6 +101,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -120,6 +124,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -142,6 +147,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -164,6 +170,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -186,6 +193,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -208,6 +216,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -230,6 +239,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -252,6 +262,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -274,6 +285,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -296,6 +308,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -318,6 +331,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -344,6 +358,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -364,6 +379,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -384,6 +400,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -404,6 +421,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -424,6 +442,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -444,6 +463,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -464,6 +484,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -484,6 +505,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -504,6 +526,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}
@@ -524,6 +547,7 @@ table = comparison_table(fix=fix, versus=versus)
 print("```{=html}")
 print(render_table(table))
 print("```")
+print(comparison_dates(fix=fix, versus=versus))
 ```
 
 ```{python}

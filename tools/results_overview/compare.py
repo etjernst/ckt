@@ -427,6 +427,48 @@ def comparison_table(
     return pd.DataFrame(data, index=pd.Index(rows_idx, name=""), columns=columns)
 
 
+def comparison_dates(
+    fix: dict[str, str],
+    versus: dict[str, str | dict],
+    output_dir: Path = OUTPUT_DIR,
+) -> str:
+    """Return a small HTML datestamp line summarising when each version was fit.
+
+    For each version: takes the oldest `.ster` mtime across the (stem, cov)
+    cells discovered the same way `comparison_table` discovers them. That gives
+    a conservative "results from <date>" --- if any cell is older than that,
+    the displayed table is at least that old.
+
+    Versions backed by `scraped_real.json` (no on-disk `.ster` files) are
+    flagged "(scraped from log)" rather than dated.
+    """
+    import datetime as _dt
+
+    versus_norm = _normalize_versus(versus)
+    parts: list[str] = []
+    for label, override in versus_norm.items():
+        cfg = {**fix, **override}
+        stem = _stem_for(cfg)
+        vsfx = _vsfx(cfg)
+        covs = _discover_covs(stem, output_dir, vsfx)
+        mtimes: list[float] = []
+        for cov in covs:
+            p = output_dir / f"{stem}_{cov}{vsfx}.ster"
+            if p.exists():
+                mtimes.append(p.stat().st_mtime)
+        if mtimes:
+            stamp = _dt.datetime.fromtimestamp(min(mtimes)).strftime("%Y-%m-%d %H:%M")
+            parts.append(f"<i>{label}</i>: {stamp}")
+        else:
+            parts.append(f"<i>{label}</i>: scraped from log")
+    return (
+        "<div style='font-size:0.85em; color:#666; margin-top:-0.5em; "
+        "margin-bottom:1em;'>Results from "
+        + " &nbsp;|&nbsp; ".join(parts)
+        + "</div>"
+    )
+
+
 _COEF_DISPLAY = {
     "Delta_never": r"$\Delta_{\mathrm{never}}$",
     "phi":         r"$\phi$",
