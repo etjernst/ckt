@@ -55,7 +55,7 @@
 \newcommand{\nuil}{\nu_{it}^{l}}
 \newcommand{\tildenu}{\tilde{\nu}_{it}^{l}}
 
-\title{Implementing Verdier's robust extrapolation \\ in the CKT model}
+\title{Implementing Verdier's robust extrapolation in the CKT model}
 \subtitle{Relaxing the i.i.d.\ assumption on $\nuil$}
 \author{Cenci, Kleemans, Tjernstr\"om}
 \date{\today}
@@ -68,6 +68,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 2
 \begin{frame}{Our current estimator corresponds to Verdier's simple extrapolation}
 
   We currently follow \citet{suriSelectionComparativeAdvantage2011} and \citet{tjernstromCommentSuri2011}:
@@ -84,6 +85,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 3
 \begin{frame}{The simple extrapolation assumes i.i.d.\ non-pecuniary shocks}
 
   Our current Assumption A2 states that the non-pecuniary utility shock
@@ -102,6 +104,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 4: finding 15 --- drop the China bullet
 \begin{frame}{The migration literature documents what A2 rules out}
 
   Regional heterogeneity is a central fact of this literature:
@@ -111,7 +114,6 @@
     \item \citet{bryanAggregateProductivityEffects2019}: structural model of Indonesian internal migration estimates large bilateral migration costs
     \item \citet{lagakosMigrationCostsObservational2020}: migration cost estimates differ across developing countries
     \item \citet{pulidoBarriersMobilitySorting2021}: cross-sector barriers in Indonesia explain a large share of within-country income gaps
-    \item China: hukou is an institutional source of region-specific migration barriers
   \end{itemize}
 
   \vspace{0.6em}
@@ -120,6 +122,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 5: findings 5, 6 --- replace alertblock; drop bold pseudo-label
 \begin{frame}{Verdier's robust extrapolation weakens A2 to a conditional version}
 
   Decompose the non-pecuniary shock:
@@ -129,7 +132,7 @@
   where $\vii$ is an observed, time-invariant individual-level index
 
   \vspace{0.6em}
-  \textbf{New assumption (A2$'$):}
+  New assumption (A2$'$):
   \begin{itemize}
     \item $\tildenu$ is i.i.d.\ \emph{conditional on} $\vii$
     \item $m_{l}(\vii)$ can correlate arbitrarily with comparative advantage
@@ -139,14 +142,14 @@
   We use first-wave province as $\vii$ to index region-level shocks (all three countries)
 
   \vspace{0.6em}
-  \begin{alertblock}{Why this is weaker}
-    A2 (our assumption) requires \emph{unconditional} independence \\
-    A2$'$ (VV's assumption) requires only \emph{within-province} independence
-  \end{alertblock}
+  \textit{A2 (our assumption) requires unconditional independence} \\
+  \textit{A2$'$ (VV's assumption) requires only within-province independence}
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 6 (keep \textbf{Simple:}/\textbf{Robust:} --- they earn their weight)
+% finding 9: strip accumulated \vspace calls
 \begin{frame}{In practice: the LCA gets a cluster-specific intercept}
 
   Slope stays common but the intercept varies
@@ -162,7 +165,6 @@
     \Deltai \;=\; \beta(\vii) \;+\; \phicoef\, \thetai
   \]
 
-  \vspace{0.6em}
   \begin{itemize}
     \item slope $\phicoef$ remains common; this is still the LCA restriction
     \item intercept $\beta(\vii)$ absorbs cluster-level $m_l(\vii)$ heterogeneity
@@ -170,17 +172,17 @@
     \item extrapolation to non-migrants happens cluster-by-cluster, then averaged
   \end{itemize}
 
-  \vspace{0.4em}
   $\vii$ is generic in VV's framework (village in his Suri-Kenya application; for CKT, see slide on geography below).
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 7 (keep \textbf{Province A}/\textbf{Province B} --- definitional contrast)
+% finding 9: strip extra \vspace
 \begin{frame}{Pooling provinces mixes differentially-selected switcher samples}
 
   Consider two provinces:
 
-  \vspace{0.4em}
   \begin{itemize}
     \item \textbf{Province A} (many movers): wide switcher sample, broad range of $\thetai$
     \item \textbf{Province B} (few movers): skewed sample, only high-return types migrate
@@ -189,12 +191,13 @@
   \vspace{0.6em}
   Pooled regression: can be biased by across-province difference in selection
 
-  \vspace{0.4em}
   Within-province: clean slope, holds region-level shocks constant
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 8: findings 12, 13
+% nudge green label up; convert flushleft block to itemize
 \begin{frame}{Within-province slopes agree---the pooled slope is pulled off}
 
   \centering
@@ -224,23 +227,22 @@
     % Drawn from (0.2, 4.96) to (5.5, 0.40) to match the OLS through the joint centroid.
     \draw[cktaccent,thick,dashed] (0.2,4.96) -- (5.5,0.40);
 
-    % Legend
-    \node[anchor=west, cktblue]   at (6.7,4.6) {\small Province $A$ (many movers)};
-    \node[anchor=west, cktgreen]  at (6.7,4.0) {\small Province $B$ (few movers)};
-    \node[anchor=west, cktaccent] at (6.7,3.4) {\small Pooled fit};
+    % Legend (kept inside axis box at x ~ 6.0 to avoid clipping at x=6.5)
+    \node[anchor=west, cktblue]   at (3.8,5.4) {\small Province $A$ (many movers)};
+    \node[anchor=west, cktgreen]  at (3.8,4.9) {\small Province $B$ (few movers)};
+    \node[anchor=west, cktaccent] at (3.8,4.4) {\small Pooled fit};
 
-    % Slope annotations
-    \node[cktblue,font=\footnotesize]    at (5.7,1.0) {slope $= \phicoef$};
-    \node[cktgreen,font=\footnotesize]   at (3.4,4.1) {slope $= \phicoef$};
+    % Slope annotation (one label, in clear space between the two parallel solid fit lines)
+    \node[cktblue,font=\footnotesize]    at (3.4,3.1) {slope $= \phicoef$};
     \node[cktaccent,font=\footnotesize]  at (4.7,2.5) {biased fit};
 
   \end{tikzpicture}
 
-  \vspace{0.6em}
-  \begin{flushleft}
-  Each province's switcher cloud has true slope $\phicoef$ \\
-  The pooled line tilts because of intercept differences, not because $\phicoef$ varies
-  \end{flushleft}
+  \vspace{0.4em}
+  \begin{itemize}
+    \item Each province's switcher cloud has true slope $\phicoef$
+    \item The pooled line tilts because of intercept differences, not because $\phicoef$ varies
+  \end{itemize}
 
 \end{frame}
 
@@ -248,11 +250,12 @@
 \section{How Suri, Verdier, and CKT identify the LCA slope}
 
 % ---------------------------------------------------------------
+% Slide 9 (keep \textbf{Stage 1}/\textbf{Stage 2} --- definitional)
+% finding 9: strip \vspace under 0.6em where possible
 \begin{frame}{Suri (2011) identifies $\phicoef$ via panel SUR \& minimum distance}
 
   \citet{suriSelectionComparativeAdvantage2011}'s two-stage indirect approach on a multi-year, binary-adoption panel:
 
-  \vspace{0.4em}
   \textbf{Stage 1 (reduced form).}
   Stack one outcome equation per year. SUR over the panel:
   \[
@@ -260,7 +263,6 @@
   \]
   Each coefficient $\pi_{\underline{d}, t}$ is the average $y$ in adoption pattern $\underline{d}$ in year $t$
 
-  \vspace{0.4em}
   \textbf{Stage 2 (structural / OMD).}
   Express each $\pi_{\underline{d}, t}$ as a known function of $(\beta, \phicoef, \lambda_1, \ldots, \lambda_K)$ implied by the CRC restriction
   \[
@@ -268,7 +270,7 @@
   \]
   Solve via weighted minimum distance: $\hat\theta = \arg\min (\hat\pi - g(\theta))' W (\hat\pi - g(\theta))$
 
-  \vspace{0.5em}
+  \vspace{0.2em}
   \begin{itemize}
     \item Identification: SUR over-identifies the structural parameters; $\phicoef$ gets pinned by the across-equation cross-restrictions
     \item Implemented in our \texttt{randcoef.ado}, which replicates Suri's estimation approach
@@ -277,9 +279,9 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{VV Step 1: worker FE plus worker-by-treatment interactions}
+% Slide 10: finding 10 --- re-title as assertion; finding 2 --- remove \footnotesize
+\begin{frame}{Step 1 estimates worker-level returns by saturated FE}
 
-  \footnotesize
   \citet{verdierAverageTreatmentEffects2020a}'s CRC model (his eq.\ 2.4):
   \[
     y_{it} \;=\; a_i \;+\; b_i\, \D_{it} \;+\; f_t \;+\; x_{it}'\gamma \;+\; u_{it}
@@ -303,7 +305,8 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{VV Step 2: IV regression of $\hat a_i$ on $\hat b_i$ identifies $\alpha_1$}
+% Slide 11: finding 10 --- re-title as assertion; finding 2 --- remove \footnotesize
+\begin{frame}{Step 2 IV-regresses worker rural means on worker returns}
 
   VV writes the LCA in the direction $a$-on-$b$:
   \[
@@ -331,6 +334,7 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 12: finding 6 --- drop \textbf{Robust variant:}
 \begin{frame}{CKT identifies $\phicoef$ at the trajectory level}
 
   Trajectory pooling: every worker with $\underline{d}_i = \underline{d}$ has the same expected baseline
@@ -351,11 +355,12 @@
   Identification: switcher$\times$choice indicators as instruments
 
   \vspace{0.6em}
-  \textbf{Robust variant:} same equation, switcher$\times$choice instruments \emph{village-demeaned} (like VV)
+  The robust variant uses the same equation with switcher$\times$choice instruments village-demeaned (like VV)
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 13: finding 7 --- remove trailing periods from two closing bullets
 \begin{frame}{Both procedures collapse to the same trajectory-level moments}
 
   VV's IV groups movers by trajectory pattern $g$ and uses within-group means $(\bar{\hat a}_g, \bar{\hat b}_g)$.
@@ -371,17 +376,26 @@
 
   \vspace{0.4em}
   \begin{itemize}
-    \item Without cluster structure: VV-simple and CKT-simple are equivalent up to slope-direction convention.
-    \item With cluster structure: CKT-robust pools \emph{within each cluster} (assumption A3 below).
-          VV-robust uses only within-cluster variation, no across-cluster pooling needed.
+    \item Without cluster structure: VV-simple and CKT-simple are equivalent up to slope-direction convention
+    \item With cluster structure: CKT-robust pools across clusters within trajectory (assumption A3 below)
+    \item VV-robust uses only within-cluster variation; no across-cluster pooling needed
   \end{itemize}
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Breath slide between slides 13 and 14
+\begin{frame}[c]{}
+  \centering\large
+  How do $\alpha_1$ and $\phicoef$ relate?
+\end{frame}
+
+% ---------------------------------------------------------------
+% Slide 14: finding 6 --- drop \textbf{Regression direction.} and
+% \textbf{Right-hand-side variable.}; rephrase as First/Second prose;
+% finding 2 --- remove \footnotesize
 \begin{frame}{VV's $\alpha_1$ and CKT's $\phicoef$ target different population scalars}
 
-  \footnotesize
   VV's LCA: $a_i = \alpha_0 + \alpha_1 b_i + e_i$ \qquad ($\alpha_1$: slope of $a$ on $b$)
 
   CKT's LCA: $\Deltai = \beta + \phicoef \thetai + \xi_i$ \qquad ($\phicoef$: slope of $\Delta$ on $\theta$)
@@ -389,34 +403,42 @@
   \vspace{0.4em}
   Two distinctions:
   \begin{itemize}
-    \item \textbf{Regression direction.} Slope of $a$ on $b$ vs slope of $\Delta$ on $\theta$.
+    \item First, the regression directions differ: slope of $a$ on $b$ vs slope of $\Delta$ on $\theta$.
           Reciprocal only when $|\mathrm{Corr}(a_i, b_i)| = 1$ (perfect linear LCA).
           Sign agrees automatically when both target the same correlation; magnitudes differ.
-    \item \textbf{Right-hand-side variable.} Rural baseline $a_i$ vs comparative advantage $\thetai = b_R(\theta_i^U - \theta_i^R)$.
+    \item Second, the right-hand-side variables differ: rural baseline $a_i$ vs comparative advantage $\thetai = b_R(\theta_i^U - \theta_i^R)$.
           CKT's structural model interprets $\Deltai$ in terms of two skills $(\theta_i^U, \theta_i^R)$; VV is agnostic about that structure.
           Both target the same scalar empirically (under correct assumptions); CKT's two-skill structure buys interpretation, not identification.
   \end{itemize}
 
   \vspace{0.4em}
-  \emph{Special-case identity}: when $\xi_i = e_i = 0$ and $\thetai \equiv a_i$ (deterministic, single-skill limit), $\alpha_1 = 1/\phicoef$.
-  Outside that limit, $\alpha_1 \ne \phicoef$ \emph{and} $\alpha_1 \ne 1/\phicoef$.
   See appendix for the algebra.
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Finding 1 & 2: slide 15 was "Three estimators" with \footnotesize covering
+% both assumptions and the table. Split into two slides.
+%
+% Slide 15a: Assumptions A1--A3 (description-style itemize, no \footnotesize)
+% Keep \textbf{A1}/\textbf{A2}/\textbf{A2'}/\textbf{A3} labels --- they earn weight
+% Finding 7: remove trailing periods from all four description items
+\begin{frame}{A2$'$ is strictly weaker than A2; A3 is the cost of trajectory pooling}
+
+  \begin{description}
+    \item[\textbf{A1}] LCA at the worker level: $\Deltai = \beta(\vii) + \phicoef\,\thetai + \xi_i$
+    \item[\textbf{A2}] Unconditional: $\nuil$ i.i.d.\ across workers (no cluster heterogeneity)
+    \item[\textbf{A2$'$}] Within-cluster only ($\nuil$ may correlate with $\vii$); strictly weaker than A2
+    \item[\textbf{A3}] Trajectory pooling: $E[\theta_i \mid \underline{d}_i, \vii] = E[\theta_i \mid \vii]$ (within cluster, comparative-advantage means do not vary across trajectories)
+  \end{description}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+% Slide 15b: Three estimators, three assumption regimes (table + summary prose)
+% finding 2: no \footnotesize
 \begin{frame}{Three estimators, three assumption regimes}
 
-  \footnotesize
-  Assumptions:
-  \begin{itemize}
-    \item[\textbf{A1}] LCA at the worker level: $\Deltai = \beta(\vii) + \phicoef\,\thetai + \xi_i$.
-    \item[\textbf{A2}] Unconditional: $\nuil$ i.i.d.\ across workers (no cluster heterogeneity).
-    \item[\textbf{A2$'$}] Within-cluster only ($\nuil$ may correlate with $\vii$); strictly weaker than A2.
-    \item[\textbf{A3}] Trajectory pooling: $\theta_i \mid \underline{d}_i$ same distribution in every cluster.
-  \end{itemize}
-
-  \vspace{0.3em}
   \begin{center}
   \begin{tabular}{lll}
     \toprule
@@ -429,15 +451,17 @@
   \end{tabular}
   \end{center}
 
-  \vspace{0.3em}
-  Under A2 (stronger): all three target the same LCA relationship.
-  Under A2$'$ only: CKT main is biased.
-  When A3 fails: CKT robust-vv picks up a bias of $\mathrm{Cov}_s(\bar\beta(s), \mud - \mu_{\underline{d}_0})$; VV stays consistent.
-  $\hat\alpha_1^{\text{VV}}$ and $\hat\phicoef$ differ by convention (previous slide); reciprocal under deterministic LCA.
+  \vspace{0.4em}
+  \begin{itemize}
+    \item When A2 holds: all three target the same LCA relationship
+    \item When only A2$'$ holds: CKT main is biased; CKT robust-vv and VV are consistent
+    \item When A3 fails: CKT robust-vv picks up bias $\mathrm{Cov}_s(\bar\beta(s), \mud - \mu_{\underline{d}_0})$; VV stays consistent
+  \end{itemize}
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 16: "Our implementation..."
 \begin{frame}{Our implementation moves cluster structure to the instruments}
 
   \texttt{run\_grc\_robust\_vv}: keep CKT's parameters, swap the instruments
@@ -452,22 +476,27 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 17: finding 6 --- replace "Pros:"/"Cons:" bold labels with
+% two-column layout
 \begin{frame}{The move buys a weaker assumption at tractable cost}
 
-  Pros:
-  \begin{itemize}
-    \item A2$'$ matches what the migration literature documents
-    \item the CHN hukou split acts as a principled special case ($\vii = $ hukou) \\ rather than an ad hoc fix (unless VV ``fixes'' without needing to bring in hukou)
-    \item stayer ATE estimates defensible against Verdier's concern in Suri's data
-  \end{itemize}
+  \begin{columns}[t]
+    \column{0.48\textwidth}
+    Pros
+    \begin{itemize}
+      \item A2$'$ matches what the migration literature documents
+      \item the CHN hukou split acts as a principled special case ($\vii = $ hukou) rather than an ad hoc fix
+      \item stayer ATE estimates defensible against Verdier's concern in Suri's data
+    \end{itemize}
 
-  \vspace{0.4em}
-  Cons:
-  \begin{itemize}
-    \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population
-    \item thinner identification of $\phicoef$: between-province switcher variation no longer contributes; only the within-province component does
-    \item cluster-robust standard errors at the $\vii$ level
-  \end{itemize}
+    \column{0.48\textwidth}
+    Cons
+    \begin{itemize}
+      \item $\Delta_{\dN}$ averages over provinces with switcher support, not the full population
+      \item thinner identification of $\phicoef$: between-province switcher variation no longer contributes; only the within-province component does
+      \item cluster-robust standard errors at the $\vii$ level
+    \end{itemize}
+  \end{columns}
 
 \end{frame}
 
@@ -475,34 +504,45 @@
 \section{Where the worker-level estimator can fail}
 
 % ---------------------------------------------------------------
-\begin{frame}{VV uses two geographic levels; we currently use only one}
+% Finding 3: split slide 18 into two slides
+% Slide 18a: VV's setup
+% finding 2: remove \footnotesize
+\begin{frame}{VV uses two geographic levels}
 
-  \footnotesize
-  \textbf{VV (Suri-Kenya).}
-  Two geographic units, both used:
+  \citet{verdierAverageTreatmentEffects2020a}'s Suri-Kenya application uses two distinct geographic units:
   \begin{itemize}
-    \item Province: enters as province$\times$year FE in Step 1 covariates (\citealp{verdierAverageTreatmentEffects2020a}, \S4.1).
-    \item Village: cluster index $\vii$ for robust extrapolation (\S4.3). Suri's data: $\sim 94$ villages, $\sim 12$ farmers each.
+    \item Province: enters as province$\times$year FE in Step 1 covariates (\S4.1)
+    \item Village: cluster index $\vii$ for robust extrapolation (\S4.3); $\sim 94$ villages, $\sim 12$ farmers each
   \end{itemize}
 
-  \textbf{CKT processed data.}
-  Three sub-province levels exist in our panels:
-  \begin{itemize}
-    \item CHN: \texttt{cid} (community), $\sim 4{,}066$ distinct, median $\sim 2$ workers.
-    \item IDN: \texttt{keca} (kecamatan / subdistrict), $\sim 1{,}669$ distinct, median $\sim 4$.
-    \item TZA: \texttt{ward}, $\sim 135$ distinct, median $\sim 97$.
-  \end{itemize}
-
-  \vspace{0.3em}
-  \begin{alertblock}{What we currently do, and why it's wrong}
-    Our vanilla VV port clusters at first-wave province (\texttt{vfirst}, $\sim 25$ provinces).
-    That choice came from a misreading: we saw ``province'' in VV's Step 1 and missed that his $\vii$ in Step 2 is the village.
-    The fix is to rerun at the village-equivalent level (\texttt{cid} / \texttt{keca} / \texttt{ward}), keeping province as a Step 1 covariate per VV \S4.1.
-  \end{alertblock}
+  \vspace{0.6em}
+  The two roles are distinct: province absorbs region-level trends in the outcome equation; village defines the within-cluster identification of $\phicoef$ in Step 2.
 
 \end{frame}
 
 % ---------------------------------------------------------------
+% Slide 18b: our port and the fix
+% finding 3: fold alertblock into plain prose
+% finding 2: no \footnotesize
+\begin{frame}{Our port clusters at the wrong geographic level}
+
+  Three sub-province levels exist in our panels:
+  \begin{itemize}
+    \item CHN: \texttt{cid} (community), $\sim 4{,}066$ distinct, median $\sim 2$ workers
+    \item IDN: \texttt{keca} (kecamatan / subdistrict), $\sim 1{,}669$ distinct, median $\sim 4$
+    \item TZA: \texttt{ward}, $\sim 135$ distinct, median $\sim 97$
+  \end{itemize}
+
+  \vspace{0.6em}
+  Our vanilla VV port currently clusters at first-wave province (\texttt{vfirst}, $\sim 25$ provinces).
+  That choice came from a misreading: we saw ``province'' in VV's Step 1 and missed that his $\vii$ in Step 2 is the village.
+  The fix is to rerun at the village-equivalent level (\texttt{cid} / \texttt{keca} / \texttt{ward}), keeping province as a Step 1 covariate per VV \S4.1.
+
+\end{frame}
+
+% ---------------------------------------------------------------
+% Slide 19: finding 6 --- drop \textbf{Fragility cases:}; finding 7 --- drop
+% trailing semicolons/periods from three bullets
 \begin{frame}{Cluster-FE IV is fragile when within-cluster movers are scarce}
 
   Identification needs (i) within-cluster movers, (ii) trajectory variation among them, (iii) cluster size large enough for FE-IV to be well-conditioned.
@@ -510,10 +550,9 @@
   \vspace{0.4em}
   Fragility cases:
   \begin{itemize}
-    \item zero movers in a cluster $\Rightarrow$ cluster-residualized period-treatment indicators are zero, no contribution to identification;
-    \item one or two movers $\Rightarrow$ within-cluster demeaning eats most of the variation;
-    \item with $T$ periods and $k$ movers, the within-cluster trajectory design has rank at most $\min(T, k-1)$ after partialling worker FEs.
-          Clusters with $k \le T$ contribute fewer free moments than nominal.
+    \item zero movers in a cluster $\Rightarrow$ cluster-residualized period-treatment indicators are zero, no contribution to identification
+    \item one or two movers $\Rightarrow$ within-cluster demeaning eats most of the variation
+    \item with $T$ periods and $k$ movers, the within-cluster trajectory design has rank at most $\min(T, k-1)$ after partialling worker FEs; clusters with $k \le T$ contribute fewer free moments than nominal
   \end{itemize}
 
   \vspace{0.4em}
@@ -523,7 +562,8 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{An observed shifter $w_i$ provides a separate falsification test (pending)}
+% Slide 20: finding 11 --- reword title (drop "(pending)" hedge)
+\begin{frame}{An observed shifter $w_i$ would provide a separate falsification test}
 
   Regress estimated $\thetai^{*}$ on $\Deltai$ and an observed shifter $w_i$:
   \[
@@ -549,12 +589,23 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Finding 8: add takeaway slide before appendix
+\begin{frame}{A2$'$ is the right assumption; clustering at the village level is the fix}
+
+  \begin{itemize}
+    \item A2$'$ is strictly weaker than A2 and matches what the migration literature documents---region-level cost heterogeneity is real, not a minor nuisance
+    \item we currently cluster at the province level, which is VV's Step 1 covariate level, not his Step 2 cluster; the fix is to switch to the village-equivalent (\texttt{cid} / \texttt{keca} / \texttt{ward})
+    \item once we rerun at the village-equivalent level, CKT-robust-vv identifies $\phicoef$ from within-community switcher variation and the extrapolation to non-migrants is defensible under A2$'$
+  \end{itemize}
+
+\end{frame}
+
+% ---------------------------------------------------------------
 \section{Appendix: parameter mapping}
 
 % ---------------------------------------------------------------
-\begin{frame}{Object-by-object map: parameters and LCA structure}
+\begin{frame}{Object-by-object map: worker and trajectory objects}
 
-  \footnotesize
   \begin{center}
   \begin{tabular}{p{4.0cm}p{4.5cm}p{4.5cm}}
     \toprule
@@ -568,7 +619,20 @@
     \multicolumn{3}{l}{\emph{Trajectory-level objects} (CKT's natural level)} \\
     Trajectory rural mean              & $\bar{\hat a}_g$ (post-Step-1 avg in bin $g$) & $\mud$ (joint GMM parameter) \\
     Trajectory return                  & $\bar{\hat b}_g$                       & $\Deltad$ (joint GMM parameter) \\
-    \addlinespace
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}{Object-by-object map: LCA structure}
+
+  \begin{center}
+  \begin{tabular}{p{4.0cm}p{4.5cm}p{4.5cm}}
+    \toprule
+    Object & VV & CKT \\
+    \midrule
     \multicolumn{3}{l}{\emph{LCA structure}} \\
     LCA equation                       & $a_i = \alpha_0 + \alpha_1 b_i + e_i$  & $\Deltai = \beta + \phicoef\thetai + \xi_i$ \\
     Slope parameter                    & $\alpha_1$ (slope of $a$ on $b$)       & $\phicoef$ (slope of $\Delta$ on $\theta$) \\
@@ -580,23 +644,57 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-\begin{frame}{Object-by-object map: geographic structure and estimator}
+% Finding 4: split into two appendix slides at \footnotesize
+% Column widths tuned to Beamer 169 text width (~12.8cm usable):
+% p{2.8cm}+p{3.5cm}+p{2.5cm}+p{2.8cm} = 11.6cm + tabcolsep * 6 ~ 12.6cm
+\begin{frame}{Object-by-object map: geographic structure}
 
-  \scriptsize
   \begin{center}
-  \begin{tabular}{p{2.7cm}p{3.6cm}p{3.0cm}p{3.3cm}}
+  \begin{tabular}{p{3.2cm}p{3.5cm}p{2.5cm}p{3.1cm}}
     \toprule
-    Object & VV & CKT-main (\texttt{run\_grc}) & CKT-vv (\texttt{run\_grc\_robust\_vv}) \\
+    Object & VV & CKT-main & CKT-vv \\
     \midrule
-    \multicolumn{4}{l}{\emph{Geographic / clustering structure}} \\
-    Province (covariate use)   & province$\times$year FE in Step 1     & not used as a separate level   & not used as a separate level \\
-    Cluster index $\vii$       & village (Suri-Kenya, $\sim 94$, $\sim 12$ farmers each) & none (no clustering) & first-wave province as currently configured ($\sim 25$); to be switched to community / kecamatan / ward \\
-    \addlinespace
-    \multicolumn{4}{l}{\emph{Estimator}} \\
-    Step 1 estimator           & OLS w/ worker$\times$regime FE        & n/a (joint GMM)               & n/a (joint GMM) \\
-    Step 2 estimator           & IV: $\hat a$ on $\hat b$, cluster FE  & joint GMM with switcher$\times$choice instruments & joint GMM with \emph{cluster-residualized} switcher$\times$choice instruments \\
-    Aggregation level          & worker (movers only)                  & trajectory                    & trajectory \\
-    Inference                  & cluster bootstrap or analytical, clustered at $\vii$ & default GMM SE & cluster-robust at $\vii$ \\
+    Province (covariate use)
+      & province$\times$year FE in Step 1
+      & not used as a separate level
+      & not used as a separate level \\
+    Cluster index $\vii$
+      & village (${\sim}94$, ${\sim}12$ workers each)
+      & none
+      & first-wave province (${\sim}25$); to be switched to \texttt{cid}/\texttt{keca}/\texttt{ward} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{0.4em}
+  {\footnotesize CKT-main: \texttt{run\_grc}. \quad CKT-vv: \texttt{run\_grc\_robust\_vv}.}
+
+\end{frame}
+
+% ---------------------------------------------------------------
+\begin{frame}[allowframebreaks]{Object-by-object map: estimator details}
+
+  \begin{center}
+  \begin{tabular}{p{2.5cm}p{3.2cm}p{3.0cm}p{3.4cm}}
+    \toprule
+    Object & VV & CKT-main & CKT-vv \\
+    \midrule
+    Step 1 estimator
+      & OLS w/ worker$\times$regime FE
+      & n/a (joint GMM)
+      & n/a (joint GMM) \\
+    Step 2 estimator
+      & IV: $\hat a$ on $\hat b$, cluster FE
+      & joint GMM, switcher$\times$choice instruments
+      & joint GMM, cluster-residualized switcher$\times$choice instruments \\
+    Aggregation level
+      & worker (movers only)
+      & trajectory
+      & trajectory \\
+    Inference
+      & cluster bootstrap or analytical, at $\vii$
+      & default GMM SE
+      & cluster-robust at $\vii$ \\
     \bottomrule
   \end{tabular}
   \end{center}
@@ -604,32 +702,28 @@
 \end{frame}
 
 % ---------------------------------------------------------------
+% Finding 6: drop \textbf{Plain English.}, \textbf{Algebra.},
+% \textbf{Two ways the identity breaks.} --- let prose carry the structure
+% finding 2: remove \footnotesize
 \begin{frame}{When the slopes coincide, and when they don't}
 
-  \footnotesize
-  \textbf{Plain English.}
-  Suppose every worker's return fell \emph{exactly} on the LCA line (no noise) and there were one underlying skill so that rural baseline $a_i$ and comparative advantage $\thetai$ were the same object up to a constant.
+  Suppose every worker's return fell exactly on the LCA line (no noise) and there were one underlying skill so that rural baseline $a_i$ and comparative advantage $\thetai$ were the same object up to a constant.
   Then $\Deltai$ would be a perfect linear function of $a_i$ and the inverse would also be linear with reciprocal slope.
 
-  \vspace{0.3em}
-  \textbf{Algebra.}
-  $\Deltai = \beta + \phicoef a_i$ inverts to $a_i = -\beta/\phicoef + (1/\phicoef)\Deltai$, so $\alpha_1 = 1/\phicoef$.
+  \vspace{0.4em}
+  In algebra: $\Deltai = \beta + \phicoef a_i$ inverts to $a_i = -\beta/\phicoef + (1/\phicoef)\Deltai$, so $\alpha_1 = 1/\phicoef$.
 
-  \vspace{0.3em}
-  \textbf{Two ways the identity breaks.}
+  \vspace{0.4em}
+  Two ways this identity breaks:
   \begin{itemize}
-    \item \emph{LCA noise.}
-          OLS slope of $a$ on $b$ is $\mathrm{Corr}(a,b)\,\sigma(a)/\sigma(b)$;
+    \item First, LCA noise: OLS slope of $a$ on $b$ is $\mathrm{Corr}(a,b)\,\sigma(a)/\sigma(b)$;
           slope of $b$ on $a$ is $\mathrm{Corr}(a,b)\,\sigma(b)/\sigma(a)$.
           Product equals $\mathrm{Corr}(a_i,b_i)^2 \le 1$.
           Reciprocal only when $|\mathrm{Corr}(a_i,b_i)| = 1$.
-    \item \emph{Two-skill structure.}
-          $\thetai = b_R(\theta_i^U - \theta_i^R)$ uses both skills; $a_i$ uses $\theta_i^R$ alone.
+    \item Second, two-skill structure: $\thetai = b_R(\theta_i^U - \theta_i^R)$ uses both skills; $a_i$ uses $\theta_i^R$ alone.
           Slope of $\Delta$ on $\theta$ $\ne$ slope of $\Delta$ on $a$.
   \end{itemize}
 
-  \vspace{0.2em}
-  Outside the special-case limit, $\alpha_1 \ne \phicoef$ \emph{and} $\alpha_1 \ne 1/\phicoef$.
 
 \end{frame}
 
