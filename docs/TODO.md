@@ -94,6 +94,14 @@ Append dated entries. Move completed items to the bottom with a strike-through o
 3. **Visual scatter** of $(\hat\mu_{d,v}, \hat\Delta_{d,v})$ trajectory-cluster cell means, faceted by trajectory. Drift across clusters within a trajectory hints A3 fails.
 **Why it matters:** A3 is the load-bearing assumption for CKT-vv (and CKT-main). When A3 fails, CKT estimators pick up bias; VV's worker-level stays consistent. Some empirical hint that A3 is approximately true would substantially strengthen the case for CKT-vv vs adopting VV directly.
 
+### Resume the A3 + counterfactual-simulations discussion thread
+**Added:** 2026-05-08
+**Context:** This is a discussion / thinking placeholder, not an execution item. The 2026-05-08 slide-deck rewrite session opened two threads that need more thinking before they can be acted on:
+1. *What A3 actually means* in CKT's setup (beyond the formal "trajectory pooling within cluster" statement) and what the empirical test from the third TODO above would actually be measuring. The Hansen J / trajectory-by-cluster F-test / visual scatter approaches each test slightly different things; we have not been precise about which tests which sufficient condition for which estimator's consistency. Worth a careful walkthrough before running any of them.
+2. *Concrete shape of the counterfactual simulations* leveraging CKT's two-skill structure. The four bullets in the counterfactual TODO (urban skill premium, rural skill upgrading, differential migration costs, asymmetric education) are sketches; each needs a clean policy question, an explicit DGP, and a comparison to what VV's framework would or would not predict. This is the load-bearing argument when a referee asks why we don't just adopt Verdier's estimator, so it has to land cleanly.
+**Action:** in a future session, sit down and walk through both threads slowly; write a memo for each before opening any code.
+**Why it matters:** these are the two threads where the slide-deck rewrite stopped at "punch list" rather than "answered question". Both have direct bearing on how we frame our contribution against Verdier's; both feed into how we present results in the paper.
+
 ---
 
 ## Completed
