@@ -111,3 +111,6 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/11_make_figures.do"
 * Run Verdier-style robust GRC (cluster-residualized instruments)
 	include			"$dir/scripts/17_verdier_robust.do"
+* Refresh the headlines cache (one CSV per fit) the dashboard reads instead
+* of pystata round-trips. Reads only stems whose ster mtimes have changed.
+	shell python "$dir/../tools/results_overview/scrape_headlines.py" --incremental

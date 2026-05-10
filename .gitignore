@@ -26,6 +26,14 @@ RP7/output/**/*.gph
 # Transient test artifacts (e.g. addlinespace investigation, minimal repros)
 RP7/output/test_*
 
+# Headlines cache (derived from .ster files via tools/results_overview/scrape_headlines.py)
+RP7/output/headlines/
+
+# Dashboard cache-bootstrap profiling and run logs
+tools/results_overview/profile_render.prof
+tools/results_overview/scrape_bootstrap.log
+tools/results_overview/render_with_cache.log
+
 # Stata artifacts
 *.log
 *.smcl
