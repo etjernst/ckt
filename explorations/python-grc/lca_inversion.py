@@ -827,8 +827,8 @@ def compute_all_inversion_cis(
             "islands90": islands90,
             "islands95": islands95,
             "grid_bounds": bounds,
-            "ci90_str": format_islands_tex(islands90, grid_bounds=bounds),
-            "ci95_str": format_islands_tex(islands95, grid_bounds=bounds),
+            "ci90_str": format_islands_tex(islands90, grid_bounds=bounds, fmt=".3f"),
+            "ci95_str": format_islands_tex(islands95, grid_bounds=bounds, fmt=".3f"),
             "J_R": J_R,
             "n_kept": n_kept,
         }

@@ -3103,7 +3103,7 @@ program define grc_tex_table_trend
     * `[$-\infty$, x] $\cup$ [y, $+\infty$]` for those cells, and this
     * note tells readers what that union notation means.
     local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.}"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \bottomrule \end{tabular}"
+		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \\ \bottomrule \end{tabular}"
 
     * Phase 1b.5b: load estimates from disk inside the program, so callers
     * don't need to do `estimates use/store` boilerplate. This means a
@@ -3154,10 +3154,9 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_dN_ci90_str inv_dN_ci95_str, ///
-            fmt(s s)                         ///
-            labels("90\% LCA inv. CI ($\Delta_{\text{never}}$)" ///
-                   "95\% LCA inv. CI ($\Delta_{\text{never}}$)")) ///
+      stats(inv_dN_ci95_str,                 ///
+            fmt(s)                           ///
+            labels("95\% inv. CI"))          ///
       varwidth(20) 	                         ///
       nolines nomtitles `colnumbers'         ///
       prehead(`table_prehead')               ///
@@ -3172,10 +3171,9 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_davg_ci90_str inv_davg_ci95_str, ///
-            fmt(s s)                         ///
-            labels("90\% LCA inv. CI ($\bar{\Delta}$)" ///
-                   "95\% LCA inv. CI ($\bar{\Delta}$)")) ///
+      stats(inv_davg_ci95_str,               ///
+            fmt(s)                           ///
+            labels("95\% inv. CI"))          ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "$\bar{\Delta}$") ///
@@ -3190,10 +3188,9 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_dT_ci90_str inv_dT_ci95_str, ///
-            fmt(s s)                         ///
-            labels("90\% LCA inv. CI ($\Delta_{\text{always}}$)" ///
-                   "95\% LCA inv. CI ($\Delta_{\text{always}}$)")) ///
+      stats(inv_dT_ci95_str,                 ///
+            fmt(s)                           ///
+            labels("95\% inv. CI"))          ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_always "$\Delta_{\text{always}}$") ///
@@ -3210,12 +3207,11 @@ program define grc_tex_table_trend
       fragment booktabs                      ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(inv_phi_ci90_str inv_phi_ci95_str    ///
+      s(inv_phi_ci95_str                     ///
         N_clust N Jstat Jpval converged_str, ///
-        label("90\% LCA inv. CI ($\phi$)"    ///
-              "95\% LCA inv. CI ($\phi$)"    ///
+        label("95\% inv. CI"                 ///
               "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-        fmt(s s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc)) ///
+        fmt(s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc)) ///
       varwidth(20)                           ///
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
@@ -3227,6 +3223,19 @@ program define grc_tex_table_trend
     * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
     removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
         , remove("                    &               &               &               &               &               \BS\BS")
+
+    * Strip the \addlinespace that esttab inserts between the SE row and
+    * the inversion CI row of the same block, so the CI row visually
+    * attaches to its parameter rather than reading as a separate block.
+    * Pattern: "\\\n\addlinespace\n95\% inv. CI" -> "\\\n95\% inv. CI".
+    * The \addlinespace BETWEEN blocks is left intact because the line
+    * before it is a CI row (or coef row in covs2 columns where the CI
+    * row is "empty"), not an SE row immediately followed by a CI row.
+    tempfile _addlspc_tmp
+    filefilter "$output/tables/`filename'${vsfx}.tex" "`_addlspc_tmp'", ///
+        from("\BS\BS\r\n\BSaddlinespace\r\n95\BS% inv. CI")            ///
+        to("\BS\BS\r\n95\BS% inv. CI")
+    copy "`_addlspc_tmp'" "$output/tables/`filename'${vsfx}.tex", replace
 
     * Drop the ~15 estimates this call stored. Without cleanup the
     * stored-estimates namespace fills up after ~20 cells (Stata limit ~300)
