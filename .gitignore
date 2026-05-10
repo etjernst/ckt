@@ -26,8 +26,9 @@ RP7/output/**/*.gph
 # Transient test artifacts (e.g. addlinespace investigation, minimal repros)
 RP7/output/test_*
 
-# Headlines cache (derived from .ster files via tools/results_overview/scrape_headlines.py)
-RP7/output/headlines/
+# Headlines cache: text CSVs with the actual headline values per fit.
+# Tracked (not ignored) so git records the value history per re-fit ---
+# .ster files are binary and can't be diff'd, but these CSVs can.
 
 # Dashboard cache-bootstrap profiling and run logs
 tools/results_overview/profile_render.prof
