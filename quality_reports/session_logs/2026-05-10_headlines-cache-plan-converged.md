@@ -149,3 +149,128 @@ State to know:
   No live Stata process to coordinate around during cache implementation.
 
 with Claude
+
+---
+
+## Continuation: 2026-05-10 afternoon, cache implementation
+
+Picked up the plan at Step 0 in the same session.
+All four steps shipped; commit `dc83443` on `worktree-grc-pipeline-refactor`.
+
+### Outcomes
+
+- **Render time: ~12 min --> 37 s (~19x speedup).**
+- Cache-rendered HTML matches the pre-cache baseline byte-for-byte except two `FileNotFoundError` traceback line numbers (408 -> 590), reflecting the ~180 lines added to `compare.py`.
+  No content differences in headlines, figures, or tables.
+- Equivalence test passes 20 random stems x 8 values at `rtol=1e-12`.
+- 219 main sters cached; `--incremental` correctly skips all when fresh.
+
+### Step-by-step what was built
+
+**Step 0: baseline + profile.**
+[tools/results_overview/profile_render.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/profile_render.py) mirrors the qmd's 24 `comparison_table` + `coefplot` calls without Quarto/Jupyter overhead.
+24-case profile under cProfile: 627.9 s total, `_cached_load_ster` at 619.4 s = **98.6% of wall time**, 93.9% inside `_st_getmatrix` (the pystata IPC round-trip itself).
+Comfortably past the 80% threshold the plan required.
+Baseline HTML at [quality_reports/baselines/2026-05-09_pre-cache.html](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/baselines/2026-05-09_pre-cache.html); writeup at [quality_reports/baselines/2026-05-09_pre-cache_profile.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/baselines/2026-05-09_pre-cache_profile.md).
+
+**Step 1: writer.**
+[tools/results_overview/scrape_headlines.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/scrape_headlines.py).
+Walks `RP7/output/*.ster`, identifies main sters (no `_n`/`_a`/`_d`/`_g` suffix), loads main + `_n` + `_a` + `_g` per stem, writes one CSV per stem to `RP7/output/headlines/<stem>.csv` via `os.replace` atomic rename.
+`--incremental` skips stems whose recorded source mtimes match every live source ster mtime exactly.
+`--jobs N` parallelizes (default 1).
+Idempotent: single-stem rerun byte-identical; full-cache rerun was kicked off as a verification but is independent of the byte-identical-per-file proof which already holds.
+
+**Step 2: reader.**
+[tools/results_overview/compare.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/compare.py).
+Renamed existing `load_fit` to `_load_fit_live` (synthetic-bank fallback path preserved verbatim).
+Added `_load_headlines`, `_fit_from_cache_row`, `_same_mtime`, `EXPECTED_SCHEMA_VERSION`.
+New cache-aware `load_fit` wrapper validates per-row `schema_version` + four source mtimes; falls through to `_load_fit_live` on miss/staleness.
+Equivalence gate: [tools/results_overview/test_cache_equivalence.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/test_cache_equivalence.py) (PASS).
+
+**Step 3: pipeline tail.**
+One line at the tail of [RP7/scripts/0_master.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/0_master.do):
+```stata
+shell python "$dir/../tools/results_overview/scrape_headlines.py" --incremental
+```
+`run_master_resume.do` calls `do "0_master.do"` so it inherits the refresh.
+Did NOT add the line a second time inside `run_master_resume.do`; doing so would scrape twice on every resume run.
+
+### Decisions, with the why
+
+**Deviation from plan: signature-validated cache on `_load_headlines()`.**
+The round-3 plan rejected `@lru_cache`, arguing 600 small CSV reads per render is cheap.
+Empirically each read is ~280 ms and `load_fit` fires ~430 times per render -> ~120 s of pure CSV I/O.
+Replaced the no-cache stance with a signature-validated cache: re-stat the cache directory; re-read only when any `(filename, mtime_ns)` tuple changes.
+Correctness-equivalent to no cache (same staleness guarantees in long-lived Jupyter kernels), ~12x faster.
+Documented inline in [compare.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/compare.py) so future readers find the rationale next to the code.
+
+**Did NOT add the wire-in line to `run_master_resume.do`.**
+The resume script delegates to `do "0_master.do"` which now triggers the scrape.
+Adding the line a second time inside resume would scrape twice (essentially a no-op the second time under `--incremental`, but still pointless).
+The plan's parenthetical "(and `run_master_resume.do`)" assumed the two scripts were independent paths; they aren't.
+
+**Per-stem `Fit.path` for cache-built records.**
+`_fit_from_cache_row` builds `main.path` as `output_dir / f"{cached_stem}.ster"` so `Fit.stem` (used by `_load_rescaled` keying) matches the live loader.
+Subgroup record paths point at the actual `_n`/`_a`/`_g` ster filenames the live loader would have used; they are never read downstream but stay coherent for any future debugging.
+
+**Schema column order locked.**
+`COLUMN_ORDER` in `scrape_headlines.py` is the canonical schema for v1.
+Reader's `EXPECTED_SCHEMA_VERSION = 1` keys off it.
+A schema bump means changing both lists together and re-running the bootstrap.
+
+### Approaches rejected and the reason
+
+**No `@lru_cache` on `_load_headlines()` (per round-3 plan).**
+Reason rejected (deviating from plan): empirically too slow.
+See deviation memo above.
+
+**Adding the wire-in line to `run_master_resume.do` as well.**
+Reason rejected: resume calls `do 0_master.do` which already runs the new tail.
+Adding twice would produce two scrape passes per resume.
+
+**Letting the cache row's `Fit` carry full `e(b)`/`e(V)` matrices.**
+Reason rejected: the cache schema is deliberately minimal --- only the eight headline values + four diagnostics that any caller actually reads.
+A confirmation grep over `compare.py` shows no caller references `fit.main.J`, `fit.main.J_df`, `fit.main.b` outside `phi:_cons`, etc.
+Storing more would balloon the CSV without buying anything.
+
+**Caching `_r` synthetic-bank fits in the headlines cache.**
+Reason rejected (per plan): `_r` stems with no on-disk `.ster` continue to use the existing `_load_fit_live` synthetic-bank fallback.
+Drops a whole class of bank-vs-ster precedence concerns.
+`_r` stems WITH on-disk sters DO get cached (5 such files exist today, all `vM4_real_*` --- but they don't match `_FILENAME_RE` so the writer skips them silently; not a problem for the dashboard, which doesn't read `vM4_real_*`).
+
+### Open items and blockers
+
+- **Idempotency rerun (background task `b82mhh8au`)** still going at 15:59 pickup, started 15:42.
+  Pre-rerun cache hash recorded as `f066b43576784bba658be1ae7747904d`.
+  Single-stem byte-identical proof already holds; the full rerun is verification.
+  Will hash-confirm when the background task notification fires.
+
+- **The two fixes from 2026-05-08** (`assert_merge_clean` `asis` + Delta_avg scaling in `0_programs.do`, `copyOverleaf` filename in `8_learning.do`) are committed on this branch but not on `lca-inversion`.
+  Eventual cherry-pick or merge still owed (carried forward from morning log).
+
+- **Pipeline is still OFF.**
+  No live Stata process to coordinate around (carried forward).
+
+### Picking back up
+
+If you resume:
+
+1. Confirm the idempotency rerun hash matches `f066b43576784bba658be1ae7747904d`:
+   ```
+   cd RP7/output/headlines && md5sum *.csv | md5sum
+   ```
+2. Run a final post-cache profile via [tools/results_overview/profile_render.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/profile_render.py) under cProfile to confirm no other bottleneck has emerged.
+   Plan flagged `_synthetic_fit_from_bank`, `_load_rescaled`, and pandas `comparison_table` ops as candidates.
+3. Decide whether to bump `--jobs` default above 1.
+   30 min is acceptable for the one-time bootstrap; if coauthor adoption becomes annoying, lift it to 4.
+4. Anything else from the plan's "Caveats and re-plan triggers" section in [quality_reports/baselines/2026-05-09_pre-cache_profile.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/baselines/2026-05-09_pre-cache_profile.md).
+
+State to know:
+
+- All Step 0--3 code, baseline HTML + profile memo, and equivalence test land in commit `dc83443` on `worktree-grc-pipeline-refactor`.
+  Not pushed anywhere.
+- `RP7/output/headlines/` is gitignored; cache is fully derivable from `.ster` files.
+- The cache-aware `load_fit` falls through to `_load_fit_live` on miss/staleness, so deleting any CSV is safe (just slower until the next `--incremental` run).
+- `report.html` re-rendered with the cache as part of the commit; substantively identical to the pre-cache baseline.
+
+with Claude
