@@ -107,3 +107,129 @@ State to know:
 - Dashboard renders in ~37 s vs. the ~12 min pre-cache baseline.
 
 with Claude
+
+---
+
+## Continuation: pipeline relaunch + parallelization slice drivers (afternoon)
+
+User asked "where did we left off", I summarized the four open threads from the morning log, and user pushed back that we have unfinished estimation results that should be the top priority.
+They were right --- the 2026-05-09 resume run was killed at 24 h elapsed with ~50 min of work lost on `grc_IDN_cuu_maxexpsh_c1`, and `maxexpsh`, `IDN cnu x experience`, and `birth` families had never finished.
+The morning hand-off had buried this under audit busy-work.
+
+### State on disk before relaunch
+
+| Family               | Sters | Fits done | Owed |
+|----------------------|------:|----------:|-----:|
+| `exp`                |  180  |  36/36    | 0    |
+| `maxexp`             |  180  |  36/36    | 0    |
+| `expsh`              |  180  |  36/36    | 0    |
+| `maxexpsh`           |    5  |   1/36    | 35   |
+| IDN cnu x experience |    0  |   0/16    | 16   |
+| birth (urbanbirth)   |    0  |   0/16    | 16   |
+| **total owed**       |       |           | **67** |
+
+The 25 `grc_IDN_cnu_*.ster` files on disk are from base GRC (c0/c1/c2/ca/ct cols, no extras token in name), not from the IDN cnu x experience block.
+
+### What got built
+
+Three family-slice drivers in [RP7/scripts/](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts):
+
+- [run_extras_maxexpsh.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/run_extras_maxexpsh.do) --- 9 stems x 4 cols (IDN cuu dominates wall-clock).
+- [run_extras_cnu.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/run_extras_cnu.do) --- IDN cnu x {exp, exp_max, exp_share, exp_max_share}, 4 stems x 4 cols.
+- [run_extras_birth.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/run_extras_birth.do) --- IDN x {cuu, cub, iuu, cnu} x urbanbirth, 4 stems x 4 cols.
+
+Each follows the established `_smoke_extras_one.do` pattern: `$dir` block matching `0_master.do`, `include 0_path_config.do`, `quietly include 0_programs.do`, `global skip_if_exists 1`, `global copyOverleaf 0`, per-driver log under `$logs/`, body wrapped in `capture noisily`, `exit, STATA clear` (harmless under `-e`).
+
+### Decisions, with the why
+
+#### Launched the serial resume FIRST, then wrote drivers, then launched the safe two parallel slices
+
+Why: user wanted to get the long-running estimation in flight immediately and only THEN spin up parallel work.
+Sequencing the launches lets the serial resume cover all owed families if the slice drivers misbehave; the slices are pure speed-up insurance.
+
+Serial resume launched at ~14:35 via `Start-Process StataMP-64.exe /e do run_master_resume.do`, captured as PID 17480.
+Confirmed alive (log populating, 1_processData rebuilding the .dta files, then into 9_GRC_extras).
+
+#### Option 2: launched birth and cnu slices, NOT maxexpsh
+
+Why: `9_GRC_extras.do` runs families in fixed order --- exp -> maxexp -> expsh -> maxexpsh -> IDN cnu -> birth.
+PID 17480 will reach `maxexpsh` within minutes (already inside `9_GRC_extras.do` at the time slices launched), so a parallel `maxexpsh` slice would race directly against it.
+`birth` and `cnu` are positions 5 and 6 of 6 --- PID 17480 won't reach them for hours, so the slices finish long before the serial pipeline arrives.
+Zero race window, strict speed-up.
+A parallel maxexpsh slice would need PID 17480 killed first (Plan B) to be safe; deferred.
+
+Birth slice PID 42328, cnu slice PID 4420. Both confirmed mid-fit on first cell (`grc_IDN_cuu_urbanbirth_c1` and `grc_IDN_cnu_exp_c1`) within 30 s of launch.
+
+#### Three drivers instead of one combined "run_all_remaining" driver
+
+Why: fine-grained partition lets the user re-launch one slice without re-running the others if any single slice fails or needs re-running.
+Also lets PID 17480 plus N slices coexist with disjoint cell sets, which is the whole point of family-level partitioning.
+
+### Approaches rejected
+
+#### Plan A (Plan A from 2026-05-09 HTML): same as what we shipped
+
+The 2026-05-09 plan called this "Plan A: 2 new instances (cnu + birth), 32 h -> 13 h critical path".
+This is what we launched.
+Not rejected --- adopted.
+
+#### Plan B: kill PID 17480 and launch all three slices
+
+Reason deferred: kills 30 min of in-flight serial work for ~2 h wall-clock saving.
+Not worth the disruption when option 2 already gets us a strict speed-up at zero risk.
+
+#### Plan C: split maxexpsh and birth by stem across 6 instances
+
+Reason deferred: 8 h vs 11 h critical path saves ~3 h but multiplies coordination surface 6x.
+Not worth it for a one-time relaunch.
+
+### Open items
+
+- **Three pipelines in flight.**
+  Serial (17480) ETA ~11 h on the critical path through maxexpsh.
+  Birth (42328) ETA ~2--3 h.
+  Cnu (4420) ETA ~2--3 h.
+- **`maxexpsh` slice driver exists but is NOT launched.**
+  Sitting dormant.
+  If PID 17480 dies mid-maxexpsh, can launch the slice to finish the family without rerunning the whole 0_master.
+- **`tier2_diffs/` directory** (untracked, dated 2026-05-04) is sitting in `RP7/output/`.
+  Not touched by today's work.
+  Owed: decide whether to commit or remove on a future pass.
+- The 2026-05-08 fixes (assert_merge_clean `asis` + Delta_avg scaling; copyOverleaf filename) still owed to `lca-inversion`.
+  Carried forward unchanged.
+
+### Picking back up
+
+Check on the three running processes first:
+
+```powershell
+tasklist /FI "IMAGENAME eq StataMP-64.exe"
+```
+
+Expected: PIDs 17480, 42328, 4420 still alive (plus 8144 which is unrelated cross-worktree work).
+
+Tail any log to see current cell:
+
+```powershell
+Get-Content RP7/scripts/logs/run_extras_birth.log -Tail 20
+Get-Content RP7/scripts/logs/run_extras_cnu.log -Tail 20
+Get-Content RP7/scripts/run_master_resume.log -Tail 20
+```
+
+Count sters by family to gauge progress:
+
+```powershell
+Get-ChildItem RP7/output -Filter 'grc_*_maxexpsh_*.ster' | Measure-Object | Select-Object Count
+Get-ChildItem RP7/output -Filter 'grc_IDN_cnu_*_*.ster' | Where-Object Name -match '_(exp|maxexp|expsh|maxexpsh)_' | Measure-Object | Select-Object Count
+Get-ChildItem RP7/output -Filter 'grc_*_urbanbirth_*.ster' | Measure-Object | Select-Object Count
+```
+
+Target totals: maxexpsh = 180, IDN cnu x experience = 80, birth = 80.
+
+When everything finishes, re-render the dashboard --- all 24 chunks should populate cleanly:
+
+```bash
+cd tools/results_overview && python render_results.py
+```
+
+with Claude
