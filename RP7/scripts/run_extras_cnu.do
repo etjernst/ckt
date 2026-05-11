@@ -62,23 +62,9 @@ if "${dir}" == "" {
     exit 198
 }
 
-* Set sub-directory globals ($scripts, $logs, $output, $dirdata) and
-* project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave).
-* Reads $values to pick nominal vs. real data paths and $vsfx suffix.
-include "$dir/scripts/0_path_config.do"
-
-* Load all shared programs (run_grc_with_extra_regressor + dependencies).
-* Quietly because the 155 KB file would otherwise saturate batch output.
-quietly include "$scripts/0_programs.do"
-
-* skip_if_exists=1: run_grc skips any cell whose _g$vsfx.ster is already
-* on disk. Lets this slice coexist safely with a parallel 0_master.do
-* run --- both processes agree on which cells still need fitting.
-global skip_if_exists 1
-
-* copyOverleaf=0: slice drivers don't run the table builders, but set
-* this defensively in case any called helper attempts a copy.
-global copyOverleaf   0
+* Shared post-$dir setup: path_config + programs include + skip/copy flags.
+* See 0_slice_bootstrap.do for what this does and why.
+include "$dir/scripts/0_slice_bootstrap.do"
 
 capture log close
 log using "$logs/run_extras_cnu$vsfx.log", replace
