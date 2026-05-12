@@ -23,7 +23,7 @@
 if "$dir" == "" {
     clear all
     if "`c(username)'" == "maand" {
-        global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
+        global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
     }
     include "$dir/scripts/0_path_config.do"
     include "$dir/scripts/0_setup.do"
