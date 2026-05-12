@@ -19,12 +19,6 @@ if "$dir" == "" {
     exit 198
 }
 
-* TEMPORARY: skip verdier in the 2026-05-12 refit per user request.
-* Remove these two lines once the main GRC refit completes and verdier
-* should run again as part of the pipeline.
-di as text "17_verdier_robust: SKIPPED (temporary; remove the early exit to re-enable)"
-exit
-
 * Resume-on-interrupt: skip cells whose final .ster (_avg) already exists.
 * Set to 0 to force every cell to re-estimate.
 global skip_if_exists 1
