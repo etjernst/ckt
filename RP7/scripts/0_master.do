@@ -13,8 +13,8 @@ version 17
 
 * Project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave) and
 * `set more off` are configured in 0_path_config.do (included below) so
-* alternate entry points (e.g. _smoke_full.do) which bypass this file
-* still see them.
+* alternate entry points (e.g. the run_extras_*.do slice drivers) which
+* bypass this file still see them.
 
 * **********************************************************************
 * Preliminaries
