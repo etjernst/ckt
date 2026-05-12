@@ -14,21 +14,13 @@
 *          quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md (decision-aid markdown)
 * ============================================================
 
-* ============================================================
-* Defensive prelude: when this file is run standalone via
-* `stata-mp -b do 17_verdier_robust.do`, $dir is not set, and
-* path globals + programs need bootstrapping. When invoked via
-* `include` from 0_master.do, $dir is already set and we skip.
-* ============================================================
+* This file is meant to be `include`d from 0_master.do, which sets $dir,
+* loads path globals and programs, and resolves copyOverleaf. Standalone
+* launching is not supported --- run 0_master.do (or run_master_resume.do)
+* and let the pipeline reach this file in sequence.
 if "$dir" == "" {
-    clear all
-    if "`c(username)'" == "maand" {
-        global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
-    }
-    include "$dir/scripts/0_path_config.do"
-    include "$dir/scripts/0_setup.do"
-    include "$dir/scripts/0_programs.do"
-    global copyOverleaf 0
+    di as error "17_verdier_robust: \$dir not set. Run 0_master.do or run_master_resume.do; do not launch this file directly."
+    exit 198
 }
 
 * Resume-on-interrupt: skip cells whose final .ster (_avg) already exists.
