@@ -224,8 +224,14 @@ foreach step in onestep twostep {
 * mismatches) that broke the in-Stata version. Numbers in the comparison
 * are taken verbatim from the .tex tables, so what you read there is
 * exactly what the paper reports.
+*
+* Gated behind $runDashboard so coauthors without Python don't hit errors.
+* The .tex tables above are still produced regardless --- this only skips
+* the internal markdown/CSV review summary.
 * **********************************************************************
-shell python "$dir/scripts/gen_verdier_comparison.py"
+if "${runDashboard}" == "1" {
+    shell python "$dir/scripts/gen_verdier_comparison.py"
+}
 
 }
 local saved_rc = _rc
