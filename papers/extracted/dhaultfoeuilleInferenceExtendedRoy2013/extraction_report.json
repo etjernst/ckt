@@ -1,0 +1,139 @@
+{
+  "schema_version": "2",
+  "pdf": "dhaultfoeuilleInferenceExtendedRoy2013.pdf",
+  "pdf_path": "C:\\git\\ckt\\.claude\\worktrees\\grc-pipeline-refactor\\papers\\extracted\\dhaultfoeuilleInferenceExtendedRoy2013.pdf",
+  "pdf_page_count": 12,
+  "extract_artifact_path": "papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013/paper.extract.md",
+  "extract_artifact_name": "dhaultfoeuilleInferenceExtendedRoy2013.extract.md",
+  "extract_bytes": 88931,
+  "extract_lines": 606,
+  "expected_min_bytes": 6000,
+  "expected_min_lines": 120,
+  "engine": "datalab",
+  "engine_version": "",
+  "ocr_fallback": false,
+  "degraded": false,
+  "partial": false,
+  "table_count": 2,
+  "figure_count": 3,
+  "formula_tag_count": 0,
+  "formula_tag_pages": [],
+  "page_marker_count": 12,
+  "low_text_pages": [],
+  "chunks_dir": "papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013/chunks",
+  "chunk_count": 0,
+  "engine_warnings": [],
+  "pages": [
+    {
+      "page": 0,
+      "chars": 5077,
+      "line_count": 72,
+      "has_table": false,
+      "has_figure": true,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 1,
+      "chars": 8326,
+      "line_count": 28,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 2,
+      "chars": 7787,
+      "line_count": 46,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 3,
+      "chars": 7372,
+      "line_count": 56,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 4,
+      "chars": 8316,
+      "line_count": 48,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 5,
+      "chars": 8365,
+      "line_count": 60,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 6,
+      "chars": 6910,
+      "line_count": 70,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 7,
+      "chars": 7763,
+      "line_count": 42,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 8,
+      "chars": 10706,
+      "line_count": 78,
+      "has_table": true,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 9,
+      "chars": 7203,
+      "line_count": 37,
+      "has_table": true,
+      "has_figure": true,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 10,
+      "chars": 8916,
+      "line_count": 56,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    },
+    {
+      "page": 11,
+      "chars": 1142,
+      "line_count": 10,
+      "has_table": false,
+      "has_figure": false,
+      "formula_tag_count": 0,
+      "low_text": false
+    }
+  ],
+  "basename": "dhaultfoeuilleInferenceExtendedRoy2013",
+  "source_pdf": "papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013/dhaultfoeuilleInferenceExtendedRoy2013.pdf",
+  "extraction_dir": "papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013"
+}

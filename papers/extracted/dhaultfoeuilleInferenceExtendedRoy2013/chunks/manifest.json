@@ -1,0 +1,42 @@
+{
+  "source": "C:\\git\\ckt\\.claude\\worktrees\\grc-pipeline-refactor\\papers\\extracted\\dhaultfoeuilleInferenceExtendedRoy2013.extract.md",
+  "engine_marker": "<!-- engine: datalab -->",
+  "target_pages": 5,
+  "max_pages": 10,
+  "heading_levels": [
+    1,
+    2
+  ],
+  "chunks": [
+    {
+      "index": 0,
+      "page_start": 0,
+      "page_end": 4,
+      "heading": "Inference on an extended Roy model, with an application to schooling decisions in France<sup>\\*</sup>",
+      "slug": "inference-on-an-extended-roy-model-with-",
+      "file": "C:\\git\\ckt\\.claude\\worktrees\\grc-pipeline-refactor\\papers\\extracted\\dhaultfoeuilleInferenceExtendedRoy2013.chunks\\00_inference-on-an-extended-roy-model-with-.md",
+      "line_count": 276,
+      "byte_count": 39705
+    },
+    {
+      "index": 1,
+      "page_start": 5,
+      "page_end": 9,
+      "heading": "3. Semiparametric estimation",
+      "slug": "semiparametric-estimation",
+      "file": "C:\\git\\ckt\\.claude\\worktrees\\grc-pipeline-refactor\\papers\\extracted\\dhaultfoeuilleInferenceExtendedRoy2013.chunks\\01_semiparametric-estimation.md",
+      "line_count": 271,
+      "byte_count": 40287
+    },
+    {
+      "index": 2,
+      "page_start": 10,
+      "page_end": 11,
+      "heading": "5. Conclusion",
+      "slug": "conclusion",
+      "file": "C:\\git\\ckt\\.claude\\worktrees\\grc-pipeline-refactor\\papers\\extracted\\dhaultfoeuilleInferenceExtendedRoy2013.chunks\\02_conclusion.md",
+      "line_count": 56,
+      "byte_count": 8308
+    }
+  ]
+}
