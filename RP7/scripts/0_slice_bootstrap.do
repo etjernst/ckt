@@ -26,7 +26,8 @@
 * **********************************************************************
 
 if "${dir}" == "" {
-    di as error "0_slice_bootstrap: \$dir not set. Resolve \$dir before including this file."
+    di as error "0_slice_bootstrap: \$dir not set for user `c(username)'."
+    di as error "Add a user block to the caller (mirror the layout in 0_master.do)."
     exit 198
 }
 
