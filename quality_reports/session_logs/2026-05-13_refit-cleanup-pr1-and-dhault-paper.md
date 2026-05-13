@@ -320,4 +320,44 @@ The edits are correct; the subagent's diagnostic was the problem, not the edits.
 - This worktree's working tree has a few intentional or untracked files: a `test_inc.do` stray from an earlier Stata pre-load experiment, a `papers/summaries/test.json`, a stale `RP7/scripts/run_master_resume.log.2026-05-09`, the runtime `.claude/scheduled_tasks.lock`, and modifications to `.claude/settings.local.json`.
   None require commit.
 
+## Final wrap-up
+
+Verified PR-7 included all paper-facing results files:
+
+- 98 `.tex` tables under `RP7/output/tables/` (the regenerated GRC tables carrying corrected `\bar{\Delta}` values, slim tabular format).
+- 286 headlines cache CSVs under `RP7/output/headlines/`.
+- `tools/results_overview/report.html` (rendered dashboard, 2.6 MB).
+- 0 `.ster` files (gitignored by design; regenerable from the pipeline).
+- 0 figures (none re-rendered this PR).
+
+Total 454 files changed in the merge, with 384 of those being result artifacts.
+
+Session log committed as `cf0694c` and pushed.
+Working tree is clean of anything pipeline-relevant.
+
+## Picking back up
+
+**If you resume:**
+
+Read [quality_reports/session_logs/2026-05-13_refit-cleanup-pr1-and-dhault-paper.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-05-13_refit-cleanup-pr1-and-dhault-paper.md) for the full session arc.
+
+**Open thread:** PR-7 is merged.
+No active work pending on this branch.
+
+**Possible next-session priorities, in no particular order:**
+
+1. Onboard the Suri 2011 PDF via `process-papers` (still in `papers/inbox/` on main, unprocessed).
+2. Extend the preamble-macro migration to OLS and summary-stats tables (deferred today; would mirror the GRC migration mechanically).
+3. Address remaining MINORs from the critic reports if anyone cares to polish:
+   - Stata: brace-less `if` in extras drivers, missing headers on the two other slice drivers, stale line-number reference.
+   - Python: schema-version dtype mismatch between writer and reader, redundant `pd.isna` guards, subgroup `SterRecord` field gaps.
+4. Clean up the loose stray files in this worktree (`test_inc.do`, `papers/summaries/test.json`, the stale `.log`).
+
+**State to know:**
+
+- Branch tip: `cf0694c` on `worktree-grc-pipeline-refactor`, pushed to origin.
+- `main` tip: `da8b51e` (the merge commit), pushed.
+- The `_pre_fix_backup_82766d2/` ster backup is gone permanently.
+- Voice.md and manuscript-writing.md were Read this session, so the prose-rules-enforcer flag is set for this session; resets on next session start.
+
 with Claude
