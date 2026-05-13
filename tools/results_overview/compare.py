@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re as _re
+import sys as _sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
@@ -23,6 +25,13 @@ import pandas as pd
 from scipy import stats
 
 import matplotlib.pyplot as plt
+
+# Make sibling imports work regardless of the caller's cwd. Quarto renders
+# inject this via the qmd setup cell; non-Quarto callers (tests, profiling)
+# don't, so we add it defensively.
+_HERE = Path(__file__).resolve().parent
+if str(_HERE) not in _sys.path:
+    _sys.path.insert(0, str(_HERE))
 
 from scrape import SterRecord, load_ster
 
@@ -71,6 +80,10 @@ SCRAPED_BANK = Path(__file__).resolve().parent / "scraped_real.json"
 @lru_cache(maxsize=1)
 def _load_bank() -> dict[str, dict]:
     if not SCRAPED_BANK.exists():
+        logging.warning(
+            "scraped_real.json not found at %s; real-values fallback disabled. "
+            "Run scrape_logs.py to regenerate.", SCRAPED_BANK
+        )
         return {}
     return json.loads(SCRAPED_BANK.read_text(encoding="utf-8"))
 
@@ -79,8 +92,6 @@ def _vsfx(cfg: dict) -> str:
     """Return the values-axis suffix: empty for nominal, `_r` for real."""
     return "_r" if cfg.get("values") == "real" else ""
 
-
-import re as _re
 
 _SPEC3_REV = {
     "consumption": "c", "income": "i",
@@ -691,6 +702,11 @@ def coefplot(
         stem = _stem_for(cfg)
         vsfx = _vsfx(cfg)
         covs = _discover_covs(stem, output_dir, vsfx)
+        if not covs:
+            raise FileNotFoundError(
+                f"no '{stem}_<cov>{vsfx}.ster' files (or bank entries) "
+                f"found for version '{label}' in {output_dir}"
+            )
         version_covs[label] = covs
         for cov in covs:
             fits[(label, cov)] = load_fit(f"{stem}_{cov}", output_dir, vsfx)

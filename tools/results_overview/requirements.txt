@@ -1,0 +1,8 @@
+# Runtime dependencies for the GRC results-overview dashboard.
+# Pin to major versions matching a typical Anaconda 2024+ environment.
+# These tools are opt-in (gated behind $runDashboard in 0_master.do) and
+# are not required to run the paper pipeline itself.
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+matplotlib>=3.7
