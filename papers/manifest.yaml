@@ -1,5 +1,5 @@
 # Manifest: maps PDF filenames to citekeys.
-# Populated by Stage A of the paper-pipeline skill after user confirmation.
+# Populated by Stage A of the process-papers skill after user confirmation.
 # Confirmed by user on 2026-04-12.
 # Reshuffled into per-citekey subdirectories.
 
@@ -20,3 +20,14 @@ VV-appendix:
   venue: Journal of Applied Econometrics
   note: Online appendix / supplementary material for verdierAverageTreatmentEffects2020
   extraction_dir: papers/extracted/verdierAverageTreatmentEffects2020appendix
+dhaultfoeuilleInferenceExtendedRoy2013:
+  citekey: dhaultfoeuilleInferenceExtendedRoy2013
+  title: Inference on an extended Roy model, with an application to schooling decisions
+    in France
+  first_author: D'Haultfoeuille
+  authors:
+  - D'Haultfoeuille
+  - Maurel
+  year: 2013
+  venue: Journal of Econometrics
+  extraction_dir: papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013

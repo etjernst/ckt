@@ -1,0 +1,558 @@
+---
+title: "GRC results overview"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    df-print: kable
+execute:
+  echo: false
+  warning: false
+  error: true
+---
+
+```{python}
+#| label: setup
+import sys
+from pathlib import Path
+ROOT = Path.cwd()
+sys.path.insert(0, str(ROOT))
+
+from compare import comparison_table, coefplot, render_table, comparison_dates
+```
+
+Stars throughout: <sup>\*</sup> p<0.10, <sup>\*\*</sup> p<0.05, <sup>\*\*\*</sup> p<0.01.
+Standard errors in parentheses.
+
+## Balanced vs unbalanced | IDN consumption, urban
+
+```{python}
+#| label: idn-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-bal-vs-unb-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Balanced vs unbalanced | CHN consumption, urban
+
+```{python}
+#| label: chn-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-bal-vs-unb-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Balanced vs unbalanced | TZA consumption, urban
+
+```{python}
+#| label: tza-bal-vs-unb-table
+#| output: asis
+fix    = {"country": "TZA", "depvar": "consumption", "choice": "urban"}
+versus = {"unbalanced": "cuu", "balanced": "cub"}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: tza-bal-vs-unb-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs experience | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds years of working experience as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-exp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "experience": {"family": "exp"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-exp-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs max experience | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds maximum years of working experience (the running max of experience over the panel) as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-maxexp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "max experience": {"family": "maxexp"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-maxexp-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs experience share | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds the experience share (years of experience normalized by potential working years) as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-expsh-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "experience share": {"family": "expsh"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-expsh-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs max experience share | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds the running max of experience share as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-maxexpsh-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "max experience share": {"family": "maxexpsh"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-maxexpsh-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban birth | IDN consumption, urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that adds an indicator for being born in an urban location as a covariate in all columns.
+
+```{python}
+#| label: idn-main-vs-birth-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban birth": {"family": "birth"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-birth-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs rural-first hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is rural.
+
+```{python}
+#| label: chn-main-vs-rf-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "rural-first": {"hukou": "rf"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-main-vs-rf-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs rural-only hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose recorded hukou stays rural in every wave.
+
+```{python}
+#| label: chn-main-vs-ro-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "rural-only": {"hukou": "ro"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-main-vs-ro-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban-only hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose recorded hukou stays urban in every wave.
+
+```{python}
+#| label: chn-main-vs-uo-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban-only": {"hukou": "uo"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-main-vs-uo-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main vs urban-first hukou | CHN consumption, urban (unbalanced)
+
+This table compares our main results for China to a version that restricts the sample to individuals whose initial recorded hukou is urban.
+
+```{python}
+#| label: chn-main-vs-uf-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"main": {}, "urban-first": {"hukou": "uf"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-main-vs-uf-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main (urban) vs non-agricultural | IDN consumption (unbalanced)
+
+This table compares our main results for Indonesia to a version that uses non-agricultural employment instead of urban location as the treatment.
+
+```{python}
+#| label: idn-main-vs-nonag-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "balance": "unbalanced"}
+versus = {"main": {"choice": "urban"}, "non-ag": {"choice": "nonag"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-nonag-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Main (consumption) vs income | IDN urban (unbalanced)
+
+This table compares our main results for Indonesia to a version that uses log per-capita income as the dependent variable instead of log per-capita consumption.
+
+```{python}
+#| label: idn-main-vs-income-table
+#| output: asis
+fix    = {"country": "IDN", "choice": "urban", "balance": "unbalanced"}
+versus = {"consumption": {"depvar": "consumption"}, "income": {"depvar": "income"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-main-vs-income-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+# Real values
+
+The sections below compare nominal (default) results to the same specification estimated on real (deflated) values of the dependent variable.
+Nominal columns load from on-disk `.ster` files; real columns currently pull headline values from a bank scraped from the RP6-real Stata logs (see `tools/results_overview/scrape_logs.py`).
+Once we re-run the M4 real pipeline locally, the bank fallback will be replaced with on-disk `_r`-suffix `.ster` files, and the `runtime` row will populate.
+
+## Nominal vs real | IDN consumption, urban (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN consumption, urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | TZA consumption, urban (unbalanced)
+
+```{python}
+#| label: tza-nom-vs-real-cuu-table
+#| output: asis
+fix    = {"country": "TZA", "depvar": "consumption", "choice": "urban", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: tza-nom-vs-real-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN consumption, urban, experience family (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-exp-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "family": "exp"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-exp-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN consumption, urban, urban-birth family (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cuu-birth-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "family": "birth"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-nom-vs-real-cuu-birth-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | IDN consumption, non-agricultural (unbalanced)
+
+```{python}
+#| label: idn-nom-vs-real-cnu-table
+#| output: asis
+fix    = {"country": "IDN", "depvar": "consumption", "choice": "nonag", "balance": "unbalanced"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: idn-nom-vs-real-cnu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN rural-first hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-rf-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "rf"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-nom-vs-real-rf-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN rural-only hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-ro-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "ro"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-nom-vs-real-ro-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN urban-first hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-uf-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "uf"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-nom-vs-real-uf-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```
+
+## Nominal vs real | CHN urban-only hukou, consumption/urban (unbalanced)
+
+```{python}
+#| label: chn-nom-vs-real-uo-cuu-table
+#| output: asis
+fix    = {"country": "CHN", "depvar": "consumption", "choice": "urban", "balance": "unbalanced", "hukou": "uo"}
+versus = {"nominal": {}, "real": {"values": "real"}}
+
+table = comparison_table(fix=fix, versus=versus)
+print("```{=html}")
+print(render_table(table))
+print("```")
+print(comparison_dates(fix=fix, versus=versus))
+```
+
+```{python}
+#| label: chn-nom-vs-real-uo-cuu-coefplot
+#| out-width: "100%"
+coefplot(fix=fix, versus=versus);
+```

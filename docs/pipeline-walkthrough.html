@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GRC pipeline---what changed</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; background: #fafaf7; }
+  body {
+    font-family: 'Source Serif Pro', 'Charter', 'Georgia', serif;
+    background: #fafaf7;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    margin-bottom: 3rem;
+    padding-bottom: 1.8rem;
+    border-bottom: 1px solid #d0cdc4;
+  }
+  .eyebrow {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8b6f3a;
+    margin-bottom: 0.7rem;
+  }
+  h1 {
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: clamp(2.1rem, 4.5vw, 3rem);
+    line-height: 1.08;
+    margin: 0 0 0.65rem;
+    font-weight: 700;
+    letter-spacing: -0.018em;
+    color: #1a1a1a;
+  }
+  h1 .accent { color: #b14e1f; }
+  .lede {
+    font-size: 1.18rem;
+    line-height: 1.5;
+    color: #46545f;
+    margin: 0 0 1.7rem;
+    max-width: 38rem;
+  }
+
+  /* ---------- At-a-glance stat strip ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: #d8cfb3;
+    border: 1px solid #d8cfb3;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  @media (min-width: 640px) {
+    .stats { grid-template-columns: repeat(4, 1fr); }
+  }
+  .stat {
+    background: #fdfaf0;
+    padding: 0.9rem 1.1rem 1rem;
+  }
+  .stat .num {
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #b14e1f;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  .stat .label {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.78rem;
+    color: #6b5520;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Section headers ---------- */
+  section { margin-bottom: 3rem; }
+  section > h2 {
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 1.55rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.012em;
+    color: #1a1a1a;
+    padding-left: 0.85rem;
+    border-left: 4px solid #b14e1f;
+    line-height: 1.25;
+  }
+  section > .sec-eyebrow {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8b6f3a;
+    margin: 0 0 0.4rem 1rem;
+  }
+  section > .sec-lede {
+    margin: 0.7rem 0 1.3rem 1rem;
+    color: #46545f;
+    font-size: 1.02rem;
+    max-width: 38rem;
+  }
+  section > p,
+  section > ul,
+  section > ol,
+  section > pre,
+  section > table,
+  section > div { margin-left: 1rem; margin-right: 0; }
+  @media (max-width: 640px) {
+    section > h2 { padding-left: 0.6rem; }
+    section > .sec-eyebrow { margin-left: 0.8rem; }
+    section > .sec-lede,
+    section > p,
+    section > ul,
+    section > ol,
+    section > pre,
+    section > table,
+    section > div { margin-left: 0.8rem; }
+  }
+
+  /* tint variants for section accent */
+  section.s-rust > h2 { border-left-color: #b14e1f; }
+  section.s-amber > h2 { border-left-color: #c8983a; }
+  section.s-olive > h2 { border-left-color: #7a8a5c; }
+  section.s-teal > h2 { border-left-color: #5b8a8a; }
+
+  section p, section ol, section ul { margin-top: 0.5rem; margin-bottom: 0.8rem; }
+  section ol, section ul { padding-left: 1.4rem; }
+  section ol li, section ul li { margin-bottom: 0.45rem; }
+
+  /* ---------- Code ---------- */
+  code, kbd, pre {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    font-size: 0.9em;
+  }
+  code {
+    background: #f3efe4;
+    color: #2e2410;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #fdfaf0;
+    color: #2e2410;
+    padding: 0.9rem 1.1rem;
+    border-radius: 4px;
+    border: 1px solid #e6dcb8;
+    overflow-x: auto;
+    line-height: 1.5;
+    font-size: 0.86rem;
+  }
+  pre code { background: transparent; padding: 0; }
+  pre.diff-old {
+    background: #fbeae4;
+    border-color: #e6c2b3;
+    color: #5a2a14;
+  }
+  pre.diff-new {
+    background: #eef5e8;
+    border-color: #c5d7b4;
+    color: #2d4a1c;
+  }
+
+  /* ---------- Headline change visual: 6 to 1 ---------- */
+  .merge {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    margin: 1rem 0 1.2rem 1rem;
+  }
+  @media (min-width: 720px) {
+    .merge { grid-template-columns: 1fr auto 1fr; }
+  }
+  .merge-side h4 {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 0.6rem;
+  }
+  .merge-before h4 { color: #b14e1f; }
+  .merge-after h4 { color: #5a7a3a; }
+  .file-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+  .file-stack .f {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    font-size: 0.83rem;
+    padding: 0.42rem 0.75rem;
+    background: #fbeae4;
+    border: 1px solid #e6c2b3;
+    border-radius: 3px;
+    color: #5a2a14;
+    position: relative;
+  }
+  .file-stack .f::before {
+    content: '';
+    position: absolute;
+    inset: 50% 0.45rem auto auto;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 1px;
+    background: #b14e1f;
+    opacity: 0.4;
+  }
+  .merge-arrow {
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 2.2rem;
+    color: #8b6f3a;
+    text-align: center;
+    line-height: 1;
+    transform: rotate(0deg);
+  }
+  @media (max-width: 720px) {
+    .merge-arrow { transform: rotate(90deg); }
+  }
+  .file-one {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 1rem 1.1rem;
+    background: #eef5e8;
+    border: 1px solid #c5d7b4;
+    border-radius: 4px;
+    color: #2d4a1c;
+    text-align: center;
+  }
+  .file-one small {
+    display: block;
+    margin-top: 0.4rem;
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.78rem;
+    color: #5a7a3a;
+    font-weight: 400;
+  }
+
+  /* ---------- Rename comparison ---------- */
+  .rename {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 0.8rem 0 1.2rem 1rem;
+  }
+  @media (min-width: 720px) {
+    .rename { grid-template-columns: 1fr 1fr; }
+  }
+  .rename-box {
+    padding: 1rem 1.1rem 1.05rem;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .rename-box.old { background: #fbeae4; border-color: #e6c2b3; }
+  .rename-box.new { background: #eef5e8; border-color: #c5d7b4; }
+  .rename-box .tag {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+  }
+  .rename-box.old .tag { color: #8a3818; }
+  .rename-box.new .tag { color: #4a6e2a; }
+  .rename-box pre {
+    margin: 0;
+    background: rgba(255,255,255,0.55);
+    border-color: rgba(0,0,0,0.08);
+    font-size: 0.8rem;
+    padding: 0.55rem 0.7rem;
+  }
+  .rename-box.old pre code { color: #5a2a14; }
+  .rename-box.new pre code { color: #2d4a1c; }
+  .rename-box .note {
+    margin: 0.6rem 0 0;
+    font-size: 0.88rem;
+    color: #46545f;
+  }
+
+  /* ---------- spec3 key ---------- */
+  .key {
+    background: white;
+    border: 1px solid #e2dbc4;
+    border-left: 4px solid #c8983a;
+    border-radius: 4px;
+    padding: 0.95rem 1.15rem;
+    margin: 1rem 0 0.5rem 1rem;
+  }
+  .key h4 {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8a6620;
+    margin: 0 0 0.55rem;
+  }
+  .key-rows { display: grid; grid-template-columns: auto auto 1fr; gap: 0.3rem 0.7rem; align-items: baseline; }
+  .key-rows .pos {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    color: #8b6f3a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .key-rows .letters {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #b14e1f;
+  }
+  .key-rows .gloss { font-size: 0.93rem; color: #1a1a1a; }
+  .key-rows .gloss code { font-size: 0.82rem; }
+
+  /* ---------- Switches ---------- */
+  .switch {
+    background: white;
+    border: 1px solid #e2dbc4;
+    border-radius: 4px;
+    padding: 1rem 1.2rem 1.1rem;
+    margin: 0.7rem 0 0.7rem 1rem;
+    position: relative;
+  }
+  .switch-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  .switch-name {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #b14e1f;
+  }
+  .switch-where {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.76rem;
+    color: #8b6f3a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .switch-default {
+    margin-left: auto;
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: #eef5e8;
+    color: #4a6e2a;
+    border: 1px solid #c5d7b4;
+    padding: 1px 8px;
+    border-radius: 12px;
+  }
+  .switch p { margin: 0.4rem 0 0.15rem; font-size: 0.97rem; }
+  .switch dl { margin: 0.35rem 0 0.4rem; }
+  .switch dt {
+    font-family: 'JetBrains Mono','Fira Mono','Consolas',monospace;
+    display: inline-block;
+    background: #f3efe4;
+    color: #2e2410;
+    padding: 1px 7px;
+    border-radius: 3px;
+    margin-right: 0.45rem;
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+    min-width: 4.5rem;
+    text-align: center;
+  }
+  .switch dd { display: inline; margin: 0; font-size: 0.97rem; }
+  .switch .row { margin: 0.3rem 0; }
+  .switch .row.is-default dt {
+    background: #eef5e8;
+    color: #4a6e2a;
+    font-weight: 600;
+  }
+
+  /* ---------- Use-case tiles ---------- */
+  .tiles {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 0.5rem 0 0.3rem 1rem;
+  }
+  @media (min-width: 720px) {
+    .tiles { grid-template-columns: 1fr 1fr; }
+  }
+  .tile {
+    background: white;
+    border: 1px solid #e2dbc4;
+    border-radius: 5px;
+    padding: 1.1rem 1.2rem 1.2rem;
+    position: relative;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.025);
+  }
+  .tile .num {
+    position: absolute;
+    top: -0.6rem;
+    left: 1rem;
+    background: #b14e1f;
+    color: #fdfaf0;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 1rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+  .tile h3 {
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin: 0.45rem 0 0.55rem;
+    color: #1a1a1a;
+    line-height: 1.25;
+  }
+  .tile p {
+    margin: 0.35rem 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .tile p code { font-size: 0.84rem; }
+  .tile pre { font-size: 0.78rem; padding: 0.6rem 0.75rem; margin: 0.55rem 0; }
+  .tile .open {
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.72rem;
+    color: #8b6f3a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.7rem;
+    display: block;
+    border-top: 1px solid #efebda;
+    padding-top: 0.6rem;
+  }
+  .tile .open code {
+    font-size: 0.85rem;
+    background: #fdfaf0;
+    border: 1px solid #e6dcb8;
+    padding: 1px 6px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ---------- Delta-avg callout ---------- */
+  .magnitude {
+    display: inline-block;
+    font-family: 'Source Serif Pro','Charter',serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #b14e1f;
+    background: #fdfaf0;
+    border: 1px solid #e6dcb8;
+    padding: 0.1rem 0.55rem;
+    border-radius: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Table ---------- */
+  table.simple {
+    border-collapse: collapse;
+    width: calc(100% - 1rem);
+    margin: 1rem 0 0.5rem 1rem;
+    font-size: 0.96rem;
+    background: white;
+    border: 1px solid #e6e2d6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  table.simple th, table.simple td {
+    text-align: left;
+    padding: 0.6rem 0.95rem;
+    border-bottom: 1px solid #f0ecde;
+  }
+  table.simple tbody tr:last-child td { border-bottom: none; }
+  table.simple tbody tr:nth-child(even) td { background: #faf6e8; }
+  table.simple th {
+    background: #f3efe4;
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b5520;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid #d8d4c7;
+  }
+  table.simple td code { font-size: 0.85rem; }
+
+  /* ---------- Disclosure ---------- */
+  details {
+    margin: 1rem 0 0 1rem;
+    background: white;
+    border: 1px solid #e2dbc4;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  details > summary {
+    cursor: pointer;
+    padding: 0.7rem 1.1rem;
+    font-family: 'Inter','Helvetica Neue',sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #6b5520;
+    background: #f3efe4;
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before {
+    content: '+ ';
+    color: #8b6f3a;
+    font-weight: 400;
+  }
+  details[open] > summary::before { content: '– '; }
+  details > .det-body { padding: 0.9rem 1.2rem; font-size: 0.97rem; }
+  details > .det-body p:first-child { margin-top: 0; }
+  details > .det-body p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Returns to migration · pipeline notes · May 2026</div>
+  <h1>What changed in the <span class="accent">GRC pipeline</span></h1>
+  <p class="lede">A short tour of what's new, organized around the files and switches you'll open.</p>
+</header>
+
+<!-- ============================================================ -->
+<section class="s-rust">
+  <div class="sec-eyebrow">Change 1 / The big one</div>
+  <h2>Files 10 through 15 are gone</h2>
+  <p class="sec-lede">Their regressions now live in one place, called by a single program.</p>
+
+  <div class="merge">
+    <div class="merge-side merge-before">
+      <h4>Before</h4>
+      <div class="file-stack">
+        <div class="f">10_GrRC_experience.do</div>
+        <div class="f">11_GrRC_max_experience.do</div>
+        <div class="f">12_GrRC_experience_share.do</div>
+        <div class="f">13_GrRC_max_experience_share.do</div>
+        <div class="f">14_GrRC_NonAg_experience.do</div>
+        <div class="f">15_GrRC_birth.do</div>
+      </div>
+    </div>
+    <div class="merge-arrow">&rarr;</div>
+    <div class="merge-side merge-after">
+      <h4>After</h4>
+      <div class="file-one">
+        9_GRC_extras.do
+        <small>+ <code>run_grc_with_extra_regressor</code> in <code>0_programs.do</code></small>
+      </div>
+    </div>
+  </div>
+
+  <p>Each call inside <code>9_GRC_extras.do</code> is one line:</p>
+
+  <pre><code>run_grc_with_extra_regressor, country(IDN) spec3(cuu) regressor(exp)
+run_grc_with_extra_regressor, country(CHN) spec3(cuu) regressor(exp)
+run_grc_with_extra_regressor, country(TZA) spec3(cuu) regressor(exp)</code></pre>
+
+  <p>The shared logic that used to fan across the six files now sits as one program in <code>0_programs.do</code>. To add a regression of the kind that used to go in (say) <code>11_GrRC_max_experience.do</code>, scroll to the <code>max_experience</code> section of <code>9_GRC_extras.do</code> and add one call line.</p>
+
+  <p>Everything else about the pipeline---data prep, summary stats, OLS, main GRC, hukou GRC, learning, tables, figures---works the way you remember.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="s-amber">
+  <div class="sec-eyebrow">Change 2 / Filenames</div>
+  <h2>The <code>.ster</code> files got shorter names</h2>
+  <p class="sec-lede">Old names spelled out every axis, which kept blowing past Stata's 32-character cap on internal estimate names once the subgroup suffixes (<code>_n</code>, <code>_a</code>, <code>_d</code>, <code>_g</code>) got tacked on. The new names compact <em>depvar</em>, <em>choice</em>, and <em>balance</em> into a three-letter token.</p>
+
+  <div class="rename">
+    <div class="rename-box old">
+      <div class="tag">Before</div>
+      <pre><code>GRC_CHN_consumption_urban_unbalanced_exp_c1.ster</code></pre>
+      <p class="note">48 chars; collides with the 32-char internal name cap.</p>
+    </div>
+    <div class="rename-box new">
+      <div class="tag">After</div>
+      <pre><code>grc_CHN_cuu_exp_c1.ster</code></pre>
+      <p class="note">24 chars; safe headroom for every subgroup suffix.</p>
+    </div>
+  </div>
+
+  <div class="key">
+    <h4>How to read the three-letter token</h4>
+    <div class="key-rows">
+      <div class="pos">Position 1</div>
+      <div class="letters">c · i</div>
+      <div class="gloss"><code>c</code> = consumption, <code>i</code> = income</div>
+      <div class="pos">Position 2</div>
+      <div class="letters">u · n</div>
+      <div class="gloss"><code>u</code> = urban, <code>n</code> = non-ag</div>
+      <div class="pos">Position 3</div>
+      <div class="letters">u · b</div>
+      <div class="gloss"><code>u</code> = unbalanced, <code>b</code> = balanced</div>
+    </div>
+  </div>
+
+  <p>So <code>cuu</code> reads as "consumption, urban, unbalanced"; <code>cub</code> as "consumption, urban, balanced"; <code>inu</code> as "income, non-ag, unbalanced"; and so on. Per fit you'll see five files on disk: the main <code>.ster</code> plus four subgroup ones (<code>_n</code> for never-switchers, <code>_a</code> for always-switchers, <code>_d</code> for delta switchers, <code>_g</code> for the group-average row).</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="s-rust">
+  <div class="sec-eyebrow">Change 3 / Behavior knobs</div>
+  <h2>Five switches at the top of <code>0_master.do</code></h2>
+  <p class="sec-lede">A handful of globals live near the top of the master. Each one is a single line you flip; the defaults are picked so the pipeline runs end to end without surprises.</p>
+
+  <div class="switch">
+    <div class="switch-head">
+      <span class="switch-name">$dir</span>
+      <span class="switch-where">your user block</span>
+    </div>
+    <p>Project root. Set inside the <code>if "`c(username)'" == "..."</code> block keyed to your machine username. Everything else (scripts, data, output) lives relative to it.</p>
+  </div>
+
+  <div class="switch">
+    <div class="switch-head">
+      <span class="switch-name">$overleaf</span>
+      <span class="switch-where">your user block</span>
+    </div>
+    <p>Optional. Path to your local Overleaf-Dropbox folder. If you leave it unset, copies to Overleaf simply skip with a one-line notice at the start of the run. If you set it, the pipeline uses the path whenever <code>$copyOverleaf</code> is on.</p>
+  </div>
+
+  <div class="switch">
+    <div class="switch-head">
+      <span class="switch-name">$copyOverleaf</span>
+      <span class="switch-where">line ~81 of 0_master.do</span>
+      <span class="switch-default">default: 1</span>
+    </div>
+    <dl>
+      <div class="row is-default"><dt>1</dt><dd>copy tables and figures to <code>$overleaf</code> as they're built</dd></div>
+      <div class="row"><dt>0</dt><dd>build them locally only</dd></div>
+    </dl>
+  </div>
+
+  <div class="switch">
+    <div class="switch-head">
+      <span class="switch-name">$values</span>
+      <span class="switch-where">defaults in 0_path_config.do</span>
+      <span class="switch-default">default: nominal</span>
+    </div>
+    <dl>
+      <div class="row is-default"><dt>"nominal"</dt><dd>reads <code>$dir/data</code>; output filenames are bare</dd></div>
+      <div class="row"><dt>"real"</dt><dd>reads <code>$dir/data_real</code>; output filenames get an <code>_r</code> suffix</dd></div>
+    </dl>
+    <p>The two modes coexist on disk, which helps when you want nominal and real results side by side. To pick real mode, set <code>global values "real"</code> in your user block above the <code>include "$dir/scripts/0_path_config.do"</code> line.</p>
+  </div>
+
+  <div class="switch">
+    <div class="switch-head">
+      <span class="switch-name">$runDashboard</span>
+      <span class="switch-where">line ~86 of 0_master.do</span>
+      <span class="switch-default">default: 0</span>
+    </div>
+    <dl>
+      <div class="row is-default"><dt>0</dt><dd>skip the Python tail</dd></div>
+      <div class="row"><dt>1</dt><dd>refresh the headlines cache for the results dashboard</dd></div>
+    </dl>
+    <p>The pipeline finishes all tables, figures, and <code>.ster</code> files before this flag fires, so the default of 0 keeps Python out of the picture entirely. Flip it to 1 only if you've got Python installed and want the dashboard cache.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="s-teal">
+  <div class="sec-eyebrow">How to use it</div>
+  <h2>Common situations</h2>
+  <p class="sec-lede">Four scenarios you'll hit, and the file to open for each.</p>
+
+  <div class="tiles">
+
+    <div class="tile">
+      <div class="num">1</div>
+      <h3>Run the whole pipeline from scratch</h3>
+      <p>Every fit runs unconditionally. Use this when you've changed programs and want a clean canonical run.</p>
+      <span class="open">Open <code>0_master.do</code></span>
+    </div>
+
+    <div class="tile">
+      <div class="num">2</div>
+      <h3>Pick up after a crash</h3>
+      <p>The main GRC fits are the slow part. <code>run_master_resume.do</code> flips one global so already-saved cells get skipped:</p>
+      <pre><code>* the entire file
+global skip_if_exists 1
+do "0_master.do"</code></pre>
+      <p>Data prep, OLS, table builders, and figure builders all still run; those are cheap.</p>
+      <span class="open">Open <code>run_master_resume.do</code></span>
+    </div>
+
+    <div class="tile">
+      <div class="num">3</div>
+      <h3>Force a clean re-fit of specific cells</h3>
+      <p>Resume mode skips any cell whose <code>_g.ster</code> sits on disk. To force those cells to refit, delete (or move to an archive folder) the <code>.ster</code> files for the cells you want redone, then run <code>run_master_resume.do</code> again.</p>
+      <p>For a clean wipe across the board: archive the whole <code>$output</code> folder and run <code>0_master.do</code>.</p>
+      <span class="open">Delete or archive in <code>$output</code></span>
+    </div>
+
+    <div class="tile">
+      <div class="num">4</div>
+      <h3>Re-fit just one subset of 9_GRC_extras.do</h3>
+      <p>Three small shortcut files walk subsets of the calls in <code>9_GRC_extras.do</code>. Open the matching one and run it; they share the skip-if-exists behavior, so they only refit what's missing:</p>
+      <ul>
+        <li><code>run_extras_maxexpsh.do</code></li>
+        <li><code>run_extras_birth.do</code></li>
+        <li><code>run_extras_cnu.do</code></li>
+      </ul>
+      <span class="open">Open one of <code>run_extras_*.do</code></span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="s-olive">
+  <div class="sec-eyebrow">Change 4 / Numerical fix</div>
+  <h2>A small correction to the <code>Delta_avg</code> row</h2>
+  <p class="sec-lede">The <code>Delta_avg</code> row in the main GRC tables had a formula bug: it returned <code>switcher_frac × E[Delta | switcher]</code> instead of <code>E[Delta | switcher]</code>. <code>0_programs.do</code> now carries the corrected formula.</p>
+
+  <p>What this means in practice: the corrected <code>Delta_avg</code> runs <span class="magnitude">~9&times; to 14&times;</span> larger than the pre-fix value, because <code>switcher_frac</code> sits in the 7---11% range across countries. If you have a draft of the tables from before May 2026, that row will move on a re-run.</p>
+
+  <p>The affected files are <code>4_GrRC.do</code>, <code>5_GrRC_NonAg.do</code>, and <code>7_GrRC_hukou.do</code>. Re-running the pipeline (or the resume wrapper) refreshes every affected cell automatically.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="s-amber">
+  <div class="sec-eyebrow">Reference</div>
+  <h2>Where to look when you want to change something</h2>
+
+  <table class="simple">
+    <thead><tr><th>You want to change&hellip;</th><th>&hellip;open this file</th></tr></thead>
+    <tbody>
+      <tr><td>Your project root path</td><td><code>0_master.do</code> (user block)</td></tr>
+      <tr><td>Your Overleaf folder path</td><td><code>0_master.do</code> (user block)</td></tr>
+      <tr><td>Whether outputs copy to Overleaf</td><td><code>0_master.do</code> (<code>$copyOverleaf</code>)</td></tr>
+      <tr><td>Nominal vs real values</td><td><code>0_master.do</code> (set <code>$values</code> in user block)</td></tr>
+      <tr><td>An OLS or FE specification</td><td><code>3_OLS_uGRC.do</code> or <code>6_OLS_uGRC_hukou.do</code></td></tr>
+      <tr><td>A main GRC specification</td><td><code>4_GrRC.do</code>, <code>5_GrRC_NonAg.do</code>, or <code>7_GrRC_hukou.do</code></td></tr>
+      <tr><td>A GRC with an extra regressor</td><td><code>9_GRC_extras.do</code> (call sites) or <code>0_programs.do</code> (the program)</td></tr>
+      <tr><td>How tables are assembled</td><td><code>10_make_tables.do</code></td></tr>
+      <tr><td>How figures are assembled</td><td><code>11_make_figures.do</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<details>
+  <summary>For the curious: what 0_slice_bootstrap.do does</summary>
+  <div class="det-body">
+    <p>Each <code>run_extras_*.do</code> file sets <code>$dir</code> in its own user block and then includes <code>0_slice_bootstrap.do</code>, which handles the rest of the setup: it includes <code>0_path_config.do</code> for sub-directory globals, quietly includes <code>0_programs.do</code> (quietly because that file is large enough to flood the output otherwise), turns on <code>skip_if_exists</code>, and turns off <code>copyOverleaf</code> defensively. To write a fourth shortcut, the body of the new file is just the call sites; the bootstrap handles the rest.</p>
+  </div>
+</details>
+
+</div>
+</body>
+</html>

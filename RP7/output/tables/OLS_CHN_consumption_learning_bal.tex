@@ -1,0 +1,35 @@
+\begin{table}[htbp] \centering \begin{threeparttable}
+ \caption{OLS Estimates of the Returns to Learning in Urban and Rural Locations on log Consumption in China, Balanced Sample} 
+ \label{tab:OLS_CHN_cons_learning_bal} 
+\begin{tabular}{l cccc} \toprule  \textbf{Dep. var:}  log(consumption) 
+                    &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   \\
+                    &               &               &               &               \\
+\addlinespace
+1st urban period    &       0.133***&      -0.043*  &      -0.070***&       0.076***\\
+                    &     (0.027)   &     (0.026)   &     (0.025)   &     (0.025)   \\
+\addlinespace
+2nd urban period    &       0.279***&       0.022   &       0.009   &       0.175***\\
+                    &     (0.036)   &     (0.035)   &     (0.034)   &     (0.036)   \\
+\addlinespace
+3rd urban period    &       0.297***&      -0.068   &      -0.034   &       0.257***\\
+                    &     (0.052)   &     (0.052)   &     (0.052)   &     (0.050)   \\
+\addlinespace
+1st rural period    &       0.375***&       0.134*  &       0.066   &       0.044   \\
+                    &     (0.080)   &     (0.079)   &     (0.072)   &     (0.062)   \\
+\addlinespace
+2nd rural period    &       0.939***&       0.662***&       0.564***&       0.493***\\
+                    &     (0.212)   &     (0.208)   &     (0.198)   &     (0.173)   \\
+\addlinespace
+3rd rural period    &       0.065   &      -0.301** &      -0.322** &      -0.113   \\
+                    &     (0.150)   &     (0.150)   &     (0.126)   &     (0.174)   \\
+\addlinespace
+Joint p-value urban learning&       0.000   &       0.106   &       0.100   &       0.000   \\
+p-value: 1 year urban = 2 years urban&       0.000   &       0.085   &       0.032   &       0.008   \\
+p-value: 1 year urban = 3 years urban&       0.002   &       0.644   &       0.487   &       0.000   \\
+Joint p-value rural learning&       0.000   &       0.000   &       0.000   &       0.005   \\
+p-value: 1 year rural = 2 years rural&       0.007   &       0.011   &       0.013   &       0.013   \\
+p-value: 1 year rural = 3 years rural&       0.062   &       0.009   &       0.008   &       0.365   \\
+Observations        &      56,855   &      56,855   &      56,855   &      56,855   \\
+Individuals         &      14,214   &      14,214   &      14,214   &      14,214   \\
+Adj. R$^{2}$        &      0.0025   &       0.099   &        0.20   &        0.52   \\
+\cmidrule{2 -5} Covariates & & & All & All \\ Time FE & & Y & Y & Y \\ Individual FE & & & & Y \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{The dependent variable is the log of total consumption per capita. Columns (2) to (4) include time (survey wave) fixed effects. Columns (3) and (4) add a female indicator, age squared, and education (years of schooling, maximum across periods) and its square. Column (4) adds individual fixed effects. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.} \end{tablenotes} \end{threeparttable} \end{table}

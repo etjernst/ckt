@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CKT pipeline parallelization: how it works and where it duplicates</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         max-width: 880px; margin: 2em auto; line-height: 1.55; color: #1f2328;
+         padding: 0 1em; }
+  h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.3em; }
+  h2 { margin-top: 1.6em; border-bottom: 1px solid #eee; padding-bottom: 0.2em; }
+  h3 { margin-top: 1.2em; }
+  code, pre { font-family: "JetBrains Mono", Consolas, monospace; }
+  pre { background: #f6f8fa; padding: 0.8em 1em; border-radius: 6px;
+        overflow-x: auto; font-size: 0.88em; line-height: 1.4; }
+  code { background: #f0f2f4; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  .callout { background: #fff8e1; border-left: 4px solid #f4a000;
+             padding: 0.8em 1em; margin: 1em 0; border-radius: 4px; }
+  .ok { background: #e6f4ea; border-left: 4px solid #34a853; }
+  .bad { background: #fce8e6; border-left: 4px solid #d93025; }
+  table { border-collapse: collapse; margin: 1em 0; font-size: 0.92em; }
+  th, td { border: 1px solid #ddd; padding: 0.4em 0.8em; text-align: left; }
+  th { background: #f6f8fa; }
+  .file { font-family: Consolas, monospace; font-size: 0.92em; }
+  ul.tight li { margin: 0.1em 0; }
+</style>
+</head>
+<body>
+
+<h1>CKT pipeline parallelization: how it works and where it duplicates</h1>
+
+<p><em>Snapshot 2026-05-12, branch <code>worktree-grc-pipeline-refactor</code>.
+Aim: explain what we're doing now, then call out duplication concerns
+we should think about before merging.</em></p>
+
+<h2>The big picture</h2>
+
+<p>The pipeline is <strong>not</strong> parallel inside any single Stata
+process. What we do is run multiple Stata processes <em>concurrently</em>
+at the OS level, and let the filesystem mediate so they don't fight over
+the same fits. Three pieces make this work:</p>
+
+<ol>
+  <li>A <strong>resume-if-exists guard</strong> baked into <code>run_grc</code>
+  and <code>run_grc_robust_vv</code>. If a cell's terminal ster
+  (<code>_g$vsfx.ster</code>) is already on disk and the global
+  <code>${skip_if_exists}</code> is 1, the program prints
+  <code>SKIP &lt;estname&gt;</code> and returns immediately.</li>
+
+  <li>A <strong>master entry point</strong>
+  (<a class="file" href="../RP7/scripts/0_master.do">0_master.do</a>) that
+  walks the whole pipeline sequentially, plus a thin wrapper
+  (<a class="file" href="../RP7/scripts/run_master_resume.do">run_master_resume.do</a>)
+  that just sets <code>${skip_if_exists}=1</code> before calling it.
+  Same script, different mode.</li>
+
+  <li>Three <strong>family slice drivers</strong> that run only a subset
+  of <a class="file" href="../RP7/scripts/9_GRC_extras.do">9_GRC_extras.do</a>'s
+  cells (one extra-regressor family each), with
+  <code>${skip_if_exists}=1</code> always on:
+  <ul class="tight">
+    <li><a class="file" href="../RP7/scripts/run_extras_maxexpsh.do">run_extras_maxexpsh.do</a>
+        --- 9 stems = 36 fits = 180 sters</li>
+    <li><a class="file" href="../RP7/scripts/run_extras_birth.do">run_extras_birth.do</a>
+        --- 4 IDN stems = 16 fits = 80 sters</li>
+    <li><a class="file" href="../RP7/scripts/run_extras_cnu.do">run_extras_cnu.do</a>
+        --- 4 IDN cnu stems = 16 fits = 80 sters</li>
+  </ul>
+  </li>
+</ol>
+
+<p>Yesterday's overnight run was three concurrent <code>stata-mp -e do
+run_extras_*.do</code> processes plus the master pipeline in resume mode,
+all in the same <code>RP7/output/</code> directory, coordinating only
+through the presence or absence of <code>_g.ster</code> files.</p>
+
+<h2>How the resume guard works</h2>
+
+<p>The guard lives in
+<a class="file" href="../RP7/scripts/0_programs.do">0_programs.do</a> around
+line 1847 (run_grc) and 2753 (run_grc_robust_vv):</p>
+
+<pre><code>if "${skip_if_exists}" == "1" {
+    capture confirm file "$output/`estname'_g${vsfx}.ster"
+    if _rc == 0 {
+        di as text "run_grc: SKIP `estname' (`estname'_g${vsfx}.ster present)"
+        exit
+    }
+}</code></pre>
+
+<p>Two design choices to flag here:</p>
+
+<ul>
+  <li>The check is on the <em>last</em> ster a cell writes
+  (<code>_g</code>, the group-average), not the first. So a cell crashed
+  mid-fit (e.g. <code>_n</code> written but not <code>_g</code>) is correctly
+  re-attempted.</li>
+
+  <li>The check happens <em>inside</em> <code>run_grc</code>, not at the
+  caller. Every caller --- 4_GrRC, 5_GrRC_NonAg, 7_GrRC_hukou,
+  run_grc_with_extra_regressor --- gets the resume behaviour for free.
+  This is the right factoring; no per-caller boilerplate.</li>
+</ul>
+
+<h2>Why the slice drivers can race the master safely</h2>
+
+<p>If <code>0_master.do</code> (in resume mode) and
+<code>run_extras_birth.do</code> both reach the same un-fit cell at
+roughly the same instant, both processes pass the <code>capture confirm
+file</code> guard (the ster doesn't exist yet), both run the GMM fit, and
+both call <code>estimates save</code>. The second save wins; the resulting
+ster is byte-identical (deterministic optimizer, same data, same initial
+values) so nothing observable changes. The cost is one redundant fit,
+not a corrupted ster.</p>
+
+<p>In practice the slice drivers each touch a distinct
+<em>family</em> of cells (<code>maxexpsh</code>,
+<code>birth</code>, <code>cnu × experience</code>), and
+<code>9_GRC_extras.do</code> walks them in family order, so race windows
+are short and overlapping work is rare. The header comment in
+<a class="file" href="../RP7/scripts/run_extras_maxexpsh.do">run_extras_maxexpsh.do</a>
+notes this explicitly.</p>
+
+<h2>What actually runs concurrently</h2>
+
+<p>Yesterday's overnight run looked like this:</p>
+
+<table>
+<tr><th>Process</th><th>Entry point</th><th>Scope</th></tr>
+<tr><td>1</td><td><code>run_master_resume.do</code></td>
+    <td>Full pipeline, skipping any cell with a <code>_g.ster</code> on disk</td></tr>
+<tr><td>2</td><td><code>run_extras_maxexpsh.do</code></td>
+    <td>9 maxexpsh stems</td></tr>
+<tr><td>3</td><td><code>run_extras_birth.do</code></td>
+    <td>4 IDN birth stems</td></tr>
+<tr><td>4</td><td><code>run_extras_cnu.do</code></td>
+    <td>4 IDN cnu × experience stems</td></tr>
+</table>
+
+<p>By the time the master pipeline's resume run reached
+<code>9_GRC_extras.do</code>, the slice drivers had already produced most
+of the missing sters. The master picked up only what was left, ran the
+table and figure builders, and called
+<code>scrape_headlines.py --incremental</code> at the tail to refresh
+the dashboard cache.</p>
+
+<h2>Where the duplication lives</h2>
+
+<p>This is the part to look at hard. Each slice driver is ~96 lines, but
+only 4 to 11 lines inside <code>capture noisily { ... }</code> actually
+differ between them. The rest is shared scaffolding repeated three times.</p>
+
+<h3>The repeated blocks</h3>
+
+<ol>
+  <li><strong>The $dir resolution block</strong> (~14 lines per file,
+  ~42 lines total). Identical username-to-path lookup in every slice
+  driver. The header comment in each one literally says
+  "Mirrors 0_master.do; keep these blocks in sync if 0_master.do gains
+  new users." That's a smell --- it's documenting a maintenance burden
+  rather than removing it. <em>This is also duplicated in</em>
+  <code>0_master.do</code> itself, so the same block exists in <strong>four
+  places</strong>.</li>
+
+  <li><strong>The values switch</strong>
+  (<code>global values "nominal"</code> + ~7-line comment block).
+  Identical in all three drivers.</li>
+
+  <li><strong>The bootstrap includes</strong>: <code>include
+  "$dir/scripts/0_path_config.do"</code> + <code>quietly include
+  "$scripts/0_programs.do"</code>. Identical in all three.</li>
+
+  <li><strong>Global flags</strong>: <code>global skip_if_exists 1</code>
+  + <code>global copyOverleaf 0</code>. Identical.</li>
+
+  <li><strong>Log + error wrapper</strong>: <code>capture log close</code>
+  / <code>log using "$logs/&lt;name&gt;.log", replace</code> /
+  <code>capture noisily { ... }</code> / <code>local saved_rc = _rc</code>
+  / <code>log close</code> / error print / <code>exit, STATA clear</code>.
+  Same in all three; only the log filename and body differ.</li>
+</ol>
+
+<div class="callout bad">
+<strong>Concrete failure mode this invites.</strong> The CLAUDE.md says
+<code>$dir</code> for user <code>maand</code> varies by worktree, and
+the current value in <code>0_master.do</code> is
+<code>C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7</code>. If we
+add a new worktree, we have to update <strong>four</strong> files to
+keep them in sync (master + three slice drivers). Easy to miss one.
+And we already commented out 4 alternate worktree paths in
+<code>0_master.do</code> but not in any of the slice drivers.
+</div>
+
+<h3>What actually has to live in each driver</h3>
+
+<p>Strip the boilerplate and a slice driver only needs to declare:</p>
+
+<ol class="tight">
+  <li>Its name (for the log file)</li>
+  <li>Its cells (the body of <code>capture noisily { ... }</code>)</li>
+  <li>Optionally, the values switch (nominal vs real)</li>
+</ol>
+
+<p>Everything else --- <code>$dir</code> resolution, path config, programs
+include, skip flag, log open/close, error handling --- is identical
+across drivers.</p>
+
+<h2>A cleaner structure</h2>
+
+<p>Two changes would collapse the duplication without changing behavior:</p>
+
+<h3>Change 1: extract <code>$dir</code> resolution into its own include</h3>
+
+<p>Create <code>0_dir_resolution.do</code> with the user-block,
+then have <code>0_master.do</code> and every slice driver call it as the
+literal first include. The user-block lives in one place; adding a new
+worktree is a one-file edit.</p>
+
+<pre><code>* 0_dir_resolution.do  --- single source of truth for $dir per user
+if "`c(username)'"=="maand" {
+    global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
+    global overleaf = "C:/Users/maand/Monash Uni Enterprise Dropbox/..."
+}
+if "`c(username)'"=="kleemans" { ... }
+* etc.
+
+if "${dir}" == "" {
+    di as error "0_dir_resolution: \$dir not set for user `c(username)'."
+    exit 198
+}</code></pre>
+
+<h3>Change 2: extract the bootstrap envelope into its own include</h3>
+
+<p>Create <code>0_slice_bootstrap.do</code> for the path config + programs
+load + skip/copy flag setup. With both extracts, a slice driver becomes
+about 25 lines instead of 96, and the only repeated lines are the include
+calls themselves:</p>
+
+<pre><code>* run_extras_birth.do  --- after refactor
+clear all
+version 17
+
+if "$values" == "" global values "nominal"
+
+include "0_dir_resolution.do"
+include "$dir/scripts/0_path_config.do"
+quietly include "$dir/scripts/0_programs.do"
+include "$dir/scripts/0_slice_bootstrap.do"   // sets skip_if_exists=1, copyOverleaf=0
+
+capture log close
+log using "$logs/run_extras_birth$vsfx.log", replace
+capture noisily {
+    run_grc_with_extra_regressor, country(IDN) spec3(cuu) regressor(urbanbirth)
+    run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(urbanbirth)
+    run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(urbanbirth)
+    run_grc_with_extra_regressor, country(IDN) spec3(cnu) regressor(urbanbirth) ///
+        data_path_override("$dirdata/processed/IDN_unb.dta")
+}
+local saved_rc = _rc
+log close
+if `saved_rc' != 0 di as error ">>> run_extras_birth FAILED with rc=`saved_rc'"</code></pre>
+
+<p>Could go further and factor the <code>capture log close ... log close
+... if rc != 0</code> envelope into a one-shot helper too, but that's
+diminishing returns for three files.</p>
+
+<h2>What this would <em>not</em> change</h2>
+
+<div class="callout ok">
+  <ul class="tight">
+    <li>The actual parallelization model --- still OS-level concurrent
+    Stata processes mediated by <code>skip_if_exists</code>.</li>
+    <li>The slice families and their cells.</li>
+    <li>Anything inside <code>run_grc</code> or
+    <code>run_grc_with_extra_regressor</code>.</li>
+    <li>The master entry point's behavior in either mode (full or resume).</li>
+  </ul>
+</div>
+
+<p>This is pure refactor: move the boilerplate out of the slice drivers
+into a shared include. No estimation results would change.</p>
+
+<h2>Open questions</h2>
+
+<ol>
+  <li>Do we want to refactor <strong>before</strong> merging the branch,
+  or land the slice drivers as-is and clean up later? Argument for
+  before: the duplication is small, and merging now bakes it into main.
+  Argument for after: the refactor is a separate PR-sized change and
+  we already have a lot of moving parts on this branch.</li>
+
+  <li>Is <code>0_dir_resolution.do</code> worth extracting on its own,
+  or should we just have a single <code>0_slice_bootstrap.do</code> that
+  does the whole envelope? My read: the $dir block is the highest-pain
+  duplication (four places, varies per worktree, easy to forget). Worth
+  extracting even if we leave the rest of the envelope inline.</li>
+
+  <li>Anything else duplicated that I missed? The smoke drivers
+  (<a class="file" href="../RP7/scripts/_smoke_full.do">_smoke_full.do</a>,
+  <a class="file" href="../RP7/scripts/_smoke_extras_dispatch.do">_smoke_extras_dispatch.do</a>,
+  etc.) likely have the same boilerplate too --- worth checking.</li>
+</ol>
+
+</body>
+</html>

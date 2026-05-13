@@ -26,6 +26,15 @@ RP7/output/**/*.gph
 # Transient test artifacts (e.g. addlinespace investigation, minimal repros)
 RP7/output/test_*
 
+# Headlines cache: text CSVs with the actual headline values per fit.
+# Tracked (not ignored) so git records the value history per re-fit ---
+# .ster files are binary and can't be diff'd, but these CSVs can.
+
+# Dashboard cache-bootstrap profiling and run logs
+tools/results_overview/profile_render.prof
+tools/results_overview/scrape_bootstrap.log
+tools/results_overview/render_with_cache.log
+
 # Stata artifacts
 *.log
 *.smcl
@@ -44,6 +53,11 @@ RP7/output/test_*
 *.vrb
 *.run.xml
 *.bcf
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
 
 # OS files
 .DS_Store

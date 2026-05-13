@@ -13,8 +13,8 @@ version 17
 
 * Project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave) and
 * `set more off` are configured in 0_path_config.do (included below) so
-* alternate entry points (e.g. _smoke_full.do) which bypass this file
-* still see them.
+* alternate entry points (e.g. the run_extras_*.do slice drivers) which
+* bypass this file still see them.
 
 * **********************************************************************
 * Preliminaries
@@ -80,6 +80,11 @@ if "`c(username)'"=="maand" {
 * 5. Copy to Overleaf or not? 1 = will copy to Overleaf
 	global copyOverleaf 1
 
+* 6. Refresh dashboard cache + Verdier comparison memo? 1 = will run Python.
+*    Default 0; coauthors do not need Python. Set to 1 only on a machine
+*    that has Python installed and that runs the headlines-cache dashboard.
+	global runDashboard 0
+
 * **********************************************************************
 * Run do-files
 * **********************************************************************
@@ -111,3 +116,9 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/11_make_figures.do"
 * Run Verdier-style robust GRC (cluster-residualized instruments)
 	include			"$dir/scripts/17_verdier_robust.do"
+* Refresh the headlines cache (one CSV per fit) the dashboard reads instead
+* of pystata round-trips. Reads only stems whose ster mtimes have changed.
+* Gated behind $runDashboard so coauthors without Python don't hit errors.
+	if "${runDashboard}" == "1" {
+		shell python "$dir/../tools/results_overview/scrape_headlines.py" --incremental
+	}
