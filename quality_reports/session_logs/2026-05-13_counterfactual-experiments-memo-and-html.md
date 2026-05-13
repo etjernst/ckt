@@ -348,3 +348,75 @@ After that, the trajectory-extraction pipeline is the 2--3 day commitment that u
 
 There are uncommitted changes across the four files modified this session.
 A clean commit before /clear would make the state recoverable and let the next session start from `git log`.
+
+---
+
+## Continued: paper-bound draft of the counterfactual experiments section
+
+Mode: drafting.
+Picked up after /clear from a clean working tree; the morning/afternoon/evening commits were already in (`bd9f0b7`).
+
+### Goals
+
+The user asked for a draft section of the paper describing the planned counterfactual experiments, to be added at the end of the current results section, written in the way the migration-counterfactual literature typically describes such exercises (Mobarak et al.\ in particular).
+Framed explicitly as "two counterfactual experiments," which constrained the scope to #1 (aggregate misallocation) and #2 (hukou wedge) from the canonical memo; experiment #3 (consumption-to-welfare) demoted from a standalone experiment to a closing bridge paragraph that flags it as ongoing work.
+
+### What got built
+
+[paper/results_counterfactuals.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_counterfactuals.tex), 87 lines, standalone .tex with header comment listing every cross-ref and citekey used.
+Four subsections: `\subsection{Counterfactual experiments}` (intro), `\subsubsection{Aggregate consumption gap from misallocated migration}`, `\subsubsection{Removing the hukou wedge in China}`, `\subsubsection{From consumption to welfare}`.
+One numbered equation per experiment plus the misallocation decomposition equation that brackets observed migration against zero-migration and optimal-sort.
+
+### Decisions, with the why
+
+- "Two experiments" interpreted as #1 + #2; #3 demoted to a closing paragraph.
+Why: user wrote "the two counterfactual experiments" explicitly; #3 in the memo is still "design open" with neither route specified, while #1 and #2 are paper-ready in their current scope.
+The bridge paragraph preserves the welfare extension as ongoing work without overcommitting to a route the user has not approved.
+- Did NOT bake the back-of-envelope numbers ($\approx 22\%$ TZA, $\approx 6.5\%$ CHN, $\approx 3.7\%$ IDN) into the prose.
+Why: those rest on unverified trajectory-share guesses ($\pi_{d_N} \approx 0.75$ TZA, $0.65$ CHN, $0.50$ IDN), and the user explicitly flagged in the afternoon session that "the full counterfactual thing needs a bit more than point estimates and population shares."
+The draft describes what we will deliver and the design that produces it, not numbers that would commit the paper to magnitudes we have not verified.
+- Cited \cite{bryanAggregateProductivityEffects2019}, \cite{lagakosMigrationCostsObservational2020}, \cite{lagakosUrbanRuralGapsDeveloping2020a} as the literature placing the exercise.
+Why: the user asked for "Mobarak et al" style framing, and these three are the standard structural-migration-counterfactual references already in CKT.bib.
+Bryan-Morten is the canonical "what does removing rural-urban frictions deliver" paper; Lagakos-Mobarak-et-al 2020 is closest in spirit to our identification (migration costs from observed wage gaps in panel data); Lagakos 2020 frames the urban-rural productivity gap.
+- Three within-trajectory heterogeneity reporting options (floor / heterogeneity-corrected / bounded envelope) preserved from the memo.
+Why: LCA identifies $\Delta_{\underline{d}}$ but not its within-trajectory dispersion, and the trajectory-mean formula is a Jensen lower bound on the true gap.
+Bracketing the magnitude across the three options is the honest way to report this, and the memo committed to all three as deliverables.
+- Inversion CI propagation method described in prose, not derived.
+Why: the appendix [app:inversion-preview](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/sections/app_inversion_preview.tex) already does this work; the counterfactual section inherits the machinery and points the reader there.
+- Hukou wedge parameterized as an additive intercept shift $\beta^{rh} \rightarrow \beta^{uh}$.
+Why: the memo's "resorting version" specified this, and it is the cleanest way to use the model's existing decision rule from equation~\eqref{eq:decision-rule} without introducing new structure.
+The alternative (estimating a separate barrier parameter) would expand the model beyond what the paper currently identifies.
+- Sentence-case headings even though `sec_results.tex` currently uses Title Case for its existing subsections.
+Why: the user's `rules/manuscript-writing.md` mandates sentence case as a hard rule, and the prior addendum [paper/results_interpretation_addendum.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_interpretation_addendum.tex) already chose sentence case.
+Consistency with the addendum wins over consistency with the legacy-cased sec_results headings; the user will presumably normalize the existing headings later.
+
+### Approaches rejected and the reason
+
+- Including #3 as a third counterfactual experiment.
+User said "two," and the memo flags #3 as design-open with the Suri-style observables route requiring a per-country amenity-proxy catalog that does not yet exist.
+- Putting specific back-of-envelope percentages in the section text.
+The shares feeding them ($\pi_{\underline{d}}$) are unverified guesses; baking the percentages into the paper would commit us to numbers that will move when actual trajectory shares are extracted.
+- Drafting in a "we find" / "we estimate" register as if the experiments had been run.
+The section is paper-bound but describes planned exercises; pretending results exist would be sloppy.
+Chose "we use these objects to address...", "We report two versions...", "We will report..."---future-facing where results are not yet realized, present-tense where we describe what is identified.
+- A full \subsection-level structural defense of LCA as the right identification for these counterfactuals.
+That work is in the interpretation addendum from earlier today; duplicating it here would bloat the section.
+The counterfactual section references `\ref{sec:interpretation}` instead.
+
+### Open items
+
+- Compile verification only possible inside the full Overleaf build; the standalone .tex references macros and labels defined elsewhere (`\GRChukoutable`, `eq:decision-rule`, `eq:restricted-GRC`, `app:inversion-preview`, `sec:interpretation`).
+Verify on the next user-side compile when pasted in.
+- The interpretation addendum [paper/results_interpretation_addendum.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_interpretation_addendum.tex) is not yet pasted into Overleaf either; the counterfactuals section's `\ref{sec:interpretation}` resolves only after both are pasted, in order.
+- New file [paper/results_counterfactuals.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_counterfactuals.tex) is untracked; commit pending.
+- The trajectory-share verification flagged at the top of this session log as "the natural next concrete action" remains undone.
+That 30-minute warm-up is still the cheapest next step before any pipeline build.
+
+### Picking back up
+
+If you resume:
+Read this session log; the canonical memo at [docs/notes/2026-05-13_counterfactual-experiments-plan.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-13_counterfactual-experiments-plan.md) remains the design reference.
+Open thread: paper has two ready-to-paste standalone .tex files in [paper/](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/) (interpretation addendum and counterfactual experiments section); both await the user's manual paste into the Overleaf-Dropbox `sec_results.tex`.
+Next concrete action options, in increasing commitment: (1) commit [paper/results_counterfactuals.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_counterfactuals.tex); (2) verify trajectory shares $\pi_{\underline{d}}$ from descriptive tables to firm up the back-of-envelope numbers; (3) start the 2--3 day trajectory-extraction pipeline for experiment #1.
+State to know: [paper/results_counterfactuals.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_counterfactuals.tex) is the only uncommitted change in the worktree.
+The prose-rules-enforcer hook was satisfied this session ([references/voice.md](file:///C:/Users/maand/.claude/references/voice.md) and [rules/manuscript-writing.md](file:///C:/Users/maand/.claude/rules/manuscript-writing.md) both Read).
