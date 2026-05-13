@@ -355,3 +355,88 @@ This is the six lines under `* TEMPORARY: skip verdier in the 2026-05-12 refit` 
   Future "edit while running" plans should account for this.
 
 with Claude
+
+## Late-evening addendum: refit relaunch + PR-2 + coauthor walkthrough
+
+Resumed after a /clear; user asked to pick back up from the wrap-up.
+
+### Refit relaunched
+
+Confirmed no Stata processes were owning project state.
+Verified the two gating commits were intact: `28a74f2` (verdier early-exit) and `43ab63d` (`$runDashboard 0`).
+Launched `run_master_resume.do` in the background at 13:10:05 (PID 10420).
+
+Pace check ~3.5 hours in: 12 cells refit since launch (`grc_CHN_cuu_ct`, `grc_CHN_cuu_c1` are the most recent on disk), CPU ~100% sustained.
+That's ~8 min/cell on the c1-tier cells, consistent with the pre-orphan-RAM pre-yesterday rate.
+The unrelated `StataMP-64.exe` PID 37364 (1.45 GB, from another project per user) is no longer pressuring this session.
+
+### PR-2 description drafted
+
+Saved to [quality_reports/plans/2026-05-12_pr2-pipeline-refactor.md … err PR-2 file](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/plans/2026-05-12_pr2-dashboard-tooling.md).
+19 commits in scope, ~12.6k lines, gated behind `$runDashboard` so it's additive for coauthors who don't have Python.
+Notes that the `compare.py` rescaler-overlay deletion is part of PR-1's cleanup, not PR-2; once PR-1 lands and PR-2 rebases, the `19cd009` commit's substantive contribution is gone but the surrounding chunk-tolerance fix survives.
+
+### Rescaler cleanup checklist drafted (NOT applied)
+
+Six-step apply-when-refit-verifies checklist saved to [quality_reports/plans/2026-05-12_rescaler-cleanup.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/plans/2026-05-12_rescaler-cleanup.md).
+Exact line ranges in `compare.py` verified against the live file:
+- L78--106: module-level constant + `_cached_rescaled` + `_load_rescaled` + the comment block.
+- L265--270: the substitution branch inside `Fit.headline()`; preserves the surrounding `Delta_avg` extraction.
+
+Steps include `git rm` of `fix_delta_avg_scaling.do` and `delta_avg_rescaled.csv`, the `compare.py` edits, revert of commit `28a74f2` (verdier early-exit), cache refresh, dashboard re-render, and deletion of the `_pre_fix_backup_82766d2/` snapshot.
+
+### Coauthor walkthrough
+
+Built [docs/pipeline-walkthrough.html](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/pipeline-walkthrough.html).
+Audience: Cenci + Kleemans, who know the old pipeline and don't run from terminal or batch.
+Five rounds of revision based on user feedback:
+
+1. First pass framed slice drivers as a headline feature with three entry-point cards.
+   User pushed back: "family" and "extras" are my coinages, coauthors knew these as files 10--15.
+2. Reframed around the six file names (`10_GrRC_experience.do` through `15_GrRC_birth.do`) collapsing into `9_GRC_extras.do`.
+   Adopted the create-overview palette (Source Serif body, Inter eyebrows, sandy-cream).
+   Dropped batch-mode references, `cd` commands, and the batch popup gotcha because coauthors run interactively.
+3. Reframed `run_master_resume.do` honestly: showed the two-line wrapper inline so it's visibly not a parallel pipeline.
+4. Added the ster-rename story (old `GRC_CHN_consumption_urban_unbalanced_exp_c1` → new `grc_CHN_cuu_exp_c1`, driven by Stata's 32-char `_est_` cap).
+   Added the four-tile "common situations" grid with the "force a clean re-fit" tile pointing at ster deletion.
+   Dropped two callouts that were notes for me (do-file pre-loading, estname length) rather than coauthors.
+5. User said it still read flat.
+   Added a hero stat strip; bigger sentence-case h2s with colored left-border accent bars and per-section accent rotation; before/after diagram for the 6→1 merge; side-by-side old-vs-new colored panels for the ster rename; numbered tile badges; alternating row tints on the reference table; magnitude pill on the `~9× to 14×` Delta_avg claim.
+   User asked to drop the hero stat strip; done.
+
+Em-dash policy: all flush via `&mdash;` HTML entity (no surrounding spaces); arrows and multiplication via `&rarr;` / `&times;`.
+American spellings throughout.
+Active voice (rewrote three passive constructions the user spotted: "Defaults are picked", "the path gets used", "are all built").
+
+### Audit-residue pass on the walkthrough
+
+Ran the skill against the walkthrough.
+Report saved to [quality_reports/reviews/2026-05-12_audit-residue_pipeline-walkthrough.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-12_audit-residue_pipeline-walkthrough.md).
+Three mild flags found, all applied:
+- "actually" in the lede (path-not-taken)
+- "Defaults are picked so the pipeline runs end-to-end without you touching anything" (anticipated-objection, mild)
+- "run it the same way you've always run a do-file" (anticipated-objection, mild)
+
+Kept four anticipated-objection-shaped sentences that legitimately address the actual coauthor audience: "works the way you remember", "Python doesn't need to be installed", "those are cheap", and "no manual rescaling needed".
+
+### Style notes for create-overview
+
+User liked the walkthrough's visual hierarchy and asked for portable suggestions to bring back to the create-overview skill.
+First draft included CSS rules and a palette table; user said too specific.
+Cut to a general list of conceptual moves at [docs/create-overview-style-suggestions.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/create-overview-style-suggestions.md).
+Covers: section-header restructuring (kicker + sentence-case h2 with colored bar), accent-color rotation, hero treatment, before/after-panel pattern for contrasts, merge diagrams, magnitude pills, numbered tiles, switch-card defaults, table polish, three-column decoder-key cards, and two caveats specific to porting into create-overview's two-column layout.
+
+## State at hand-off
+
+- Refit (PID 10420) still running; 12 cells refit at ~8 min/cell pace; estimated ~12--14 more hours wall to hit 107 cells.
+- No commits this session.
+  All artifacts are saved markdown / HTML files; no Stata code edits.
+  Mid-refit edits to `0_programs.do` or `0_master.do` wouldn't propagate anyway (Stata pre-loads), so the refit is on the right versions.
+- Open items unchanged from the morning wrap-up: wait for refit, then apply [the rescaler cleanup checklist](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/plans/2026-05-12_rescaler-cleanup.md), revert commit `28a74f2`, refresh dashboard cache, open PR-1.
+
+## Picking back up (refresh)
+
+If refit finishes overnight: verify the 110 affected `_g.ster` files match `delta_avg_rescaled.csv`'s `b_rescaled` to machine epsilon for a sample, then walk the cleanup checklist.
+If refit is still running: leave it alone; mid-run edits won't reach it anyway.
+
+with Claude
