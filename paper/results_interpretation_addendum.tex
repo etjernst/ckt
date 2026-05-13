@@ -1,0 +1,37 @@
+% Results-section addendum: interpretation and scope of the LCA estimates.
+% Drafted 2026-05-13 for inclusion at the end of Section~\ref{sec:results}, after the hukou subsubsection.
+% Standalone .tex; paste directly into sec_results.tex.
+% Cross-references assume the labels in sec_model.tex and sec_results.tex resolve as written.
+
+\subsection{What the LCA estimates identify}\label{sec:interpretation}
+
+The estimates in this section rest on the joint identification assumptions A1--A5, of which A5 (the LCA restriction) is the one we test directly through Hansen's $J$-statistic.
+Across our reported specifications, the test fails to reject at conventional levels in Indonesia and Tanzania, as well as in both hukou-split subsamples for China.
+A2 (the i.i.d.\ assumption on $\nu_{it}^l$) is maintained rather than tested.
+Its role inside the identification set is to underwrite the reading that trajectory membership reflects comparative advantage cleanly.
+The estimated $\phi$, $\beta$, $\mu_{\underline{d}}$, and trajectory-specific $\Delta_{\underline{d}}$ are conditional averages of $\Delta_i$ across trajectories, identified by the GMM moment conditions in equation~\eqref{eq:gmm-moments} under A1--A5 jointly.
+
+Read against the model's decision rule, the estimates nonetheless suggest that observed sorting does not reflect comparative advantage alone.
+Under negative $\phi$ and the rule in equation~\eqref{eq:decision-rule}, the always-urban trajectory $d_T$ should aggregate workers with high pecuniary returns to migration.
+The restricted GRC instead places $\Delta_{d_T}$ near zero or below zero in Indonesia and Tanzania.
+A symmetric pattern holds for never-migrants: under rational sorting the model would predict $\Delta_{d_N}$ near zero or negative, while our estimates place it consistently well above zero.
+
+We do not read this pattern as evidence against A5.
+The LCA restriction holds in the $J$-test sense, and the conditional averages it identifies are well-defined population objects.
+What the pattern instead suggests is that A2 (the i.i.d.\ assumption on $\nu_{it}^l$) is strained: trajectories evidently reflect features beyond comparative advantage alone.
+Persistent amenity value, social ties, and costs of return migration can keep workers in urban locations whose pecuniary returns to migration are not large.
+Symmetric frictions can keep workers rural whose pecuniary returns to migration would be substantial if realized.
+Section~\ref{sec:model_identification} already concedes this possibility; our estimates put magnitudes on it.
+The testable consequence of A2 being strained would be a departure from A5, which the $J$-test would detect.
+That this does not happen in our reported specifications means the strain on A2 does not break the LCA conditional-mean structure.
+The estimated $\Delta_{\underline{d}}$ remain consistent estimates of trajectory-conditional averages; what loosens is the structural reading that those averages represent what rational sorters would have realized.
+
+The China hukou comparison sharpens the reading.
+Where the institutional barrier is absent, in the urban hukou subsample, the LCA estimates align with rational sorting under the decision rule: the estimated return for never-migrants is close to zero, consistent with workers who chose rural because their personal pecuniary return to urban location is approximately zero.
+Where the barrier binds, in the rural hukou subsample, the alignment breaks: the estimated return for never-migrants is large and positive, consistent with workers whose pecuniary returns to migration are unrealized.
+The contrast in $\phi$ across regimes is direct evidence that institutional context shapes which workers reach which trajectories, separately from comparative advantage.
+
+The distinction between identification and behavioral interpretation also clarifies how to read counterfactual statements built from our estimates.
+The LCA structure identifies the consumption side of $\Delta_i$.
+Reallocations that would place workers in locations they currently avoid would raise consumption to the extent characterized by our estimates, but would also forgo non-pecuniary value not captured in $\Delta_i$.
+Our estimates are therefore well-suited to consumption-side comparisons; they are conservative when extended to welfare more broadly.

@@ -8,6 +8,24 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Counterfactual experiments: misallocation, hukou wedge, consumption-to-welfare
+**Added:** 2026-05-13.
+**Branch:** lca-inversion (memo); future implementation likely on a fresh worktree.
+**Context:** the paper currently reports identified parameters but not magnitudes.
+Pro-poor returns ($\phi < 0$) is a coefficient; the non-migrant return is reported through $(\beta, \phi)$ rather than as a per-worker gain.
+Three counterfactual experiments to convert estimates into magnitudes:
+(1) aggregate misallocation accounting (optimal vs observed sorting, % of consumption), with both extremes (no migration vs current; current vs optimal) reported;
+(2) the hukou puzzle and what removing it would unlock (CHN), with a lower-bound version (immediate) and a resorting version using the model's existing decision rule;
+(3) from consumption to welfare: valuing the non-pecuniary side via Suri-style observables (primary, cross-country) and a parametric Heckman-style assumption on $\nu$ (in parallel).
+**Action:** see the design memo at [docs/notes/2026-05-13_counterfactual-experiments-plan.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-13_counterfactual-experiments-plan.md).
+#1 and #2 (bound) use identified objects directly and can be implemented now.
+#2 (resorting) and #3 are model extensions that build on the same trajectory-extraction pipeline.
+**Sequencing:** #1 first (reuses inversion CI machinery, delivers the headline consumption-side number), #2 bound in parallel, #2 resorting and #3 after.
+#1 has three nested reporting options (conservative floor / heterogeneity-corrected / bounded envelope) to pre-empt the within-$d_N$ heterogeneity objection; all three worth delivering.
+**Estimated cost:** #1 one to two days for Option 1 plus two to three days for Options 2--3; #2 bound half a day; #2 resorting two to three days plus a sorting-spec design decision; #3 Route A 3--4 days (observable proxies + per-country probit/logit); Route B 2--3 days (reuses #1 pipeline, adds $\sigma_\eta$ identification + truncated-mean integration).
+**Borjas benchmark (later TODO).** Sketched in the expert pocket of #3 in the memo. Joint-log-normality of $(\theta^U, \theta^R)$ Borjas-style as a robustness exercise; natural panel extensions to adapt are Heckman-Honor\'e (1990), Lemieux (1998), Carneiro-Hansen-Heckman (2003), Cunha-Heckman (2007) factor structure; for migration specifically Dahl (2002), Kennan-Walker (2011), Lagakos-Mobarak-Waugh (2023).
+**Why it matters:** these are the natural way to make the paper's stated contribution---returns for non-migrant subpopulations---read as a magnitude rather than as a slope.
+
 ### Port Delta_always block + inversion CI rows to grc_tex_table_trend_robust
 **Added:** 2026-05-07.
 **Branch:** lca-inversion.

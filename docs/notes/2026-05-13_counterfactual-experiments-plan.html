@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Counterfactual experiments: plan and design notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+<style>
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Source Serif Pro','Charter','Georgia',serif;
+  background: #fafaf7;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 56rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+header.hero {
+  border-bottom: 1px solid #d0cdc4;
+  padding-bottom: 1.4rem;
+  margin-bottom: 2rem;
+}
+.eyebrow {
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b6f3a;
+  margin-bottom: 0.6rem;
+}
+h1 {
+  font-family: 'Source Serif Pro','Charter',serif;
+  font-size: clamp(2.1rem, 4.5vw, 3rem);
+  line-height: 1.08;
+  margin: 0 0 0.65rem;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+}
+h1 .accent { color: #b14e1f; }
+.subtitle { font-size: 1.05rem; color: #444; margin-bottom: 0.3rem; max-width: 38rem; }
+.meta {
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.tldr {
+  background: #fffaf0;
+  border: 1px solid #e6c98a;
+  border-left: 4px solid #b14e1f;
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  margin: 0 0 2rem;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+.tldr .eyebrow { margin-bottom: 0.4rem; color: #b14e1f; }
+.tldr p { margin: 0; }
+
+section { margin-bottom: 2.4rem; position: relative; }
+section > h2 {
+  font-family: 'Source Serif Pro','Charter',serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+  letter-spacing: -0.012em;
+  color: #1a1a1a;
+  padding-left: 0.85rem;
+  border-left: 4px solid #c8983a;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+section.s-rust  > h2 { border-left-color: #b14e1f; }
+section.s-amber > h2 { border-left-color: #c8983a; }
+section.s-olive > h2 { border-left-color: #7a8a5c; }
+section.s-teal  > h2 { border-left-color: #5b8a8a; }
+
+.status-pill {
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+}
+.status-pill.ready   { background: #ead7c4; color: #6b3a1f; }
+.status-pill.design  { background: #f0e6c8; color: #6b5520; }
+
+section > p,
+section > ul,
+section > ol,
+section > div:not(.eyebrow):not(.lead) { margin-left: 0.85rem; }
+section p, section ol, section ul { margin-top: 0; margin-bottom: 0.9rem; }
+section ol, section ul { padding-left: 1.4rem; }
+section ol li, section ul li { margin-bottom: 0.5rem; }
+
+.lead {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #2a2a2a;
+  margin-left: 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  margin: 0.6rem 0 1.2rem 0.85rem;
+}
+@media (min-width: 700px) {
+  .tile-grid { grid-template-columns: 1fr 1fr; }
+}
+.tile {
+  background: white;
+  border: 1px solid #e2dbc4;
+  border-left: 3px solid #8b6f3a;
+  border-radius: 4px;
+  padding: 0.85rem 1rem 0.95rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.tile-header {
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b5520;
+  margin-bottom: 0.35rem;
+}
+.tile.priced { border-left-color: #b14e1f; }
+.tile.priced .tile-header { color: #b14e1f; }
+.tile p { margin: 0 0 0.4rem; }
+.tile p:last-child { margin-bottom: 0; }
+.tile ul { margin: 0; padding-left: 1.1rem; }
+.tile ul li { margin-bottom: 0.25rem; font-size: 0.95rem; }
+
+.contrast-card {
+  display: grid;
+  grid-template-columns: max-content 1fr 1fr;
+  background: white;
+  border: 1px solid #e2dbc4;
+  border-radius: 4px;
+  margin: 0.6rem 0 1.2rem 0.85rem;
+  overflow: hidden;
+}
+.contrast-cell {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #f0ead6;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.contrast-cell:nth-last-child(-n+3) { border-bottom: none; }
+.contrast-head {
+  background: #faf6e8;
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b5520;
+}
+.contrast-label {
+  background: #f3efe4;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+blockquote.callout {
+  margin: 0.6rem 0 0.9rem 0.85rem;
+  padding: 0.6rem 1rem;
+  border-left: 4px solid #b14e1f;
+  background: #fdf4ec;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+  border-radius: 0 4px 4px 0;
+}
+blockquote.callout p { margin: 0 0 0.4rem; }
+blockquote.callout p:last-child { margin-bottom: 0; }
+blockquote.callout strong { color: #b14e1f; }
+
+.eq {
+  background: #fdfaf0;
+  border: 1px solid #e6dcb8;
+  border-radius: 4px;
+  padding: 0.8rem 1rem;
+  margin: 0.6rem 0 0.9rem 0.85rem;
+  font-size: 1rem;
+  overflow-x: auto;
+}
+
+details.expert {
+  background: #fbf8ee;
+  border: 1px solid #e2dbc4;
+  border-radius: 4px;
+  margin: 0.8rem 0 0.9rem 0.85rem;
+  padding: 0;
+}
+details.expert > summary {
+  cursor: pointer;
+  padding: 0.55rem 0.9rem;
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #6b5520;
+  background: #f3efe4;
+  border-radius: 4px 4px 0 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+details.expert > summary::-webkit-details-marker { display: none; }
+details.expert > summary::after {
+  content: 'expand \002b';
+  font-size: 0.74rem;
+  color: #8b6f3a;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-left: 0.6rem;
+}
+details.expert[open] > summary::after { content: 'collapse \2212'; }
+details.expert .expert-body {
+  padding: 0.85rem 1rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+details.expert .expert-body p { margin: 0 0 0.5rem; }
+details.expert .expert-body p:last-child { margin-bottom: 0; }
+
+.notation {
+  background: #f3efe4;
+  border: 1px solid #e2dbc4;
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 2rem;
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.notation h3 {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b6f3a;
+  margin: 0 0 0.7rem;
+}
+.notation dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: 1rem; row-gap: 0.3rem; }
+.notation dt { font-family: 'Source Serif Pro','Charter',serif; font-size: 1rem; color: #1a1a1a; }
+.notation dd { margin: 0; color: #2a2a2a; }
+
+.sequencing {
+  background: #f3f0e2;
+  border: 1px solid #d8cfb3;
+  border-radius: 4px;
+  padding: 1.2rem 1.3rem;
+  margin-top: 2rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+.sequencing h2 {
+  border-left: none;
+  padding-left: 0;
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+  font-size: 1.2rem;
+  color: #6b5520;
+}
+.sequencing ol { padding-left: 1.4rem; margin: 0.4rem 0 0; }
+.sequencing ol li { margin-bottom: 0.5rem; }
+.sequencing ol li strong { color: #b14e1f; }
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid #d0cdc4;
+  font-family: 'Inter','Helvetica Neue',sans-serif;
+  font-size: 0.82rem;
+  color: #666;
+  line-height: 1.55;
+}
+footer code {
+  background: #f0ead6;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+footer a { color: #8b6f3a; text-decoration: none; border-bottom: 1px dotted #8b6f3a; }
+footer a:hover { color: #1a1a1a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Design memo &middot; CKT migration paper</div>
+  <h1>Counterfactual experiments <span class="accent">to develop</span></h1>
+  <p class="subtitle">Four exercises to convert the paper's identified parameters into magnitudes the audience can press on.</p>
+  <p class="meta">2026-05-13 &middot; branch <code style="font-family:'Inter',sans-serif;font-size:0.86rem;background:#f0ead6;padding:0.05rem 0.4rem;border-radius:3px">lca-inversion</code></p>
+</header>
+
+<div class="tldr">
+  <div class="eyebrow">TL;DR</div>
+  <p>The paper currently reports identification and estimates but not magnitudes; these four counterfactuals turn $(\beta, \phi)$ and the LCA extrapolation into per-worker and aggregate consumption numbers, and two of them are implementable with the inversion CI machinery already in hand.</p>
+</div>
+
+<section class="s-amber">
+  <h2>Why these counterfactuals</h2>
+  <p class="lead">Pro-poor returns ($\phi&lt;0$) is a coefficient. The non-migrant extrapolation is reported through the slope and intercept of $\Delta_i = \beta + \phi\theta_i$ rather than as &ldquo;the average never-migrant in country $c$ would gain $X$ log points.&rdquo; The exercises below convert the identified objects into readable magnitudes that align with the paper's stated contribution.</p>
+</section>
+
+<div class="notation">
+  <h3>Notation reminder</h3>
+  <dl>
+    <dt>$y_{it}^l$</dt><dd>systematic log consumption in location $l \in \{R, U\}$</dd>
+    <dt>$\theta_i^R, \theta_i^U$</dt><dd>location-specific time-invariant productivities</dd>
+    <dt>$\theta_i$</dt><dd>$\equiv b_R(\theta_i^U - \theta_i^R)$, rescaled comparative advantage</dd>
+    <dt>$\phi$</dt><dd>$\equiv (b_U - b_R)/b_R$, LCA slope</dd>
+    <dt>$\Delta_i$</dt><dd>$= \beta + \phi\theta_i$, worker-specific return to urban location</dd>
+    <dt>$\mu_{\underline{d}}$</dt><dd>average rural mean for trajectory $\underline{d}$</dd>
+    <dt>$\Delta_{\underline{d}}$</dt><dd>average return for trajectory $\underline{d}$</dd>
+    <dt>$\pi_{\underline{d}}$, $\bar{D}_{\underline{d}}$</dt><dd>population share and urban-period share for trajectory $\underline{d}$</dd>
+    <dt>$\mathcal{D}_S, d_N, d_T$</dt><dd>switcher trajectories, always-rural, always-urban</dd>
+    <dt>$\underline{d}_0$</dt><dd>base switcher trajectory in the restricted GRC</dd>
+  </dl>
+</div>
+
+<section class="s-rust">
+  <h2>1. Aggregate misallocation accounting <span class="status-pill ready">Ready to implement</span></h2>
+  <p class="lead">What is aggregate log consumption under optimal sorting versus observed sorting, expressed as a percentage of observed consumption?</p>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">Identified objects (in hand)</div>
+      <ul>
+        <li>$\pi_{\underline{d}}$, $\mu_{\underline{d}}$, $\bar{D}_{\underline{d}}$ from the data</li>
+        <li>$\Delta_{\underline{d}}$ for switchers from the unrestricted GRC</li>
+        <li>$\Delta_{d_T}$ from the LCA inversion</li>
+        <li>$\Delta_{d_N} = \beta + \phi(\mu_{d_N} - \mu_{\underline{d}_0})$ from LCA extrapolation</li>
+      </ul>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Computation</div>
+      <p>Per-worker gain from optimal sort: $\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}$.</p>
+      <p>Aggregate gap: sum across trajectories weighted by $\pi_{\underline{d}}$.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Headline output</div>
+      <p>Per country, the misallocation gap as a percentage of observed aggregate consumption, decomposed into pieces from $d_N$, switchers, and $d_T$.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Inference</div>
+      <p>For each $(\phi, \beta)$ in the inversion CI, recompute the gap; report the convex hull. Reuses the inversion CI machinery directly.</p>
+    </div>
+  </div>
+
+  <div class="eq">
+$$\text{Misallocation gap} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}\right]$$
+  </div>
+
+  <blockquote class="callout">
+    <p><strong>Where the action is.</strong> The $d_N$ piece dominates because $\pi_{d_N}$ is large in every country (back-of-envelope: $\approx 0.75$ TZA, $\approx 0.65$ CHN, $\approx 0.50$ IDN; shares to verify against descriptives) and $\bar{D}_{d_N} = 0$. The misallocation number is essentially &ldquo;what would never-migrants gain from migrating, on average, weighted by their share.&rdquo;</p>
+  </blockquote>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Both extremes: zero migration as the lower bound</h3>
+
+  <p style="margin-left:0.85rem;">The misallocation gap measures observed sorting versus optimal sorting. Pairing it with the converse&mdash;observed sorting versus zero migration&mdash;brackets where observed migration sits in the range of possibilities. Let $W_{\text{obs}}$, $W_{\text{zero}}$, $W_{\text{opt}}$ denote aggregate log consumption under the three scenarios.</p>
+
+  <div class="eq">
+$$\underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \cdot \Delta_{\underline{d}} \cdot \bar{D}_{\underline{d}}; \qquad \underbrace{W_{\text{opt}} - W_{\text{obs}}}_{\text{misallocation gap}} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}\right]$$
+  </div>
+
+  <p style="margin-left:0.85rem;">The zero-migration calculation is cleaner than the optimal-sort one: the $d_N$ piece drops out ($\bar{D}_{d_N} = 0$), and within-trajectory heterogeneity in $\Delta_i$ does not enter because everyone in a trajectory shares the same $\bar{D}$. Only conditional means are needed, all identified by the GRC. The switcher piece uses the non-parametric $\Delta_{\underline{d}}$ from the unrestricted GRC; the $d_T$ piece uses $\Delta_{d_T}$ from the LCA inversion.</p>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">TZA</div>
+      <p>$d_T$ piece: $\pi_{d_T} \cdot \Delta_{d_T} \approx 0.14 \cdot (-0.66) \approx -9$ log pts.</p>
+      <p>Switcher piece: $\lesssim 0.1$ log pts.</p>
+      <p><strong>Net: $\approx -9$ log pts.</strong> Observed migration delivers <em>negative</em> net welfare under the LCA point estimates.</p>
+    </div>
+
+    <div class="tile priced">
+      <div class="tile-header">IDN</div>
+      <p>$d_T$ piece: $\pi_{d_T} \cdot \Delta_{d_T} \approx 0.46 \cdot (-0.10) \approx -4.4$ log pts.</p>
+      <p>Switcher piece small.</p>
+      <p><strong>Net: $\approx -4$ log pts.</strong> Same direction as TZA, smaller magnitude.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">CHN</div>
+      <p>Pooled spec does not report $\Delta_{d_T}$ (the $J$-test rejects, so the inversion machinery returns empty CIs and the $\Delta_{\text{always}}$ row is omitted from the table).</p>
+      <p>Compute regime by regime once the hukou-split tables are extended to include $\Delta_{d_T}$ rows.</p>
+    </div>
+  </div>
+
+  <blockquote class="callout">
+    <p><strong>Implication.</strong> Combining the two extremes: observed migration delivers no detectable net welfare gain in TZA or IDN under the LCA point estimates, while optimal migration would deliver $\approx 22\%$ (TZA) or $\approx 3.7\%$ (IDN). The misallocation gap is essentially the entire potential value of migration. The lower bound is fragile&mdash;driven by point-estimate $\Delta_{d_T}$ in the wide multi-island inversion CI&mdash;so report it with the same CI propagation as $\Delta_{d_T}$ itself. The upper bound is more robust because it does not depend on $\Delta_{d_T}$ when the $d_N$ piece dominates.</p>
+  </blockquote>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Within-trajectory heterogeneity in returns</h3>
+
+  <p style="margin-left:0.85rem;">The formula above treats every never-migrant as if they share the same return. Under LCA, $\Delta_i = \beta + \phi\theta_i$ varies within trajectory whenever $\theta_i$ does, so the formula is implicitly a no-within-heterogeneity assumption. The GRC identifies the conditional mean $\Delta_{d_N}$ but not the conditional dispersion. The same caveat applies inside $d_T$ and inside switcher trajectories, but $d_N$ is where the share is biggest and the LCA extrapolation does most of the work.</p>
+
+  <blockquote class="callout">
+    <p><strong>Direction of error.</strong> Optimal sort assigns to urban the workers with $\Delta_i &gt; 0$, so the aggregate gain from $d_N$ is $\pi_{d_N} \cdot E[\max(0, \Delta_i) \mid d_N]$, not $\pi_{d_N} \cdot \max(0, E[\Delta_i \mid d_N])$. With $\Delta_{d_N} &gt; 0$, the conditional expectation of the positive part weakly exceeds the positive part of the conditional mean. The trajectory-mean number is a lower bound on the true gap. Under $\phi&lt;0$, the lowest-$\theta$ never-migrants carry the highest unrealized returns, so optimal sort moves precisely those workers&mdash;a feature, not a wrinkle, of the pro-poor finding.</p>
+  </blockquote>
+
+  <p style="margin-left:0.85rem;">Three reporting options, all worth running. Each makes the heterogeneity assumption progressively more explicit.</p>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">Option 1: conservative floor</div>
+      <p>Trajectory-mean formula as written: $\sum_{\underline{d}} \pi_{\underline{d}}\,[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}]$.</p>
+      <p>Defensible as a lower bound under LCA. No extra structure beyond what the GRC already delivers. This is the back-of-envelope $\approx 22\%$ / $6.5\%$ / $3.7\%$.</p>
+      <p><em>How we report it:</em> &ldquo;at least $X\%$ of consumption is unrealized.&rdquo;</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Option 2: heterogeneity-corrected</div>
+      <p>Use the paper's existing decision rule from eq.&nbsp;(6) of the model section: choose urban iff $\beta + \phi\theta_i + (\nu_{it}^U - \nu_{it}^R) &gt; 0$. Under iid shocks, $f_{\theta \mid d_N}(\theta) \propto f_\theta(\theta) \cdot F_\eta(-\beta - \phi\theta)^T$.</p>
+      <p>Parametric choices: $\theta_i \sim N(0, \sigma_\theta^2)$ with $\sigma_\theta$ from cross-trajectory dispersion of $\mu_{\underline{d}}$; $\nu^l$ normal or type-I extreme value. Integrate $\max(0, \beta + \phi\theta)$ over $\theta \mid d_N$ (since $\bar{D}_{d_N} = 0$).</p>
+      <p><em>How we report it:</em> a magnitude, not a floor. Two parametric assumptions made explicit (one for $\theta$, one for $\nu$).</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Option 3: bounded envelope</div>
+      <p>Parameterize the within-$d_N$ dispersion as $\sigma_{\theta \mid d_N} = c \cdot \sigma_\theta$ for $c \in [0, 1]$. At $c = 0$, recovers Option 1 as a point; at $c = 1$, the within share equals the pooled population variance (an upper limit on plausible dispersion).</p>
+      <p>Compute Option 2's integral on a grid of $c$. Plot the gap as a function of $c$; the audience reads the envelope rather than committing to a single value.</p>
+      <p><em>How we report it:</em> a range. Cleanest in that the only choice on the reader's table is &ldquo;how dispersed should you think within-$d_N$ comparative advantage is?&rdquo;</p>
+    </div>
+  </div>
+
+  <blockquote class="callout">
+    <p><strong>Tension with the decision rule.</strong> Under $\phi &lt; 0$ and rational sorting via eq.&nbsp;(6), never-migrants should have $\Delta_{d_N} &lt; 0$ on average (workers with negative returns self-select rural). The empirical $\Delta_{d_N} &gt; 0$ under LCA therefore signals either an institutional barrier that suppresses rational sorting (the hukou story in #2) or LCA misspecification off-support. The misallocation calculation is interpretable either way: it quantifies how much consumption is left on the table by the friction (institutional or specification) that prevents observed sorting from matching the model's predicted sorting.</p>
+  </blockquote>
+
+  <details class="expert">
+    <summary>The deeper concern: LCA out of the switcher support</summary>
+    <div class="expert-body">
+      <p>$(\beta, \phi)$ are identified from switcher trajectories; all three options extrapolate to $d_N$. If LCA is a local approximation around the switcher region, the slope identified from switchers may not carry over to never-migrants, and the $d_N$ piece of every option becomes shaky.</p>
+      <p>The paper already addresses this through the $J$-test and the inversion CI as the primary inference object. The misallocation reporting inherits the same identification machinery and the same caveats; the options above sit on top of LCA, not next to it.</p>
+    </div>
+  </details>
+
+  <details class="expert">
+    <summary>Open question: what to do near $\phi = -1$</summary>
+    <div class="expert-body">
+      <p>The $\Delta_{d_T}$ piece explodes as $\phi$ approaches $-1$ (M&ouml;bius pole; see <a href="2026-04-30_mobius-singularity.md">2026-04-30 note</a>). For specs where the inversion CI brushes $-1$, report the gap restricted to the $d_N$ and switcher pieces, which captures the headline because $d_T$ is small.</p>
+      <p>Open also: log points versus level percentage. The log-point version is cleanest given the consumption equation; the level version is cleaner for the abstract but requires a Jensen adjustment.</p>
+    </div>
+  </details>
+
+  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> Both extremes (no migration vs current, current vs optimal) share a common pipeline---extract trajectory-level $\mu_{\underline{d}}, \Delta_{\underline{d}}, \bar{D}_{\underline{d}}, \pi_{\underline{d}}$ from <code>.ster</code> files and panel data; aggregate; propagate inference through the inversion CI. Pipeline build is 2&ndash;3 days; once built, the zero-migration aggregate and Option 1 of the misallocation calc drop out in parallel. Options 2&ndash;3 add their own 2&ndash;3 days (parametric within-trajectory $\theta_i$ distribution, integration over eq.&nbsp;(6), grid sweep on $c$). Compute cost is small throughout.</p>
+</section>
+
+<section class="s-rust">
+  <h2>2. The hukou puzzle and what removing it would unlock <span class="status-pill ready">Ready to implement</span></h2>
+  <p class="lead">The CHN hukou-split estimates show inverted patterns across regimes. Rural-hukou never-migrants carry a large unrealized return under a flat LCA slope; urban-hukou never-migrants carry essentially zero return under a steep LCA slope. Read together, the two regimes trace out a sorting-suppressed world and a sorting world side by side.</p>
+
+  <div class="contrast-card">
+    <div class="contrast-cell contrast-head"></div>
+    <div class="contrast-cell contrast-head">Rural-hukou</div>
+    <div class="contrast-cell contrast-head">Urban-hukou</div>
+
+    <div class="contrast-cell contrast-label">$\Delta_{d_N}$</div>
+    <div class="contrast-cell">$0.106$ (large, positive)</div>
+    <div class="contrast-cell">$0.006$ (essentially zero)</div>
+
+    <div class="contrast-cell contrast-label">$\phi$</div>
+    <div class="contrast-cell">$-0.04$ (flat slope)</div>
+    <div class="contrast-cell">$-0.97$ (steep slope)</div>
+
+    <div class="contrast-cell contrast-label">$J$-stat (p)</div>
+    <div class="contrast-cell">$12.6$ ($0.13$)</div>
+    <div class="contrast-cell">$7.1$ ($0.22$)</div>
+
+    <div class="contrast-cell contrast-label">Subsample share of CHN</div>
+    <div class="contrast-cell">$\approx 74\%$</div>
+    <div class="contrast-cell">$\approx 26\%$</div>
+  </div>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.4rem 0 0.5rem 0.85rem;color:#1a1a1a;">Mechanical decomposition</h3>
+  <p style="margin-left:0.85rem;">Recall that $\Delta_{d_N} = \beta + \phi(\mu_{d_N} - \mu_{\underline{d}_0})$. Two ways for $\Delta_{d_N}$ to come out where it does:</p>
+  <ul style="margin-left:0.85rem;">
+    <li>Rural-hukou: $\phi \approx 0$ flattens the LCA line, so $\Delta_{d_N} \approx \beta \approx 0.106$. The 10 log point return looks uniform across the comparative-advantage distribution.</li>
+    <li>Urban-hukou: $\phi \approx -1$ tilts the line steeply, and $\beta$ approximately cancels the never-migrant offset $\phi(\mu_{d_N}^{uh} - \mu_{\underline{d}_0}^{uh})$. Never-migrants sit at the point where the line crosses zero.</li>
+  </ul>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.4rem 0 0.5rem 0.85rem;color:#1a1a1a;">Economic reading</h3>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">Rural-hukou: sorting suppressed</div>
+      <p>The institutional barrier prevents workers from sorting on comparative advantage. The estimated LCA slope is flat not because skills are homogeneous, but because the heterogeneity is not being revealed through migration choices&mdash;high-comparative-advantage workers are stuck rural.</p>
+      <p>The 10-log-point $\Delta_{d_N}^{rh}$ is the unrealized return that sorting would deliver. It looks uniform precisely because the workers who would sort have not been allowed to, so the observed slope cannot distinguish them.</p>
+    </div>
+
+    <div class="tile priced">
+      <div class="tile-header">Urban-hukou: sorting works</div>
+      <p>Workers choose where to locate. Comparative advantage drives the choice. The steep negative $\phi^{uh}$ reflects revealed heterogeneity in returns.</p>
+      <p>Never-migrants here are not blocked, they are sorted. They chose rural because their personal return to urban location is approximately zero. The $\Delta_{d_N}^{uh} \approx 0$ describes optimally placed workers, not victims of an institutional wedge.</p>
+    </div>
+  </div>
+
+  <blockquote class="callout">
+    <p><strong>Implication.</strong> The hukou system suppresses the comparative-advantage sorting that operates freely for urban-hukou holders. The fact that $\phi$ varies across subsamples is itself the evidence that institutions, not just preferences, are doing real work.</p>
+  </blockquote>
+
+  <details class="expert">
+    <summary>Is this regime-driven, or an LCA misspecification artifact?</summary>
+    <div class="expert-body">
+      <p>A competing reading is that $\Delta_i = \beta + \phi\theta_i$ holds within each regime but with different $(\beta, \phi)$ because the LCA linearity is a local approximation that bends differently when fit to different selected populations. Under that reading, $\phi^{rh} \neq \phi^{uh}$ is a specification fact, not an institutional fact.</p>
+      <p>The way to discriminate is the hukou-split overid tests. Both $J$-statistics fail to reject in the column-5 specification ($p^{rh} = 0.13$, $p^{uh} = 0.22$). The LCA restriction looks fine within each regime; the institutional reading is the more parsimonious one.</p>
+    </div>
+  </details>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.8rem 0 0.5rem 0.85rem;color:#1a1a1a;">What removing hukou would unlock</h3>
+
+  <p style="margin-left:0.85rem;">The counterfactual question is: what if rural-hukou holders could sort freely? Under the reading above, the high-return workers would migrate, and the residual never-migrants would have expected return close to zero, matching the urban-hukou pattern. The welfare gain is the integral of positive returns over the rural-hukou never-migrant distribution.</p>
+
+  <div class="eq">
+$$\text{Welfare gain (lower bound)} \;\approx\; \pi^{rh} \cdot \pi_{d_N}^{rh} \cdot \Delta_{d_N}^{rh} \;\approx\; 0.74 \cdot 0.65 \cdot 0.106 \;\approx\; 5 \text{ log points}$$
+  </div>
+
+  <p style="margin-left:0.85rem;">The bound is conservative: it assumes the flat $\phi^{rh}$ reflects genuine uniformity of returns, so every rural-hukou never-migrant gets the same 10 log points. If the flat slope is instead a censoring artifact of suppressed sorting, the welfare gain rises above the bound because optimal sort selects the high-return tail.</p>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">Lower bound (now, no simulation)</div>
+      <p>Existing estimates already pin a $\approx 5$ log point welfare gain from removing hukou. Carry the inversion CI on $\phi^{rh}$ and $\Delta_{d_N}^{rh}$ for a confidence band.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Resorting version (primary)</div>
+      <p>Use the model's existing decision rule from eq.&nbsp;(6) in [sec_model.tex]. Parameterize the hukou barrier as an additive cost $c$ that shifts $\beta^{rh}$ down to $\beta^{uh}$; removing hukou sets $c = 0$. Simulate which rural-hukou workers select urban under the no-barrier rule.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">What simulation adds</div>
+      <p>Distributional bounds: the lower bound assumes uniform returns; the resorting simulation delivers a magnitude rather than a bound, and a confidence interval that propagates through the choice model.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Headline output</div>
+      <p>Percentage gain in CHN aggregate consumption from removing the hukou wedge, decomposed into (a) returns realized by the marginal migrant and (b) the unrealized return left in the residual never-migrant pool.</p>
+    </div>
+  </div>
+
+  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> bound is half a day, sits inside #1's machinery. Resorting version uses the model's existing decision rule and needs (i) a parametric form for the shock distribution $F_\eta$ (paper leaves it iid but unspecified), (ii) a parameterization of the institutional barrier, (iii) simulation of choice probabilities. 2&ndash;3 days once the sorting specification is locked in.</p>
+</section>
+
+<section class="s-amber">
+  <h2>3. From consumption to welfare: valuing the non-pecuniary side <span class="status-pill design">Design open</span></h2>
+  <p class="lead">All four counterfactuals above report consumption-side statistics. Converting them to welfare requires putting a value on the non-pecuniary component of $\nu^U_i - \nu^R_i$, which the LCA framework deliberately does not identify on its own. Two routes are available, both with precedent: observable proxies in the Suri (2011) style and a parametric assumption on $\nu$ in the Heckman style. We plan to do both.</p>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Route A: Suri-style observables</h3>
+
+  <p style="margin-left:0.85rem;">Suri (2011, Section 7) resolves her high-counterfactual-returns puzzle by relating predicted $\hat\theta_i$ to observable cost proxies (distance to fertilizer sellers, distance to roads, infrastructure) rather than imputing the cost component from choice probabilities under a distributional assumption. The analogous move for us: model the persistent component of $\nu^U_i - \nu^R_i$ as $X_i'\gamma$ for some observable vector $X_i$ that affects non-pecuniary value of location but not the consumption return $\Delta_i$. The decision rule becomes &ldquo;choose urban iff $\beta + \phi\theta_i + X_i'\gamma + (\text{iid component}) > 0$.&rdquo; The GRC already identifies $\Delta_i$; a probit or logit using $X_i$ alongside the trajectory predictions of $\Delta_i$ pins down $\gamma$. Welfare counterfactuals then include $X_i'\gamma$ as the non-pecuniary value the model puts on observed location.</p>
+
+  <p style="margin-left:0.85rem;">The benefit of doing this cross-country: it generalizes the hukou comparison we already have, which only speaks for China. We can run the same exercise in Indonesia and Tanzania with appropriate observables.</p>
+
+  <div class="tile-grid">
+    <div class="tile">
+      <div class="tile-header">Cross-country observables</div>
+      <ul>
+        <li>Distance from birthplace or origin village (direct Suri analog)</li>
+        <li>Family network at origin (relatives in rural area)</li>
+        <li>Ethnic or community ties concentrated by location</li>
+        <li>Marital status and household composition</li>
+        <li>Age and life-cycle position</li>
+      </ul>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Country-specific augmentations</div>
+      <ul>
+        <li>CHN: hukou (already have); native-province status; family in rural counties</li>
+        <li>IDN: Javanese-or-not; transmigration history; family in origin village</li>
+        <li>TZA: ethnic group; linguistic region; family ties at origin</li>
+      </ul>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Exclusion restriction concerns</div>
+      <p>$X_i$ must affect non-pecuniary value of location but not the consumption return $\Delta_i$. Variables already in the consumption equation (education, age, female) cannot also serve as exclusion restrictions because they enter $\Delta_i$ via $\gamma$. Distance to birthplace and family-network variables are the most defensible candidates.</p>
+    </div>
+
+    <div class="tile">
+      <div class="tile-header">Headline output</div>
+      <p>Country-level decomposition: how much of the gap between observed sorting and rational-sorting predictions is attributable to identifiable non-pecuniary observables versus residual unexplained variation. The residual is what the parametric route would then have to value.</p>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Route B: parametric (in parallel)</h3>
+
+  <p style="margin-left:0.85rem;">Maintain the paper's existing A2 (iid $\nu$) and add a parametric form for $\eta_{it} = \nu^U_{it} - \nu^R_{it}$. Two natural choices: type-I extreme value (logit-style choice probabilities, closed-form expected utility, $\sigma_\eta^2 = \pi^2 \sigma^2 / 6$); or normal (probit-style, slightly more numerical work but familiar in empirical micro). Identification: under iid $\eta$,</p>
+
+  <div class="eq">
+$$\pi_{d_T} = E_\theta\!\left[(1 - F_\eta(-\Delta(\theta)))^T\right]$$
+  </div>
+
+  <p style="margin-left:0.85rem;">pins down $\sigma_\eta$ from the observed trajectory share $\pi_{d_T}$, the GMM-identified distribution of $\Delta_i$, and the panel length $T$. Multiple trajectory shares give over-identification. Once $\sigma_\eta$ is pinned, the non-pecuniary value to a $d_T$ worker is the truncated mean $E[\eta \mid d_T]$, a standard Heckman-style inverse-Mills-ratio calculation. This is the same machinery Suri uses for her ATE/TT/MTE benchmarks in Section 5.2 of her paper.</p>
+
+  <blockquote class="callout">
+    <p><strong>Why both.</strong> Route A makes the empirical case (&ldquo;here is what we can attribute to identifiable amenity proxies&rdquo;). Route B delivers a single welfare number under a stated distributional assumption (&ldquo;under iid type-I EV, the welfare gap is X%&rdquo;). The two are complements, not substitutes. Reporting both gives a defensible range and lets the audience choose the reading they trust most.</p>
+  </blockquote>
+
+  <details class="expert">
+    <summary>Borjas-style benchmark (later TODO)</summary>
+    <div class="expert-body">
+      <p>Borjas (1987) assumes joint log-normality of $(\theta^U, \theta^R)$ in source and destination, then identifies skill prices and selection patterns from cross-sectional wage moments. Our LCA approach deliberately avoids this distributional assumption. Worth running as a benchmark robustness exercise: estimate $b_U$ and $b_R$ separately under joint log-normality, characterize selection patterns, compare to what LCA delivers.</p>
+      <p>Panel extensions of Borjas that we should cite or adapt:</p>
+      <ul>
+        <li><em>Heckman &amp; Honor&eacute; (1990, ECMA)</em>: formal identification result for the Roy model under different data structures including panels.</li>
+        <li><em>Lemieux (1998, JOLE)</em>: panel-based CRC, the direct ancestor of Suri and CKT.</li>
+        <li><em>Carneiro, Hansen, &amp; Heckman (2003, IER); Cunha, Heckman, &amp; Navarro (2005, 2006); Cunha &amp; Heckman (2007)</em>: factor structure approach. Recover the joint distribution of $(\theta^U, \theta^R)$ from panel plus auxiliary measurements without imposing joint normality. The cleanest panel extension of Borjas in spirit.</li>
+        <li><em>Heckman &amp; Vytlacil (2005, ECMA)</em>: MTE framework with panel data; identifies the full distribution of treatment effects.</li>
+        <li><em>Dahl (2002, ECMA); Kennan &amp; Walker (2011, ECMA)</em>: migration-specific. Dahl: multi-destination Roy with selection correction. Kennan-Walker: dynamic Roy of migration with panel, modern structural template.</li>
+        <li><em>Lagakos, Mobarak, &amp; Waugh (2023)</em>: recent migration-specific structural Roy with cross-country data, closest in spirit to our setting.</li>
+      </ul>
+      <p>The natural Borjas-with-panel adaptation for us would be Carneiro-Hansen-Heckman / Cunha-Heckman: factor structure recovery of the joint skill distribution, then Borjas-style selection characterization. Less ambitious than Kennan-Walker; more honest about its parametric structure than vanilla Borjas.</p>
+    </div>
+  </details>
+
+  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> Route A requires identifying defensible observable proxies and verifying their availability across the three panels (CFPS, IFLS, TZNPS); estimation is then a probit/logit per country plus integration of $X_i'\gamma$ into the counterfactual aggregates. Maybe 3&ndash;4 days. Route B reuses the same trajectory-level estimates and adds the $\sigma_\eta$ identification step plus truncated-mean integration. 2&ndash;3 days. Borjas benchmark is a separate exercise, lower priority.</p>
+</section>
+
+<section class="s-olive">
+  <h2>How to read the results: identification vs behavior</h2>
+  <p class="lead">A natural reaction to the negative $\Delta_{d_T}$ and the positive $\Delta_{d_N}$ is: &ldquo;the results contradict what the model would predict under rational sorting, so why is it OK to estimate this model in the first place?&rdquo; This section is the defense. The short answer: the parameters are identified by moment conditions that don't require the decision rule to literally describe choice behavior. The model isolates the pecuniary return $\Delta_i$ from non-pecuniary factors; observing that pecuniary returns don't fully explain location choices is a finding the model surfaces, not a failure of the model.</p>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">What the moments actually need</h3>
+
+  <p style="margin-left:0.85rem;">The GRC + LCA identification rests on the moment conditions</p>
+
+  <div class="eq">
+$$E[\varepsilon_{it} \cdot z_{it}] = 0,$$
+  </div>
+
+  <p style="margin-left:0.85rem;">where $z_{it}$ contains trajectory indicators and their interactions with $D_{it}$. These moments hold under A1--A5 in <a href="file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/sections/sec_model.tex">sec_model.tex:259--265</a>: time-invariant $\theta_i^l$, i.i.d.\ $\nu^l$, constant $\beta$, symmetric covariate effects ($\gamma^U = \gamma^R$), and LCA. The decision rule in eq.&nbsp;(6) does not enter the moments. It is a narrative device for why trajectories carry information about $\theta_i$. The orthogonality of $\varepsilon$ to trajectory indicators is what does the identification work.</p>
+
+  <blockquote class="callout">
+    <p><strong>The key distinction.</strong> A1&ndash;A5 jointly imply the moments hold. Of these, A5 (LCA) is the one formally testable through Hansen's $J$; A1&ndash;A4 are maintained. The estimated $(\beta, \phi, \mu_{\underline{d}}, \Delta_{\underline{d}})$ are conditional averages of $\Delta_i$ across trajectories&mdash;well-defined population objects. What A2 contributes inside the identification set is the structural reading that trajectory membership cleanly reflects comparative advantage; that reading is what loosens if A2 is strained, while the conditional-average interpretation of the estimates is preserved as long as A5 holds (which $J$ checks).</p>
+  </blockquote>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">The $J$-test is the formal check</h3>
+
+  <p style="margin-left:0.85rem;">Hansen's $J$ tests whether the LCA restriction (A5) is consistent with the over-identified moment conditions. If LCA fails badly, $J$ rejects. In our reported specs:</p>
+
+  <table style="margin: 0.6rem 0 1.2rem 0.85rem; border-collapse: collapse; font-family: 'Inter',sans-serif; font-size: 0.92rem; background: white; border: 1px solid #e2dbc4; border-radius: 4px; overflow: hidden;">
+    <thead>
+      <tr style="background: #faf6e8;">
+        <th style="padding: 0.5rem 1rem; text-align: left; font-weight: 700; color: #6b5520; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.78rem; border-bottom: 1px solid #d8cfb3;">Specification</th>
+        <th style="padding: 0.5rem 1rem; text-align: right; font-weight: 700; color: #6b5520; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.78rem; border-bottom: 1px solid #d8cfb3;">$J$-stat</th>
+        <th style="padding: 0.5rem 1rem; text-align: right; font-weight: 700; color: #6b5520; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.78rem; border-bottom: 1px solid #d8cfb3;">$p$-value</th>
+        <th style="padding: 0.5rem 1rem; text-align: left; font-weight: 700; color: #6b5520; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.78rem; border-bottom: 1px solid #d8cfb3;">Verdict</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">CHN pooled, col 5</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$17.6$</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$0.025$</td>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6; color: #b14e1f;">Rejects at 5%</td>
+      </tr>
+      <tr>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">TZA, col 5</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$3.8$</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$0.28$</td>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">Fails to reject</td>
+      </tr>
+      <tr>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">IDN, col 5</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$28.2$</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$0.40$</td>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">Fails to reject</td>
+      </tr>
+      <tr>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">CHN rural-hukou, col 5</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$12.6$</td>
+        <td style="padding: 0.4rem 1rem; text-align: right; border-bottom: 1px solid #f0ead6;">$0.13$</td>
+        <td style="padding: 0.4rem 1rem; border-bottom: 1px solid #f0ead6;">Fails to reject</td>
+      </tr>
+      <tr>
+        <td style="padding: 0.4rem 1rem;">CHN urban-hukou, col 5</td>
+        <td style="padding: 0.4rem 1rem; text-align: right;">$7.1$</td>
+        <td style="padding: 0.4rem 1rem; text-align: right;">$0.22$</td>
+        <td style="padding: 0.4rem 1rem;">Fails to reject</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-left:0.85rem;">The pooled CHN rejection is exactly why the paper splits by hukou. In every other spec we would report, the data do not reject LCA. The moments hold. The LCA holds. The estimates are reliable as conditional averages.</p>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">What the negative $\Delta_{d_T}$ means</h3>
+
+  <p style="margin-left:0.85rem;">It is a finding within the model, not a failure of the model. The model identifies, separately, the pecuniary return $\Delta_i = \beta + \phi\theta_i$ and the non-pecuniary residual $\nu_{it}^l$. The observation that some workers stay urban despite $\Delta_{d_T} &lt; 0$ tells you the non-pecuniary side&mdash;$\nu$, or whatever it stands in for&mdash;is doing real work for those workers. That is a substantive insight the model enables you to see, not evidence that the model is wrong.</p>
+
+  <p style="margin-left:0.85rem;">A2 (i.i.d.\ $\nu$) is the piece strained by this finding. The paper already concedes (<a href="file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/sections/sec_model.tex">sec_model.tex:108</a>) that persistent non-pecuniary factors would weaken the trajectory-as-$\theta$ interpretation. A2 plays a specific role in identification: it underwrites the reading that trajectory membership reflects comparative advantage cleanly. The negative $\Delta_{d_T}$ is evidence that A2 is approximately rather than strictly true&mdash;workers stay urban for reasons beyond current $\theta$ realizations. The testable consequence is whether A5 (LCA) holds despite A2 being strained, and that is exactly what $J$ checks. In our reported specs $J$ does not reject. The estimates remain consistent estimates of trajectory-conditional averages; what loosens is the structural reading that those averages represent &ldquo;what rational sorters in trajectory $\underline{d}$ would have realized.&rdquo;</p>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">One real qualification for the counterfactual</h3>
+
+  <p style="margin-left:0.85rem;">Our misallocation gap is a <em>consumption</em> gap, not a <em>welfare</em> gap. If $d_T$ workers stay urban because of persistent non-pecuniary amenity value not captured in $\Delta_i$, the reallocation that puts them rural raises their consumption but lowers their utility. The consumption number is still well-defined and meaningful; it just is not the same as a welfare number. Standard practice in this literature is to report the consumption gap and acknowledge the non-pecuniary caveat. That is the right move here too.</p>
+
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Framing for a referee</h3>
+
+  <p style="margin-left:0.85rem;">The defensible position has four parts.</p>
+
+  <div class="tile-grid">
+    <div class="tile priced">
+      <div class="tile-header">1. Moment conditions hold</div>
+      <p>A1&ndash;A5 jointly imply the moments. A5 is the testable piece; $J$ does not reject in the specs we report. A2 is maintained, evidently strained by the negative $\Delta_{d_T}$, but not strained enough to violate A5.</p>
+    </div>
+
+    <div class="tile priced">
+      <div class="tile-header">2. Negative $\Delta_{d_T}$ is a finding, not a failure</div>
+      <p>It says non-pecuniary factors are quantitatively important for always-urban workers, consistent with the literature on urban amenities, social ties, and migration costs. The model lets us measure this without making a stand on what those factors are.</p>
+    </div>
+
+    <div class="tile priced">
+      <div class="tile-header">3. Consumption side is cleanly identified</div>
+      <p>The misallocation gap is a consumption-side statistic. A welfare-side statistic would require structure on $\nu$ that the data do not pin down. The consumption number is the conservative, cleanly identified object.</p>
+    </div>
+
+    <div class="tile priced">
+      <div class="tile-header">4. Hukou is the validation</div>
+      <p>Where the institutional barrier is absent (urban-hukou), the LCA estimates align with rational sorting. Where it binds (rural-hukou), they do not. That gives the paper a natural &ldquo;consumption matters AND institutions matter&rdquo; reading without overclaiming on the welfare side.</p>
+    </div>
+  </div>
+
+  <blockquote class="callout">
+    <p><strong>The punchline.</strong> The response to &ldquo;the results are telling you the model is wrong&rdquo; is: no, the results are using the model to tell us something we couldn't see without it&mdash;that non-pecuniary or institutional factors are quantitatively important. The model isolates the pecuniary return; that is its job. The fact that observed migration doesn't perfectly track pecuniary returns is the finding, not the bug.</p>
+  </blockquote>
+</section>
+
+<div class="sequencing">
+  <h2>Sequencing</h2>
+  <ol>
+    <li><strong>#1 first.</strong> Reuses the inversion CI machinery and delivers the headline number ($\approx 22\%$ TZA, $\approx 6.5\%$ CHN, $\approx 3.7\%$ IDN).</li>
+    <li><strong>#2 bound, in parallel.</strong> The $\approx 5$ log point lower bound on the welfare cost of hukou falls out of #1's machinery applied to the rural-hukou subsample; no new model.</li>
+    <li><strong>#2 resorting version next.</strong> Uses the model's existing decision rule (eq.~6); converts the bound into a magnitude-plus-CI and tells the cleaner policy story.</li>
+    <li><strong>#3 after.</strong> Route A (Suri-style observables) requires cataloging available proxies across CFPS, IFLS, TZNPS and re-estimating with the choice equation augmented; Route B (parametric) reuses #1's pipeline plus an $\sigma_\eta$ identification step.</li>
+  </ol>
+  <p style="margin-top:0.8rem;margin-bottom:0;">#1 and #2 (bound) are paper-ready additions in their current scope. #2 (resorting) and #3 are model extensions; #3 is the route from consumption-side to welfare-side counterfactuals. A Borjas-style benchmark with panel extensions sits in the back of our mind as a robustness exercise for later (see the expert pocket under #3).</p>
+</div>
+
+<footer>
+  <p>Source memo: <code>docs/notes/2026-05-13_counterfactual-experiments-plan.md</code>. TODO entry: <code>docs/TODO.md</code>, top of the Active section.</p>
+  <p>Related: <code>docs/notes/2026-04-30_mobius-singularity.md</code> for the $\phi = -1$ pole; <code>paper/main.tex</code> &sect;3 for the GRC notation.</p>
+</footer>
+
+</div>
+</body>
+</html>
