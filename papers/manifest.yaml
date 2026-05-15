@@ -5,25 +5,24 @@
 
 Verdier:
   citekey: verdierAverageTreatmentEffects2020
-  title: Average Treatment Effects for Stayers with Correlated Random Coefficient
-    Models of Panel Data
+  title: Average Treatment Effects for Stayers with Correlated Random Coefficient Models of Panel Data
   first_author: Verdier
   year: 2020
   venue: Journal of Applied Econometrics
   extraction_dir: papers/extracted/verdierAverageTreatmentEffects2020
+  central_paper_id: verdierAverageTreatmentEffects2020
 VV-appendix:
   citekey: verdierAverageTreatmentEffects2020appendix
-  title: Average Treatment Effects for Stayers with Correlated Random Coefficient
-    Models of Panel Data — Online Appendix
+  title: Average Treatment Effects for Stayers with Correlated Random Coefficient Models of Panel Data — Online Appendix
   first_author: Verdier
   year: 2020
   venue: Journal of Applied Econometrics
   note: Online appendix / supplementary material for verdierAverageTreatmentEffects2020
   extraction_dir: papers/extracted/verdierAverageTreatmentEffects2020appendix
+  central_paper_id: verdierAverageTreatmentEffects2020appendix
 dhaultfoeuilleInferenceExtendedRoy2013:
   citekey: dhaultfoeuilleInferenceExtendedRoy2013
-  title: Inference on an extended Roy model, with an application to schooling decisions
-    in France
+  title: Inference on an extended Roy model, with an application to schooling decisions in France
   first_author: D'Haultfoeuille
   authors:
   - D'Haultfoeuille
@@ -31,3 +30,19 @@ dhaultfoeuilleInferenceExtendedRoy2013:
   year: 2013
   venue: Journal of Econometrics
   extraction_dir: papers/extracted/dhaultfoeuilleInferenceExtendedRoy2013
+  central_paper_id: dhaultfoeuilleInferenceExtendedRoy2013
+ruralpensions:
+  citekey: gaiRuralPensionsLabor2025
+  title: 'Rural Pensions, Labor Reallocation, and Aggregate Income: An Empirical and Quantitative Analysis of China'
+  first_author: Gai
+  authors:
+  - Gai
+  - Guo
+  - Li
+  - Shi
+  - Zhu
+  year: 2025
+  venue: Econometrica
+  doi: 10.3982/ECTA19699
+  extraction_dir: papers/extracted/gaiRuralPensionsLabor2025
+  central_paper_id: gaiRuralPensionsLabor2025
