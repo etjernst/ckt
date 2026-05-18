@@ -8,6 +8,17 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
+### Paper figure: density of trajectory rural log consumption with never-migrants highlighted
+**Added:** 2026-05-18.
+**Branch:** lca-inversion.
+**Context:** the first-pass diagnostic from decision A6 (out-of-support extrapolation) produced informative figures showing that $\hat\mu_{d_N}$ sits inside the switcher hull in all three countries (CHN 26%, IDN 24%, TZA 8% from the lower edge).
+First-pass artifacts at [docs/notes/2026-05-18_extrapolation_support_diagnostic.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-18_extrapolation_support_diagnostic.md) and [explorations/2026-05-18_extrapolation_support_diagnostic.do](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/2026-05-18_extrapolation_support_diagnostic.do).
+**Action:** promote a polished version of these figures (likely the per-trajectory variant) to a paper appendix or main-text figure with prose that explains how the visual supports the LCA-extrapolation reading.
+A natural location is the section where $\hat\Delta_{d_N}$ is first reported, or a methods appendix on identification.
+The TZA boundary case ($\hat\mu_{d_N}$ at 8% of switcher range) deserves a textual flag.
+**Pre-reqs for polishing:** thicker / more visible switcher min--max lines, possibly add endpoint markers, choose between lumped-switcher and per-trajectory variant, integrate into the paper's figure style.
+**Why it matters:** the headline E1 misallocation magnitude is dominated by the $d_N$ piece, which is identified by LCA extrapolation; the figure is the cleanest visual defense that the extrapolation is interpolation in support.
+
 ### Counterfactual experiments: misallocation, hukou wedge, consumption-to-welfare
 **Added:** 2026-05-13.
 **Branch:** lca-inversion (memo); future implementation likely on a fresh worktree.

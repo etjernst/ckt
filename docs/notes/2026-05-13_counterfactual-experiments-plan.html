@@ -325,6 +325,8 @@ footer a:hover { color: #1a1a1a; }
   <p>The paper currently reports identification and estimates but not magnitudes; these four counterfactuals turn $(\beta, \phi)$ and the LCA extrapolation into per-worker and aggregate consumption numbers, and two of them are implementable with the inversion CI machinery already in hand.</p>
 </div>
 
+<p class="meta" style="margin: -1rem 0 2rem; font-style: italic;">Design notes after the 2026-05-18 methods review; see the <a href="file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-05-18-counterfactual-experiments.md" style="color:#8b6f3a;">implementation plan</a> for the build sequence.</p>
+
 <section class="s-amber">
   <h2>Why these counterfactuals</h2>
   <p class="lead">Pro-poor returns ($\phi&lt;0$) is a coefficient. The non-migrant extrapolation is reported through the slope and intercept of $\Delta_i = \beta + \phi\theta_i$ rather than as &ldquo;the average never-migrant in country $c$ would gain $X$ log points.&rdquo; The exercises below convert the identified objects into readable magnitudes that align with the paper's stated contribution.</p>
@@ -386,15 +388,15 @@ $$\text{Misallocation gap} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max
     <p><strong>Where the action is.</strong> The $d_N$ piece dominates because $\pi_{d_N}$ is large in every country (back-of-envelope: $\approx 0.75$ TZA, $\approx 0.65$ CHN, $\approx 0.50$ IDN; shares to verify against descriptives) and $\bar{D}_{d_N} = 0$. The misallocation number is essentially &ldquo;what would never-migrants gain from migrating, on average, weighted by their share.&rdquo;</p>
   </blockquote>
 
-  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Both extremes: zero migration as the lower bound</h3>
+  <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Both extremes: no further migration as the lower bound</h3>
 
-  <p style="margin-left:0.85rem;">The misallocation gap measures observed sorting versus optimal sorting. Pairing it with the converse&mdash;observed sorting versus zero migration&mdash;brackets where observed migration sits in the range of possibilities. Let $W_{\text{obs}}$, $W_{\text{zero}}$, $W_{\text{opt}}$ denote aggregate log consumption under the three scenarios.</p>
+  <p style="margin-left:0.85rem;">The misallocation gap measures observed sorting versus optimal sorting. Pairing it with the converse---observed sorting versus a no-further-migration scenario in which workers stay where their first observed period puts them---brackets where observed migration sits in the range of possibilities. The intensive-margin reading is deliberate: the counterfactual fixes subsequent location switching at zero but does not undo extensive-margin migration that occurred before the panel begins, so it isolates the value of within-panel location switching rather than the value of migration over a lifetime. Let $W_{\text{obs}}$, $W_{\text{nofm}}$, $W_{\text{opt}}$ denote aggregate log consumption under the three scenarios.</p>
 
   <div class="eq">
-$$\underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \cdot \Delta_{\underline{d}} \cdot \bar{D}_{\underline{d}}; \qquad \underbrace{W_{\text{opt}} - W_{\text{obs}}}_{\text{misallocation gap}} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}\right]$$
+$$\underbrace{W_{\text{obs}} - W_{\text{nofm}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \cdot \Delta_{\underline{d}} \cdot \bar{D}_{\underline{d}}; \qquad \underbrace{W_{\text{opt}} - W_{\text{obs}}}_{\text{misallocation gap}} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \bar{D}_{\underline{d}}\right]$$
   </div>
 
-  <p style="margin-left:0.85rem;">The zero-migration calculation is cleaner than the optimal-sort one: the $d_N$ piece drops out ($\bar{D}_{d_N} = 0$), and within-trajectory heterogeneity in $\Delta_i$ does not enter because everyone in a trajectory shares the same $\bar{D}$. Only conditional means are needed, all identified by the GRC. The switcher piece uses the non-parametric $\Delta_{\underline{d}}$ from the unrestricted GRC; the $d_T$ piece uses $\Delta_{d_T}$ from the LCA inversion.</p>
+  <p style="margin-left:0.85rem;">The no-further-migration calculation is cleaner than the optimal-sort one: the $d_N$ piece drops out ($\bar{D}_{d_N} = 0$), and within-trajectory heterogeneity in $\Delta_i$ does not enter because everyone in a trajectory shares the same $\bar{D}$. Only conditional means are needed, all identified by the GRC. The switcher piece uses the non-parametric $\Delta_{\underline{d}}$ from the unrestricted GRC; the $d_T$ piece uses $\Delta_{d_T}$ from the LCA inversion.</p>
 
   <div class="tile-grid">
     <div class="tile priced">
@@ -419,7 +421,7 @@ $$\underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migrati
   </div>
 
   <blockquote class="callout">
-    <p><strong>Implication.</strong> Combining the two extremes: observed migration delivers no detectable net welfare gain in TZA or IDN under the LCA point estimates, while optimal migration would deliver $\approx 22\%$ (TZA) or $\approx 3.7\%$ (IDN). The misallocation gap is essentially the entire potential value of migration. The lower bound is fragile&mdash;driven by point-estimate $\Delta_{d_T}$ in the wide multi-island inversion CI&mdash;so report it with the same CI propagation as $\Delta_{d_T}$ itself. The upper bound is more robust because it does not depend on $\Delta_{d_T}$ when the $d_N$ piece dominates.</p>
+    <p><strong>Implication.</strong> Combining the two extremes: observed migration delivers no detectable net welfare gain in TZA or IDN under the LCA point estimates, while optimal migration would deliver $\approx 22\%$ (TZA) or $\approx 3.7\%$ (IDN). The misallocation gap is essentially the entire potential value of within-panel migration. The lower bound is fragile---driven by point-estimate $\Delta_{d_T}$ in the wide multi-island inversion CI---so report it with the same CI propagation as $\Delta_{d_T}$ itself. The upper bound is more robust because it does not depend on $\Delta_{d_T}$ when the $d_N$ piece dominates. When the joint $(\phi, \beta)$ inversion CI is empty (the LCA-restricted model is rejected at $\alpha$), the headline cell splits into the identified piece (always reportable: $W_{\text{obs}} - W_{\text{nofm}}$ uses the non-parametric switcher $\Delta_{\underline{d}}$ and the inversion $\Delta_{d_T}$) and the LCA-dependent piece ($W_{\text{opt}} - W_{\text{obs}}$, reportable only when the joint CI is non-empty). This matches the existing CHN-pooled / hukou-split convention.</p>
   </blockquote>
 
   <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Within-trajectory heterogeneity in returns</h3>
@@ -430,7 +432,7 @@ $$\underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migrati
     <p><strong>Direction of error.</strong> Optimal sort assigns to urban the workers with $\Delta_i &gt; 0$, so the aggregate gain from $d_N$ is $\pi_{d_N} \cdot E[\max(0, \Delta_i) \mid d_N]$, not $\pi_{d_N} \cdot \max(0, E[\Delta_i \mid d_N])$. With $\Delta_{d_N} &gt; 0$, the conditional expectation of the positive part weakly exceeds the positive part of the conditional mean. The trajectory-mean number is a lower bound on the true gap. Under $\phi&lt;0$, the lowest-$\theta$ never-migrants carry the highest unrealized returns, so optimal sort moves precisely those workers&mdash;a feature, not a wrinkle, of the pro-poor finding.</p>
   </blockquote>
 
-  <p style="margin-left:0.85rem;">Three reporting options, all worth running. Each makes the heterogeneity assumption progressively more explicit.</p>
+  <p style="margin-left:0.85rem;">Two reporting options. The floor uses only trajectory means; the envelope adds a parameterized within-$d_N$ dispersion that the reader can dial.</p>
 
   <div class="tile-grid">
     <div class="tile priced">
@@ -441,29 +443,23 @@ $$\underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migrati
     </div>
 
     <div class="tile">
-      <div class="tile-header">Option 2: heterogeneity-corrected</div>
-      <p>Use the paper's existing decision rule from eq.&nbsp;(6) of the model section: choose urban iff $\beta + \phi\theta_i + (\nu_{it}^U - \nu_{it}^R) &gt; 0$. Under iid shocks, $f_{\theta \mid d_N}(\theta) \propto f_\theta(\theta) \cdot F_\eta(-\beta - \phi\theta)^T$.</p>
-      <p>Parametric choices: $\theta_i \sim N(0, \sigma_\theta^2)$ with $\sigma_\theta$ from cross-trajectory dispersion of $\mu_{\underline{d}}$; $\nu^l$ normal or type-I extreme value. Integrate $\max(0, \beta + \phi\theta)$ over $\theta \mid d_N$ (since $\bar{D}_{d_N} = 0$).</p>
-      <p><em>How we report it:</em> a magnitude, not a floor. Two parametric assumptions made explicit (one for $\theta$, one for $\nu$).</p>
-    </div>
-
-    <div class="tile">
       <div class="tile-header">Option 3: bounded envelope</div>
-      <p>Parameterize the within-$d_N$ dispersion as $\sigma_{\theta \mid d_N} = c \cdot \sigma_\theta$ for $c \in [0, 1]$. At $c = 0$, recovers Option 1 as a point; at $c = 1$, the within share equals the pooled population variance (an upper limit on plausible dispersion).</p>
-      <p>Compute Option 2's integral on a grid of $c$. Plot the gap as a function of $c$; the audience reads the envelope rather than committing to a single value.</p>
-      <p><em>How we report it:</em> a range. Cleanest in that the only choice on the reader's table is &ldquo;how dispersed should you think within-$d_N$ comparative advantage is?&rdquo;</p>
+      <p>Parameterize $\theta_i \mid d_N \sim N(\hat\mu_{\theta \mid d_N}, (c\sigma_\theta)^2)$ directly, for $c \in [0, 1]$. At $c = 0$, recovers Option 1 as a point. At $c = 1$, within-$d_N$ dispersion equals the cross-trajectory dispersion of $\mu_{\underline{d}}$, which is itself an upper bound on $\sigma_\theta$ by the law of total variance; $c = 1$ is therefore the upper edge of plausible within-trajectory dispersion.</p>
+      <p>Integrate $\max(0, \beta + \phi\theta)$ over $\theta \mid d_N$ on a grid of $c$. Plot the gap as a function of $c$; the audience reads the envelope rather than committing to a single value. No decision-rule construction, no $F_\eta$ dependence.</p>
+      <p><em>How we report it:</em> a range. The only choice on the reader's table is &ldquo;how dispersed should you think within-$d_N$ comparative advantage is?&rdquo;</p>
     </div>
   </div>
 
-  <blockquote class="callout">
-    <p><strong>Tension with the decision rule.</strong> Under $\phi &lt; 0$ and rational sorting via eq.&nbsp;(6), never-migrants should have $\Delta_{d_N} &lt; 0$ on average (workers with negative returns self-select rural). The empirical $\Delta_{d_N} &gt; 0$ under LCA therefore signals either an institutional barrier that suppresses rational sorting (the hukou story in #2) or LCA misspecification off-support. The misallocation calculation is interpretable either way: it quantifies how much consumption is left on the table by the friction (institutional or specification) that prevents observed sorting from matching the model's predicted sorting.</p>
-  </blockquote>
+  <p style="margin-left:0.85rem;font-family:'Inter',sans-serif;font-size:0.88rem;color:#666;"><strong style="color:#6b5520;">Auxiliary assumption.</strong> The Gaussian $\theta_i \mid d_N$ form inside Option 3 is an auxiliary parametric assumption not implied by the GRC, imported to perform the integration. The Option 1 floor does not require it.</p>
+
+  <p style="margin-left:0.85rem;font-family:'Inter',sans-serif;font-size:0.88rem;color:#666;"><strong style="color:#6b5520;">Why no $F_\eta$-based correction.</strong> An earlier formulation built $f_{\theta \mid d_N}$ from the model's decision rule (choose urban iff $\beta + \phi\theta_i + \eta_{it} &gt; 0$, $f_{\theta \mid d_N} \propto f_\theta \cdot F_\eta(-\beta - \phi\theta)^T$). Under $\hat\phi &lt; 0$, that rule predicts $\Delta_{d_N} &lt; 0$; the empirical $\hat\Delta_{d_N} &gt; 0$ in all three countries rejects it. A standalone "decision-rule-corrected" magnitude would therefore integrate the wrong density. The envelope above achieves the same goal---bracket what within-trajectory dispersion can do to the gap---without depending on the rejected rule.</p>
 
   <details class="expert">
     <summary>The deeper concern: LCA out of the switcher support</summary>
     <div class="expert-body">
-      <p>$(\beta, \phi)$ are identified from switcher trajectories; all three options extrapolate to $d_N$. If LCA is a local approximation around the switcher region, the slope identified from switchers may not carry over to never-migrants, and the $d_N$ piece of every option becomes shaky.</p>
+      <p>$(\beta, \phi)$ are identified from switcher trajectories; both options extrapolate to $d_N$. If LCA is a local approximation around the switcher region, the slope identified from switchers may not carry over to never-migrants, and the $d_N$ piece of every option becomes shaky.</p>
       <p>The paper already addresses this through the $J$-test and the inversion CI as the primary inference object. The misallocation reporting inherits the same identification machinery and the same caveats; the options above sit on top of LCA, not next to it.</p>
+      <p>A first-pass support diagnostic confirms that $\hat\mu_{d_N}$ lies <em>inside</em> the switcher hull for all three countries: CHN at 26% from the lower edge, IDN at 24%, TZA at 8% (boundary case worth flagging in the paper-side figure). Extrapolation is interior, not external, in every case. See the <a href="file:///C:/git/ckt/.claude/worktrees/lca-inversion/docs/notes/2026-05-18_extrapolation_support_diagnostic.md">support-diagnostic memo</a> and the per-country density figures.</p>
     </div>
   </details>
 
@@ -549,6 +545,8 @@ $$\text{Welfare gain (lower bound)} \;\approx\; \pi^{rh} \cdot \pi_{d_N}^{rh} \c
 
   <p style="margin-left:0.85rem;">The bound is conservative: it assumes the flat $\phi^{rh}$ reflects genuine uniformity of returns, so every rural-hukou never-migrant gets the same 10 log points. If the flat slope is instead a censoring artifact of suppressed sorting, the welfare gain rises above the bound because optimal sort selects the high-return tail.</p>
 
+  <p style="margin-left:0.85rem;">A maintained-assumption statement before the simulation. The intercept $\beta$ in the GRC absorbs four sources at once: the pecuniary urban premium net of cost-of-living, the cost-of-living difference, compensating differentials for non-pecuniary amenities, and any residual selection not absorbed by $\phi\theta_i$ under LCA misspecification. Setting $\beta^{rh} = \beta^{uh}$ treats the full intercept gap as the institutional barrier---the assumption that the other three sources are equalized across regimes. This is the headline reading (Reading A). A continuum sensitivity (Reading B: sweep the institutional fraction $c \in [0, 1]$ of the intercept gap) lives in an appendix figure for readers who want to dial down the maintained assumption.</p>
+
   <div class="tile-grid">
     <div class="tile priced">
       <div class="tile-header">Lower bound (now, no simulation)</div>
@@ -557,7 +555,8 @@ $$\text{Welfare gain (lower bound)} \;\approx\; \pi^{rh} \cdot \pi_{d_N}^{rh} \c
 
     <div class="tile">
       <div class="tile-header">Resorting version (primary)</div>
-      <p>Use the model's existing decision rule from eq.&nbsp;(6) in [sec_model.tex]. Parameterize the hukou barrier as an additive cost $c$ that shifts $\beta^{rh}$ down to $\beta^{uh}$; removing hukou sets $c = 0$. Simulate which rural-hukou workers select urban under the no-barrier rule.</p>
+      <p>Use the model's existing decision rule from eq.&nbsp;(6) in [sec_model.tex]. Parameterize the hukou barrier as an additive cost that shifts $\beta^{rh}$ all the way to $\beta^{uh}$; removing hukou sets the wedge to zero. Simulate which rural-hukou workers select urban under the no-barrier rule. Under Reading A, the four-source decomposition of $\beta^{rh} - \beta^{uh}$ attributes the entire gap to the institutional barrier.</p>
+      <p>$\sigma_\eta$ is reported as a curve over a justified grid (no commitment to a single value), with two curves per country---logistic and normal shocks---so the figure shows both shape and scale dependence.</p>
     </div>
 
     <div class="tile">
@@ -571,18 +570,18 @@ $$\text{Welfare gain (lower bound)} \;\approx\; \pi^{rh} \cdot \pi_{d_N}^{rh} \c
     </div>
   </div>
 
-  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> bound is half a day, sits inside #1's machinery. Resorting version uses the model's existing decision rule and needs (i) a parametric form for the shock distribution $F_\eta$ (paper leaves it iid but unspecified), (ii) a parameterization of the institutional barrier, (iii) simulation of choice probabilities. 2&ndash;3 days once the sorting specification is locked in.</p>
+  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> bound is half a day, sits inside #1's machinery. Resorting version uses the model's existing decision rule and needs (i) a parametric form for the shock distribution $F_\eta$ (reported as a curve under both logistic and normal), (ii) a parameterization of the institutional barrier, (iii) simulation of choice probabilities. 2&ndash;3 days once the sorting specification is locked in.</p>
 </section>
 
 <section class="s-amber">
   <h2>3. From consumption to welfare: valuing the non-pecuniary side <span class="status-pill design">Design open</span></h2>
-  <p class="lead">All four counterfactuals above report consumption-side statistics. Converting them to welfare requires putting a value on the non-pecuniary component of $\nu^U_i - \nu^R_i$, which the LCA framework deliberately does not identify on its own. Two routes are available, both with precedent: observable proxies in the Suri (2011) style and a parametric assumption on $\nu$ in the Heckman style. We plan to do both.</p>
+  <p class="lead">All four counterfactuals above report consumption-side statistics. Converting them to welfare would require putting a value on the non-pecuniary component of $\nu^U_i - \nu^R_i$, which the LCA framework deliberately does not identify on its own. Two routes are available in principle, both with precedent: observable proxies in the Suri (2011) style and a parametric assumption on $\nu$ in the Heckman style. We leave both to future work and sketch them here as the natural extensions, so the consumption-side counterfactuals in #1 and #2 sit on a clear map of what a welfare bridge would add.</p>
 
   <h3 style="font-family:'Source Serif Pro',serif;font-size:1.15rem;font-weight:600;margin:1.6rem 0 0.5rem 0.85rem;color:#1a1a1a;">Route A: Suri-style observables</h3>
 
-  <p style="margin-left:0.85rem;">Suri (2011, Section 7) resolves her high-counterfactual-returns puzzle by relating predicted $\hat\theta_i$ to observable cost proxies (distance to fertilizer sellers, distance to roads, infrastructure) rather than imputing the cost component from choice probabilities under a distributional assumption. The analogous move for us: model the persistent component of $\nu^U_i - \nu^R_i$ as $X_i'\gamma$ for some observable vector $X_i$ that affects non-pecuniary value of location but not the consumption return $\Delta_i$. The decision rule becomes &ldquo;choose urban iff $\beta + \phi\theta_i + X_i'\gamma + (\text{iid component}) > 0$.&rdquo; The GRC already identifies $\Delta_i$; a probit or logit using $X_i$ alongside the trajectory predictions of $\Delta_i$ pins down $\gamma$. Welfare counterfactuals then include $X_i'\gamma$ as the non-pecuniary value the model puts on observed location.</p>
+  <p style="margin-left:0.85rem;">Suri (2011, Section 7) resolves her high-counterfactual-returns puzzle by relating predicted $\hat\theta_i$ to observable cost proxies (distance to fertilizer sellers, distance to roads, infrastructure) rather than imputing the cost component from choice probabilities under a distributional assumption. The analogous move for us would be to model the persistent component of $\nu^U_i - \nu^R_i$ as $X_i'\gamma$ for some observable vector $X_i$ that affects non-pecuniary value of location but not the consumption return $\Delta_i$. The decision rule would become &ldquo;choose urban iff $\beta + \phi\theta_i + X_i'\gamma + (\text{iid component}) > 0$.&rdquo; The GRC already identifies $\Delta_i$; a probit or logit using $X_i$ alongside the trajectory predictions of $\Delta_i$ would pin down $\gamma$. Welfare counterfactuals would then include $X_i'\gamma$ as the non-pecuniary value the model puts on observed location.</p>
 
-  <p style="margin-left:0.85rem;">The benefit of doing this cross-country: it generalizes the hukou comparison we already have, which only speaks for China. We can run the same exercise in Indonesia and Tanzania with appropriate observables.</p>
+  <p style="margin-left:0.85rem;">The cross-country payoff of this route would be to generalize the hukou comparison we already have, which only speaks for China. The same exercise could in principle run in Indonesia and Tanzania with appropriate observables. We leave the cross-country extension to future work.</p>
 
   <div class="tile-grid">
     <div class="tile">
@@ -624,10 +623,10 @@ $$\text{Welfare gain (lower bound)} \;\approx\; \pi^{rh} \cdot \pi_{d_N}^{rh} \c
 $$\pi_{d_T} = E_\theta\!\left[(1 - F_\eta(-\Delta(\theta)))^T\right]$$
   </div>
 
-  <p style="margin-left:0.85rem;">pins down $\sigma_\eta$ from the observed trajectory share $\pi_{d_T}$, the GMM-identified distribution of $\Delta_i$, and the panel length $T$. Multiple trajectory shares give over-identification. Once $\sigma_\eta$ is pinned, the non-pecuniary value to a $d_T$ worker is the truncated mean $E[\eta \mid d_T]$, a standard Heckman-style inverse-Mills-ratio calculation. This is the same machinery Suri uses for her ATE/TT/MTE benchmarks in Section 5.2 of her paper.</p>
+  <p style="margin-left:0.85rem;">would pin down $\sigma_\eta$ from the observed trajectory share $\pi_{d_T}$, the GMM-identified distribution of $\Delta_i$, and the panel length $T$. Multiple trajectory shares would give over-identification. Once $\sigma_\eta$ is pinned, the non-pecuniary value to a $d_T$ worker is the truncated mean $E[\eta \mid d_T]$, a standard Heckman-style inverse-Mills-ratio calculation. This is the same machinery Suri uses for her ATE/TT/MTE benchmarks in Section 5.2 of her paper. We leave this implementation to future work.</p>
 
   <blockquote class="callout">
-    <p><strong>Why both.</strong> Route A makes the empirical case (&ldquo;here is what we can attribute to identifiable amenity proxies&rdquo;). Route B delivers a single welfare number under a stated distributional assumption (&ldquo;under iid type-I EV, the welfare gap is X%&rdquo;). The two are complements, not substitutes. Reporting both gives a defensible range and lets the audience choose the reading they trust most.</p>
+    <p><strong>Why both, if and when we do them.</strong> Route A makes the empirical case (&ldquo;here is what we can attribute to identifiable amenity proxies&rdquo;). Route B would deliver a single welfare number under a stated distributional assumption (&ldquo;under iid type-I EV, the welfare gap is X%&rdquo;). The two are complements, not substitutes. Reporting both would give a defensible range and let the audience choose the reading they trust most. If only one is feasible in a follow-up, logistic and normal as parallel reports under Route B is the cheaper exercise; Route A is the more empirically grounded one. We defer the choice with the welfare bridge itself.</p>
   </blockquote>
 
   <details class="expert">
@@ -647,7 +646,7 @@ $$\pi_{d_T} = E_\theta\!\left[(1 - F_\eta(-\Delta(\theta)))^T\right]$$
     </div>
   </details>
 
-  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost:</strong> Route A requires identifying defensible observable proxies and verifying their availability across the three panels (CFPS, IFLS, TZNPS); estimation is then a probit/logit per country plus integration of $X_i'\gamma$ into the counterfactual aggregates. Maybe 3&ndash;4 days. Route B reuses the same trajectory-level estimates and adds the $\sigma_\eta$ identification step plus truncated-mean integration. 2&ndash;3 days. Borjas benchmark is a separate exercise, lower priority.</p>
+  <p style="font-family:'Inter',sans-serif;font-size:0.86rem;color:#666;margin-top:0.6rem;margin-left:0.85rem;"><strong style="color:#6b5520;">Cost (future work):</strong> Route A would require identifying defensible observable proxies and verifying their availability across the three panels (CFPS, IFLS, TZNPS); estimation would then be a probit/logit per country plus integration of $X_i'\gamma$ into the counterfactual aggregates---maybe 3&ndash;4 days. Route B would reuse the same trajectory-level estimates and add the $\sigma_\eta$ identification step plus truncated-mean integration---2&ndash;3 days. Borjas benchmark is a separate exercise, lower priority.</p>
 </section>
 
 <section class="s-olive">
@@ -763,10 +762,10 @@ $$E[\varepsilon_{it} \cdot z_{it}] = 0,$$
   <ol>
     <li><strong>#1 first.</strong> Reuses the inversion CI machinery and delivers the headline number ($\approx 22\%$ TZA, $\approx 6.5\%$ CHN, $\approx 3.7\%$ IDN).</li>
     <li><strong>#2 bound, in parallel.</strong> The $\approx 5$ log point lower bound on the welfare cost of hukou falls out of #1's machinery applied to the rural-hukou subsample; no new model.</li>
-    <li><strong>#2 resorting version next.</strong> Uses the model's existing decision rule (eq.~6); converts the bound into a magnitude-plus-CI and tells the cleaner policy story.</li>
-    <li><strong>#3 after.</strong> Route A (Suri-style observables) requires cataloging available proxies across CFPS, IFLS, TZNPS and re-estimating with the choice equation augmented; Route B (parametric) reuses #1's pipeline plus an $\sigma_\eta$ identification step.</li>
+    <li><strong>#2 resort next.</strong> Uses the model's existing decision rule (eq.~6) with $\sigma_\eta$ reported as a curve over a justified grid and both shock distributions (logistic and normal) shown in parallel; converts the bound into a magnitude-plus-CI and tells the cleaner policy story.</li>
+    <li><strong>#3 deferred to future work.</strong> Route A (Suri-style observables) would require cataloging available proxies across CFPS, IFLS, TZNPS and re-estimating with the choice equation augmented; Route B (parametric) would reuse #1's pipeline plus a $\sigma_\eta$ identification step. We leave both to a follow-up.</li>
   </ol>
-  <p style="margin-top:0.8rem;margin-bottom:0;">#1 and #2 (bound) are paper-ready additions in their current scope. #2 (resorting) and #3 are model extensions; #3 is the route from consumption-side to welfare-side counterfactuals. A Borjas-style benchmark with panel extensions sits in the back of our mind as a robustness exercise for later (see the expert pocket under #3).</p>
+  <p style="margin-top:0.8rem;margin-bottom:0;">#1 and #2 (bound) are paper-ready additions in their current scope. #2 (resort) is a model extension that ships in this round. #3 is the route from consumption-side to welfare-side counterfactuals, deferred to future work. A Borjas-style benchmark with panel extensions sits in the back of our mind as a robustness exercise for later (see the expert pocket under #3).</p>
 </div>
 
 <footer>
