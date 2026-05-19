@@ -1,0 +1,14 @@
+name,value
+country,TZA
+phi_hat,-.71904216
+beta_hat,.13435627
+kappa_hat,14.940317
+unb_choice_hat,.37041105
+inv_phi,-.73
+inv_dN,.27
+inv_dT,-.7
+inv_davg,.11
+n_obs,29864
+j_stat,3.832934588783235
+j_df,3
+j_pval,.2800784569304225
