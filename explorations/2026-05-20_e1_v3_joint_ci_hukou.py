@@ -91,15 +91,16 @@ def compute_alpha_dT_obs(data: pd.DataFrame, traj_var: str, choice_var: str,
 
 
 def prepare_data(country_file_stem: str) -> tuple[pd.DataFrame, list[str]]:
+    """Mirror 5b_inversion.do's sample: do not drop trajectory NaN rows.
+    See the IDN/TZA driver for the full rationale."""
     df = pd.read_stata(
         DATA_DIR / f"{country_file_stem}_unb.dta", convert_categoricals=False
     )
-    df = df.dropna(subset=["consumption", "choice", "trajectory"]).copy()
     df["lndepvar"] = np.log(df["consumption"] / df["hhsize_cube"])
-    df = df.dropna(subset=["lndepvar"])
-    df = df.dropna(subset=["education_max", "age"])
-    if "obs_per_individual" in df.columns:
-        df = df.loc[df["obs_per_individual"] > 1].copy()
+    df = df.dropna(subset=["lndepvar", "choice"]).copy()
+    needed = ["female", "age2", "education_max", "education_max2",
+              "unbalanced", "unbalanced_choice"]
+    df = df.dropna(subset=[c for c in needed if c in df.columns])
     periods = sorted(df["period"].dropna().unique().astype(int).tolist())
     period_cols = []
     for t in periods[1:]:

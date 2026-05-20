@@ -87,14 +87,24 @@ def compute_alpha_dT_obs(data: pd.DataFrame, traj_var: str, choice_var: str,
 
 
 def prepare_data(country: str) -> tuple[pd.DataFrame, list[str]]:
-    """Load and prepare data with GMM-matched outcome, controls, sample."""
+    """Load and prepare data matching 5b_inversion.do's sample.
+
+    Critical detail: do NOT drop trajectory NaN rows. Unbalanced workers
+    have missing trajectory in the .dta file; in 5b they are recoded to
+    trajectory=999 by setup_grc_estimation and then back to NaN inside
+    attach_inversion_for_stata, with the auxiliary OLS routing them
+    through the `unbalanced` and `unbalanced_choice` dummies rather than
+    via any alpha[d] / beta[s]. Dropping trajectory NaN here would shrink
+    the IDN sample from 29k pids to 3k pids and inflate the joint CI."""
     df = pd.read_stata(DATA_DIR / f"{country}_unb.dta", convert_categoricals=False)
-    df = df.dropna(subset=["consumption", "choice", "trajectory"]).copy()
     df["lndepvar"] = np.log(df["consumption"] / df["hhsize_cube"])
-    df = df.dropna(subset=["lndepvar"])
-    df = df.dropna(subset=["education_max", "age"])
-    if "obs_per_individual" in df.columns:
-        df = df.loc[df["obs_per_individual"] > 1].copy()
+    # 5b drops only mi(lndepvar) | mi(choice); we mirror that.
+    df = df.dropna(subset=["lndepvar", "choice"]).copy()
+    # compute_all_inversion_cis additionally requires controls to be non-NaN,
+    # so dropna on controls + unbalanced dummies (but not trajectory).
+    needed = ["female", "age2", "education_max", "education_max2",
+              "unbalanced", "unbalanced_choice"]
+    df = df.dropna(subset=[c for c in needed if c in df.columns])
     periods = sorted(df["period"].dropna().unique().astype(int).tolist())
     period_cols = []
     for t in periods[1:]:
