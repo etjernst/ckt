@@ -1,0 +1,14 @@
+name,value
+country,CHN_rf
+phi_hat,-.0388937
+beta_hat,.10463466
+kappa_hat,9.476389
+unb_choice_hat,.18328716
+inv_phi,-.16
+inv_dN,.11
+inv_dT,.08
+inv_davg,.11
+n_obs,80742
+j_stat,12.6380141501384
+j_df,8
+j_pval,.1249262440165151
