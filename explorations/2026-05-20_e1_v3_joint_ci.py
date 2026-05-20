@@ -223,54 +223,76 @@ def run_country(country: str) -> None:
         out = np.where(is_dT, lca_delta_dT(phi, beta, alpha_dT_obs, mu_base), out)
         return out
 
-    wms: list[float] = []
-    wmm: list[float] = []
-    crosses_pole = False
+    # P3 fallback: also compute aggregate with Delta_dT set to zero.
+    # When the joint CI crosses the phi = -1 identification boundary,
+    # the with-d_T aggregate inflates from the (1+phi) singularity;
+    # the no-d_T version gives a defensible lower bound on the gap.
+    wms_full: list[float] = []
+    wmm_full: list[float] = []
+    wms_p3: list[float] = []
+    wmm_p3: list[float] = []
+    crosses_boundary = False
     for (i, j) in np.argwhere(ci["accept"]):
         phi = float(ci["phi_grid"][i])
         beta = float(ci["beta_grid"][j])
         if phi <= -1.0:
-            crosses_pole = True
+            crosses_boundary = True
         try:
             delta_vec = delta_at(phi, beta)
-            res = evaluate_aggregate(
+            delta_vec_p3 = delta_vec.copy()
+            delta_vec_p3[is_dT] = 0.0
+            res_full = evaluate_aggregate(
                 delta_d=delta_vec, pi_d=pi_arr, dbar_d=dbar_arr, traj_labels=None,
             )
-            wms.append(res.w_obs_minus_zero)
-            wmm.append(res.w_opt_minus_obs)
+            res_p3 = evaluate_aggregate(
+                delta_d=delta_vec_p3, pi_d=pi_arr, dbar_d=dbar_arr, traj_labels=None,
+            )
+            wms_full.append(res_full.w_obs_minus_zero)
+            wmm_full.append(res_full.w_opt_minus_obs)
+            wms_p3.append(res_p3.w_obs_minus_zero)
+            wmm_p3.append(res_p3.w_opt_minus_obs)
         except (ValueError, FloatingPointError):
-            wms.append(float("nan"))
-            wmm.append(float("nan"))
+            wms_full.append(float("nan"))
+            wmm_full.append(float("nan"))
+            wms_p3.append(float("nan"))
+            wmm_p3.append(float("nan"))
 
-    wms_arr = np.array(wms)
-    wmm_arr = np.array(wmm)
+    wms_arr = np.array(wms_full)
+    wmm_arr = np.array(wmm_full)
+    wms_p3_arr = np.array(wms_p3)
+    wmm_p3_arr = np.array(wmm_p3)
     proj_oz = project_image_intervals(wms_arr)
     proj_oo = project_image_intervals(wmm_arr)
+    proj_oz_p3 = project_image_intervals(wms_p3_arr)
+    proj_oo_p3 = project_image_intervals(wmm_p3_arr)
 
-    if crosses_pole:
-        print(f"    WARNING: accepted region crosses the Mobius pole (phi <= -1).")
-        print(f"             aggregate is unbounded near phi = -1 from below.")
-        print(f"             P3 fallback (drop d_T) recommended; not implemented here.")
+    if crosses_boundary:
+        print(f"    NOTE: accepted region crosses the phi = -1 identification boundary.")
+        print(f"          with-d_T aggregate inflates from the (1+phi) singularity;")
+        print(f"          rely on the P3 (no-d_T) summary below as the defensible reading.")
 
-    print(f"\n  W_obs - W_zero (value of observed migration):")
-    print(f"    finite values: {proj_oz['n_finite']} / {len(wms_arr)}")
-    if proj_oz["n_finite"] > 0:
-        lo, hi = proj_oz["convex_hull"]
-        print(f"    convex hull: [{lo:+.4f}, {hi:+.4f}] log pts  "
-              f"({log_to_pct(lo) * 100:+.2f}% to {log_to_pct(hi) * 100:+.2f}%)")
-        print(f"    n_islands: {proj_oz['n_islands']}")
-        for k, (lo, hi) in enumerate(proj_oz["intervals"][:5]):
-            print(f"    interval {k + 1}: [{lo:+.4f}, {hi:+.4f}]")
+    def _print_block(label: str, proj_with: dict, proj_p3: dict,
+                     n_with: int, n_p3: int) -> None:
+        print(f"\n  {label}:")
+        if proj_with["n_finite"] > 0:
+            lo, hi = proj_with["convex_hull"]
+            print(f"    with d_T   ({proj_with['n_finite']}/{n_with} finite): "
+                  f"[{lo:+.4f}, {hi:+.4f}] log pts  "
+                  f"({log_to_pct(lo) * 100:+.2f}% to {log_to_pct(hi) * 100:+.2f}%)")
+        else:
+            print(f"    with d_T   ({proj_with['n_finite']}/{n_with} finite): empty")
+        if proj_p3["n_finite"] > 0:
+            lo, hi = proj_p3["convex_hull"]
+            print(f"    P3 (no dT) ({proj_p3['n_finite']}/{n_p3} finite): "
+                  f"[{lo:+.4f}, {hi:+.4f}] log pts  "
+                  f"({log_to_pct(lo) * 100:+.2f}% to {log_to_pct(hi) * 100:+.2f}%)")
+        else:
+            print(f"    P3 (no dT) ({proj_p3['n_finite']}/{n_p3} finite): empty")
 
-    print(f"\n  W_opt - W_obs (misallocation gap):")
-    print(f"    finite values: {proj_oo['n_finite']} / {len(wmm_arr)}")
-    if proj_oo["n_finite"] > 0:
-        lo, hi = proj_oo["convex_hull"]
-        print(f"    convex hull: [{lo:+.4f}, {hi:+.4f}] log pts  "
-              f"({log_to_pct(lo) * 100:+.2f}% to {log_to_pct(hi) * 100:+.2f}%)")
-        print(f"    n_islands: {proj_oo['n_islands']}")
-        for k, (lo, hi) in enumerate(proj_oo["intervals"][:5]):
-            print(f"    interval {k + 1}: [{lo:+.4f}, {hi:+.4f}]")
+    _print_block("W_obs - W_zero (value of observed migration)",
+                 proj_oz, proj_oz_p3, len(wms_arr), len(wms_p3_arr))
+    _print_block("W_opt - W_obs (misallocation gap)",
+                 proj_oo, proj_oo_p3, len(wmm_arr), len(wmm_p3_arr))
 
 
 def main() -> None:
