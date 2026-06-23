@@ -178,3 +178,196 @@ This session log is uncommitted.
 - Voice.md and manuscript-writing.md were Read this session, so the prose-rules-enforcer flag is set for this session; resets on next session start.
 
 with Claude
+
+## Afternoon addendum: table-migration, critic-fixer loop, PR-7 merged
+
+Resumed after the morning hand-off.
+The morning closed with PR-7 open and waiting for review.
+Afternoon ended with PR-7 merged.
+
+### Table preamble-macro migration (Option A)
+
+User asked how tables are saved and copied to Overleaf, and whether the "new way" of reading tables in `main-sections.tex` was fully adopted.
+
+Discovery showed the migration was GRC-only and partial:
+
+- Stata side: `grc_tex_table_trend` and `extras_tex_table` had been emitting slim tabular-only output since at least May 4 (file mtimes).
+- Preamble side: macros `\GRCtable`, `\GRCexptable`, `\GRChukoutable` defined in [preamble.tex](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/preamble.tex) since 2026-04-28.
+- Paper side: only the canonical IDN/CHN/TZA `consumption_urban_unb` block in `sec_results.tex` was on the macros.
+- Overleaf table copies: stale (most cells were pre-migration full envelopes); 54 local tables hadn't been copied at all.
+
+Discovery memo saved at [quality_reports/reviews/2026-05-13_table-migration-status.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-05-13_table-migration-status.md).
+
+User chose Option A (full migration).
+Executed:
+
+- Wrote [RP7/scripts/tmp/refresh_tables_to_overleaf.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/tmp/refresh_tables_to_overleaf.do) (one-off driver mirroring `10_make_tables.do` standalone with `$copyOverleaf=1`).
+- Ran it: 72 Overleaf tables refreshed (Overleaf count went from 58 to 109), 66 local tables also touched.
+- The `\bar{\Delta}` row in the regenerated tables now carries the post-fix Delta_avg values for the first time.
+  Example: `GRC_CHN_consumption_urban_unb.tex` column 1 moved from 0.020 to 0.472 (the ~10× correction landing in paper-facing artifacts).
+- Edited four section files in Overleaf to flip raw `\input{}` to macro calls: `sec_results.tex` (CHN hukou block), `sec_robustness.tex` (balanced panel), `app_hukou.tex` (rural_only / urban_only), `app_nonag.tex` (IDN nonag).
+- Fixed two undefined references in `sec_results.tex` line 139 (`tab:GRC_CHN_rural_first_...` → `tab:GRC_CHN_hukou_rural_first_...`) to match the macro-generated label format.
+- Recompiled `main-sections.tex` via xelatex three-pass + bibtex: 65 pages, clean.
+- Swept aux files per Overleaf hygiene rule.
+- Commit `f7282b9`: 68 files / +361 / −132.
+
+User then asked to extend the cleanup to `app_balanced.tex`.
+Its three commented-out `\input{}` lines for the balanced-panel GRC tables (whose live render lives in `sec_robustness.tex`) were converted to commented `\GRCtable` calls with a two-line note explaining that uncommenting would multiply-define the labels.
+Recompiled: 65 pages, still clean.
+
+Subsequent discussion clarified the migration was GRC-only; OLS and summary-stats tables remain full-envelope on both sides because they have no preamble macros.
+User opted not to extend the migration to those today.
+
+### PR-7 self-review and critic dispatch
+
+User asked to review PR-7 from main-checkout perspective.
+Invoked `/review` skill, which produced a self-authored review (acknowledged conflict of interest up front).
+
+Two concerns surfaced as worth a fresh-context pass:
+
+- Stata: three new infrastructure files (`0_slice_bootstrap.do`, `run_master_resume.do`, `run_extras_birth.do`).
+- Python: two dashboard tools (`scrape_headlines.py`, `compare.py`).
+
+User asked to run the critics.
+Dispatched `critic-stata` and `critic-python` in parallel via a single message.
+
+Findings:
+
+- Stata, score 93/100: three MAJORs all on `run_master_resume.do` (F1 path resolution / F2 copyOverleaf inheritance / F3 hygiene), plus four minors.
+- Python, score 83/100: four MAJORs (M1 no env spec, M2 cwd-dependent sibling import, M3 silent bank failure + coefplot empty-covs guard, M4 mid-file import), plus four minors.
+
+Saved both reports under `quality_reports/reviews/2026-05-13_critic-*`.
+
+### Routed through fixer-code
+
+User approved fixes with two specifics:
+
+- F2 (copyOverleaf inheritance from master) deliberately NOT applied: user wants resume runs to inherit.
+- Python: all four MAJORs apply.
+
+Dispatched `fixer-code` agent with the approved scope.
+Agent bailed citing a "critic-fixer-enforcer.py hook" supposedly blocking edits.
+That hook does not exist in user's actual config (only `prose-rules-enforcer.py`); diagnosis was speculative.
+Applied edits directly from top-level context instead.
+
+Changes:
+
+- [run_master_resume.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7/scripts/run_master_resume.do): full rewrite mirroring 0_master.do user-block ladder; added canonical header, `clear all`/`version 17`/`set more off` hygiene, `$dir`-not-set guard, and absolute path `do "$dir/scripts/0_master.do"`.
+- [compare.py](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/compare.py): `sys.path` injection above sibling import; `logging.warning` in `_load_bank` on missing bank; empty-covs `FileNotFoundError` guard in `coefplot` mirroring `comparison_table`; `import re` moved to top.
+- New [tools/results_overview/requirements.txt](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tools/results_overview/requirements.txt) (numpy/pandas/scipy/matplotlib version pins).
+
+Verified: `test_cache_equivalence.py` passes (160 comparisons, rtol 1e-12, atol 1e-15).
+Commit `ba92728`.
+
+### Pre-merge trail + merge
+
+User cleared merge.
+Committed four loose artifacts (PR-1 draft, PR-2 draft, rescaler-cleanup checklist, audit-residue findings) plus the addendum to the 2026-05-12 session log as commit `9be31f4` so the docs trail accompanies the PR.
+
+Merged PR-7 to main via `gh pr merge 7 --merge --delete-branch=false`.
+Merge commit `da8b51e`, merged at 2026-05-13 01:52 UTC.
+Branch retained as reference point.
+
+## Decisions, with the why (afternoon addendum)
+
+### Migration via full pipeline refresh, not file-by-file copy
+
+Two refresh paths existed: rerun `10_make_tables.do` with `$copyOverleaf 1` to fan out all 112 local tables to Overleaf at once, or manually copy the 8 tables backing the 5 paper-side edit locations.
+Picked the full refresh because the local Stata side had been producing slim tables since May 4; refreshing only 8 would leave 50+ stale Overleaf tables for the next time someone notices.
+The ordering hazard (slim tables + raw `\input{}` would render bare tabulars without captions) was handled by doing the Overleaf refresh and paper-side macro flips in the same session.
+
+### Used `Push-Location` rather than `cd` for Quarto + Stata launches
+
+User's standing rule forbids `cd` in shell commands.
+PowerShell `Push-Location ... try { ... } finally { Pop-Location }` and Bash `--cwd` flags substitute cleanly.
+The auto-mode classifier enforced this when `cd tools/results_overview && quarto render` was attempted.
+
+### Bundled PR scope kept, no split
+
+User had earlier accepted bundling pipeline + dashboard into PR-7.
+When the table regeneration and the d'Haultfœuille paper artifacts also landed on the branch, considered splitting them out but proceeded with the bundle.
+The PR title and body were updated to make the three-bucket scope explicit so a reviewer can navigate it.
+
+### Used `--merge` not `--squash` on PR-7
+
+The branch had 59 substantive commits, each carrying part of the story (Delta_avg fix, refit, rescaler cleanup, table regen, fixer-code edits).
+Squashing would have flattened that to one commit on main and lost the audit trail.
+Merge-commit strategy preserves per-commit history at the cost of one extra merge-commit node.
+
+### Did not extend the preamble-macro migration to OLS or summary-stats
+
+OLS and summary-stats tables remain full-envelope on both sides, no preamble macros for them, no migration started.
+Extending would require adding `\OLStable` and `\summarystattable` macros, updating the Stata writers, and ~10 paper-side line swaps.
+User explicitly deferred this work.
+
+### fixer-code agent bailed but I applied edits directly
+
+The fixer-code subagent reported a "critic-fixer-enforcer.py hook" was blocking edits.
+That hook does not exist in the user's actual config.
+Applied the same approved edits directly from top-level context rather than trying to debug the subagent's environment.
+The edits are correct; the subagent's diagnostic was the problem, not the edits.
+
+## State at hand-off
+
+- PR-7 merged.
+  Branch `worktree-grc-pipeline-refactor` retained at tip `9be31f4`.
+- `main` is now ahead of local main checkout by the merged commits.
+  A `git pull` from a main checkout will sync.
+- All approved critic findings applied.
+  MINORs from both reports remain open for future polish (documented in the reports under `quality_reports/reviews/2026-05-13_critic-*`).
+- The Suri 2011 PDF in main's `papers/inbox/` is still unprocessed.
+  Not blocking anything.
+- This worktree's working tree has a few intentional or untracked files: a `test_inc.do` stray from an earlier Stata pre-load experiment, a `papers/summaries/test.json`, a stale `RP7/scripts/run_master_resume.log.2026-05-09`, the runtime `.claude/scheduled_tasks.lock`, and modifications to `.claude/settings.local.json`.
+  None require commit.
+
+## Final wrap-up
+
+Verified PR-7 included all paper-facing results files:
+
+- 98 `.tex` tables under `RP7/output/tables/` (the regenerated GRC tables carrying corrected `\bar{\Delta}` values, slim tabular format).
+- 286 headlines cache CSVs under `RP7/output/headlines/`.
+- `tools/results_overview/report.html` (rendered dashboard, 2.6 MB).
+- 0 `.ster` files (gitignored by design; regenerable from the pipeline).
+- 0 figures (none re-rendered this PR).
+
+Total 454 files changed in the merge, with 384 of those being result artifacts.
+
+Session log committed as `cf0694c` and pushed.
+Working tree is clean of anything pipeline-relevant.
+
+## Picking back up
+
+**If you resume:**
+
+Read [quality_reports/session_logs/2026-05-13_refit-cleanup-pr1-and-dhault-paper.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/session_logs/2026-05-13_refit-cleanup-pr1-and-dhault-paper.md) for the full session arc.
+
+**Open thread:** PR-7 is merged.
+No active work pending on this branch.
+
+**Possible next-session priorities, in no particular order:**
+
+1. Onboard the Suri 2011 PDF via `process-papers` (still in `papers/inbox/` on main, unprocessed).
+2. Extend the preamble-macro migration to OLS and summary-stats tables (deferred today; would mirror the GRC migration mechanically).
+3. Address remaining MINORs from the critic reports if anyone cares to polish:
+   - Stata: brace-less `if` in extras drivers, missing headers on the two other slice drivers, stale line-number reference.
+   - Python: schema-version dtype mismatch between writer and reader, redundant `pd.isna` guards, subgroup `SterRecord` field gaps.
+4. Clean up the loose stray files in this worktree (`test_inc.do`, `papers/summaries/test.json`, the stale `.log`).
+
+**State to know:**
+
+- Branch tip: `cf0694c` on `worktree-grc-pipeline-refactor`, pushed to origin.
+- `main` tip: `da8b51e` (the merge commit), pushed.
+- The `_pre_fix_backup_82766d2/` ster backup is gone permanently.
+- Voice.md and manuscript-writing.md were Read this session, so the prose-rules-enforcer flag is set for this session; resets on next session start.
+
+with Claude
+
+## Continuation (afternoon)
+
+After PR-1 merged on origin yesterday evening, this session resumed on `main`:
+
+- Pulled 60 commits from origin (PR-7 merge); local `papers/inbox/dhaultfoeuilleInferenceExtendedRoy2013.pdf` was byte-identical to the incoming version and removed before fast-forward.
+- D'Haultfoeuille and Maurel (2013) added to CKT.bib and cited once in [sec_intro.tex](file:///C:/Users/maand/Monash%20Uni%20Enterprise%20Dropbox/Emilia%20Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/sections/sec_intro.tex) after the MTE paragraph as a parallel "no-exclusion-restriction" identification route (different structural source: selection equation, not form of comparative advantage).
+- Started Gai, Guo, Li, Shi, Zhu (2025, *Econometrica*) "Rural Pensions, Labor Reallocation, and Aggregate Income" through `/process-papers` — Stage A done, citekey `gaiRuralPensionsLabor2025`, reshuffled, 5 chunk_notes written. Reducer next.
+
+with Claude
