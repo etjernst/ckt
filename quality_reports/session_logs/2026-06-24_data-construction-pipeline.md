@@ -2,16 +2,20 @@
 
 ## If you resume
 
-A clean, reproducible data-construction pipeline now lives in `RP7/databuild/` on branch `worktree-data-construction`.
+A clean, reproducible data-construction pipeline lives in `RP7/databuild/` and is now on main.
 It rebuilds the three analysis inputs (`CHN.dta`, `IDN.dta`, `TZA.dta`) from the upstream replication-package outputs and was verified to reproduce the canonical files exactly.
 
-Status: complete and verified.
-The branch is not yet merged to main.
+Status: complete, verified, merged, and pushed.
+`worktree-data-construction` was merged into main with `--no-ff` (merge commit `f92e351`) and pushed to origin (`da8b51e..f92e351`).
+
+Cached state to know:
+- The `worktree-data-construction` worktree is kept on disk at `.claude/worktrees/data-construction` with its 2 GB of gitignored `inputs/`/`output/` intact, so the build can rerun without re-copying.
+- The branch still exists (checked out in that worktree); it cannot be deleted until the worktree is removed. The user wants explicit go-ahead before any worktree removal, post the 2026-06-23 incident. This worktree has no junctions, so removal is safe when approved.
 
 Next actions if continuing:
-- Merge `worktree-data-construction` into main when ready.
 - Optionally wire the real and spatial-deflator tracks (`260302`, `260508`) the same way; only nominal was built.
 - The Todoist task to document the CHN/CFPS provenance in the paper data section is filed (id `6gwq3x2hQ2R3xmWr`).
+- Remove the worktree and delete the branch once the user confirms it is no longer needed.
 
 ## Mode
 
@@ -64,6 +68,12 @@ A separate bug also surfaced: a `/*` inside a header comment (`countries/*.dta`)
 
 ## Open items
 
-- Merge the branch to main.
 - Real and spatial tracks not yet built.
 - Document the CHN/CFPS provenance in the paper (Todoist task filed).
+- Remove the worktree and delete `worktree-data-construction` once the user confirms.
+
+## Merge and push (closing)
+
+Merged `worktree-data-construction` into main with `--no-ff` (merge commit `f92e351`); the merge had no conflicts because the branch only added new files under `RP7/databuild/` and one new session log, none of which existed on main.
+Pushed main to origin (`da8b51e..f92e351`) after the user authorized it.
+Kept the worktree on disk so the 2 GB of copied inputs survive for a rerun; deletion awaits explicit user approval.
