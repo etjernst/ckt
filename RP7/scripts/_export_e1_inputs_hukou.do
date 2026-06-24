@@ -13,7 +13,6 @@
 * ============================================================
 
 version 17
-clear all
 set more off
 set varabbrev off
 capture log close
@@ -72,6 +71,11 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
 
     * --- 2. Read _d ster for per-trajectory unrestricted Delta_d ---
     local dster "$output/grc_`country_short'_cuu_ca_d.ster"
+    capture confirm file "`dster'"
+    if _rc {
+        di as error "  _d ster missing -- skipping `country_short'"
+        continue
+    }
     quietly estimates use "`dster'"
     matrix bd = e(b)
     local d_names : colnames bd

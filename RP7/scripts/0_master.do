@@ -59,9 +59,9 @@ if "`c(username)'"=="etje0002" {
 }
 if "`c(username)'"=="maand" {
 	* Path varies by worktree. Pick ONE --- uncomment the active line.
-	global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
-	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
 	* global dir = "C:/git/ckt/RP7"
 	* Overleaf-Dropbox lives in Monash Enterprise Dropbox (not Personal).
@@ -84,6 +84,14 @@ if "`c(username)'"=="maand" {
 *    Default 0; coauthors do not need Python. Set to 1 only on a machine
 *    that has Python installed and that runs the headlines-cache dashboard.
 	global runDashboard 0
+
+* 7. Run the E1 counterfactual misallocation accounting? 1 = will run.
+*    Default 0: like the dashboard it needs Python, plus the inversion
+*    sters (5b_inversion.do) and the hukou sters (7_GrRC_hukou.do) on disk.
+*    Produces output/counterfactual_results.csv and the paper table
+*    output/tables/counterfactual_misallocation.tex, and self-checks the
+*    numbers against the committed baseline snapshot.
+	global run_counterfactuals 0
 
 * **********************************************************************
 * Run do-files
@@ -124,4 +132,10 @@ if "`c(username)'"=="maand" {
 * Gated behind $runDashboard so coauthors without Python don't hit errors.
 	if "${runDashboard}" == "1" {
 		shell python "$dir/../tools/results_overview/scrape_headlines.py" --incremental
+	}
+* Run the E1 counterfactual misallocation accounting (Stata orchestrates,
+* Python computes). Placed after 5b and 7 because it needs the inversion
+* sters (5b_inversion.do) and the hukou sters (7_GrRC_hukou.do) on disk.
+	if "${run_counterfactuals}" == "1" {
+		include		"$dir/scripts/12_counterfactuals.do"
 	}
