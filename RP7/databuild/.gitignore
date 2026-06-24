@@ -1,0 +1,3 @@
+# Copied replication inputs and regenerated outputs are data, never committed.
+inputs/
+output/
