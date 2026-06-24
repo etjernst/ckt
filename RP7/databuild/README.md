@@ -18,8 +18,10 @@ All consumption and income variables are nominal.
 
 ```
 cd RP7/databuild
-stata-mp -b do 0_databuild_master.do
+stata-mp -e do 0_databuild_master.do
 ```
+
+Use the `-e` flag, not `-b`: on Windows `-b` always shows a modal completion popup, while `-e` exits cleanly.
 
 Outputs land in `output/`.
 The build never touches the canonical files and never runs the analytical pipeline.

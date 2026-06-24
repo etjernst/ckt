@@ -8,8 +8,8 @@ replication-package outputs, and writes them to output/.
 This is the permanent data-construction pipeline. It is separate from the
 analytical pipeline (RP7/scripts/0_master.do), which this file never calls.
 
-Run from the databuild directory:
-	cd RP7/databuild && stata-mp -b do 0_databuild_master.do
+Run from the databuild directory (use -e, not -b, to avoid the Windows popup):
+	cd RP7/databuild && stata-mp -e do 0_databuild_master.do
 
 Chain, per country:
 - IDN: HKLM Intergen_Analysis_IFLS (+ Total_panel_HKLM_hhsize + location_vars) -> IDN.dta
@@ -23,10 +23,35 @@ here; run it separately once, then delete it.
 clear all
 set more off
 
-do 0_databuild_paths.do
+* Run this file with `stata-mp -e do 0_databuild_master.do` (NOT -b): the -e
+* flag is what suppresses the Windows "Stata finished" completion popup. The
+* capture noisily wrapper below is for error hygiene (so _rc can be inspected),
+* not for popup suppression.
+local failed = 0
+capture noisily {
 
-do 1_build_IDN.do
-do 2_build_CHN.do
-do 3_build_TZA.do
+	do 0_databuild_paths.do
 
-display "Data build complete. Outputs in $output."
+	foreach f in 1_build_IDN 2_build_CHN 3_build_TZA {
+		display _n "=================== running `f' ==================="
+		capture noisily do `f'.do
+		if _rc {
+			display as error ">>> `f' FAILED with rc=`=_rc'"
+			local failed = 1
+		}
+		else {
+			display ">>> `f' completed"
+		}
+	}
+}
+if _rc local failed = 1
+
+if `failed' {
+	display as error "One or more builds failed; see the log above. Outputs may be incomplete."
+}
+else {
+	display "Data build complete. Outputs in $output."
+}
+
+capture log close
+exit, STATA clear

@@ -5,8 +5,8 @@ _verify_equivalence.do   (TEMPORARY --- delete after verification passes)
 Confirms that the regenerated output/{CHN,IDN,TZA}.dta reproduce the canonical
 analysis inputs. NOT part of the permanent pipeline and NOT called by the master.
 
-Run after the build:
-	cd RP7/databuild && stata-mp -b do _verify_equivalence.do
+Run after the build (use -e, not -b, to avoid the Windows popup):
+	cd RP7/databuild && stata-mp -e do _verify_equivalence.do
 
 Writes verification_report.md. The primary verdict is the Stata datasignature,
 which compares data content independent of file-header timestamps and of
@@ -24,6 +24,17 @@ file write `fh' "Primary verdict is the Stata datasignature (content equality, o
 file write `fh' "cf _all is a secondary positional check (rc 0 means identical position by position)." _n _n
 
 foreach c in CHN IDN TZA {
+
+	* guard: skip cleanly (no modal) if either file is missing
+	capture confirm file "$output/`c'.dta"
+	local rc_out = _rc
+	capture confirm file "$canonical/`c'.dta"
+	local rc_can = _rc
+	if `rc_out' | `rc_can' {
+		file write `fh' "## `c'" _n
+		file write `fh' "- SKIPPED: missing file (output rc `rc_out', canonical rc `rc_can')" _n _n
+		continue
+	}
 
 	* regenerated
 	use "$output/`c'", clear
@@ -92,15 +103,15 @@ foreach c in CHN IDN {
 	capture confirm file "`dbx'/`c'_real_spatial.dta"
 	local rc_sp = _rc
 	if `rc_nom' == 0 & `rc_real' == 0 {
-		use consumption using "`dbx'/`c'.dta", clear
+		cap use consumption using "`dbx'/`c'.dta", clear
 		qui summarize consumption
 		local m_nom = r(mean)
-		use consumption using "`dbx'/`c'_real.dta", clear
+		cap use consumption using "`dbx'/`c'_real.dta", clear
 		qui summarize consumption
 		local m_real = r(mean)
 		local m_sp = .
 		if `rc_sp' == 0 {
-			use consumption using "`dbx'/`c'_real_spatial.dta", clear
+			cap use consumption using "`dbx'/`c'_real_spatial.dta", clear
 			qui summarize consumption
 			local m_sp = r(mean)
 		}
