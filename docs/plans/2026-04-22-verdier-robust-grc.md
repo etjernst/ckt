@@ -1,7 +1,7 @@
 # Plan: implementing Verdier's robust extrapolation in the CKT GRC estimator
 
 **Date:** 2026-04-22
-**Revised:** 2026-04-23 (incorporating [plan-review findings](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-22_verdier-robust-grc-plan-review.md))
+**Revised:** 2026-04-23 (incorporating [plan-review findings](file:///C:/git/ckt/.claude/worktrees/verdier/quality_reports/reviews/2026-04-22_verdier-robust-grc-plan-review.md))
 **Spec:** [`docs/specs/2026-04-22-verdier-robust-grc.md`](file:///C:/git/ckt/.claude/worktrees/verdier/docs/specs/2026-04-22-verdier-robust-grc.md) (approved)
 **Worktree:** `verdier`
 **Mode:** Implementation
@@ -36,7 +36,7 @@ Six phases. Each ends in a verification gate before the next begins.
 
 ### 2.1 VV Section F adaptation memo
 
-**File:** `docs/reviews/2026-04-XX_robust-grc-derivation.md`. Audience: anyone who needs to read the code. Translates VV's notation into CKT notation:
+**File:** `quality_reports/reviews/2026-04-XX_robust-grc-derivation.md`. Audience: anyone who needs to read the code. Translates VV's notation into CKT notation:
 
 | VV | CKT |
 |---|---|
@@ -56,7 +56,7 @@ Sign-off: human review before P1 begins.
 
 ### 2.2 LCA-overid (E.3.2) transcription
 
-**File:** `docs/reviews/2026-04-XX_lca-overid-derivation.md`. Five independent subagents transcribe the E.3.2 augmented moments in parallel; majority-of-five consensus is the canonical version. Key facts (from initial transcription):
+**File:** `quality_reports/reviews/2026-04-XX_lca-overid-derivation.md`. Five independent subagents transcribe the E.3.2 augmented moments in parallel; majority-of-five consensus is the canonical version. Key facts (from initial transcription):
 
 - VV adds $|S|+1$ exactly-identifying moments, indexed by $\eta_0$ and $\eta_t$ for $t \in S$.
 - $S$ = largest subset of time periods with linearly independent treatment vectors among switchers. For $T\geq 3$, $S = \{1, \ldots, T\}$.
@@ -70,7 +70,7 @@ Sign-off: human review of the consensus transcription and the worked Stata expre
 
 ### 2.3 Inference: analytical default, bootstrap as cross-check
 
-**Updated 2026-04-23** after reading [VV's published implementation](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-implementation-findings.md): VV uses analytical cluster-robust standard errors (`vce(cluster vil)`) and reports the LCA-overid p-value via `chi2tail`. He does NOT bootstrap the LCA-overid test. We follow VV.
+**Updated 2026-04-23** after reading [VV's published implementation](file:///C:/git/ckt/.claude/worktrees/verdier/quality_reports/reviews/2026-04-23_lca-overid-implementation-findings.md): VV uses analytical cluster-robust standard errors (`vce(cluster vil)`) and reports the LCA-overid p-value via `chi2tail`. He does NOT bootstrap the LCA-overid test. We follow VV.
 
 **Default for both LCA-overid and $\hat\phi$ inference:** analytical SEs from `vce(cluster vfirst)` (robust spec) or `vce(cluster pid)` (simple spec). Wald p-values via `chi2tail`.
 
@@ -170,7 +170,7 @@ In addition: for tables, save a sample-matched simple-spec estimate that restric
 
 ### 5.1 `run_grc_overid`
 
-New program in `0_programs.do`. Implements the augmented exactly-identifying moment system from VV E.3.2 per the [§2.2 transcription memo](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-derivation.md) and the [implementation-findings memo §5](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-23_lca-overid-implementation-findings.md). Naming: `grc_{simple|robust}_{country}_{spec}{_vindex}_lca.ster`.
+New program in `0_programs.do`. Implements the augmented exactly-identifying moment system from VV E.3.2 per the [§2.2 transcription memo](file:///C:/git/ckt/.claude/worktrees/verdier/quality_reports/reviews/2026-04-23_lca-overid-derivation.md) and the [implementation-findings memo §5](file:///C:/git/ckt/.claude/worktrees/verdier/quality_reports/reviews/2026-04-23_lca-overid-implementation-findings.md). Naming: `grc_{simple|robust}_{country}_{spec}{_vindex}_lca.ster`.
 
 **Implementation pattern (mirrors VV's `Table1/Code/nrobust.do` and `robust.do`):** single `gmm` call with the system stacked as: original `run_grc` moments + LCA-overid $\eta$ moments. Uses two instrument blocks: block 1 = original CKT instruments (the `wd*` analogues for first-stage covariates), block 2 = per-period treatment indicators (`hybrid`per'IV` analogues) for the overid moments. After estimation, `test [eta0]_cons [eta1]_cons ... [eta_T]_cons` produces a Wald $\chi^2_{|S|-1}$ statistic; p-value via `chi2tail(|S|-1, chi2)`.
 
@@ -252,7 +252,7 @@ Sign-and-magnitude stability of $\phi$ across this matrix is the actual robustne
 
 ### 7.4 Results memo
 
-`docs/reviews/2026-04-XX_verdier-results.md`. Headings as in the original plan, plus:
+`quality_reports/reviews/2026-04-XX_verdier-results.md`. Headings as in the original plan, plus:
 - Sign-of-$\phi$ stress matrix as the headline robustness table.
 - WCB p-values discussion (caveat about `boottest` not re-weighting the moment matrix).
 - Constant-$\beta(v)$ test result: did the data reject the simple spec, or not?
@@ -263,9 +263,9 @@ Sign-and-magnitude stability of $\phi$ across this matrix is the actual robustne
 
 New files:
 - `docs/plans/2026-04-22-verdier-robust-grc.md` (this file)
-- `docs/reviews/2026-04-XX_robust-grc-derivation.md` (P0)
-- `docs/reviews/2026-04-XX_lca-overid-derivation.md` (P0)
-- `docs/reviews/2026-04-XX_verdier-results.md` (P5)
+- `quality_reports/reviews/2026-04-XX_robust-grc-derivation.md` (P0)
+- `quality_reports/reviews/2026-04-XX_lca-overid-derivation.md` (P0)
+- `quality_reports/reviews/2026-04-XX_verdier-results.md` (P5)
 
 Modified (single file, additive only):
 - `scripts/0_programs.do`: append `gen_vfirst`, `initial_values_robust`, `run_grc_robust`, `run_grc_overid`, `grc_tex_table_robust`. Modify `heterogeneity_plots` (P5).

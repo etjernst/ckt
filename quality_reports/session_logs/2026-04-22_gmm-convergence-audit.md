@@ -21,7 +21,7 @@ Understand why several GrRC specifications aren't converging. Before diagnosing,
 
 - `run_grc` calls `gmm … quickderivatives nolog`, so the iteration trace is suppressed. Only the final "convergence not achieved" / "Warning: Convergence not achieved." messages appear, plus the final GMM criterion Q(b) and coefficient table.
 - Wrote `explorations/audit_convergence.py` to parse all `scripts/logs/*GrRC*.log` files. For each `run_grc: base trajectory = N` echo in the log, we record: country, section, estname, base, Q(b), converged flag, and the final phi/kappa + SEs from the coefficient table that follows.
-- Output: `docs/reviews/2026-04-22-gmm-convergence-audit.md` — includes per-country summary, per-spec ✓/✗ grid, failed-run detail table, and a diagnosis section.
+- Output: `quality_reports/reviews/2026-04-22-gmm-convergence-audit.md` — includes per-country summary, per-spec ✓/✗ grid, failed-run detail table, and a diagnosis section.
 
 ### Numbers
 
@@ -143,7 +143,7 @@ Three exploration tasks offered but not yet executed (user hasn't picked):
 - `MEMORY.md` (auto-memory) — RP4 → RP6, added re-versioning note.
 - `explorations/audit_convergence.py` — new parser.
 - `explorations/check_trajectories.do` / `.log` — new trajectory tab.
-- `docs/reviews/2026-04-22-gmm-convergence-audit.md` — new audit report.
+- `quality_reports/reviews/2026-04-22-gmm-convergence-audit.md` — new audit report.
 
 ## Not done / open questions
 
@@ -266,7 +266,7 @@ Worktree: `.claude/worktrees/verdier/` (branch `worktree-verdier`).
    `explorations/CKT_2026.tex` and `run_grc` in
    `scripts/0_programs.do` (lines 1538-1664).
 6. Wrote design memo:
-   `docs/reviews/2026-04-22_verdier-modification-design.md`.
+   `quality_reports/reviews/2026-04-22_verdier-modification-design.md`.
    Ranked four implementation variants:
    A (robust extrapolation with $v_i$-clustered intercepts),
    B (LCA-specific $|S|-1$ df overid test),
@@ -274,7 +274,7 @@ Worktree: `.claude/worktrees/verdier/` (branch `worktree-verdier`).
    D (individual-level Chamberlain rewrite). Recommended A primary,
    B as complementary diagnostic.
 7. Addendum written after feedback:
-   `docs/reviews/2026-04-22_verdier-modification-design-addendum.md`.
+   `quality_reports/reviews/2026-04-22_verdier-modification-design-addendum.md`.
    Corrects the mechanical issue that "village" does not transfer
    from VV's single-village-per-farmer setting to CKT's
    migration-as-treatment setting. Proposes time-invariant
@@ -323,8 +323,8 @@ Worktree: `.claude/worktrees/verdier/` (branch `worktree-verdier`).
 - `papers/summaries/verdierAverageTreatmentEffects2020.{md,bib,notes.md}`
 - `papers/summaries/verdierAverageTreatmentEffects2020appendix.{md,bib,notes.md}`
 - `papers/manifest.yaml`, `papers/config.yaml`
-- `docs/reviews/2026-04-22_verdier-modification-design.md`
-- `docs/reviews/2026-04-22_verdier-modification-design-addendum.md`
+- `quality_reports/reviews/2026-04-22_verdier-modification-design.md`
+- `quality_reports/reviews/2026-04-22_verdier-modification-design-addendum.md`
 - `tmp/vv-replication/replication_archive/` (unpacked VV code)
 
 No changes to `scripts/`, `paper/`, or any tracked CKT file.
@@ -406,7 +406,7 @@ After both fixes, `2_cluster_support_v2.do` ran clean.
 
 ### Results
 
-See [feasibility note](file:///C:/git/ckt/.claude/worktrees/verdier/docs/reviews/2026-04-22_verdier-feasibility-note.md).
+See [feasibility note](file:///C:/git/ckt/.claude/worktrees/verdier/quality_reports/reviews/2026-04-22_verdier-feasibility-note.md).
 
 First-wave province is viable for all three countries, with
 99.65-100% always-rural support and 13-22 clusters with
@@ -517,11 +517,11 @@ All changes verified with two-pass xelatex; 57-page output,
 no undefined references.
 
 Reviews saved:
-- `docs/reviews/2026-04-22-unbalanced_proposition-methods.md`
-- `docs/reviews/2026-04-22-unbalanced_proposition-writing.md`
-- `docs/reviews/2026-04-22-unbalanced_proposition-humanizer.md`
-- `docs/reviews/2026-04-22-unbalanced_proposition-followup.md`
-- `docs/reviews/2026-04-22-unbalanced_proposition-methods-v2.md`
+- `quality_reports/reviews/2026-04-22-unbalanced_proposition-methods.md`
+- `quality_reports/reviews/2026-04-22-unbalanced_proposition-writing.md`
+- `quality_reports/reviews/2026-04-22-unbalanced_proposition-humanizer.md`
+- `quality_reports/reviews/2026-04-22-unbalanced_proposition-followup.md`
+- `quality_reports/reviews/2026-04-22-unbalanced_proposition-methods-v2.md`
 
 ### Python GRC port (in progress)
 

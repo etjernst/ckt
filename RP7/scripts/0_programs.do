@@ -2368,7 +2368,7 @@ end
 * Implements the within-v demeaning estimator as a single-step
 * extension of run_grc: adds |V|-1 cluster dummies x choice to the
 * GMM equation so Delta_{d_0} becomes cluster-specific (beta(v)).
-* See docs/reviews/2026-04-23_robust-grc-derivation.md for the full
+* See quality_reports/reviews/2026-04-23_robust-grc-derivation.md for the full
 * derivation. Standard errors switch from vce(cluster pid) to
 * vce(cluster vfirst). The always-urban term uses scalar kappa
 * (cross-origin extrapolation) per memo section 6.

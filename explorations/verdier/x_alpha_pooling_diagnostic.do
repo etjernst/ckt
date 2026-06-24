@@ -9,7 +9,7 @@
 *          If these weights differ substantially across switchers
 *          AND beta(v) varies across clusters, the GMM estimator of
 *          phi is biased (see
-*          docs/reviews/2026-04-24_alpha-pooling-derivation.md).
+*          quality_reports/reviews/2026-04-24_alpha-pooling-derivation.md).
 *          This script computes the per-(s, v) weights for each
 *          (country, cov_all spec), then the total-variation distance
 *          between pairs of switchers' weight profiles to diagnose

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parallelizing the GRC extras pipeline</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    color: #1f2937;
+    line-height: 1.55;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.2rem; border-bottom: 2px solid #1e40af; padding-bottom: 0.4rem; }
+  h2 { font-size: 1.2rem; color: #1e40af; margin-top: 2.2rem; }
+  h3 { font-size: 1.0rem; color: #1f2937; margin-top: 1.4rem; }
+  .subtitle { color: #6b7280; font-size: 0.95rem; margin-top: 0; }
+  table { border-collapse: collapse; margin: 0.6rem 0; font-size: 0.92rem; }
+  th, td { padding: 0.35rem 0.7rem; border: 1px solid #d1d5db; text-align: left; }
+  th { background: #eaf2f9; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.idn td.num { background: #fde2e2; }
+  tr.chn td.num { background: #fef3c7; }
+  tr.tza td.num { background: #d1fae5; }
+  .summary-box {
+    background: #fef9e7;
+    border-left: 4px solid #f59e0b;
+    padding: 0.7rem 1rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  .gantt-wrapper { margin: 1rem 0 1.6rem 0; }
+  .gantt-label { font-weight: 600; color: #4b5563; margin-bottom: 0.3rem; font-size: 0.95rem; }
+  svg { display: block; margin: 0.4rem 0; }
+  .legend { font-size: 0.85rem; color: #4b5563; margin-top: 0.4rem; }
+  .legend span { display: inline-block; margin-right: 1rem; }
+  .legend .swatch {
+    display: inline-block; width: 12px; height: 12px; border-radius: 2px;
+    vertical-align: middle; margin-right: 4px;
+  }
+  .crit { color: #b91c1c; font-weight: 600; }
+  .ok { color: #15803d; font-weight: 600; }
+  ul.tight li { margin: 0.15rem 0; }
+  .small { font-size: 0.86rem; color: #6b7280; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.8rem 1rem; }
+  .card h4 { margin: 0 0 0.4rem 0; font-size: 0.95rem; color: #1e40af; }
+</style>
+</head>
+<body>
+
+<h1>Parallelizing the GRC extras pipeline</h1>
+<p class="subtitle">Three options for compressing the remaining serial work in <code>9_GRC_extras.do</code>. Drafted 2026-05-09. Planning only --- no implementation.</p>
+
+<div class="summary-box">
+<strong>The core lever.</strong> Stata MP cannot parallelize the <code>gmm</code> / <code>nlcom</code> bottleneck within a single process, so multi-core is irrelevant here. Multiple Stata instances on the same machine, each handling a disjoint slice of the work, is the only practical speedup. The codebase already supports this through <code>${skip_if_exists}</code> --- any instance that finds a target ster on disk skips that cell in seconds.
+</div>
+
+<h2>1. Where time is spent</h2>
+
+<p>Per-cell wall time differs by three orders of magnitude across the (country, spec3) grid. The intuition for why is in the session log; here are the medians from the run so far:</p>
+
+<table>
+  <thead>
+    <tr><th>Country</th><th>cuu (sec/cell)</th><th>cub (sec/cell)</th><th>iuu (sec/cell)</th><th>family total (4 covs &times; 3 spec3)</th></tr>
+  </thead>
+  <tbody>
+    <tr class="idn"><td><strong>IDN</strong></td><td class="num">~3300</td><td class="num">~520</td><td class="num">~2000</td><td class="num">~6.5 h</td></tr>
+    <tr class="chn"><td><strong>CHN</strong></td><td class="num">~470</td><td class="num">~225</td><td class="num">~180</td><td class="num">~58 min</td></tr>
+    <tr class="tza"><td><strong>TZA</strong></td><td class="num">~38</td><td class="num">~28</td><td class="num">~10</td><td class="num">~5 min</td></tr>
+  </tbody>
+</table>
+
+<p>Visualized as a stacked bar (one row per family, segments by country &times; spec3 contribution):</p>
+
+<svg width="1000" height="120" viewBox="0 0 1000 120">
+  <!-- Single family of 36 cells = ~7.5 h -->
+  <text x="0" y="20" font-size="12" fill="#374151" font-weight="600">One extras family (36 cells, ~7.5 h)</text>
+  <!-- Bar at y=40, height=28, total width 900px = 7.5h -->
+  <!-- IDN cuu: 3.5h = 420px -->
+  <rect x="20" y="40" width="420" height="28" fill="#dc2626" />
+  <text x="230" y="59" text-anchor="middle" fill="white" font-size="11" font-weight="600">IDN cuu (3.5 h)</text>
+  <!-- IDN iuu: 2.2h = 264px -->
+  <rect x="440" y="40" width="264" height="28" fill="#f87171" />
+  <text x="572" y="59" text-anchor="middle" fill="white" font-size="11" font-weight="600">IDN iuu (2.2 h)</text>
+  <!-- IDN cub: 0.6h = 72px -->
+  <rect x="704" y="40" width="72" height="28" fill="#fca5a5" />
+  <text x="740" y="59" text-anchor="middle" fill="#7f1d1d" font-size="10">IDN cub</text>
+  <!-- CHN all: ~0.95h = 114px -->
+  <rect x="776" y="40" width="114" height="28" fill="#f59e0b" />
+  <text x="833" y="59" text-anchor="middle" fill="white" font-size="10">CHN (~58 min)</text>
+  <!-- TZA all: ~0.08h = 10px -->
+  <rect x="890" y="40" width="10" height="28" fill="#10b981" />
+  <!-- Time axis -->
+  <line x1="20" y1="80" x2="900" y2="80" stroke="#9ca3af" stroke-width="1" />
+  <g font-size="10" fill="#6b7280">
+    <text x="20" y="98" text-anchor="middle">0 h</text>
+    <text x="248" y="98" text-anchor="middle">2 h</text>
+    <text x="476" y="98" text-anchor="middle">4 h</text>
+    <text x="704" y="98" text-anchor="middle">6 h</text>
+    <text x="900" y="98" text-anchor="middle">~7.5 h</text>
+  </g>
+</svg>
+
+<p>IDN cuu eats 47% of family time on its own; IDN iuu another 30%. CHN+TZA combined: 14%. <strong>If you parallelize, the slowest single stem (IDN cuu) is the unavoidable floor.</strong></p>
+
+<h2>2. The current state, visualized</h2>
+
+<p>PID 4864 is doing all 6 remaining work blocks (1 unfinished family + 3 future families + cnu sub-block + birth dispatcher) in a single serial chain. As of the last status check (slot 86, 2026-05-09 ~08:00):</p>
+
+<svg width="1000" height="170" viewBox="0 0 1000 170">
+  <text x="0" y="18" font-size="12" fill="#374151" font-weight="600">PID 4864, single instance, serial schedule (32 h ahead)</text>
+  <!-- Bar at y=40, height=32. Total ~32h = 900px scale -->
+  <!-- expsh remainder (3.5h = 100px) -->
+  <rect x="20" y="40" width="100" height="32" fill="#a78bfa" />
+  <text x="70" y="61" text-anchor="middle" fill="white" font-size="11" font-weight="600">expsh rem.</text>
+  <text x="70" y="86" text-anchor="middle" fill="#6b21a8" font-size="10">3.5 h</text>
+  <!-- maxexpsh (7.5h = 211px) -->
+  <rect x="120" y="40" width="211" height="32" fill="#8b5cf6" />
+  <text x="225" y="61" text-anchor="middle" fill="white" font-size="11" font-weight="600">maxexpsh</text>
+  <text x="225" y="86" text-anchor="middle" fill="#6b21a8" font-size="10">7.5 h</text>
+  <!-- cnu (8h = 225px) -->
+  <rect x="331" y="40" width="225" height="32" fill="#3b82f6" />
+  <text x="443" y="61" text-anchor="middle" fill="white" font-size="11" font-weight="600">IDN cnu sub-block</text>
+  <text x="443" y="86" text-anchor="middle" fill="#1e3a8a" font-size="10">8 h</text>
+  <!-- birth (13h = 366px) -->
+  <rect x="556" y="40" width="366" height="32" fill="#1e40af" />
+  <text x="739" y="61" text-anchor="middle" fill="white" font-size="11" font-weight="600">IDN birth dispatcher</text>
+  <text x="739" y="86" text-anchor="middle" fill="#1e3a8a" font-size="10">13 h</text>
+  <!-- Time axis -->
+  <line x1="20" y1="105" x2="922" y2="105" stroke="#9ca3af" stroke-width="1" />
+  <g font-size="10" fill="#6b7280">
+    <text x="20" y="123" text-anchor="middle">0 h</text>
+    <text x="245" y="123" text-anchor="middle">8 h</text>
+    <text x="470" y="123" text-anchor="middle">16 h</text>
+    <text x="697" y="123" text-anchor="middle">24 h</text>
+    <text x="922" y="123" text-anchor="middle">32 h</text>
+  </g>
+  <text x="471" y="155" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="600">Critical path: 32 h serial (ETA late 2026-05-10)</text>
+</svg>
+
+<h2>3. Three plans, side by side</h2>
+
+<p>Each new instance gets a slice driver (set <code>global skip_if_exists 1</code>, set its own log filename, source <code>0_path_config.do</code> + <code>0_programs.do</code>, run a target block) and gets launched detached via PowerShell. The slice is chosen so PID 4864 won't reach it for many hours, removing the race window.</p>
+
+<h3>Plan A --- minimal: 2 new instances</h3>
+
+<svg width="1000" height="200" viewBox="0 0 1000 200">
+  <!-- Same 32h scale: 900px = 32h -->
+  <text x="0" y="18" font-size="12" fill="#374151" font-weight="600">PID 4864 + 2 new instances</text>
+
+  <!-- Row 1: PID 4864 -->
+  <text x="0" y="48" font-size="11" fill="#374151">PID 4864</text>
+  <rect x="80" y="35" width="100" height="22" fill="#a78bfa" />
+  <text x="130" y="51" text-anchor="middle" fill="white" font-size="10">expsh</text>
+  <rect x="180" y="35" width="211" height="22" fill="#8b5cf6" />
+  <text x="285" y="51" text-anchor="middle" fill="white" font-size="10">maxexpsh</text>
+  <!-- skip cnu and birth as thin bars -->
+  <rect x="391" y="35" width="6" height="22" fill="#9ca3af" />
+  <rect x="397" y="35" width="6" height="22" fill="#9ca3af" />
+  <text x="420" y="51" font-size="10" fill="#6b7280">~11 h, then skips finish</text>
+
+  <!-- Row 2: Instance B -->
+  <text x="0" y="78" font-size="11" fill="#374151">Instance B</text>
+  <rect x="80" y="65" width="225" height="22" fill="#3b82f6" />
+  <text x="192" y="81" text-anchor="middle" fill="white" font-size="10">IDN cnu sub-block (8 h)</text>
+
+  <!-- Row 3: Instance C -->
+  <text x="0" y="108" font-size="11" fill="#374151">Instance C</text>
+  <rect x="80" y="95" width="366" height="22" fill="#1e40af" />
+  <text x="263" y="111" text-anchor="middle" fill="white" font-size="10">IDN birth dispatcher (13 h)</text>
+
+  <!-- Critical path arrow -->
+  <line x1="80" y1="135" x2="446" y2="135" stroke="#b91c1c" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="263" y="153" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="600">Critical path: 13 h (instance C)</text>
+
+  <!-- Time axis -->
+  <line x1="80" y1="180" x2="980" y2="180" stroke="#9ca3af" stroke-width="1" />
+  <g font-size="10" fill="#6b7280">
+    <text x="80" y="195" text-anchor="middle">0</text>
+    <text x="305" y="195" text-anchor="middle">8 h</text>
+    <text x="530" y="195" text-anchor="middle">16 h</text>
+    <text x="755" y="195" text-anchor="middle">24 h</text>
+    <text x="980" y="195" text-anchor="middle">32 h</text>
+  </g>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#b91c1c" />
+    </marker>
+  </defs>
+</svg>
+
+<p><strong>Speedup: 32 h &rarr; 13 h (~2.5x).</strong> Two new drivers, two log files, two detached <code>Start-Process</code> calls. Lowest setup cost.</p>
+
+<h3>Plan B --- balanced: 3 new instances</h3>
+
+<svg width="1000" height="220" viewBox="0 0 1000 220">
+  <text x="0" y="18" font-size="12" fill="#374151" font-weight="600">PID 4864 + 3 new instances (adds maxexpsh slice)</text>
+
+  <text x="0" y="48" font-size="11" fill="#374151">PID 4864</text>
+  <rect x="80" y="35" width="100" height="22" fill="#a78bfa" />
+  <text x="130" y="51" text-anchor="middle" fill="white" font-size="10">expsh</text>
+  <rect x="180" y="35" width="6" height="22" fill="#9ca3af" />
+  <rect x="186" y="35" width="6" height="22" fill="#9ca3af" />
+  <rect x="192" y="35" width="6" height="22" fill="#9ca3af" />
+  <text x="215" y="51" font-size="10" fill="#6b7280">3.5 h, then skips finish</text>
+
+  <text x="0" y="78" font-size="11" fill="#374151">Instance D</text>
+  <rect x="80" y="65" width="211" height="22" fill="#8b5cf6" />
+  <text x="185" y="81" text-anchor="middle" fill="white" font-size="10">maxexpsh family (7.5 h)</text>
+
+  <text x="0" y="108" font-size="11" fill="#374151">Instance B</text>
+  <rect x="80" y="95" width="225" height="22" fill="#3b82f6" />
+  <text x="192" y="111" text-anchor="middle" fill="white" font-size="10">IDN cnu sub-block (8 h)</text>
+
+  <text x="0" y="138" font-size="11" fill="#374151">Instance C</text>
+  <rect x="80" y="125" width="366" height="22" fill="#1e40af" />
+  <text x="263" y="141" text-anchor="middle" fill="white" font-size="10">IDN birth dispatcher (13 h)</text>
+
+  <line x1="80" y1="165" x2="446" y2="165" stroke="#b91c1c" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="263" y="183" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="600">Critical path: still 13 h (instance C)</text>
+
+  <line x1="80" y1="205" x2="980" y2="205" stroke="#9ca3af" stroke-width="1" />
+  <g font-size="10" fill="#6b7280">
+    <text x="80" y="220" text-anchor="middle">0</text>
+    <text x="305" y="220" text-anchor="middle">8 h</text>
+    <text x="530" y="220" text-anchor="middle">16 h</text>
+    <text x="755" y="220" text-anchor="middle">24 h</text>
+    <text x="980" y="220" text-anchor="middle">32 h</text>
+  </g>
+</svg>
+
+<p><strong>Same 13 h critical path as Plan A.</strong> The added instance D doesn't move the floor because instance C (birth) is already longer. The benefit of adding D: PID 4864 finishes its work after ~3.5 h instead of 11 h, freeing the machine of one running process for the rest of the night. Marginal but cheap.</p>
+
+<h3>Plan C --- aggressive: split the long blocks by stem (5--6 instances)</h3>
+
+<p>The IDN birth dispatcher is the critical path. To reduce it, split birth into stem-level instances; spec3=cuu is the only ~3.5 h stem within birth, the rest are short.</p>
+
+<svg width="1000" height="280" viewBox="0 0 1000 280">
+  <text x="0" y="18" font-size="12" fill="#374151" font-weight="600">PID 4864 + 6 new instances (stem-level on birth + maxexpsh)</text>
+
+  <text x="0" y="48" font-size="11" fill="#374151">PID 4864</text>
+  <rect x="80" y="35" width="100" height="22" fill="#a78bfa" />
+  <text x="130" y="51" text-anchor="middle" fill="white" font-size="10">expsh</text>
+  <rect x="180" y="35" width="6" height="22" fill="#9ca3af" />
+
+  <text x="0" y="78" font-size="11" fill="#374151">Inst. D</text>
+  <rect x="80" y="65" width="211" height="22" fill="#8b5cf6" />
+  <text x="185" y="81" text-anchor="middle" fill="white" font-size="10">maxexpsh (7.5 h)</text>
+
+  <text x="0" y="108" font-size="11" fill="#374151">Inst. B</text>
+  <rect x="80" y="95" width="225" height="22" fill="#3b82f6" />
+  <text x="192" y="111" text-anchor="middle" fill="white" font-size="10">IDN cnu sub-block (8 h)</text>
+
+  <text x="0" y="138" font-size="11" fill="#374151">Inst. C1</text>
+  <rect x="80" y="125" width="100" height="22" fill="#1e40af" />
+  <text x="130" y="141" text-anchor="middle" fill="white" font-size="10">birth cuu (3.5 h)</text>
+
+  <text x="0" y="168" font-size="11" fill="#374151">Inst. C2</text>
+  <rect x="80" y="155" width="62" height="22" fill="#3730a3" />
+  <text x="111" y="171" text-anchor="middle" fill="white" font-size="9">birth iuu (2.2 h)</text>
+
+  <text x="0" y="198" font-size="11" fill="#374151">Inst. C3</text>
+  <rect x="80" y="185" width="28" height="22" fill="#4338ca" />
+  <text x="115" y="201" font-size="9" fill="#374151">birth cub (~1 h)</text>
+
+  <line x1="80" y1="225" x2="305" y2="225" stroke="#b91c1c" stroke-width="2" marker-end="url(#arrow)" />
+  <text x="192" y="243" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="600">Critical path: 8 h (instance B, IDN cnu)</text>
+
+  <line x1="80" y1="263" x2="980" y2="263" stroke="#9ca3af" stroke-width="1" />
+  <g font-size="10" fill="#6b7280">
+    <text x="80" y="278" text-anchor="middle">0</text>
+    <text x="305" y="278" text-anchor="middle">8 h</text>
+    <text x="530" y="278" text-anchor="middle">16 h</text>
+    <text x="755" y="278" text-anchor="middle">24 h</text>
+    <text x="980" y="278" text-anchor="middle">32 h</text>
+  </g>
+</svg>
+
+<p><strong>Speedup: 32 h &rarr; 8 h (~4x).</strong> The new bottleneck is the IDN cnu sub-block, which we left whole. To go faster still, split cnu by family (4 instances at ~2 h each); the new floor would be ~3.5 h, set by the slowest single IDN-cuu stem. That asks for 9--10 concurrent Stata instances and runs into diminishing returns: setup, log management, and concurrent-write watchfulness compound.</p>
+
+<h2>4. The mechanism, in one diagram</h2>
+
+<svg width="1000" height="200" viewBox="0 0 1000 200">
+  <!-- Box: PID 4864 stack -->
+  <rect x="20" y="20" width="180" height="160" fill="#f0f9ff" stroke="#3b82f6" stroke-width="1.5" rx="6" />
+  <text x="110" y="42" text-anchor="middle" font-weight="600" fill="#1e40af">PID 4864 (existing)</text>
+  <text x="35" y="65" font-size="11" fill="#374151">expsh remainder</text>
+  <text x="35" y="83" font-size="11" fill="#374151">maxexpsh</text>
+  <text x="35" y="101" font-size="11" fill="#9ca3af" text-decoration="line-through">cnu</text>
+  <text x="100" y="101" font-size="11" fill="#15803d">&larr; finds skip</text>
+  <text x="35" y="119" font-size="11" fill="#9ca3af" text-decoration="line-through">birth</text>
+  <text x="100" y="119" font-size="11" fill="#15803d">&larr; finds skip</text>
+  <text x="35" y="155" font-size="10" fill="#6b7280">writes its own log,</text>
+  <text x="35" y="170" font-size="10" fill="#6b7280">never sees the new sters</text>
+
+  <!-- Arrow to disk -->
+  <path d="M 200 100 L 290 100" stroke="#6b7280" stroke-width="2" marker-end="url(#arr2)" fill="none" />
+  <text x="245" y="92" text-anchor="middle" font-size="10" fill="#6b7280">writes / reads</text>
+
+  <!-- Disk -->
+  <rect x="290" y="60" width="200" height="80" fill="#fef9e7" stroke="#f59e0b" stroke-width="1.5" rx="6" />
+  <text x="390" y="84" text-anchor="middle" font-weight="600" fill="#92400e">RP7/output/*.ster</text>
+  <text x="390" y="105" text-anchor="middle" font-size="11" fill="#78350f">shared file system</text>
+  <text x="390" y="124" text-anchor="middle" font-size="11" fill="#78350f">(~20 KB each)</text>
+
+  <!-- Arrows from new instances to disk -->
+  <path d="M 600 80 L 490 90" stroke="#6b7280" stroke-width="2" marker-end="url(#arr2)" fill="none" />
+  <path d="M 600 110 L 490 105" stroke="#6b7280" stroke-width="2" marker-end="url(#arr2)" fill="none" />
+  <path d="M 600 140 L 490 120" stroke="#6b7280" stroke-width="2" marker-end="url(#arr2)" fill="none" />
+
+  <!-- New instance B -->
+  <rect x="600" y="60" width="180" height="40" fill="#eff6ff" stroke="#3b82f6" stroke-width="1" rx="6" />
+  <text x="690" y="84" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="600">Instance B (cnu)</text>
+
+  <!-- New instance C -->
+  <rect x="600" y="110" width="180" height="40" fill="#eff6ff" stroke="#3b82f6" stroke-width="1" rx="6" />
+  <text x="690" y="134" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="600">Instance C (birth)</text>
+
+  <!-- Optional D -->
+  <rect x="600" y="160" width="180" height="30" fill="#eff6ff" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,3" rx="6" />
+  <text x="690" y="180" text-anchor="middle" font-size="10" fill="#6b7280">Instance D (maxexpsh) opt.</text>
+
+  <!-- Skip-if-exists annotation -->
+  <text x="500" y="35" text-anchor="middle" font-size="11" fill="#15803d" font-weight="600">${skip_if_exists}=1 on every instance</text>
+  <text x="500" y="50" text-anchor="middle" font-size="10" fill="#374151">whoever writes first wins; everyone else skips</text>
+
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#6b7280" />
+    </marker>
+  </defs>
+</svg>
+
+<h2>5. Risks and mitigations</h2>
+
+<table>
+  <thead>
+    <tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Two instances fitting the same cell concurrently &rarr; race on the binary <code>.ster</code> file.</td>
+      <td>Low</td>
+      <td>Partition slices so PID 4864 reaches them last. Stata's <code>estimates save</code> writes atomically (temp + rename); both writes succeed, late one wins; estimation is deterministic so contents identical.</td>
+    </tr>
+    <tr>
+      <td>Two instances opening the same log file (<code>$logs/9_GRC_extras.log</code>).</td>
+      <td>High if not handled</td>
+      <td>Each driver sets its own per-instance log path before sourcing the slice block.</td>
+    </tr>
+    <tr>
+      <td>Stata MP license refusing concurrent instances.</td>
+      <td>Low (personal MP allows multiple)</td>
+      <td>Confirm by launching a second instance briefly (no harm).</td>
+    </tr>
+    <tr>
+      <td>Memory pressure: 4 instances &times; ~250 MB &asymp; 1 GB.</td>
+      <td>Negligible</td>
+      <td>Modern machine.</td>
+    </tr>
+    <tr>
+      <td>Concurrent reads of the data file.</td>
+      <td>Negligible</td>
+      <td>Read-only access; Windows handles fine.</td>
+    </tr>
+    <tr>
+      <td>Mid-fit collision: PID 4864 reads a half-written ster from instance C.</td>
+      <td>Very low (atomic writes)</td>
+      <td>Even if it occurred, <code>estimates use</code> would error and the cell would be re-fitted in the next iteration; not silent corruption.</td>
+    </tr>
+    <tr>
+      <td>Drift from the corrected <code>0_programs.do</code>.</td>
+      <td>None</td>
+      <td>All instances source the same file; new sters from new instances are born correct (no sidecar override needed for them).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6. Open questions before implementation</h2>
+
+<ul>
+  <li>Is <code>9_GRC_extras.do</code> structured so each family is a contiguous block we can <code>include</code> or sub-source selectively, or does it fall through such that we'd need a real refactor to slice cleanly?</li>
+  <li>Is the log path opened directly as <code>$logs/9_GRC_extras.log</code>, or is there a global we can override per-instance?</li>
+  <li>Are there any cross-family dependencies (e.g., a regressor created in one family's <code>data_setup</code> that another family relies on) that would force a particular ordering within a single instance?</li>
+  <li>For instance C (birth), what's the actual spec3 set --- is it really cuu/cub/iuu like the others, or does the dispatcher add extra spec3s? This determines the per-stem split.</li>
+</ul>
+
+<p>Three short reads of <code>9_GRC_extras.do</code> would settle all four. Worth doing before sizing up beyond Plan B.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>If you want maximum speedup with minimum setup</h4>
+    <p>Plan A. Two new drivers, two new log files, two <code>Start-Process</code> calls. Cuts ETA from ~32 h to ~13 h.</p>
+  </div>
+  <div class="card">
+    <h4>If you want PID 4864 to wind up tonight too</h4>
+    <p>Plan B. Adds maxexpsh as a third slice. Same 13 h critical path but PID 4864 finishes in 3.5 h and frees the box.</p>
+  </div>
+  <div class="card">
+    <h4>If 13 h is too long</h4>
+    <p>Plan C. Split birth by stem (3 instances, longest 3.5 h). New floor: 8 h, set by IDN cnu. Splitting cnu pushes the floor to ~3.5 h at the cost of orchestrating ~10 instances.</p>
+  </div>
+  <div class="card">
+    <h4>What you cannot beat</h4>
+    <p>The slowest single IDN-cuu stem runs ~3.5 h on one core. That's the irreducible floor unless we change the estimator or the <code>nlcom</code> structure.</p>
+  </div>
+</div>
+
+<p class="small">Drafted with Claude. Planning artifact only --- no code changes from this document.</p>
+
+</body>
+</html>

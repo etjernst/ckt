@@ -1,7 +1,7 @@
 # Plan: VV worker-level diagnostic port
 
 **Date:** 2026-04-24
-**Context:** The [alpha-pooling derivation](file:///C:/git/ckt/docs/reviews/2026-04-24_alpha-pooling-derivation.md) and [empirical diagnostic](file:///C:/git/ckt/docs/reviews/2026-04-24_alpha-pooling-diagnostic-results.md) show the TV ranking of switcher weight profiles matches the Verdier-shift ranking across IDN/CHN/TZA. That's circumstantial evidence. To settle whether `run_grc_robust_vv`'s estimator is biased by the trajectory-pooling aggregation, we want to compare its $\hat\phi$ to a worker-level estimator that doesn't aggregate across workers within a trajectory --- i.e., VV's original Chamberlain (1992) + village-demeaned-instruments approach from his [Table 1 robust.do](file:///C:/git/ckt/tmp/vv-replication/replication_archive/Table1/Code/robust.do).
+**Context:** The [alpha-pooling derivation](file:///C:/git/ckt/quality_reports/reviews/2026-04-24_alpha-pooling-derivation.md) and [empirical diagnostic](file:///C:/git/ckt/quality_reports/reviews/2026-04-24_alpha-pooling-diagnostic-results.md) show the TV ranking of switcher weight profiles matches the Verdier-shift ranking across IDN/CHN/TZA. That's circumstantial evidence. To settle whether `run_grc_robust_vv`'s estimator is biased by the trajectory-pooling aggregation, we want to compare its $\hat\phi$ to a worker-level estimator that doesn't aggregate across workers within a trajectory --- i.e., VV's original Chamberlain (1992) + village-demeaned-instruments approach from his [Table 1 robust.do](file:///C:/git/ckt/tmp/vv-replication/replication_archive/Table1/Code/robust.do).
 
 ## 1. Purpose (what this is NOT)
 
@@ -145,7 +145,7 @@ Write [2026-04-24_vv-worker-level-diagnostic-results.md] with the table, interpr
 - `explorations/verdier/x_vv_worker_level_diag.do` --- driver
 - `explorations/verdier/x_vv_worker_level_diag.txt` --- log
 - `explorations/verdier/x_vv_worker_level_diag_results.dta` --- comparison table data
-- `docs/reviews/2026-04-24_vv-worker-level-diagnostic-results.md` --- interpretation memo
+- `quality_reports/reviews/2026-04-24_vv-worker-level-diagnostic-results.md` --- interpretation memo
 
 ## 6. What we explicitly do NOT change
 

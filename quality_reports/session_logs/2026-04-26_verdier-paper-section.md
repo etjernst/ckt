@@ -39,7 +39,7 @@ The body's Proposition~\ref{prop:robust-equivalence} formally claims $\hat\phi^{
 
 ### D5. No TV diagnostic in the body
 
-**Reason:** Mean total-variation distance between switcher cluster profiles was a useful diagnostic during the development phase (see [`docs/reviews/2026-04-25_simulation-results.md`](file:///C:/git/ckt/docs/reviews/2026-04-25_simulation-results.md)) and is implemented in `explorations/verdier/`. The body now reports just the point-estimate comparison; if a referee asks "how do we know cluster-pooling is approximately satisfied?" we have the diagnostic ready to deploy. Putting it in the body up front signals the assumption is fragile and invites attack.
+**Reason:** Mean total-variation distance between switcher cluster profiles was a useful diagnostic during the development phase (see [`quality_reports/reviews/2026-04-25_simulation-results.md`](file:///C:/git/ckt/quality_reports/reviews/2026-04-25_simulation-results.md)) and is implemented in `explorations/verdier/`. The body now reports just the point-estimate comparison; if a referee asks "how do we know cluster-pooling is approximately satisfied?" we have the diagnostic ready to deploy. Putting it in the body up front signals the assumption is fragile and invites attack.
 
 ### D6. No comparison of $\hat\phi^{\mathrm{rob}}$ to $1/\hat\alpha_1$ in the body
 
@@ -51,7 +51,7 @@ The body's Proposition~\ref{prop:robust-equivalence} formally claims $\hat\phi^{
 
 ## Reviews applied
 
-- **writing-critic** review on the earlier draft (75/100, below 80 commit gate). Major fixes applied: notation $b_i \to \Delta_i^w$ (avoid collision with main.tex's $b_U, b_R$ projection coefficients); explicit derivation of (eq:worker-lca); explicit formula for the cluster-residualized instrument $\tilde D_{it}^{\,\underline d}$; bias formula relabeled "cluster-pooling bias" with $c(v_i)$ replacing $\beta(v_i)$ to avoid collision with $\beta$ as the constant rural-urban gap (eq:beta) and with $\alpha$ in eq:restricted-grc-unbalanced; removed `\href{run:docs/reviews/...md}` link to working-tree memo; tightened proof sketch; collapsed subsubsections into prose with topic sentences.
+- **writing-critic** review on the earlier draft (75/100, below 80 commit gate). Major fixes applied: notation $b_i \to \Delta_i^w$ (avoid collision with main.tex's $b_U, b_R$ projection coefficients); explicit derivation of (eq:worker-lca); explicit formula for the cluster-residualized instrument $\tilde D_{it}^{\,\underline d}$; bias formula relabeled "cluster-pooling bias" with $c(v_i)$ replacing $\beta(v_i)$ to avoid collision with $\beta$ as the constant rural-urban gap (eq:beta) and with $\alpha$ in eq:restricted-grc-unbalanced; removed `\href{run:quality_reports/reviews/...md}` link to working-tree memo; tightened proof sketch; collapsed subsubsections into prose with topic sentences.
 - **humanizer** pass (manual, against [`~/.claude/skills/humanizer/SKILL.md`](file:///C:/Users/maand/.claude/skills/humanizer/SKILL.md) pattern list): no AI-vocab, no superficial -ing endings, no copula avoidance, no negative parallelisms, no em-dash overuse, no bold labels in prose. One mild literary phrase ("probes a margin our baseline estimates rest on") retained as defensible academic prose.
 
 After the user's 2026-04-26 restructure (D2--D7), the writing-critic review was not re-run; the changes simplified rather than complicated the prose, so likely cleared remaining hedges.
@@ -70,6 +70,6 @@ After the user's 2026-04-26 restructure (D2--D7), the writing-critic review was 
 - [`paper/robust_equivalence_proof.tex`](file:///C:/git/ckt/paper/robust_equivalence_proof.tex) --- new appendix proof
 - [`paper/main.tex`](file:///C:/git/ckt/paper/main.tex) --- target manuscript
 - [`paper/unbalanced_proposition.tex`](file:///C:/git/ckt/paper/unbalanced_proposition.tex) --- structural template
-- [`docs/reviews/2026-04-25_robust-vv-equivalence-proof.md`](file:///C:/git/ckt/docs/reviews/2026-04-25_robust-vv-equivalence-proof.md) --- proof source memo
-- [`docs/reviews/2026-04-25_simulation-results.md`](file:///C:/git/ckt/docs/reviews/2026-04-25_simulation-results.md) --- empirical evidence
+- [`quality_reports/reviews/2026-04-25_robust-vv-equivalence-proof.md`](file:///C:/git/ckt/quality_reports/reviews/2026-04-25_robust-vv-equivalence-proof.md) --- proof source memo
+- [`quality_reports/reviews/2026-04-25_simulation-results.md`](file:///C:/git/ckt/quality_reports/reviews/2026-04-25_simulation-results.md) --- empirical evidence
 - [`.claude/worktrees/unbalanced-panel-proof-review/docs/Econometric Proof Style.md`](file:///C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/docs/Econometric%20Proof%20Style.md) --- style guide for proof structure

@@ -22,7 +22,7 @@ The C1 timer bug fires there (see "Open" section below).
 ### 1. Pipeline best-practice audit
 
 Spawned the `stata-critic` subagent over `RP7/scripts/0_programs.do` and the rest of the live pipeline.
-Result: 27 findings (2 critical, 8 major, 17 minor) saved to [docs/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/reviews/2026-04-28_pipeline-best-practices.md).
+Result: 27 findings (2 critical, 8 major, 17 minor) saved to [quality_reports/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_pipeline-best-practices.md).
 
 ### 2. Data-creation scripts audit (Dropbox)
 
@@ -156,7 +156,7 @@ User: come back to the pipeline review for the sections on data construction sin
 
 ## Tracking files
 
-- [docs/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/reviews/2026-04-28_pipeline-best-practices.md): the audit, all 39 findings.
+- [quality_reports/reviews/2026-04-28_pipeline-best-practices.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/quality_reports/reviews/2026-04-28_pipeline-best-practices.md): the audit, all 39 findings.
 - [docs/plans/2026-04-29-audit-action-plan.md](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/docs/plans/2026-04-29-audit-action-plan.md): user's response to each finding (NOW / POST-T3 / TODO / WAIT / SKIP).
 - [tests/test_gmm_from_duplicate.do](file:///C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/tests/test_gmm_from_duplicate.do): M4 test, not yet run.
 
@@ -428,7 +428,7 @@ Common likely causes given history: another `\"` escape somewhere I missed, anot
 
 The M4 verification step (post-Tier 3): pick one cell from `5_GrRC.do`---e.g., the IDN cuu_c2 cell---and re-run with `skip_if_exists 0` against the cleaned `0_programs.do`.
 Compare the new ster bit-for-bit against the existing ster (which was created with the duplicate mu-loop in place).
-If they match, mark M4 fully CLOSED in `docs/plans/2026-04-29-audit-action-plan.md` and `docs/reviews/2026-04-28_pipeline-best-practices.md`.
+If they match, mark M4 fully CLOSED in `docs/plans/2026-04-29-audit-action-plan.md` and `quality_reports/reviews/2026-04-28_pipeline-best-practices.md`.
 If they diverge, the doubled `from()` string was numerically meaningful after all and we revert `d2b0c73` and reopen the audit finding.
 
 ### Lessons worth carrying forward

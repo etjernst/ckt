@@ -3,7 +3,7 @@
 * Author:  Emilia (with Claude)
 * Date:    2026-04-25
 * Purpose: Monte Carlo for the equivalence claim in
-*          docs/reviews/2026-04-25_robust-vv-equivalence-proof.md.
+*          quality_reports/reviews/2026-04-25_robust-vv-equivalence-proof.md.
 *          Three regimes:
 *            R1  : A3 holds, uniform cluster assignment. Both estimators
 *                  should be consistent for phi_true.

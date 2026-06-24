@@ -14,21 +14,9 @@
 *          quality_reports/reviews/2026-04-29_verdier-v2-onestep-vs-twostep.md (decision-aid markdown)
 * ============================================================
 
-* ============================================================
-* Defensive prelude: when this file is run standalone via
-* `stata-mp -b do 17_verdier_robust.do`, $dir is not set, and
-* path globals + programs need bootstrapping. When invoked via
-* `include` from 0_master.do, $dir is already set and we skip.
-* ============================================================
 if "$dir" == "" {
-    clear all
-    if "`c(username)'" == "maand" {
-        global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
-    }
-    include "$dir/scripts/0_path_config.do"
-    include "$dir/scripts/0_setup.do"
-    include "$dir/scripts/0_programs.do"
-    global copyOverleaf 0
+    di as error "17_verdier_robust: \$dir not set."
+    exit 198
 }
 
 * Resume-on-interrupt: skip cells whose final .ster (_avg) already exists.
@@ -224,8 +212,14 @@ foreach step in onestep twostep {
 * mismatches) that broke the in-Stata version. Numbers in the comparison
 * are taken verbatim from the .tex tables, so what you read there is
 * exactly what the paper reports.
+*
+* Gated behind $runDashboard so coauthors without Python don't hit errors.
+* The .tex tables above are still produced regardless --- this only skips
+* the internal markdown/CSV review summary.
 * **********************************************************************
-shell python "$dir/scripts/gen_verdier_comparison.py"
+if "${runDashboard}" == "1" {
+    shell python "$dir/scripts/gen_verdier_comparison.py"
+}
 
 }
 local saved_rc = _rc

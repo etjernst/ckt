@@ -10,7 +10,7 @@
 * Input:   None (data generated in-memory).
 *          Requires RP7/scripts/0_programs.do.
 * Output:  x_equivalence_simulation_sanity.smcl / .txt
-* DGP:     See docs/reviews/2026-04-25_simulation-phase-a-derivations.md §B.1
+* DGP:     See quality_reports/reviews/2026-04-25_simulation-phase-a-derivations.md §B.1
 *          phi_true = -0.7, sigma_theta = 0.5, sigma_xi = 0.3, sigma_u = 0.3,
 *          sigma_beta = 0.4, c_1 = 1, c_2 = 0.5, T = 4, V = 25, 16 trajectories.
 * Notes:   Worker-level estimator: VV's joint GMM with moment
