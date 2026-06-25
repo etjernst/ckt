@@ -394,6 +394,28 @@ class CellResult:
     point_wms_p3: float
 
 
+@dataclass
+class HukouBoundResult:
+    """E2 hukou-wedge lower bound, in log per-capita consumption units.
+
+    The economy-wide consumption gain (lower bound) from relocating the
+    rural-hukou never-migrants is ``const * delta_dN_rh_point`` with
+    ``const = pi_rh * pi_dN_rh`` (both fixed population shares). Reported next
+    to the per-never-migrant return ``delta_dN_rh_point`` itself, so the
+    within-group magnitude sits beside the population-averaged floor.
+    ``hull_bound`` and ``delta_dN_rh_ci`` are (lo, hi) tuples; percent
+    quantities downstream are exp(x) - 1 (geometric-mean change).
+    """
+    pi_rh: float
+    pi_dN_rh: float
+    const: float
+    delta_dN_rh_point: float
+    delta_dN_rh_ci: tuple[float, float]   # 95% inversion CI on Delta_dN_rh
+    point_bound: float                    # const * delta_dN_rh_point
+    hull_bound: tuple[float, float]       # const * delta_dN_rh_ci
+    floor_positive: bool                  # delta_dN_rh_ci lower endpoint > 0
+
+
 def prepare_data(file_stem: str, data_dir) -> tuple[pd.DataFrame, list[str]]:
     """Load and prep a cell's sample, mirroring 5b_inversion.do.
 
@@ -640,8 +662,85 @@ def combine_national(rf: CellResult, uf: CellResult,
     }
 
 
+def hukou_bound_point(pi_rh: float, pi_dN_rh: float, delta_dN_rh: float) -> float:
+    """E2 lower bound: pi_rh * pi_dN_rh * Delta_dN_rh (log per-capita consumption)."""
+    return float(pi_rh * pi_dN_rh * delta_dN_rh)
+
+
+def run_hukou_bound(inputs_dir, data_dir, weights: dict) -> HukouBoundResult:
+    """E2 hukou-wedge lower bound for the rural-hukou regime.
+
+    Scales the rural-hukou never-migrant return Delta_dN_rh (already estimated
+    by the weak-ID-robust inversion and stored on the CHN_rf ster, exported in
+    the scalars CSV as inv_dN and inv_dN_ci95_{lo,hi}) by the fixed constant
+    pi_rh * pi_dN_rh. pi_rh is the conditional rural-hukou share of the
+    defined-hukou CHN sample (the same base the E1 national figure uses);
+    pi_dN_rh is the never-migrant share within the rural-hukou subsample.
+
+    Endpoint-scaling is the exact test-inversion CI for const * Delta_dN_rh
+    because const > 0 is a known constant: the shares' sampling variance is an
+    order of magnitude smaller than the inversion width (binomial SE on pi_dN
+    ~ 0.003 vs a CI halfwidth ~ 0.02 on Delta_dN_rh), so it is treated as fixed.
+    """
+    inp = load_cell_inputs("CHN_rf", inputs_dir)
+    traj_df = inp["trajectory"]
+    scalars = inp["scalars"]
+
+    never_rows = traj_df.loc[traj_df["traj_for_agg"] == 1, "pi_d"]
+    if len(never_rows) != 1:
+        raise ValueError(
+            f"CHN_rf: expected exactly one never (traj_for_agg==1) row for "
+            f"pi_dN_rh, found {len(never_rows)}"
+        )
+    pi_dN_rh = float(never_rows.iloc[0])
+    pi_rh = float(weights["w_rf_cond"])
+
+    # M1: both shares must be strictly inside (0, 1)
+    for _share, _name, _src in [
+        (pi_dN_rh, "pi_dN_rh", "CHN_rf_e1_traj.csv pi_d column"),
+        (pi_rh, "pi_rh", "hukou_population_weights / w_rf_cond"),
+    ]:
+        if not (np.isfinite(_share) and 0.0 < _share < 1.0):
+            raise ValueError(
+                f"CHN_rf: {_name}={_share} is not finite and strictly inside (0, 1); "
+                f"check source: {_src}"
+            )
+
+    # inv_dN and inv_dN_ci95_{{lo,hi}} must be the CHN_rf-cell-specific
+    # never-migrant inversion CI (not pooled CHN); _export_e1_inputs_hukou.do writes them.
+    for _key in ("inv_dN", "inv_dN_ci95_lo", "inv_dN_ci95_hi"):
+        if _key not in scalars:
+            raise KeyError(
+                f"CHN_rf: required scalar '{_key}' not found in CHN_rf_e1_scalars.csv"
+            )
+    delta_point = float(scalars["inv_dN"])
+    delta_lo = float(scalars["inv_dN_ci95_lo"])
+    delta_hi = float(scalars["inv_dN_ci95_hi"])
+    if not all(np.isfinite([delta_point, delta_lo, delta_hi])):
+        raise ValueError(
+            f"CHN_rf: non-finite inv_dN scalars (point={delta_point}, "
+            f"lo={delta_lo}, hi={delta_hi}); check the CHN_rf_e1_scalars.csv export."
+        )
+    if delta_lo > delta_hi:
+        raise ValueError(
+            f"CHN_rf: inv_dN CI endpoints out of order: lo={delta_lo} > hi={delta_hi}"
+        )
+
+    const = pi_rh * pi_dN_rh
+    return HukouBoundResult(
+        pi_rh=pi_rh,
+        pi_dN_rh=pi_dN_rh,
+        const=const,
+        delta_dN_rh_point=delta_point,
+        delta_dN_rh_ci=(delta_lo, delta_hi),
+        point_bound=hukou_bound_point(pi_rh, pi_dN_rh, delta_point),
+        hull_bound=(const * delta_lo, const * delta_hi),
+        floor_positive=bool(delta_lo > 0.0),
+    )
+
+
 def run_all_cells(inputs_dir, data_dir) -> dict:
-    """Run all four base cells plus the national CHN combination."""
+    """Run all four base cells, the national CHN combination, and the E2 bound."""
     cells = {short: run_cell(short, inputs_dir, data_dir) for short in CELLS}
     weights = hukou_population_weights(data_dir)
     # National CHN uses conditional hukou weights (rf or uf, normalized to
@@ -652,7 +751,9 @@ def run_all_cells(inputs_dir, data_dir) -> dict:
         cells["CHN_rf"], cells["CHN_uf"],
         weights["w_rf_cond"], weights["w_uf_cond"],
     )
-    return {"cells": cells, "national": national, "weights": weights}
+    hukou_bound = run_hukou_bound(inputs_dir, data_dir, weights)
+    return {"cells": cells, "national": national, "weights": weights,
+            "hukou_bound": hukou_bound}
 
 
 # ---------------------------------------------------------------------------
@@ -699,6 +800,27 @@ def _rows_for_cell(short: str, hull_wmm_p3, hull_wms_p3, point_wmm_p3,
     return rows
 
 
+def _result_row(cell, quantity, version, lo, hi, point) -> dict:
+    """One long-format result row in the persisted schema (log + percent)."""
+    return {
+        "cell": cell, "quantity": quantity, "version": version,
+        "ci_lo_log": lo, "ci_hi_log": hi, "point_log": point,
+        "ci_lo_pct": log_to_pct(lo) * 100.0,
+        "ci_hi_pct": log_to_pct(hi) * 100.0,
+        "point_pct": log_to_pct(point) * 100.0 if np.isfinite(point) else float("nan"),
+    }
+
+
+def _hukou_bound_rows(hb: HukouBoundResult) -> list[dict]:
+    """E2 rows: the economy-wide bound and the per-never-migrant return."""
+    return [
+        _result_row("CHN_hukou_bound", "hukou_consumption_gain", "bound",
+                    hb.hull_bound[0], hb.hull_bound[1], hb.point_bound),
+        _result_row("CHN_hukou_bound", "delta_dN_rural_hukou", "inversion",
+                    hb.delta_dN_rh_ci[0], hb.delta_dN_rh_ci[1], hb.delta_dN_rh_point),
+    ]
+
+
 def results_dataframe(res: dict) -> pd.DataFrame:
     """Flatten run_all_cells output into the persisted long-format table."""
     rows: list[dict] = []
@@ -712,6 +834,8 @@ def results_dataframe(res: dict) -> pd.DataFrame:
         "CHN_national", nat["hull_wmm_p3"], nat["hull_wms_p3"],
         nat["point_wmm_p3"], nat["point_wms_p3"],
     ))
+    if "hukou_bound" in res:
+        rows.extend(_hukou_bound_rows(res["hukou_bound"]))
     return pd.DataFrame(rows).sort_values(["cell", "quantity", "version"]).reset_index(drop=True)
 
 
@@ -757,6 +881,52 @@ def write_latex_table(res: dict, table_path) -> None:
         value = f"${log_to_pct(pt_wms) * 100.0:+.1f}\\%$"
         lines.append(f"{_LABELS[short]} & {interval} & {value} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+
+    table_path = Path(table_path)
+    table_path.parent.mkdir(parents=True, exist_ok=True)
+    table_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_hukou_bound_table(res: dict, table_path) -> None:
+    """Write the paper-facing E2 hukou-bound table (rural-hukou regime).
+
+    Self-contained float, parallel to write_latex_table: caption, label, and
+    tabular only; the population identity, fixed-share assumption, and
+    partial-equilibrium-floor framing live in the paper prose, not embedded
+    here. Reports the per-never-migrant return Delta_dN_rh (with its 95%
+    inversion CI) and the economy-wide consumption gain (lower bound, with its
+    95% CI). Every value is formatted from the computed result; nothing
+    hardcoded.
+    """
+    hb = res["hukou_bound"]
+    d_pt = log_to_pct(hb.delta_dN_rh_point) * 100.0
+    d_lo = log_to_pct(hb.delta_dN_rh_ci[0]) * 100.0
+    d_hi = log_to_pct(hb.delta_dN_rh_ci[1]) * 100.0
+    b_pt = log_to_pct(hb.point_bound) * 100.0
+    b_lo = log_to_pct(hb.hull_bound[0]) * 100.0
+    b_hi = log_to_pct(hb.hull_bound[1]) * 100.0
+    for v in (d_pt, d_lo, d_hi, b_pt, b_lo, b_hi):
+        if not np.isfinite(v):
+            raise ValueError(f"write_hukou_bound_table: non-finite value {v}")
+
+    lines = [
+        r"\begin{table}[htbp]",
+        r"\centering",
+        r"\caption{Removing the rural-hukou barrier: lower bound on the consumption gain.}",
+        r"\label{tab:hukou_bound}",
+        r"\begin{tabular}{lcc}",
+        r"\toprule",
+        r" & Point & 95\% CI \\",
+        r"\midrule",
+        f"Return per never-migrant $\\Delta_{{d_N}}^{{rh}}$ & "
+        f"${d_pt:+.1f}\\%$ & {_fmt_interval(d_lo, d_hi)} \\\\",
+        f"Economy-wide gain (lower bound) & "
+        f"${b_pt:+.1f}\\%$ & {_fmt_interval(b_lo, b_hi)} \\\\",
+        r"\bottomrule",
+        r"\end{tabular}",
+        r"\end{table}",
+        "",
+    ]
 
     table_path = Path(table_path)
     table_path.parent.mkdir(parents=True, exist_ok=True)
@@ -814,15 +984,18 @@ def run_counterfactuals_for_stata(
     data_dir: str,
     out_dir: str,
     table_path: str,
+    table_path_hukou: str | None = None,
     baseline_path: str | None = None,
     regenerate_baseline: bool = False,
     atol_log: float = 1e-3,
 ) -> None:
     """Stata-facing entry point (called from 12_counterfactuals.do).
 
-    Runs all E1 cells, writes the persisted results CSV and the paper table,
-    and self-checks against the committed baseline snapshot. Mirrors the
-    role of lca_inversion.attach_inversion_for_stata for the inversion step.
+    Runs all E1 cells plus the E2 hukou bound, writes the persisted results
+    CSV and the paper tables (E1 misallocation and, if ``table_path_hukou`` is
+    given, the E2 hukou bound), and self-checks against the committed baseline
+    snapshot. Mirrors the role of lca_inversion.attach_inversion_for_stata for
+    the inversion step.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -845,6 +1018,10 @@ def run_counterfactuals_for_stata(
     write_latex_table(res, table_path)
     print(f"  wrote table: {table_path}")
 
+    if table_path_hukou is not None:
+        write_hukou_bound_table(res, table_path_hukou)
+        print(f"  wrote table: {table_path_hukou}")
+
     # Headline echo for the Stata log.
     for short in _TABLE_ORDER:
         if short == "CHN_national":
@@ -855,3 +1032,16 @@ def run_counterfactuals_for_stata(
         print(f"  {short:14s} misallocation P3 "
               f"[{log_to_pct(hull[0]) * 100:+.2f}%, {log_to_pct(hull[1]) * 100:+.2f}%]"
               f"   value {log_to_pct(pt) * 100:+.2f}%")
+
+    hb = res["hukou_bound"]
+    print(f"  E2 hukou bound: pi_rh={hb.pi_rh:.4f} pi_dN_rh={hb.pi_dN_rh:.4f} "
+          f"const={hb.const:.4f}")
+    print(f"  E2 Delta_dN_rh          "
+          f"[{log_to_pct(hb.delta_dN_rh_ci[0]) * 100:+.2f}%, "
+          f"{log_to_pct(hb.delta_dN_rh_ci[1]) * 100:+.2f}%]"
+          f"   point {log_to_pct(hb.delta_dN_rh_point) * 100:+.2f}%")
+    print(f"  E2 economy-wide gain    "
+          f"[{log_to_pct(hb.hull_bound[0]) * 100:+.2f}%, "
+          f"{log_to_pct(hb.hull_bound[1]) * 100:+.2f}%]"
+          f"   point {log_to_pct(hb.point_bound) * 100:+.2f}%"
+          f"   (floor_positive={hb.floor_positive})")

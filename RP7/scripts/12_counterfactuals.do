@@ -17,6 +17,7 @@
 *          $dirdata/processed/{IDN,TZA,CHN,CHN_hukou_*}_unb.dta
 * Output:  $output/counterfactual_results.csv
 *          $output/tables/counterfactual_misallocation.tex
+*          $output/tables/hukou_bound.tex
 * Note:    Prerequisites are the inversion sters (5b_inversion.do) and the
 *          hukou sters (7_GrRC_hukou.do, with 5c inversion attach); it can
 *          run any time after those sters exist on disk.
@@ -68,10 +69,11 @@ capture noisily {
     * Paths are read via sfi inside Python (robust to spaces) rather than
     * interpolated into the Stata string.
     * NOTE: this python: invocation MUST stay on a single physical line.
-    python: import counterfactuals as _cf; from sfi import Macro as _M; _cf.run_counterfactuals_for_stata(inputs_dir=_M.getGlobal("output")+"/counterfactual_inputs", data_dir=_M.getGlobal("dirdata")+"/processed", out_dir=_M.getGlobal("output"), table_path=_M.getGlobal("output")+"/tables/counterfactual_misallocation.tex")
+    python: import counterfactuals as _cf; from sfi import Macro as _M; _cf.run_counterfactuals_for_stata(inputs_dir=_M.getGlobal("output")+"/counterfactual_inputs", data_dir=_M.getGlobal("dirdata")+"/processed", out_dir=_M.getGlobal("output"), table_path=_M.getGlobal("output")+"/tables/counterfactual_misallocation.tex", table_path_hukou=_M.getGlobal("output")+"/tables/hukou_bound.tex")
 
     confirm file "$output/counterfactual_results.csv"
     confirm file "$output/tables/counterfactual_misallocation.tex"
+    confirm file "$output/tables/hukou_bound.tex"
 
     di as text ""
     di as text "{hline 72}"

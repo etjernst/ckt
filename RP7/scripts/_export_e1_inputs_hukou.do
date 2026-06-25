@@ -63,6 +63,11 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     scalar inv_dT   = e(inv_dT_at_waldmin)
     scalar inv_davg = e(inv_davg_at_waldmin)
 
+    * 95% inversion CI on Delta_dN: E2 scales these endpoints by the
+    * fixed shares to form the hukou-bound CI (consumption gain lower bound).
+    scalar inv_dN_ci95_lo = e(inv_dN_ci95_lo)
+    scalar inv_dN_ci95_hi = e(inv_dN_ci95_hi)
+
     di as text "  phi_hat   = " phi_hat
     di as text "  beta_hat  = " beta_hat
     di as text "  inv_dN    = " inv_dN
@@ -175,6 +180,8 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     file write `scalars_handle' "unb_choice_hat," (unb_choice_hat) _n
     file write `scalars_handle' "inv_phi," (inv_phi) _n
     file write `scalars_handle' "inv_dN,"  (inv_dN) _n
+    file write `scalars_handle' "inv_dN_ci95_lo," (inv_dN_ci95_lo) _n
+    file write `scalars_handle' "inv_dN_ci95_hi," (inv_dN_ci95_hi) _n
     file write `scalars_handle' "inv_dT,"  (inv_dT) _n
     file write `scalars_handle' "inv_davg," (inv_davg) _n
     file write `scalars_handle' "n_obs," (n_total) _n

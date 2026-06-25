@@ -6,6 +6,8 @@ kappa_hat,9.476389
 unb_choice_hat,.18328716
 inv_phi,-.16
 inv_dN,.11
+inv_dN_ci95_lo,.09
+inv_dN_ci95_hi,.13
 inv_dT,.08
 inv_davg,.11
 n_obs,80742
