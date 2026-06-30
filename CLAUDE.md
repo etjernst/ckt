@@ -97,11 +97,34 @@ Junctions are Windows directory junctions created with `cmd /c mklink /J`.
 
 - Hansen's J-test rejects in pooled CHN sample. Splitting by hukou status (rural-first vs urban-first) resolves rejection, suggesting institutional heterogeneity rather than model failure. Separate $\phi$ estimates needed per hukou regime.
 
+## Overleaf folder structure
+
+The live manuscript compiles from `main-sections.tex` at the Overleaf-Dropbox root.
+Layout:
+
+```
+ReturnsToMigration-clean/
+  main-sections.tex   # compile root; pulls sections via \input{sections/sec_*}
+  main.tex            # legacy/archival --- NEVER edit (track-changes graveyard)
+  preamble.tex
+  CKT.bib
+  ectaart.cls
+  sections/           # sec_intro, sec_data, sec_model, sec_results, sec_robustness, sec_conclusion, app_*
+  tables/             # generated .tex tables
+  figures/            # \graphicspath is set to figures/
+```
+
+`\input` paths resolve relative to the compile root (`main-sections.tex`), not relative to the file doing the input.
+So inside `sections/sec_results.tex` the correct form is `\input{tables/foo}` with no `../`, even though `tables/` is a sibling of `sections/`.
+A `../tables/` path would break the build.
+When a table fails to compile, the cause is almost always that the generated file is missing from the Overleaf `tables/` folder, not a path error---copy it over from `RP7/output/tables/`.
+
 ## Sync protocol
 
 - Never push to Overleaf. Dropbox sync corrupts Overleaf track changes.
 - Pull from Overleaf is fine (entire Overleaf folder into `project/overleaf/`).
 - The user manually copies `main.tex`, `CKT.bib`, and `preamble.tex` to Overleaf when ready.
+- Generated tables and figures: copy from `RP7/output/{tables,figures}/` into the Overleaf `tables/` and `figures/` folders. Adding a new file is purely additive, so it carries no track-changes risk.
 
 ## Conventions
 
