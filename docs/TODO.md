@@ -7,6 +7,49 @@ Append dated entries. Move completed items to the bottom with a strike-through o
 
 ## Active
 
+### Full cluster-pooling robustness run (twostep + hukou appendix tables + Overleaf)
+**Added:** 2026-07-01
+**Context:** The "Robustness to cluster pooling" subsection (`paper/verdier_robust.tex`) reports a baseline-vs-cluster-residualized summary of $\phi$ and $\Delta_{\text{never}}$.
+Option 1 (done 2026-07-01) ran only the five onestep / full-controls cluster fits (IDN, CHN, CHN rural-first, CHN urban-first, TZA) via `RP7/scripts/17b_cluster_summary.do`, feeding `cluster_comparison_table` (in `0_programs.do`).
+The "full run" below is everything we deferred to keep option 1 cheap.
+The cluster-residualized (`vv_*`) sters exist nowhere and must be regenerated; the baselines (`grc_*_cuu_ca` incl. hukou `_rf`/`_uf`, with `_n`) live in the `lca-inversion` worktree.
+
+**Step 1. Fix the `_never`/`_avg` -> `_n`/`_g` naming (blocks per-country table regeneration).**
+`run_grc_robust_vv` (and `run_grc`) SAVE subgroup sters as `_n`/`_a`/`_d`/`_g`, but `17_verdier_robust.do`'s restore loop (lines ~157--160) and `grc_tex_table_trend_robust` (`0_programs.do`, lines ~3239--3240) still READ `_never`/`_avg`.
+This is an incomplete rename (`0_programs.do` has the comment `n = Delta_never (was _never)`).
+As-is, re-running `17` fails to restore the subgroup estimates and will not regenerate its per-country tables.
+Fix both consumers to `_n`/`_g` (and `_a`/`_d` if referenced).
+Note: option 1's summary path does NOT hit this bug; `cluster_comparison_table` reads the `_n` sters directly.
+
+**Step 2. Extend the estimation to hukou subsamples across all specs/steps.**
+`17_verdier_robust.do` currently runs pooled IDN/TZA/CHN only, onestep + twostep x 5 covariate specs.
+Add CHN rural-first and urban-first (datasets `CHN_hukou_rural_first_unb.dta`, `CHN_hukou_urban_first_unb.dta`, `vindex(provcd)`), same loop shape.
+See `17b_cluster_summary.do` for the exact per-cell call (load dataset, `setup_grc_estimation`, keepvars incl. `provcd`+`year`, `initial_values`, `run_grc_robust_vv`).
+
+**Step 3. Regenerate the per-country `_cluster` appendix tables from `.ster`.**
+After Step 1, `17` writes `GRC_{country}_consumption_urban_unb_cluster.tex` for the pooled three; extend it to emit the two hukou tables too (5 covariate columns each).
+These are the tables that go in the appendix.
+Watch the 32-char `_est_<name>` limit on the hukou estnames.
+
+**Step 4. Re-run the whole thing on the nominal data.**
+Set `$dir` to a tree with the nominal data present (main tree `C:/git/ckt/RP7`; note `0_master.do`'s `maand` block currently points at the DELETED `grc-pipeline-refactor` worktree, so fix that line to `C:/git/ckt/RP7`).
+Run `4_GrRC.do` + `7_GrRC_hukou.do` (baselines, or copy the sters from `lca-inversion`) then the extended `17`.
+Baselines already available: `lca-inversion/RP7/output/grc_*_cuu_ca(+_n).ster`.
+
+**Step 5. Swap the interim summary table.**
+The committed `RP7/output/tables/cluster_comparison_consumption_unb.tex` was hand-generated from known numbers (option 1 regenerates it from `.ster`).
+After the full run, confirm the `.ster`-generated table matches, and update the section prose if any number moves.
+
+**Step 6. Move to Overleaf.**
+The section and the proof appendix are currently in `archive/` on Overleaf.
+Un-archive `verdier_robust.tex`, DROP `app_robust_equivalence.tex` (its proposition was removed), copy the new tables (`cluster_comparison_consumption_unb.tex` + the five `GRC_*_cluster.tex`) into Overleaf `tables/`, and `\input` the section + appendix tables.
+Overleaf edits are the user's to make (never sync from here).
+
+**Step 7. Verify baseline SEs.**
+`cluster_comparison_table` prints the baseline SE straight from the `grc_*_cuu_ca` ster (`_se[phi:_cons]`); confirm that matches the vce reported in the main GRC tables before trusting the baseline column.
+
+**Estimated cost:** Step 2/3 add ~2 hukou samples x 5 specs x 2 steps = 20 GMM fits on top of the 30 pooled; a few hours end-to-end. The onestep / full-controls subset (option 1) is 5 fits.
+
 ### Wire LCA inversion CI into all GrRC scripts (5/6/8/10--15)
 **Added:** 2026-04-23
 **Context:** A prototype Stata-Python wrapper `lca_inversion_ci.ado` (in `explorations/python-grc/`) attaches the weak-ID-robust CI for $\phi$ to a saved GMM estimate as plain $e()$ scalars. Demonstrated for IDN/cons/urban/unb. Currently called explicitly after `run_grc`; not yet wired into the production pipeline.
