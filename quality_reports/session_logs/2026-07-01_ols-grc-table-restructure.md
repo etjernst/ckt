@@ -2,30 +2,30 @@
 
 ## If you resume
 
-One-line state: the OLS table restructure is fully shipped (code + regenerated tables + copied to Overleaf), but the parallel GRC table restructure is code-complete yet blocked at regeneration because the RP7-named GRC sters for CHN and the hukou cells are not on disk.
+One-line state: the afternoon follow-on work (OLS whitespace fix, combined landscape summary-stats table, robustness coefplots for IDN/TZA) is built and verified; the summary-stats + OLS piece is committed (`d05e772`), but the robustness-coefplot code and its four figure files are NOT committed yet.
+The user has already copied the relevant tables and figures into Overleaf, so no Overleaf copy is outstanding.
 
 Read first, in this order:
-1. This whole log, end to end.
-2. The plan: [2026-07-01-ols-grc-table-restructure.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-07-01-ols-grc-table-restructure.md).
-3. The paper-side change-list (what the user still edits in Overleaf): [2026-07-01_paper-edits-table-restructure.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-01_paper-edits-table-restructure.md).
+1. This whole log, end to end (the afternoon continuation block below `---` carries the current work).
+2. The robustness-coefplot plan: [2026-07-01-robustness-coefplot.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/plans/2026-07-01-robustness-coefplot.md).
+3. The figure notes (paste-ready LaTeX): [2026-07-01_robustness-coefplot-notes.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-01_robustness-coefplot-notes.md).
 
-The open thread: the CHN and hukou GRC tables cannot regenerate into the new 4-column-plus-CI format because their RP7-named, inversion-attached `ct`/`c1`/`c2` sters do not exist anywhere.
-Only IDN-cuu and TZA-cuu have the full sweep in this worktree; every other GRC cell has only the `ca` ster.
-The raw CHN/hukou GMM fits DO exist, but only in the coauthor's RP6 output (`C:/git/ckt/output` junction) under the pre-refactor naming (`grc_CHN_rural_first_ct`, no spec token), and probably without the inversion CI attached.
+The open thread: the robustness-coefplot change is complete and delivered but sits uncommitted in the working tree.
+Next concrete action: commit `0_programs.do`, `11_make_figures.do`, `quality_reports/plans/2026-07-01-robustness-coefplot.md`, the notes doc, and `RP7/output/figures/robustness_coefplot_{IDN,TZA}.{pdf,png}` as one commit (leave the pre-existing morning GRC/hetDelta/hetmu table changes untouched).
+The user had not yet said "commit" at wrap-up time.
 
-Next concrete action: the user was deciding among three paths for the missing GRC sters.
-Option 3 (investigate first) was the recommendation: check the `grc-pipeline-refactor` worktree and git history to learn whether the M11-named CHN sters ever existed here and where they went (the 2026-06-23 data-loss event is a candidate).
-Option 1: copy the RP6 old-named fits into `RP7/output` under M11 names, then run only `5b_inversion` to attach the weak-ID CIs (avoids the multi-day GMM re-fit; needs a correctness check that the RP6 fits match the post-refactor pipeline, and must copy OUT of the read-only RP6 junction).
-Option 2: re-run the CHN/hukou GRC from scratch (multi-day GMM).
-Do NOT re-run the GRC GMM without explicit approval; the user was firm that it takes days.
+Still-live earlier thread (from the morning, unchanged): the CHN and hukou GRC main tables cannot regenerate into the 4-col-plus-CI format because their RP7-named, inversion-attached `ct`/`c1`/`c2` sters do not exist on disk (only IDN-cuu and TZA-cuu have the full sweep; every other GRC cell has only `ca`).
+The raw CHN/hukou fits exist only in the coauthor RP6 output (`C:/git/ckt/output` junction) under pre-refactor names.
+Do NOT re-run the GRC GMM without explicit approval (multi-day).
+This did not block the afternoon work, which reads the `ca`/`ca_n`/`ca_g` sters that DO exist.
 
 Cached state:
 - Branch lca-inversion, worktree `C:/git/ckt/.claude/worktrees/lca-inversion`.
-- Four commits this session: `2467e48` (E2 V2 prototype), `e67e9cd` (CLAUDE.md Overleaf structure), `c1a55ba` (table restructure code), `068f8d7` (regenerated OLS tables + change-list).
-- The regenerated IDN and TZA GRC tables (4-col + CI) sit in `RP7/output/tables/` but are NOT committed and NOT copied to Overleaf, because a mixed GRC set (IDN/TZA new, CHN/hukou stale) would break the paper.
-- The 16 OLS tables ARE copied to Overleaf `tables/` and committed.
-- `$dir` for maand points at the lca-inversion worktree; the table-only regeneration driver is [\_regen_tables.do](file:///C:/Users/maand/AppData/Local/Temp/claude/C--git-ckt--claude-worktrees-lca-inversion/f5c3db97-6ba0-4c01-8298-2d0b73ac6c81/scratchpad/_regen_tables.do) in scratchpad (runs 0-section setup, then 3_OLS/6_OLS/10_make_tables with copyOverleaf 0).
-- Unresolved annoyance: Dropbox is pushing Overleaf edits DOWN to local fine, but Overleaf is slow to pull the local table changes UP; the reliable fix is a direct drag-drop upload of the OLS files in the Overleaf UI.
+- Morning commits: `c1a55ba`, `068f8d7`, `c547828` (OLS/GRC restructure). Afternoon commit: `d05e772` (OLS blank-row `collabels(none)` fix + combined `sumstats_combined_table` + 16 regenerated OLS tables + 2 new combined sumstats tables).
+- UNCOMMITTED: the robustness-coefplot change (see next action above).
+- `$dir` for maand points at the lca-inversion worktree. Scratchpad drivers for this session: `_regen_ols.do`, `_regen_sumstats_combined.do`, `_regen_robplot.do` under `C:/Users/maand/AppData/Local/Temp/claude/C--git-ckt--claude-worktrees-lca-inversion/ddaf51b0-.../scratchpad/`.
+- Adult-equivalence robustness was requested but deferred: no GRC ever fit with the alternate `hhsize_*` scales; needs a multi-day GMM re-fit.
+- CHN has no extra-regressor sters on disk, so the robustness coefplot is IDN + TZA only.
 
 ---
 
@@ -113,3 +113,45 @@ See the three options in the resume block; the user was leaning toward investiga
 - The GRC captions and notes live in `preamble.tex` lines 177 to 310 (`\GRCtable`, `\GRCexptable`, `\GRChukoutable`, and the note macros), not in the section files.
 - The OLS tables carry their own captions and notes in the generated `.tex`, so OLS note edits happen in the do-files, not the paper.
 - `showalways` is the new option on `grc_tex_table_trend`; pass it to restore the $\Delta_{\text{always}}$ block for an appendix.
+
+---
+
+## Continuation (2026-07-01 afternoon): OLS whitespace, combined sumstats, robustness coefplot
+
+Three follow-on tasks after the OLS/GRC restructure, all Implementation/Maintenance on the table+figure generators.
+
+### 1. OLS header blank rows (committed `d05e772`)
+Removed the empty ` & & & \\` filler rows between OLS panels at the generator, not ex post (user was explicit about this).
+Cause: `collabels("")` in `create_panel_tex_table` emits an empty column-labels row.
+Fix: `collabels("")` -> `collabels(none)` (0_programs.do).
+Regenerated all 16 OLS tables; model-number row and stats intact.
+
+### 2. Combined landscape summary-stats table (committed `d05e772`)
+New program `sumstats_combined_table` in 0_programs.do; called twice (unb, bal) from 2_summaryStats.do.
+Side-by-side layout: countries as column blocks (All/Rural/Urban/Diff. per country), 13 columns.
+Merges the three per-country `country_summary_stats` outputs by row.
+Uses `sidewaystable` (rotating), NOT `\begin{landscape}`+`table` --- the latter loses the float ("Float(s) lost") and cascades a threeparttable brace error.
+Also dropped the `\midrule` under the sub-header (user: the cmidrules under the country names already separate; the midrule was copied from the single-country tables and unwanted).
+Outputs: `summary_stats_combined_{unb,bal}.tex`. Per-country tables still generated (non-destructive); paper swaps six `\input`s down to two + repoints `\ref`s (user's Overleaf edit, not yet done).
+Compile-tested clean (0 overfull).
+
+### 3. Robustness coefplot (NOT yet committed)
+New native Stata `coefplot` program `grc_robustness_coefplot <country>` in 0_programs.do; called for IDN and TZA from 11_make_figures.do.
+Shows phi, $\Delta_{\text{never}}$, $\bar\Delta$ (three combined panels, specs on the y-axis) for the main `ca` spec plus each extra-regressor robustness spec.
+Reads existing sters ONLY (no GMM re-fit): phi from `grc_<C>_cuu[_<fam>]_ca.ster` (`_b[phi:_cons]`), never from `..._ca_n` (`_b[Delta_never]`), avg from `..._ca_g` (`_b[Delta_avg]`).
+Plain GMM SEs (95% CI), per user.
+Coverage: IDN = main + exp + maxexp + expsh + maxexpsh + birth (6 rows); TZA = same minus birth (5; birth cell not on disk). CHN has NO extra-regressor sters on disk, so excluded.
+Adult-equivalence robustness requested but NOT built: `hhsize_{oxford,oecd,root,comp,pse}` scales exist in the data build but no GRC was ever fit with them (main always divides by `hhsize_cube`); would need a multi-day GMM re-fit. Deferred with user approval.
+Aesthetics after two rounds of user feedback: wide 19:6 (`xsize(19) ysize(6)` on graph combine); color by group (Main navy `16 62 106`, experience lavender `128 116 168`, birth orange `216 128 60`); `xscale(range(0))` + `xlabel(#6)` to force even ticks to 0 (this also killed a stray vertical bar --- it was the y-axis sitting next to the data when the range did not reach 0); removed the embedded country title (goes in LaTeX `\caption`); kept the three Greek panel labels.
+Figure titles are Greek via the non-embedded base-14 `Symbol` font --- renders in Overleaf/Adobe, but flag for strict-submission font-embedding checks (offered a gs embed pass; user did not request).
+Files: `output/figures/robustness_coefplot_{IDN,TZA}.{pdf,png}`, plan at `quality_reports/plans/2026-07-01-robustness-coefplot.md`.
+
+Figure notes written to `quality_reports/reviews/2026-07-01_robustness-coefplot-notes.md` (full `\begin{figure}` blocks, both countries).
+Notation matched to the GRC table notes in `preamble.tex`: $\phi$, $\Delta_{\text{never}}$, $\bar\Delta = \sum_{\underline{d}} \pi_{\underline{d}} \Delta_{\underline{d}}$; `\caption` + `\floatfoot{\small ...}` style; Title-Case caption to match `fig:heterogeneity`.
+Corrected a wording bug the user caught: the robustness rows are NOT cumulative --- each is Main + exactly one added covariate (verified: `covsall = "\`regressor' female age2 education_max education_max2"` = main ca set + the single regressor).
+
+### Open items
+- Not committed: task 3 (robustness coefplot) --- `0_programs.do`, `11_make_figures.do`, the plan, the notes doc, and the four figure files. Offered to commit; awaiting user go.
+- Overleaf copies: DONE by the user (combined sumstats `.tex` and robustness figure `.pdf` are over). No copy outstanding.
+- Paper-side edits still the user's to do inside Overleaf: swap summary-stats `\input`s (six -> two) + repoint `\ref`s; add the two `\begin{figure}` blocks from the notes doc; the GRC/OLS caption edits from the earlier change-list.
+- Pre-existing uncommitted GRC/hetDelta/hetmu table changes from the morning session remain unstaged (left untouched).
