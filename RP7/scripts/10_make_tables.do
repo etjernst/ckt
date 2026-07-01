@@ -49,6 +49,7 @@ local balance unb
 local country IDN
 grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
+    invci                                               ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -67,6 +68,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 local country CHN
 grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
+    invci                                               ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -85,6 +87,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 local country TZA
 grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
+    invci                                               ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -296,6 +299,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 grc_tex_table_trend, columns(4)                         ///
+    invci                                               ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -363,6 +367,7 @@ local choice  urban
 local depvar  consumption
 local balance unb
 grc_tex_table_trend, columns(4)                         ///
+    invci                                               ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///

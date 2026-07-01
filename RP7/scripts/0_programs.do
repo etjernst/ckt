@@ -3271,10 +3271,29 @@ program define grc_tex_table_trend
              COUNTRY(string asis) KEEP(string) varlabel(string) ///
              POSTfoot(string asis)                              ///
              COEFLABels(string asis) TEXTdepvar(string asis)    ///
-             [SPEC(string) COVS2set(string) SHOWalways]
+             [SPEC(string) COVS2set(string) SHOWalways INVci]
 
     if "`covs2set'" == "" {
         local covs2set "ct c1 c2 ca"
+    }
+
+    * invci gate: only the main-results tables (main GRC IDN/CHN/TZA plus
+    * the two main hukou cells) carry the LCA weak-identification-robust
+    * inversion-CI rows. Robustness / extras tables call without invci, so
+    * their sters (which have no inversion CI attached) do not emit an empty
+    * "95\% inv. CI" label row. When off, the three CI stats() options are
+    * empty and the phi bottom block omits the inv_phi_ci95_str row.
+    if "`invci'" != "" {
+        local ci_never  `"stats(inv_dN_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_avg    `"stats(inv_davg_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_always `"stats(inv_dT_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_bottom `"s(inv_phi_ci95_str N_clust N Jstat Jpval converged_str, label("95\% inv. CI" "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") fmt(s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))"'
+    }
+    else {
+        local ci_never  ""
+        local ci_avg    ""
+        local ci_always ""
+        local ci_bottom `"s(N_clust N Jstat Jpval converged_str, label("Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))"'
     }
 
     * Build ster path stem and stored-name stem. Diverges based on whether
@@ -3369,9 +3388,7 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_dN_ci95_str,                 ///
-            fmt(s)                           ///
-            labels("95\% inv. CI"))          ///
+      `ci_never'                             ///
       varwidth(20) 	                         ///
       nolines nomtitles `colnumbers'         ///
       prehead(`table_prehead')               ///
@@ -3386,9 +3403,7 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_davg_ci95_str,               ///
-            fmt(s)                           ///
-            labels("95\% inv. CI"))          ///
+      `ci_avg'                               ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "$\bar{\Delta}$") ///
@@ -3406,9 +3421,7 @@ program define grc_tex_table_trend
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      stats(inv_dT_ci95_str,                 ///
-            fmt(s)                           ///
-            labels("95\% inv. CI"))          ///
+      `ci_always'                            ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_always "$\Delta_{\text{always}}$") ///
@@ -3426,11 +3439,7 @@ program define grc_tex_table_trend
       fragment booktabs                      ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(inv_phi_ci95_str                     ///
-        N_clust N Jstat Jpval converged_str, ///
-        label("95\% inv. CI"                 ///
-              "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-        fmt(s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc)) ///
+      `ci_bottom'                            ///
       varwidth(20)                           ///
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
@@ -3451,11 +3460,15 @@ program define grc_tex_table_trend
     * The \addlinespace BETWEEN blocks is left intact because the line
     * before it is a CI row (or coef row in covs2 columns where the CI
     * row is "empty"), not an SE row immediately followed by a CI row.
-    tempfile _addlspc_tmp
-    filefilter "$output/tables/`filename'${vsfx}.tex" "`_addlspc_tmp'", ///
-        from("\BS\BS\r\n\BSaddlinespace\r\n95\BS% inv. CI")            ///
-        to("\BS\BS\r\n95\BS% inv. CI")
-    copy "`_addlspc_tmp'" "$output/tables/`filename'${vsfx}.tex", replace
+    * Only runs when invci is on; without CI rows there is no "95\% inv. CI"
+    * string to attach, so the filter would be a no-op rewrite.
+    if "`invci'" != "" {
+        tempfile _addlspc_tmp
+        filefilter "$output/tables/`filename'${vsfx}.tex" "`_addlspc_tmp'", ///
+            from("\BS\BS\r\n\BSaddlinespace\r\n95\BS% inv. CI")            ///
+            to("\BS\BS\r\n95\BS% inv. CI")
+        copy "`_addlspc_tmp'" "$output/tables/`filename'${vsfx}.tex", replace
+    }
 
     * Drop the ~15 estimates this call stored. Without cleanup the
     * stored-estimates namespace fills up after ~20 cells (Stata limit ~300)
