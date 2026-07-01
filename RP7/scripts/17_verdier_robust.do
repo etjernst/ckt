@@ -204,6 +204,23 @@ foreach step in onestep twostep {
 }
 
 * **********************************************************************
+* Paper-facing outputs for the "Robustness to cluster pooling" subsection:
+*   (1) the onestep per-country tables under the GRC_{country}_..._cluster
+*       name that the paper \input{}s, and
+*   (2) the baseline-vs-cluster summary table, assembled by a small Python
+*       script that parses the per-country .tex tables (mirrors how
+*       gen_verdier_comparison.py already works).
+* **********************************************************************
+foreach country in IDN TZA CHN {
+    copy "$output/tables/verdier_robust_onestep_`country'_`depvar'_`choice'_`balance'.tex" ///
+         "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_cluster.tex", replace
+}
+capture shell python "$dir/scripts/gen_cluster_comparison_table.py"
+if _rc {
+    di as error "gen_cluster_comparison_table.py failed (rc=`=_rc'); committed summary table retained."
+}
+
+* **********************************************************************
 * Generate the onestep-vs-twostep comparison markdown.
 * Delegated to gen_verdier_comparison.py: it parses the 6 .tex tables
 * just produced above and writes both a markdown summary and a tidy CSV
