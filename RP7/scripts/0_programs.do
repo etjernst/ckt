@@ -1184,23 +1184,21 @@ capture program drop reghdfe_regressions
 program define reghdfe_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
-	* Run col 7 first as it has the smallest sample, then use e(sample)
-    eststo reg7_`country': reghdfe lndepvar choice			 					///
+	* Run col 6 first as it has the smallest sample, then use e(sample)
+    eststo reg6_`country': reghdfe lndepvar choice			 					///
 				$covs_all				 										///
 				, vce(cluster pid) absorb(pid period)
 		gen regression_sample = e(sample)
-	
-    eststo reg1_`country': reghdfe lndepvar choice		 						///
-		if regression_sample, noabsorb vce(cluster pid)
-	  eststo reg2_`country': reghdfe lndepvar choice			 				///
+
+	  eststo reg1_`country': reghdfe lndepvar choice			 				///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg3_`country': reghdfe lndepvar choice $covs_1 						///
+    eststo reg2_`country': reghdfe lndepvar choice $covs_1 						///
 		if regression_sample, vce(cluster pid) absorb(period)
-	  eststo reg4_`country': reghdfe lndepvar choice $covs_2 					///
+	  eststo reg3_`country': reghdfe lndepvar choice $covs_2 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg5_`country': reghdfe lndepvar choice $covs_all 					///
+    eststo reg4_`country': reghdfe lndepvar choice $covs_all 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg6_`country': reghdfe lndepvar choice $covs_all 			 		///
+    eststo reg5_`country': reghdfe lndepvar choice $covs_all 			 		///
 		if regression_sample & switcher, vce(cluster pid) absorb(period)
 end
 
@@ -3067,10 +3065,10 @@ program define grc_tex_table_trend
              COUNTRY(string asis) KEEP(string) varlabel(string) ///
              POSTfoot(string asis)                              ///
              COEFLABels(string asis) TEXTdepvar(string asis)    ///
-             [SPEC(string) COVS2set(string)]
+             [SPEC(string) COVS2set(string) SHOWalways]
 
     if "`covs2set'" == "" {
-        local covs2set "c0 ct c1 c2 ca"
+        local covs2set "ct c1 c2 ca"
     }
 
     * Build ster path stem and stored-name stem. Diverges based on whether
@@ -3102,8 +3100,15 @@ program define grc_tex_table_trend
     * LCA mapping; the inversion CI strings emit the union form
     * `[$-\infty$, x] $\cup$ [y, $+\infty$]` for those cells, and this
     * note tells readers what that union notation means.
-    local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.}"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \\ \bottomrule \end{tabular}"
+    * The Mobius/multi-island note only applies when the Delta_always row is
+    * shown (its inversion CI is the one that renders as a union interval).
+    if "`showalways'" != "" {
+        local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.}"
+        local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \\ \bottomrule \end{tabular}"
+    }
+    else {
+        local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
+    }
 
     * Phase 1b.5b: load estimates from disk inside the program, so callers
     * don't need to do `estimates use/store` boilerplate. This means a
@@ -3124,8 +3129,12 @@ program define grc_tex_table_trend
         estimates store `_stem'_`estname'_n
         estimates use "$dir/output/`_stem'_`estname'_g${vsfx}"
         estimates store `_stem'_`estname'_g
-        estimates use "$dir/output/`_stem'_`estname'_a${vsfx}"
-        estimates store `_stem'_`estname'_a
+        * Only load the always (_a) ster when it will be shown; otherwise a
+        * missing _a ster would abort a table that does not report it.
+        if "`showalways'" != "" {
+            estimates use "$dir/output/`_stem'_`estname'_a${vsfx}"
+            estimates store `_stem'_`estname'_a
+        }
       }
 
     * Empty locals to store estimate-name lists for esttab
@@ -3182,6 +3191,9 @@ program define grc_tex_table_trend
       * Output Delta-always row plus its LCA inversion CI rows. The
       * Delta_always inversion CI is the one most likely to render as
       * a multi-island union --- see the M\"obius tablenote in postfoot.
+      * Gated off by default: the main-text tables report only never and
+      * average. Pass showalways to include it (appendix robustness).
+      if "`showalways'" != "" {
       esttab `ests_always'   		         ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
@@ -3195,6 +3207,7 @@ program define grc_tex_table_trend
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_always "$\Delta_{\text{always}}$") ///
       append substitute(\_ _)
+      }
 
     * Output other estimates plus phi inversion CI rows and existing
     * diagnostics. The phi CI rows ride on the parent (unsuffixed) ster.
@@ -3218,11 +3231,12 @@ program define grc_tex_table_trend
       append substitute(\_ _)
 
     * Phase 1b.6: strip esttab's spurious blank tabular rows.
-    * Same workaround as 2_summaryStats.do, specialized for 6-column GRC
-    * tables. Removes the literal pattern emitted between fragments by
-    * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
+    * Same workaround as 2_summaryStats.do, specialized for 5-column GRC
+    * tables (label + 4 covariate columns after dropping c0). Removes the
+    * literal pattern emitted between fragments by varwidth(20) +
+    * nomtitles + noobs. Leaves \addlinespace intact.
     removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
-        , remove("                    &               &               &               &               &               \BS\BS")
+        , remove("                    &               &               &               &               \BS\BS")
 
     * Strip the \addlinespace that esttab inserts between the SE row and
     * the inversion CI row of the same block, so the CI row visually

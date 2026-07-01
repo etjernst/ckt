@@ -35,8 +35,8 @@ log using "$logs/10_make_tables.log", replace
 local reportvars "phi:_cons"
 local varlab "$\phi$"
 
-* P1 indicator-rows (5-col main GRC tables)
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
+* P1 indicator-rows (4-col main GRC tables)
+local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All \\
 
 * **********************************************************************
 * 1. Consumption | Urban | Unbalanced  (spec3=cuu) --- 3 cells
@@ -47,7 +47,7 @@ local balance unb
 
 * INDONESIA
 local country IDN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -65,7 +65,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * CHINA
 local country CHN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -83,7 +83,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * TANZANIA
 local country TZA
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -108,7 +108,7 @@ local balance bal
 
 * INDONESIA
 local country IDN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cub)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -126,7 +126,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * CHINA
 local country CHN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cub)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -144,7 +144,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * TANZANIA
 local country TZA
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cub)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -169,7 +169,7 @@ local balance unb
 
 * INDONESIA
 local country IDN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(iuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -187,7 +187,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * CHINA
 local country CHN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(iuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -205,7 +205,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 
 * TANZANIA
 local country TZA
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(iuu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -232,8 +232,8 @@ Sibling to 5_GrRC_NonAg.do.
 local reportvars "phi:_cons"
 local varlab "$\phi$"
 
-* P1 indicator-rows (5-col main GRC tables)
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
+* P1 indicator-rows (4-col main GRC tables)
+local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All \\
 
 * **********************************************************************
 * 1. Consumption | Nonag | Unbalanced  (spec3=cnu) --- IDN only
@@ -244,7 +244,7 @@ local balance unb
 
 * INDONESIA
 local country IDN
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     spec(cnu)                                           ///
     country(`country')                                  ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
@@ -282,8 +282,8 @@ out and re-run individually.
 local reportvars "phi:_cons"
 local varlab "$\phi$"
 
-* P1 indicator-rows (5-col)
-local postfoot_str Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\
+* P1 indicator-rows (4-col)
+local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All \\
 
 * **********************************************************************
 * Rural Hukou First  (CHN_rf_*)  --- 3 cells
@@ -295,7 +295,7 @@ local country_short CHN_rf_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -316,7 +316,7 @@ local country_short CHN_rf_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -337,7 +337,7 @@ local country_short CHN_rf_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -362,7 +362,7 @@ local country_short CHN_uf_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -383,7 +383,7 @@ local country_short CHN_uf_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -404,7 +404,7 @@ local country_short CHN_uf_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -429,7 +429,7 @@ local country_short CHN_ro_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -450,7 +450,7 @@ local country_short CHN_ro_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -471,7 +471,7 @@ local country_short CHN_ro_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -496,7 +496,7 @@ local country_short CHN_uo_cuu
 local choice  urban
 local depvar  consumption
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -517,7 +517,7 @@ local country_short CHN_uo_cub
 local choice  urban
 local depvar  consumption
 local balance bal
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
@@ -538,7 +538,7 @@ local country_short CHN_uo_iuu
 local choice  urban
 local depvar  income
 local balance unb
-grc_tex_table_trend, columns(5)                         ///
+grc_tex_table_trend, columns(4)                         ///
     country(`country_short')                            ///
     filename(GRC_`country'_`depvar'_`choice'_`balance') ///
     keep(`reportvars')                                  ///
