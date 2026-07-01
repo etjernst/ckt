@@ -1637,6 +1637,116 @@ program define heterogeneity_plots
 end
 
 * **********************************************************************
+* Robustness coefplot: phi, Delta_never, Delta_avg across the main ca
+* spec plus each extra-regressor robustness spec (experience family +
+* urban birth). Specs on the y-axis, one panel per estimand. Reads
+* existing sters only --- no GMM re-fit. Plain GMM SEs (95% CI).
+* **********************************************************************
+capture program drop grc_robustness_coefplot
+program define grc_robustness_coefplot
+	args country
+	if "`country'" == "IDN" local textcountry "Indonesia"
+	if "`country'" == "TZA" local textcountry "Tanzania"
+
+	* Spec stems (ster family token; "main" carries no family token).
+	* IDN has the urban-birth cell on disk; TZA does not.
+	if "`country'" == "IDN" {
+		local stems main exp maxexp expsh maxexpsh birth
+	}
+	else {
+		local stems main exp maxexp expsh maxexpsh
+	}
+	local nspec : word count `stems'
+
+	* One row vector (+ se vector) per estimand; columns index the specs.
+	tempname bphi sephi bdn sedn bdg sedg
+	matrix `bphi'  = J(1, `nspec', .)
+	matrix `sephi' = J(1, `nspec', .)
+	matrix `bdn'   = J(1, `nspec', .)
+	matrix `sedn'  = J(1, `nspec', .)
+	matrix `bdg'   = J(1, `nspec', .)
+	matrix `sedg'  = J(1, `nspec', .)
+
+	local j = 0
+	foreach s of local stems {
+		local ++j
+		if "`s'" == "main" local base "grc_`country'_cuu_ca"
+		else               local base "grc_`country'_cuu_`s'_ca"
+
+		* phi from the main ster
+		estimates use "$output/`base'${vsfx}.ster"
+		matrix `bphi'[1,`j']  = _b[phi:_cons]
+		matrix `sephi'[1,`j'] = _se[phi:_cons]
+
+		* Delta_never from the _n ster
+		estimates use "$output/`base'_n${vsfx}.ster"
+		matrix `bdn'[1,`j']  = _b[Delta_never]
+		matrix `sedn'[1,`j'] = _se[Delta_never]
+
+		* Delta_avg from the _g ster
+		estimates use "$output/`base'_g${vsfx}.ster"
+		matrix `bdg'[1,`j']  = _b[Delta_avg]
+		matrix `sedg'[1,`j'] = _se[Delta_avg]
+	}
+	matrix colnames `bphi'  = `stems'
+	matrix colnames `sephi' = `stems'
+	matrix colnames `bdn'   = `stems'
+	matrix colnames `sedn'  = `stems'
+	matrix colnames `bdg'   = `stems'
+	matrix colnames `sedg'  = `stems'
+
+	* Pretty row labels (labels for absent specs, e.g. birth on TZA, are ignored)
+	local cl coeflabels(main = "Main" exp = "+ Experience" maxexp = "+ Max experience" expsh = "+ Experience share" maxexpsh = "+ Max exp. share" birth = "+ Urban birth")
+
+	* One color per group: Main (anchor), the four experience variants, birth.
+	local cmain  "16 62 106"
+	local cexp   "128 116 168"
+	local cbirth "216 128 60"
+
+	* Shared twoway options: force 0 into every panel (also pins the y-axis
+	* line to 0 instead of floating next to the data), zero reference line.
+	local gopts `cl' grid(none) xscale(range(0)) ///
+		xline(0, lwidth(thin) lcolor(%40)) ylabel(, labsize(small)) ///
+		xlabel(#6, labsize(small)) legend(off)
+
+	* birth plot-spec: IDN only (no urban-birth cell on disk for TZA)
+	local birth_phi ""
+	local birth_dn  ""
+	local birth_dg  ""
+	if "`country'" == "IDN" {
+		local birth_phi (matrix(`bphi'), se(`sephi') keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+		local birth_dn  (matrix(`bdn'),  se(`sedn')  keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+		local birth_dg  (matrix(`bdg'),  se(`sedg')  keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+	}
+
+	coefplot ///
+		(matrix(`bphi'), se(`sephi') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bphi'), se(`sephi') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_phi' ///
+		, `gopts' title("{&phi}") saving(robplot_phi_`country', replace)
+
+	coefplot ///
+		(matrix(`bdn'), se(`sedn') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bdn'), se(`sedn') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_dn' ///
+		, `gopts' title("{&Delta}{subscript:never}") saving(robplot_dn_`country', replace)
+
+	coefplot ///
+		(matrix(`bdg'), se(`sedg') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bdg'), se(`sedg') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_dg' ///
+		, `gopts' title("Average {&Delta}") saving(robplot_dg_`country', replace)
+
+	graph combine robplot_phi_`country'.gph robplot_dn_`country'.gph ///
+		robplot_dg_`country'.gph, row(1) xsize(19) ysize(6)
+	graph export "$output/figures/robustness_coefplot_`country'${vsfx}.pdf", replace
+	graph export "$output/figures/robustness_coefplot_`country'${vsfx}.png", replace as(png) width(3600)
+	if $copyOverleaf == 1 {
+		copyOverleaf "$output/figures/robustness_coefplot_`country'${vsfx}.pdf", subdir(figures)
+	}
+end
+
+* **********************************************************************
 * uGRC regressions
 * **********************************************************************
 capture program drop ugrc_regressions
