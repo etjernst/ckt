@@ -686,7 +686,103 @@ program 				define sumstats_table
 
 	file write myfile "\bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}"
 	file close myfile
-		
+
+end
+
+* **********************************************************************
+* Combined summary stats table (three countries side by side, landscape)
+* **********************************************************************
+capture program 	drop sumstats_combined_table
+program 			define sumstats_combined_table
+	syntax, BALance(string asis) OUTputdir(string asis) FILEname(string asis)
+
+	* Balance-dependent caption suffix and note wording
+	local balance_caption ""
+	local balance_word    "unbalanced"
+	if "`balance'" == "bal" {
+		local balance_caption ", Balanced Panel"
+		local balance_word    "balanced"
+	}
+
+	* Build each country's summary block; stash its four data columns keyed by row
+	foreach c in IDN CHN TZA {
+		use "$dirdata/processed/`c'_`balance'.dta", clear
+		quietly count if !mi(ln_income)
+		local inc_`c' = string(r(N), "%9.0fc")
+		country_summary_stats `c' urban consumption `balance'
+		gen long _row = _n
+		if "`c'" == "IDN" {
+			keep _row v1 v3 v5 v7 v9
+		}
+		else {
+			keep _row v3 v5 v7 v9
+		}
+		rename (v3 v5 v7 v9) (`c'_all `c'_rural `c'_urban `c'_diff)
+		tempfile t`c'
+		save `t`c''
+	}
+	use `tIDN', clear
+	merge 1:1 _row using `tCHN', nogen
+	merge 1:1 _row using `tTZA', nogen
+	sort _row
+
+	* Open the output file
+	file close _all
+	local filepath    "`outputdir'/`filename'${vsfx}.tex"
+	local table_label "tab:`filename'"
+	file open myfile using "`filepath'", write replace
+
+	file write myfile "\begin{sidewaystable} \centering" _n
+	file write myfile "\caption{Summary Statistics`balance_caption'}\label{`table_label'}" _n
+	file write myfile "\begin{threeparttable}" _n
+	file write myfile "\begin{tabular}{l cccc cccc cccc} \toprule" _n
+	file write myfile "& \multicolumn{4}{c}{Indonesia} & \multicolumn{4}{c}{China} & \multicolumn{4}{c}{Tanzania} \\" _n
+	file write myfile "\cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}" _n
+	file write myfile "& All & Rural & Urban & Diff. & All & Rural & Urban & Diff. & All & Rural & Urban & Diff. \\" _n
+
+	quietly {
+		local nrows = _N
+		forvalues i = 1/`nrows' {
+			local lab = v1[`i']
+			* cmidrule marker row: emit a rule spanning all data columns
+			if "`lab'" == "\cmidrule{2-5}" {
+				file write myfile "\cmidrule(lr){2-13}" _n
+				continue
+			}
+			local i_all = IDN_all[`i']
+			local i_rur = IDN_rural[`i']
+			local i_urb = IDN_urban[`i']
+			local i_dif = IDN_diff[`i']
+			local c_all = CHN_all[`i']
+			local c_rur = CHN_rural[`i']
+			local c_urb = CHN_urban[`i']
+			local c_dif = CHN_diff[`i']
+			local t_all = TZA_all[`i']
+			local t_rur = TZA_rural[`i']
+			local t_urb = TZA_urban[`i']
+			local t_dif = TZA_diff[`i']
+			* skip fully-blank leftover rows from iebaltab
+			if "`lab'" == "" & "`i_all'" == "" & "`c_all'" == "" & "`t_all'" == "" {
+				continue
+			}
+			local cells "`lab' & `i_all' & `i_rur' & `i_urb' & `i_dif' & `c_all' & `c_rur' & `c_urb' & `c_dif' & `t_all' & `t_rur' & `t_urb' & `t_dif'"
+			if `i' == 1 {
+				file write myfile "`cells' \\  \addlinespace \addlinespace" _n
+			}
+			else if mod(`i', 2) == 1 {
+				file write myfile "`cells' \\  \addlinespace" _n
+			}
+			else {
+				file write myfile "`cells' \\" _n
+			}
+		}
+	}
+
+	file write myfile "\bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{Summary statistics for the `balance_word' panel. Sources: IFLS (Indonesia), China survey (China), and Tanzania survey (Tanzania). The table reports means and standard deviations (in parentheses) based on individual-year pairs. The All column reports the country-wide mean; Rural and Urban report location-specific means, and Diff. reports their difference, with stars from a \$t\$-test of equality. See Section \ref{sec:data} for further details. All variables have the same number of observations within a country, except income, which is missing for some observations: it has `inc_IDN', `inc_CHN', and `inc_TZA' observations in Indonesia, China, and Tanzania, respectively.} \end{tablenotes}" _n
+	file write myfile "\end{threeparttable}" _n
+	file write myfile "\end{sidewaystable}" _n
+	file close myfile
+
 end
 
 * **********************************************************************
@@ -1054,7 +1150,7 @@ program define create_panel_tex_table
         using "$output/tables/`filename'${vsfx}.tex", ///
 		se b(%8.3f)                            ///           
         keep(`keep') fragment booktabs         ///
-        collabels("")                          ///
+        collabels(none)                        ///
         starlevels(* 0.10 ** 0.05 *** 0.01)    ///
 		s(N N_clust r2_a, label("Observations" "Individuals" "Adj. R\$^{2}\$") ///
         fmt(%9.0fc %9.0fc a2))                 ///
