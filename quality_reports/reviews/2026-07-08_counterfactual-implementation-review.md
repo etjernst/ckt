@@ -120,3 +120,14 @@ Fix: build the per-regime regions at 97.5\% for the national row, or relabel.
 3. M4: export/assert the base trajectory per ster (blocks the CHN sweep refit from silently breaking E1).
 4. M1/M2/M3: decisions on the switcher-delta convention, lumped-cell treatment plus its disclosure, and the $W_{\text{zero}}$ convention; then align equation, code, and prose.
 5. M5 and minors alongside the same regeneration pass.
+
+---
+
+## Status footer (2026-07-08, Phase 3 close-out)
+
+All findings above are fixed and shipped.
+Code fixes (C1, C2, M1--M5, minors): commits `7ae1ae1` (exporters) and `555eb6b` (Python); a fourth bug found during implementation (the lumped cell's return dropped its $\Delta_{base}$ component) is fixed in the same pass.
+Old-vs-new numbers and the drivers: [2026-07-08_counterfactual-checkpoint.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-08_counterfactual-checkpoint.md).
+Settled decisions: coverage variant v1 (joint 3D $(\phi, \beta, \Delta_{\text{unb}})$ region); first-observed-wave baseline; CHN_uf and national reported as open intervals (the UF region is unbounded in $\phi$; Dufour-type weak-ID set); envelope paragraph cut (D5); baseline regenerated (`a908644`).
+Paper edits (Phase 3): applied per logical edit in `paper/results_counterfactuals.tex`, commits `f4772da` through `b538959`; regenerated tables copied to the Overleaf `tables/` folder.
+Headline numbers now in the paper: IDN $[+7.9\%, +10.8\%]$ (point $+9.3\%$), TZA $[+18.6\%, +33.2\%]$ ($+23.5\%$), CHN rural-first $[+13.6\%, +17.2\%]$ ($+15.2\%$), CHN urban-first $[+2.0\%, \infty)$ ($+2.5\%$), CHN national $[+10.4\%, \infty)$ ($+11.7\%$); hukou bound $+11.1\%$ per worker, $+2.1\%$ economy-wide.
