@@ -36,14 +36,19 @@ class AggregateResult:
 
     All quantities are in log per-capita consumption units (so percent
     quantities are change in geometric-mean consumption: exp(x) - 1).
+    The zero-migration baseline holds each worker at their first-observed-wave
+    location, so the value term multiplies Delta_d by (Dbar_d - Dbar0_d);
+    always-urban workers drop out of the value term by construction.
+    The gap term is baseline-free.
     """
     w_obs_minus_zero: float       # value of observed migration
-    w_opt_minus_obs: float        # misallocation gap (Option 1 floor)
-    contrib_obs_zero: np.ndarray  # per-trajectory: pi_d * Delta_d * Dbar_d
+    w_opt_minus_obs: float        # misallocation gap (trajectory-mean floor)
+    contrib_obs_zero: np.ndarray  # per-trajectory: pi_d * Delta_d * (Dbar_d - Dbar0_d)
     contrib_opt_obs: np.ndarray   # per-trajectory: pi_d * [max(0, Delta_d) - Delta_d * Dbar_d]
     delta_d: np.ndarray           # the Delta_d used per trajectory (echo)
     pi_d: np.ndarray
     dbar_d: np.ndarray
+    dbar0_d: np.ndarray
     traj_labels: list[str]        # row labels for the decomposition
 
 
@@ -51,27 +56,28 @@ def evaluate_aggregate(
     delta_d: np.ndarray,
     pi_d: np.ndarray,
     dbar_d: np.ndarray,
+    dbar0_d: np.ndarray,
     traj_labels: list[str] | None = None,
 ) -> AggregateResult:
     """E1 aggregate at trajectory-level Deltas.
 
     Computes the decomposition in equation (1) of the paper:
 
-        W_obs - W_zero = sum_d pi_d * Delta_d * Dbar_d
+        W_obs - W_zero = sum_d pi_d * Delta_d * (Dbar_d - Dbar0_d)
         W_opt - W_obs  = sum_d pi_d * [max(0, Delta_d) - Delta_d * Dbar_d]
 
-    Treats ``delta_d`` as fixed at whatever values the caller passes;
-    no LCA constraint is imposed here. For the inversion-CI propagation
-    version, the caller will feed in the LCA-implied Delta_d at each
-    grid point.
+    where Dbar0_d is the trajectory's first-observed-wave urban share (the
+    stay-at-first-observation baseline). Treats ``delta_d`` as fixed at
+    whatever values the caller passes; no LCA constraint is imposed here.
     """
     delta_d = np.asarray(delta_d, dtype=float)
     pi_d = np.asarray(pi_d, dtype=float)
     dbar_d = np.asarray(dbar_d, dtype=float)
-    if not (len(delta_d) == len(pi_d) == len(dbar_d)):
+    dbar0_d = np.asarray(dbar0_d, dtype=float)
+    if not (len(delta_d) == len(pi_d) == len(dbar_d) == len(dbar0_d)):
         raise ValueError(
             f"length mismatch: delta_d={len(delta_d)} pi_d={len(pi_d)} "
-            f"dbar_d={len(dbar_d)}"
+            f"dbar_d={len(dbar_d)} dbar0_d={len(dbar0_d)}"
         )
     if traj_labels is None:
         traj_labels = [str(i) for i in range(len(delta_d))]
@@ -81,7 +87,7 @@ def evaluate_aggregate(
     if not (0.99 <= pi_sum <= 1.01):
         raise ValueError(f"pi_d does not sum to ~1: sum = {pi_sum:.4f}")
 
-    contrib_obs_zero = pi_d * delta_d * dbar_d
+    contrib_obs_zero = pi_d * delta_d * (dbar_d - dbar0_d)
     contrib_opt_obs = pi_d * (np.maximum(0.0, delta_d) - delta_d * dbar_d)
 
     return AggregateResult(
@@ -92,6 +98,7 @@ def evaluate_aggregate(
         delta_d=delta_d,
         pi_d=pi_d,
         dbar_d=dbar_d,
+        dbar0_d=dbar0_d,
         traj_labels=traj_labels,
     )
 
@@ -353,16 +360,22 @@ def lca_delta_dT(
 
 THRESHOLD = 5
 TYPE_ONE = 0.05
-BASE_TRAJECTORY = 2
+# Cells exempt from the hard 0.01 OLS-vs-ster Delta_dN agreement bound (weak
+# identification near phi = -1 separates the two estimators; see run_cell).
+WEAK_ID_EXEMPT = {"CHN_uf"}
 
-# Per-cell configuration. The CHN hukou cells use a wider, finer phi grid:
-# the UF marginal phi sits entirely below -1 (the identification boundary),
-# so the grid must reach far enough negative to bracket the accepted region.
+# Per-cell configuration. The CHN hukou cells use wider phi AND beta grids:
+# the UF region sits below the phi = -1 boundary and, being weakly
+# identified, extends far along a (phi, beta) ray, so both grids must reach
+# far enough to bracket it (run_cell hard-errors if the accepted region
+# touches any lattice edge).
 CELLS = {
     "IDN":    {"file_stem": "IDN",                   "phi": (-2.0, 1.0, 301)},
     "TZA":    {"file_stem": "TZA",                   "phi": (-2.0, 1.0, 301)},
-    "CHN_rf": {"file_stem": "CHN_hukou_rural_first", "phi": (-3.5, 1.0, 451)},
-    "CHN_uf": {"file_stem": "CHN_hukou_urban_first", "phi": (-3.5, 1.0, 451)},
+    "CHN_rf": {"file_stem": "CHN_hukou_rural_first", "phi": (-6.0, 1.0, 701),
+               "beta": (-2.0, 2.0, 401)},
+    "CHN_uf": {"file_stem": "CHN_hukou_urban_first", "phi": (-6.0, 1.0, 701),
+               "beta": (-2.0, 2.0, 401)},
 }
 BETA_GRID_SPEC = (-0.5, 0.5, 101)
 
@@ -373,25 +386,41 @@ class CellResult:
 
     Convex hulls are (lo, hi) tuples; percent quantities are exp(x) - 1
     (change in geometric-mean consumption). P3 is the no-d_T variant that
-    drops the always-urban contribution when the joint CI crosses the
-    phi = -1 identification boundary; full keeps it.
+    zeroes the always-urban gap contribution (a lower bound; the region can
+    cross the phi = -1 pole); full keeps it. Coverage variant v1 projects the
+    joint 3D (phi, beta, Delta_unb) region (honest >= 95%); v2 folds the
+    Delta_unb 95% CI into the 2D (phi, beta) region by interval arithmetic
+    (joint coverage >= 90%).
     """
     short: str
     n_obs: int
     n_pids: int
     K: int
     base: int
-    n_accept: int
-    n_total: int
+    n_accept_2d: int
+    n_accept_3d: int
     crosses_boundary: bool
+    phi_open_below: bool                # weak-ID: region accepts phi -> -inf
+    phi_open_above: bool                # weak-ID: region accepts phi -> +inf
     marginal_phi: tuple[float, float] | None
     marginal_beta: tuple[float, float] | None
-    hull_wmm_p3: tuple[float, float]    # misallocation gap, P3
-    hull_wms_p3: tuple[float, float]    # value of observed migration, P3
-    hull_wmm_full: tuple[float, float]  # misallocation gap, with d_T
-    hull_wms_full: tuple[float, float]  # value of observed migration, with d_T
-    point_wmm_p3: float                 # at (phi_hat, beta_hat), P3
+    marginal_unb: tuple[float, float] | None
+    hull_wmm_p3_v1: tuple[float, float]
+    hull_wms_p3_v1: tuple[float, float]
+    hull_wmm_full_v1: tuple[float, float]
+    hull_wms_full_v1: tuple[float, float]
+    hull_wmm_p3_v2: tuple[float, float]
+    hull_wms_p3_v2: tuple[float, float]
+    hull_wmm_full_v2: tuple[float, float]
+    hull_wms_full_v2: tuple[float, float]
+    point_wmm_p3: float                 # at (phi_hat, beta_hat, unb_ols), P3
     point_wms_p3: float
+    unb_ols: float                      # lumped-cell return, auxiliary OLS
+    unb_se_ols: float
+    unb_gmm: float                      # ster xb:unbalanced_choice (diagnostic)
+    xcheck_gap_unrestricted: float      # point gap under unrestricted switcher returns
+    xcheck_gap_diff: float              # unrestricted minus LCA-line point gap
+    decomposition: pd.DataFrame         # per-trajectory contributions at the point
 
 
 @dataclass
@@ -427,10 +456,14 @@ def prepare_data(file_stem: str, data_dir) -> tuple[pd.DataFrame, list[str]]:
     """
     df = pd.read_stata(Path(data_dir) / f"{file_stem}_unb.dta",
                        convert_categoricals=False)
+    # Filter mirrors _export_e1_inputs*.do exactly: POSITIVITY on consumption
+    # and hhsize_cube (np.log(0) is -inf and would survive a NaN filter),
+    # plus non-missing choice, period, controls, and unbalanced dummies.
+    # The exporter asserts this reproduces the GMM e(N); run_cell asserts the
+    # row/pid counts against the exporter's scalars.
+    df = df[(df["consumption"] > 0) & (df["hhsize_cube"] > 0)].copy()
     df["lndepvar"] = np.log(df["consumption"] / df["hhsize_cube"])
-    # 5b drops only mi(lndepvar) | mi(choice); compute_all_inversion_cis
-    # additionally needs the controls + unbalanced dummies non-NaN.
-    df = df.dropna(subset=["lndepvar", "choice"]).copy()
+    df = df.dropna(subset=["lndepvar", "choice", "period"]).copy()
     needed = ["female", "age2", "education_max", "education_max2",
               "unbalanced", "unbalanced_choice"]
     df = df.dropna(subset=[c for c in needed if c in df.columns])
@@ -447,11 +480,22 @@ def prepare_data(file_stem: str, data_dir) -> tuple[pd.DataFrame, list[str]]:
     return df, controls
 
 
+# Interface schema for the exporter CSVs. load_cell_inputs errors on any
+# missing column or scalar key so a silent rename upstream cannot ship.
+_TRAJ_COLS = {"traj_for_agg", "n_pids", "dbar_d", "dbar0_d", "pi_d"}
+_MU_COLS = {"traj_for_agg", "mu_d_ster", "mu_d_raw_hh"}
+_DELTA_COLS = {"trajectory", "delta_d_lcafit_point"}
+_SCALAR_KEYS = {"phi_hat", "beta_hat", "unb_choice_hat", "base",
+                "delta_never_point", "inv_dN",
+                "n_rows_filtered", "n_pids_filtered"}
+
+
 def load_cell_inputs(short: str, inputs_dir) -> dict:
     """Read the four ster-derived input CSVs for one cell and merge them.
 
     The CSVs (`{short}_e1_{traj,mu_d,delta_d,scalars}.csv`) are written by
     _export_e1_inputs.do / _export_e1_inputs_hukou.do from the GRC sters.
+    Every required column and scalar key is asserted present.
     """
     inputs_dir = Path(inputs_dir)
     traj = pd.read_csv(inputs_dir / f"{short}_e1_traj.csv")
@@ -464,6 +508,20 @@ def load_cell_inputs(short: str, inputs_dir) -> dict:
             scalars[row["name"]] = float(row["value"])
         except (TypeError, ValueError):
             scalars[row["name"]] = row["value"]
+
+    for label, have, want in [
+        ("traj", set(traj.columns), _TRAJ_COLS),
+        ("mu_d", set(mu_d.columns), _MU_COLS),
+        ("delta_d", set(delta_d.columns), _DELTA_COLS),
+        ("scalars", set(scalars.keys()), _SCALAR_KEYS),
+    ]:
+        missing = want - have
+        if missing:
+            raise ValueError(
+                f"{short}: {label} CSV is missing {sorted(missing)}; "
+                f"re-run the E1 exporters before the counterfactuals."
+            )
+
     df = traj.merge(mu_d, on="traj_for_agg", how="left").merge(
         delta_d.rename(columns={"trajectory": "traj_for_agg"}),
         on="traj_for_agg", how="left",
@@ -471,123 +529,200 @@ def load_cell_inputs(short: str, inputs_dir) -> dict:
     return {"trajectory": df, "scalars": scalars}
 
 
-def compute_alpha_dT_obs(data: pd.DataFrame, traj_var: str, choice_var: str,
-                         dT_code: int) -> float:
-    """Mean observed urban log per-capita consumption for trajectory == d_T.
+def build_joint_ci_grid_3d(
+    fit: AuxiliaryFit,
+    switchers_kept: Sequence[int],
+    base: int,
+    phi_grid: np.ndarray,
+    beta_grid: np.ndarray,
+    unb_grid: np.ndarray,
+    type_one: float = 0.05,
+    unb_col: str = "unbalanced_choice",
+) -> dict:
+    """Joint $(\\phi, \\beta, \\Delta_{unb})$ region via constrained-J inversion.
 
-    Uses the already-constructed lndepvar column (= log(consumption /
-    hhsize_cube)) rather than recomputing from raw, which avoids any NaN
-    from an unfiltered hhsize_cube."""
-    mask = (data[traj_var] == dT_code) & (data[choice_var] == 1)
-    return float(data.loc[mask, "lndepvar"].mean())
+    Extends ``build_joint_ci_grid`` with one extra moment
+    ``unbalanced_choice_OLS - delta_unb`` so the lumped-cell return is tested
+    inside the same S-statistic (dof K+1) rather than bolted on afterwards.
+    The moment vector is linear in $(\\beta, \\delta_{unb})$ at fixed $\\phi$,
+    so the Wald surface is evaluated by quadratic-form expansion --- O(1) per
+    lattice point after one weight-matrix inversion per $\\phi$.
+    """
+    sw = list(switchers_kept)
+    K = len(sw)
+    if base not in sw:
+        raise ValueError(f"base trajectory {base} not in switchers_kept {sw}")
+
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+    unb_idx = fit.idx(unb_col)
+
+    u = fit.b[s_beta]
+    d = fit.b[s_alpha] - fit.b[base_alpha]
+    unb_hat = float(fit.b[unb_idx])
+    unb_se = float(np.sqrt(fit.V[unb_idx, unb_idx]))
+
+    n_phi, n_beta, n_unb = len(phi_grid), len(beta_grid), len(unb_grid)
+    wald = np.empty((n_phi, n_beta, n_unb))
+    avec = np.zeros(K + 1)
+    avec[:K] = 1.0            # -d m / d beta
+    bvec = np.zeros(K + 1)
+    bvec[K] = 1.0             # -d m / d delta_unb
+
+    for i, phi in enumerate(phi_grid):
+        J = np.zeros((K + 1, p))
+        for k in range(K):
+            J[k, s_beta[k]] = 1.0
+            if not is_base[k]:
+                J[k, s_alpha[k]] = -phi
+                J[k, base_alpha] = +phi
+        J[K, unb_idx] = 1.0
+        V_m = J @ fit.V @ J.T
+        W = np.linalg.pinv(V_m, rcond=1e-10)
+
+        c = np.concatenate([u - phi * d, [unb_hat]])
+        Wc = W @ c
+        Wa = W @ avec
+        Wb = W @ bvec
+        cWc = float(c @ Wc)
+        aWc = float(avec @ Wc)
+        bWc = float(bvec @ Wc)
+        aWa = float(avec @ Wa)
+        bWb = float(bvec @ Wb)
+        aWb = float(avec @ Wb)
+        B = beta_grid[:, None]
+        U = unb_grid[None, :]
+        wald[i] = (cWc - 2.0 * B * aWc - 2.0 * U * bWc
+                   + B ** 2 * aWa + U ** 2 * bWb + 2.0 * B * U * aWb)
+
+    p_value = 1.0 - chi2.cdf(wald, df=K + 1)
+    accept = p_value >= type_one
+    return {
+        "phi_grid": np.asarray(phi_grid),
+        "beta_grid": np.asarray(beta_grid),
+        "unb_grid": np.asarray(unb_grid),
+        "wald": wald,
+        "accept": accept,
+        "K": K + 1,
+        "unb_hat": unb_hat,
+        "unb_se": unb_se,
+    }
 
 
-def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
-    """Compute the E1 aggregate and its joint-CI image for one cell."""
-    cfg = CELLS[short]
-    phi_grid = np.linspace(*cfg["phi"])
-    beta_grid = np.linspace(*BETA_GRID_SPEC)
+def _assert_region_interior(accept: np.ndarray, axis_names: list[str],
+                            short: str,
+                            open_edges: set[tuple[str, str]] | None = None) -> None:
+    """Error if the accepted region touches any lattice edge.
 
-    df, controls = prepare_data(cfg["file_stem"], data_dir)
-    n_obs = len(df)
-    n_pids = int(df["pid"].nunique())
+    A truncated region silently narrows the projected interval, so this is a
+    hard stop; widen the offending grid and rerun. ``open_edges`` is a set of
+    (axis_name, "lo"/"hi") pairs declared genuinely unbounded (verified by
+    ``_phi_open_below``); those edges are exempt.
+    """
+    open_edges = open_edges or set()
+    for ax, name in enumerate(axis_names):
+        first = np.take(accept, 0, axis=ax)
+        last = np.take(accept, -1, axis=ax)
+        if bool(first.any()) and (name, "lo") not in open_edges:
+            raise ValueError(
+                f"{short}: accepted region touches the lower {name}-grid edge; "
+                f"widen the {name} grid and rerun."
+            )
+        if bool(last.any()) and (name, "hi") not in open_edges:
+            raise ValueError(
+                f"{short}: accepted region touches the upper {name}-grid edge; "
+                f"widen the {name} grid and rerun."
+            )
 
-    kept, _ = drop_sparse_switchers(
-        df, "trajectory", "choice", "pid", threshold=THRESHOLD
-    )
-    K = len(kept)
-    base = BASE_TRAJECTORY if BASE_TRAJECTORY in kept else kept[0]
 
-    fit = fit_auxiliary_ols(
-        df, outcome="lndepvar", trajectory="trajectory", choice="choice",
-        hhid="pid", switchers_kept=kept, controls=controls,
-    )
+def _min_wald_at_phi(fit: AuxiliaryFit, switchers_kept: Sequence[int],
+                     base: int, phi: float) -> float:
+    """Min-over-beta 2D S-statistic at one phi (beta concentrated in closed form)."""
+    sw = list(switchers_kept)
+    K = len(sw)
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+    J = np.zeros((K, p))
+    for k in range(K):
+        J[k, s_beta[k]] = 1.0
+        if not is_base[k]:
+            J[k, s_alpha[k]] = -phi
+            J[k, base_alpha] = +phi
+    W = np.linalg.pinv(J @ fit.V @ J.T, rcond=1e-10)
+    c = fit.b[s_beta] - phi * (fit.b[s_alpha] - fit.b[base_alpha])
+    ones = np.ones(K)
+    beta_star = float(ones @ W @ c) / float(ones @ W @ ones)
+    m = c - beta_star
+    return float(m @ W @ m)
 
-    ci = build_joint_ci_grid(
-        fit=fit, switchers_kept=kept, base=base,
-        phi_grid=phi_grid, beta_grid=beta_grid, type_one=TYPE_ONE,
-    )
-    accept = ci["accept"]
-    n_accept = int(accept.sum())
 
-    phi_marg = accept.any(axis=1)
-    beta_marg = accept.any(axis=0)
-    marginal_phi = (
-        (float(phi_grid[phi_marg][0]), float(phi_grid[phi_marg][-1]))
-        if phi_marg.any() else None
-    )
-    marginal_beta = (
-        (float(beta_grid[beta_marg][0]), float(beta_grid[beta_marg][-1]))
-        if beta_marg.any() else None
-    )
+def _beta_star_at_phi(fit: AuxiliaryFit, switchers_kept: Sequence[int],
+                      base: int, phi: float) -> float:
+    """The concentrated (min-Wald) beta at one phi."""
+    sw = list(switchers_kept)
+    K = len(sw)
+    p = len(fit.b)
+    base_alpha = fit.idx(f"alpha[{base}]")
+    s_alpha = np.array([fit.idx(f"alpha[{s}]") for s in sw])
+    s_beta = np.array([fit.idx(f"beta[{s}]") for s in sw])
+    is_base = np.array([s == base for s in sw])
+    J = np.zeros((K, p))
+    for k in range(K):
+        J[k, s_beta[k]] = 1.0
+        if not is_base[k]:
+            J[k, s_alpha[k]] = -phi
+            J[k, base_alpha] = +phi
+    W = np.linalg.pinv(J @ fit.V @ J.T, rcond=1e-10)
+    c = fit.b[s_beta] - phi * (fit.b[s_alpha] - fit.b[base_alpha])
+    ones = np.ones(K)
+    return float(ones @ W @ c) / float(ones @ W @ ones)
 
-    inp = load_cell_inputs(short, inputs_dir)
-    traj_df = inp["trajectory"]
-    scalars = inp["scalars"]
-    mu_dN = float(traj_df.loc[traj_df["traj_for_agg"] == 1, "mu_d"].iloc[0])
-    mu_base = float(traj_df.loc[traj_df["traj_for_agg"] == base, "mu_d"].iloc[0])
-    max_traj = int(traj_df["traj_for_agg"].max())
-    alpha_dT_obs = compute_alpha_dT_obs(
-        df, "trajectory", "choice", max_traj
-    )
 
-    pi_arr = traj_df["pi_d"].to_numpy()
-    dbar_arr = traj_df["dbar_d"].to_numpy()
-    delta_arr_base = traj_df["delta_d_unrestricted"].to_numpy()
-    is_dN = traj_df["traj_for_agg"].to_numpy() == 1
-    is_dT = traj_df["traj_for_agg"].to_numpy() == max_traj
-    is_lumped = traj_df["traj_for_agg"].to_numpy() == -1
-    unb_choice_hat = scalars.get("unb_choice_hat", 0.0)
+def _phi_open_sides(fit: AuxiliaryFit, switchers_kept: Sequence[int],
+                    base: int, type_one: float = 0.05,
+                    dof_offset: int = 0) -> tuple[bool, bool]:
+    """(open_below, open_above): does the S-statistic accept phi -> -/+inf?
 
-    # Guard: every trajectory is either overwritten below (dN/dT via LCA,
-    # lumped via unb_choice_hat) or must already carry a finite non-parametric
-    # delta. delta_at starts from a plain copy, so a NaN delta on a
-    # non-overwritten row would be carried into the aggregate (nansum treats it
-    # as zero), silently corrupting the gap. Fail loudly here instead.
-    covered = is_dN | is_dT | is_lumped | ~np.isnan(delta_arr_base)
-    if not covered.all():
-        bad = traj_df.loc[~covered, "traj_for_agg"].tolist()
-        raise ValueError(
-            f"{short}: trajectories {bad} have a NaN delta and are not covered "
-            f"by the dN/dT/lumped overwrites; refusing to treat them as zero."
-        )
-    if not (np.isfinite(mu_dN) and np.isfinite(mu_base)):
-        raise ValueError(
-            f"{short}: non-finite mu_dN={mu_dN} or mu_base={mu_base}; "
-            f"check the {short}_e1_mu_d.csv merge."
-        )
+    As |phi| -> inf both the moment and its variance scale with phi, so the
+    standardized statistic converges (to the same limit on both sides up to
+    grid effects); if the limit sits below the chi^2 critical value the
+    confidence region is unbounded on that side (a Dufour-type unbounded
+    weak-identification confidence set). ``dof_offset`` lets the caller test
+    against the 3D region's K+1 critical value, which is the binding one for
+    the edge guard. Probed at two extreme phi values per side for stability.
+    """
+    crit = chi2.ppf(1.0 - type_one, len(list(switchers_kept)) + dof_offset)
+    open_below = all(_min_wald_at_phi(fit, switchers_kept, base, phi) < crit
+                     for phi in (-1e4, -1e5))
+    open_above = all(_min_wald_at_phi(fit, switchers_kept, base, phi) < crit
+                     for phi in (1e4, 1e5))
+    return open_below, open_above
 
-    def delta_at(phi: float, beta: float) -> np.ndarray:
-        out = delta_arr_base.astype(float).copy()
-        out = np.where(is_lumped, unb_choice_hat, out)
-        out = np.where(is_dN, lca_delta_dN(phi, beta, mu_dN, mu_base), out)
-        out = np.where(is_dT, lca_delta_dT(phi, beta, alpha_dT_obs, mu_base), out)
-        return out
 
+def _hulls_from_sweep(dv_iter, pi_arr, dbar_arr, dbar0_arr, is_dT) -> dict:
+    """Evaluate the aggregate over an iterable of delta vectors; return hulls.
+
+    Each element of ``dv_iter`` is a per-trajectory delta vector. P3 zeroes
+    the d_T row in the gap (its value contribution is already zero because
+    dbar - dbar0 = 0 for always-urban workers); full keeps it.
+    """
     wms_full: list[float] = []
     wmm_full: list[float] = []
     wms_p3: list[float] = []
     wmm_p3: list[float] = []
-    crosses_boundary = False
-    # The with-d_T aggregate hits inf-inf near the phi = -1 pole (lca_delta_dT
-    # diverges); those points become NaN and are dropped by the finite mask in
-    # project_image_intervals. Silence the expected non-finite arithmetic.
     with np.errstate(invalid="ignore", over="ignore"):
-        for (i, j) in np.argwhere(accept):
-            phi = float(ci["phi_grid"][i])
-            beta = float(ci["beta_grid"][j])
-            if phi <= -1.0:
-                crosses_boundary = True
+        for dv in dv_iter:
             try:
-                dv = delta_at(phi, beta)
                 dv_p3 = dv.copy()
                 dv_p3[is_dT] = 0.0
-                r_full = evaluate_aggregate(
-                    delta_d=dv, pi_d=pi_arr, dbar_d=dbar_arr, traj_labels=None
-                )
-                r_p3 = evaluate_aggregate(
-                    delta_d=dv_p3, pi_d=pi_arr, dbar_d=dbar_arr, traj_labels=None
-                )
+                r_full = evaluate_aggregate(dv, pi_arr, dbar_arr, dbar0_arr)
+                r_p3 = evaluate_aggregate(dv_p3, pi_arr, dbar_arr, dbar0_arr)
                 wms_full.append(r_full.w_obs_minus_zero)
                 wmm_full.append(r_full.w_opt_minus_obs)
                 wms_p3.append(r_p3.w_obs_minus_zero)
@@ -597,31 +732,309 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
                 wmm_full.append(float("nan"))
                 wms_p3.append(float("nan"))
                 wmm_p3.append(float("nan"))
+    return {
+        "wmm_p3": project_image_intervals(np.array(wmm_p3))["convex_hull"],
+        "wms_p3": project_image_intervals(np.array(wms_p3))["convex_hull"],
+        "wmm_full": project_image_intervals(np.array(wmm_full))["convex_hull"],
+        "wms_full": project_image_intervals(np.array(wms_full))["convex_hull"],
+    }
 
-    proj_wmm_full = project_image_intervals(np.array(wmm_full))
-    proj_wms_full = project_image_intervals(np.array(wms_full))
-    proj_wmm_p3 = project_image_intervals(np.array(wmm_p3))
-    proj_wms_p3 = project_image_intervals(np.array(wms_p3))
 
-    phi_hat = scalars["phi_hat"]
-    beta_hat = scalars["beta_hat"]
-    dv_hat = delta_at(phi_hat, beta_hat).copy()
-    dv_hat[is_dT] = 0.0
-    r_hat = evaluate_aggregate(
-        delta_d=dv_hat, pi_d=pi_arr, dbar_d=dbar_arr, traj_labels=None
+def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
+    """Compute the E1 aggregate and both coverage-variant intervals for one cell.
+
+    Every LCA object comes from one per-capita, covariate-adjusted source:
+    the auxiliary-OLS fit (alpha differences) for the never cell, kept
+    switchers, and the d_T Mobius input; the ster's mu:switcher_k for sparse
+    non-kept switchers. Switcher returns are recomputed on the LCA line at
+    every lattice point (D1); the lumped cell's return is the tested
+    delta_unb coordinate under variant 1 and the auxiliary-OLS coefficient
+    otherwise.
+    """
+    cfg = CELLS[short]
+    phi_grid = np.linspace(*cfg["phi"])
+    beta_grid = np.linspace(*cfg.get("beta", BETA_GRID_SPEC))
+
+    inp = load_cell_inputs(short, inputs_dir)
+    traj_df = inp["trajectory"].sort_values("traj_for_agg").reset_index(drop=True)
+    scalars = inp["scalars"]
+
+    df, controls = prepare_data(cfg["file_stem"], data_dir)
+    n_obs = len(df)
+    n_pids = int(df["pid"].nunique())
+    if (n_obs != int(scalars["n_rows_filtered"])
+            or n_pids != int(scalars["n_pids_filtered"])):
+        raise ValueError(
+            f"{short}: sample mismatch vs exporter: rows {n_obs} vs "
+            f"{int(scalars['n_rows_filtered'])}, pids {n_pids} vs "
+            f"{int(scalars['n_pids_filtered'])}; the exporter and "
+            f"prepare_data filters have diverged."
+        )
+
+    kept, _ = drop_sparse_switchers(
+        df, "trajectory", "choice", "pid", threshold=THRESHOLD
     )
+    K = len(kept)
+    base = int(scalars["base"])
+    if base not in kept:
+        raise ValueError(f"{short}: ster base {base} not in switchers_kept {kept}")
+
+    fit = fit_auxiliary_ols(
+        df, outcome="lndepvar", trajectory="trajectory", choice="choice",
+        hhid="pid", switchers_kept=kept, controls=controls,
+    )
+
+    trajectories = sorted(int(t) for t in df["trajectory"].dropna().unique())
+    never_traj, always_traj = trajectories[0], trajectories[-1]
+    max_traj = int(traj_df["traj_for_agg"].max())
+    if never_traj != 1 or always_traj != max_traj:
+        raise ValueError(
+            f"{short}: trajectory coding mismatch: data range "
+            f"[{never_traj}, {always_traj}] vs traj CSV max {max_traj}"
+        )
+
+    alpha_base = float(fit.b[fit.idx(f"alpha[{base}]")])
+    alpha_never = float(fit.b[fit.idx(f"alpha[{never_traj}]")])
+    alpha_dT = float(fit.b[fit.idx(f"alpha[{always_traj}]")])
+    unb_idx = fit.idx("unbalanced_choice")
+    unb_ols = float(fit.b[unb_idx])
+    unb_se = float(np.sqrt(fit.V[unb_idx, unb_idx]))
+    unb_gmm = float(scalars["unb_choice_hat"])
+
+    traj_codes = traj_df["traj_for_agg"].to_numpy(dtype=int)
+    pi_arr = traj_df["pi_d"].to_numpy(dtype=float)
+    dbar_arr = traj_df["dbar_d"].to_numpy(dtype=float)
+    dbar0_arr = traj_df["dbar0_d"].to_numpy(dtype=float)
+    mu_ster = traj_df["mu_d_ster"].to_numpy(dtype=float)
+    is_dN = traj_codes == never_traj
+    is_dT = traj_codes == always_traj
+    is_lumped = traj_codes == -1
+    is_switcher = ~(is_dN | is_dT | is_lumped)
+
+    # LCA slope input per row: OLS alpha differences for the never cell and
+    # kept switchers; ster mu differences for sparse non-kept switchers,
+    # whose OLS alpha pools rural and urban observations. d_T and the lumped
+    # cell are overwritten inside delta_at.
+    mu_ster_base = float(
+        traj_df.loc[traj_df["traj_for_agg"] == base, "mu_d_ster"].iloc[0]
+    )
+    if not np.isfinite(mu_ster_base):
+        raise ValueError(f"{short}: mu_d_ster missing for base trajectory {base}")
+    diff_arr = np.zeros(len(traj_codes))
+    for i, t in enumerate(traj_codes):
+        if is_dN[i]:
+            diff_arr[i] = alpha_never - alpha_base
+        elif is_switcher[i]:
+            if t in kept:
+                diff_arr[i] = float(fit.b[fit.idx(f"alpha[{t}]")]) - alpha_base
+            else:
+                if not np.isfinite(mu_ster[i]):
+                    raise ValueError(
+                        f"{short}: sparse switcher {t} has no mu_d_ster"
+                    )
+                diff_arr[i] = mu_ster[i] - mu_ster_base
+
+    def delta_at(phi: float, beta: float, delta_unb: float) -> np.ndarray:
+        out = beta + phi * diff_arr
+        out = np.where(is_lumped, delta_unb, out)
+        out = np.where(is_dT, lca_delta_dT(phi, beta, alpha_dT, alpha_base), out)
+        return out
+
+    # Self-check: the OLS-alpha LCA extrapolation at the GMM point should
+    # reproduce the ster's Delta_never (two estimators of one object; 0.01
+    # is the inversion grid resolution). CHN_uf is exempt from the hard 0.01
+    # bound with a loose 0.15 sanity cap: near the phi = -1 boundary the
+    # restricted GMM's mu and the unrestricted OLS alpha genuinely diverge,
+    # which is why the point estimate below comes from the ster objects and
+    # the interval from the weak-ID-robust region (the same pairing the GRC
+    # tables use). On any other failure investigate; never loosen.
+    phi_hat = float(scalars["phi_hat"])
+    beta_hat = float(scalars["beta_hat"])
+    delta_never_point = float(scalars["delta_never_point"])
+    d_dN_ols = beta_hat + phi_hat * (alpha_never - alpha_base)
+    dN_gap = d_dN_ols - delta_never_point
+    tol = 0.15 if short in WEAK_ID_EXEMPT else 0.01
+    if abs(dN_gap) > tol:
+        raise ValueError(
+            f"{short}: OLS-alpha Delta_dN at the point ({d_dN_ols:+.4f}) "
+            f"differs from ster delta_never_point ({delta_never_point:+.4f}) "
+            f"by {dN_gap:+.4f} > {tol}."
+        )
+    print(f"  {short}: Delta_dN ster point {delta_never_point:+.4f}, "
+          f"OLS-alpha plug-in {d_dN_ols:+.4f} (gap {dN_gap:+.4f}), "
+          f"inv {float(scalars['inv_dN']):+.4f}, base = {base}")
+
+    # Unbounded-region probe: under weak identification the S-statistic can
+    # accept arbitrarily large |phi| (CHN_uf does, on both sides); those phi
+    # edges are declared open instead of erroring, and diverging hull
+    # endpoints are marked infinite below. The probe uses the 3D (K+1)
+    # critical value, the binding one for the wider region.
+    open_lo, open_hi = _phi_open_sides(fit, kept, base, TYPE_ONE, dof_offset=1)
+    phi_open = open_lo or open_hi
+    open_edges = set()
+    if open_lo:
+        open_edges.add(("phi", "lo"))
+    if open_hi:
+        open_edges.add(("phi", "hi"))
+    if phi_open:
+        sides = " and ".join(s for s, f in [("below", open_lo), ("above", open_hi)] if f)
+        print(f"  {short}: phi confidence region is UNBOUNDED {sides} "
+              f"(S-statistic accepts phi -> +/-inf)")
+
+    # Variant 2 region: 2D (phi, beta), dof K.
+    ci2 = build_joint_ci_grid(
+        fit=fit, switchers_kept=kept, base=base,
+        phi_grid=phi_grid, beta_grid=beta_grid, type_one=TYPE_ONE,
+    )
+    accept2 = ci2["accept"]
+    _assert_region_interior(accept2, ["phi", "beta"], short, open_edges)
+
+    # Variant 1 region: 3D (phi, beta, delta_unb), dof K+1. Grid halfwidth
+    # sqrt(chi2_{K+1,0.95}) + 1 SEs so the accepted range cannot clip.
+    halfw = (np.sqrt(chi2.ppf(1.0 - TYPE_ONE, K + 1)) + 1.0) * unb_se
+    n_unb = int(2 * np.ceil(halfw / (unb_se / 5.0))) + 1
+    unb_grid = np.linspace(unb_ols - halfw, unb_ols + halfw, n_unb)
+    ci3 = build_joint_ci_grid_3d(
+        fit=fit, switchers_kept=kept, base=base,
+        phi_grid=phi_grid, beta_grid=beta_grid, unb_grid=unb_grid,
+        type_one=TYPE_ONE,
+    )
+    accept3 = ci3["accept"]
+    _assert_region_interior(accept3, ["phi", "beta", "delta_unb"], short,
+                            open_edges)
+
+    phi_m = accept3.any(axis=(1, 2))
+    beta_m = accept3.any(axis=(0, 2))
+    unb_m = accept3.any(axis=(0, 1))
+    marginal_phi = ((float(phi_grid[phi_m][0]), float(phi_grid[phi_m][-1]))
+                    if phi_m.any() else None)
+    marginal_beta = ((float(beta_grid[beta_m][0]), float(beta_grid[beta_m][-1]))
+                     if beta_m.any() else None)
+    marginal_unb = ((float(unb_grid[unb_m][0]), float(unb_grid[unb_m][-1]))
+                    if unb_m.any() else None)
+    crosses_boundary = bool(phi_m.any() and phi_grid[phi_m][0] <= -1.0)
+
+    # Sweep variant 1: the aggregate at every accepted 3D point.
+    def _iter_v1():
+        for (i, j, m) in np.argwhere(accept3):
+            yield delta_at(float(phi_grid[i]), float(beta_grid[j]),
+                           float(unb_grid[m]))
+
+    hulls_v1 = _hulls_from_sweep(_iter_v1(), pi_arr, dbar_arr, dbar0_arr, is_dT)
+
+    # Sweep variant 2: the 2D region with the Delta_unb 95% CI folded in by
+    # interval arithmetic. The aggregate is piecewise-linear monotone in
+    # delta_unb with a kink at 0, so evaluating the endpoints (plus 0 when
+    # straddled) is exact.
+    unb_lo = unb_ols - 1.96 * unb_se
+    unb_hi = unb_ols + 1.96 * unb_se
+    unb_candidates = [unb_lo, unb_hi] + ([0.0] if unb_lo < 0.0 < unb_hi else [])
+
+    def _iter_v2():
+        for (i, j) in np.argwhere(accept2):
+            for du in unb_candidates:
+                yield delta_at(float(phi_grid[i]), float(beta_grid[j]), du)
+
+    hulls_v2 = _hulls_from_sweep(_iter_v2(), pi_arr, dbar_arr, dbar0_arr, is_dT)
+
+    # When phi is unbounded on either side, hulls computed on the finite grid
+    # are truncation artifacts wherever the aggregate diverges along an
+    # accepted ray. Probe each open ray at two extreme phi (beta concentrated,
+    # delta_unb at its center) and mark diverging endpoints infinite in BOTH
+    # variants.
+    open_rays = ([(-1e3, -2e3)] if open_lo else []) + \
+                ([(1e3, 2e3)] if open_hi else [])
+    for ray in open_rays:
+        probes = []
+        with np.errstate(invalid="ignore", over="ignore"):
+            for phi_p in ray:
+                b_p = _beta_star_at_phi(fit, kept, base, phi_p)
+                dv = delta_at(phi_p, b_p, unb_ols)
+                dv_p3 = dv.copy()
+                dv_p3[is_dT] = 0.0
+                r_p3 = evaluate_aggregate(dv_p3, pi_arr, dbar_arr, dbar0_arr)
+                r_fl = evaluate_aggregate(dv, pi_arr, dbar_arr, dbar0_arr)
+                probes.append({
+                    "wmm_p3": r_p3.w_opt_minus_obs, "wms_p3": r_p3.w_obs_minus_zero,
+                    "wmm_full": r_fl.w_opt_minus_obs, "wms_full": r_fl.w_obs_minus_zero,
+                })
+        for key in ("wmm_p3", "wms_p3", "wmm_full", "wms_full"):
+            growth = probes[1][key] - probes[0][key]
+            if not np.isfinite(growth):
+                growth = probes[1][key]
+            for hulls in (hulls_v1, hulls_v2):
+                lo, hi = hulls[key]
+                if growth > 0.005:
+                    hulls[key] = (lo, float("inf"))
+                elif growth < -0.005:
+                    hulls[key] = (float("-inf"), hi)
+
+    # Point estimate from the STER objects (GMM nlcom values: LCA-fitted
+    # switcher returns and Delta_never), matching the paper's GRC tables;
+    # the lumped cell takes the auxiliary-OLS coefficient (the interval
+    # center) and d_T the Mobius echo. P3 gap convention zeroes d_T.
+    lcafit = traj_df["delta_d_lcafit_point"].to_numpy(dtype=float)
+    if np.isnan(lcafit[is_switcher]).any():
+        bad = traj_df.loc[is_switcher & np.isnan(lcafit), "traj_for_agg"].tolist()
+        raise ValueError(f"{short}: switcher rows {bad} missing delta_d_lcafit_point")
+    dv_hat = np.where(is_switcher, lcafit, 0.0)
+    dv_hat[is_dN] = delta_never_point
+    dv_hat[is_lumped] = unb_ols
+    with np.errstate(invalid="ignore", over="ignore"):
+        dv_hat[is_dT] = lca_delta_dT(phi_hat, beta_hat, alpha_dT, alpha_base)
+    dv_hat_p3 = dv_hat.copy()
+    dv_hat_p3[is_dT] = 0.0
+    r_hat = evaluate_aggregate(dv_hat_p3, pi_arr, dbar_arr, dbar0_arr)
+
+    # D1 cross-check: the point gap with genuinely unrestricted switcher
+    # returns (beta[s] from a fit that interacts EVERY switcher trajectory
+    # with choice) in place of the LCA-line values.
+    all_switchers = [t for t in trajectories
+                     if t not in (never_traj, always_traj)]
+    fit_all = fit_auxiliary_ols(
+        df, outcome="lndepvar", trajectory="trajectory", choice="choice",
+        hhid="pid", switchers_kept=all_switchers, controls=controls,
+    )
+    dv_x = dv_hat_p3.copy()
+    for i, t in enumerate(traj_codes):
+        if is_switcher[i]:
+            dv_x[i] = float(fit_all.b[fit_all.idx(f"beta[{t}]")])
+    r_x = evaluate_aggregate(dv_x, pi_arr, dbar_arr, dbar0_arr)
+
+    decomposition = pd.DataFrame({
+        "cell": short,
+        "traj_for_agg": traj_codes,
+        "pi_d": pi_arr,
+        "dbar_d": dbar_arr,
+        "dbar0_d": dbar0_arr,
+        "delta_point": dv_hat,
+        "contrib_gap_p3": r_hat.contrib_opt_obs,
+        "contrib_value": r_hat.contrib_obs_zero,
+    })
+
+    if marginal_phi is not None:
+        if open_lo:
+            marginal_phi = (float("-inf"), marginal_phi[1])
+        if open_hi:
+            marginal_phi = (marginal_phi[0], float("inf"))
 
     return CellResult(
         short=short, n_obs=n_obs, n_pids=n_pids, K=K, base=base,
-        n_accept=n_accept, n_total=int(accept.size),
-        crosses_boundary=crosses_boundary,
+        n_accept_2d=int(accept2.sum()), n_accept_3d=int(accept3.sum()),
+        crosses_boundary=crosses_boundary, phi_open_below=open_lo,
+        phi_open_above=open_hi,
         marginal_phi=marginal_phi, marginal_beta=marginal_beta,
-        hull_wmm_p3=proj_wmm_p3["convex_hull"],
-        hull_wms_p3=proj_wms_p3["convex_hull"],
-        hull_wmm_full=proj_wmm_full["convex_hull"],
-        hull_wms_full=proj_wms_full["convex_hull"],
+        marginal_unb=marginal_unb,
+        hull_wmm_p3_v1=hulls_v1["wmm_p3"], hull_wms_p3_v1=hulls_v1["wms_p3"],
+        hull_wmm_full_v1=hulls_v1["wmm_full"], hull_wms_full_v1=hulls_v1["wms_full"],
+        hull_wmm_p3_v2=hulls_v2["wmm_p3"], hull_wms_p3_v2=hulls_v2["wms_p3"],
+        hull_wmm_full_v2=hulls_v2["wmm_full"], hull_wms_full_v2=hulls_v2["wms_full"],
         point_wmm_p3=r_hat.w_opt_minus_obs,
         point_wms_p3=r_hat.w_obs_minus_zero,
+        unb_ols=unb_ols, unb_se_ols=unb_se, unb_gmm=unb_gmm,
+        xcheck_gap_unrestricted=r_x.w_opt_minus_obs,
+        xcheck_gap_diff=r_x.w_opt_minus_obs - r_hat.w_opt_minus_obs,
+        decomposition=decomposition,
     )
 
 
@@ -647,15 +1060,19 @@ def combine_national(rf: CellResult, uf: CellResult,
     """Population-weighted national CHN aggregate via interval arithmetic.
 
     With non-negative weights the bounds are monotone in the inputs, so
-    the combined hull is the weighted sum of the per-cell hulls.
+    the combined hull is the weighted sum of the per-cell hulls. Combining
+    two independent 95% regions this way carries joint coverage of at least
+    90% (Bonferroni floor); the paper footnotes this.
     """
     def comb(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
         return (w_rf * a[0] + w_uf * b[0], w_rf * a[1] + w_uf * b[1])
 
     return {
         "short": "CHN_national",
-        "hull_wmm_p3": comb(rf.hull_wmm_p3, uf.hull_wmm_p3),
-        "hull_wms_p3": comb(rf.hull_wms_p3, uf.hull_wms_p3),
+        "hull_wmm_p3_v1": comb(rf.hull_wmm_p3_v1, uf.hull_wmm_p3_v1),
+        "hull_wms_p3_v1": comb(rf.hull_wms_p3_v1, uf.hull_wms_p3_v1),
+        "hull_wmm_p3_v2": comb(rf.hull_wmm_p3_v2, uf.hull_wmm_p3_v2),
+        "hull_wms_p3_v2": comb(rf.hull_wms_p3_v2, uf.hull_wms_p3_v2),
         "point_wmm_p3": w_rf * rf.point_wmm_p3 + w_uf * uf.point_wmm_p3,
         "point_wms_p3": w_rf * rf.point_wms_p3 + w_uf * uf.point_wms_p3,
         "w_rf": w_rf, "w_uf": w_uf,
@@ -706,14 +1123,15 @@ def run_hukou_bound(inputs_dir, data_dir, weights: dict) -> HukouBoundResult:
                 f"check source: {_src}"
             )
 
-    # inv_dN and inv_dN_ci95_{{lo,hi}} must be the CHN_rf-cell-specific
-    # never-migrant inversion CI (not pooled CHN); _export_e1_inputs_hukou.do writes them.
-    for _key in ("inv_dN", "inv_dN_ci95_lo", "inv_dN_ci95_hi"):
+    # delta_never_point is the _n-ster nlcom point (matching the RF GRC
+    # table); inv_dN_ci95_{lo,hi} are the CHN_rf-cell-specific inversion CI
+    # endpoints. _export_e1_inputs_hukou.do writes all three.
+    for _key in ("delta_never_point", "inv_dN_ci95_lo", "inv_dN_ci95_hi"):
         if _key not in scalars:
             raise KeyError(
                 f"CHN_rf: required scalar '{_key}' not found in CHN_rf_e1_scalars.csv"
             )
-    delta_point = float(scalars["inv_dN"])
+    delta_point = float(scalars["delta_never_point"])
     delta_lo = float(scalars["inv_dN_ci95_lo"])
     delta_hi = float(scalars["inv_dN_ci95_hi"])
     if not all(np.isfinite([delta_point, delta_lo, delta_hi])):
@@ -771,32 +1189,23 @@ _LABELS = {
 _TABLE_ORDER = ["IDN", "TZA", "CHN_national", "CHN_rf", "CHN_uf"]
 
 
-def _rows_for_cell(short: str, hull_wmm_p3, hull_wms_p3, point_wmm_p3,
-                   point_wms_p3, hull_wmm_full=None, hull_wms_full=None) -> list[dict]:
+def _rows_for_cell(short: str, hulls: dict, point_wmm_p3: float,
+                   point_wms_p3: float) -> list[dict]:
     """Emit one row per (quantity, version) for the results CSV.
 
-    Values are stored at full precision in log points and as percent
-    (geometric-mean change, exp(x) - 1). point is the GMM-point estimate;
-    NaN where a point is not defined (the with-d_T near-pole case).
+    ``hulls`` maps version labels (e.g. ``p3_v1``) to (lo, hi) tuples per
+    quantity prefix. Values are stored at full precision in log points and
+    as percent (geometric-mean change, exp(x) - 1). The point estimate is
+    attached to the P3 rows; NaN elsewhere (the with-d_T near-pole case).
     """
-    def row(quantity, version, lo, hi, point):
-        return {
-            "cell": short, "quantity": quantity, "version": version,
-            "ci_lo_log": lo, "ci_hi_log": hi, "point_log": point,
-            "ci_lo_pct": log_to_pct(lo) * 100.0,
-            "ci_hi_pct": log_to_pct(hi) * 100.0,
-            "point_pct": log_to_pct(point) * 100.0 if np.isfinite(point) else float("nan"),
-        }
-
-    rows = [
-        row("misallocation", "p3", hull_wmm_p3[0], hull_wmm_p3[1], point_wmm_p3),
-        row("value_migration", "p3", hull_wms_p3[0], hull_wms_p3[1], point_wms_p3),
-    ]
-    if hull_wmm_full is not None:
-        rows.append(row("misallocation", "with_dT",
-                        hull_wmm_full[0], hull_wmm_full[1], float("nan")))
-        rows.append(row("value_migration", "with_dT",
-                        hull_wms_full[0], hull_wms_full[1], float("nan")))
+    rows = []
+    for version, (wmm, wms) in hulls.items():
+        pt_wmm = point_wmm_p3 if version.startswith("p3") else float("nan")
+        pt_wms = point_wms_p3 if version.startswith("p3") else float("nan")
+        rows.append(_result_row(short, "misallocation", version,
+                                wmm[0], wmm[1], pt_wmm))
+        rows.append(_result_row(short, "value_migration", version,
+                                wms[0], wms[1], pt_wms))
     return rows
 
 
@@ -825,37 +1234,86 @@ def results_dataframe(res: dict) -> pd.DataFrame:
     """Flatten run_all_cells output into the persisted long-format table."""
     rows: list[dict] = []
     for short, c in res["cells"].items():
-        rows.extend(_rows_for_cell(
-            short, c.hull_wmm_p3, c.hull_wms_p3, c.point_wmm_p3, c.point_wms_p3,
-            c.hull_wmm_full, c.hull_wms_full,
-        ))
+        rows.extend(_rows_for_cell(short, {
+            "p3_v1": (c.hull_wmm_p3_v1, c.hull_wms_p3_v1),
+            "p3_v2": (c.hull_wmm_p3_v2, c.hull_wms_p3_v2),
+            "with_dT_v1": (c.hull_wmm_full_v1, c.hull_wms_full_v1),
+            "with_dT_v2": (c.hull_wmm_full_v2, c.hull_wms_full_v2),
+        }, c.point_wmm_p3, c.point_wms_p3))
     nat = res["national"]
-    rows.extend(_rows_for_cell(
-        "CHN_national", nat["hull_wmm_p3"], nat["hull_wms_p3"],
-        nat["point_wmm_p3"], nat["point_wms_p3"],
-    ))
+    rows.extend(_rows_for_cell("CHN_national", {
+        "p3_v1": (nat["hull_wmm_p3_v1"], nat["hull_wms_p3_v1"]),
+        "p3_v2": (nat["hull_wmm_p3_v2"], nat["hull_wms_p3_v2"]),
+    }, nat["point_wmm_p3"], nat["point_wms_p3"]))
     if "hukou_bound" in res:
         rows.extend(_hukou_bound_rows(res["hukou_bound"]))
     return pd.DataFrame(rows).sort_values(["cell", "quantity", "version"]).reset_index(drop=True)
+
+
+def diagnostics_dataframes(res: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Cell-level diagnostics and the per-trajectory point decomposition."""
+    cell_rows = []
+    decomp_frames = []
+    for short, c in res["cells"].items():
+        cell_rows.append({
+            "cell": short, "n_obs": c.n_obs, "n_pids": c.n_pids,
+            "K": c.K, "base": c.base,
+            "n_accept_2d": c.n_accept_2d, "n_accept_3d": c.n_accept_3d,
+            "crosses_boundary": c.crosses_boundary,
+            "phi_open_below": c.phi_open_below,
+            "phi_open_above": c.phi_open_above,
+            "marginal_phi_lo": c.marginal_phi[0] if c.marginal_phi else float("nan"),
+            "marginal_phi_hi": c.marginal_phi[1] if c.marginal_phi else float("nan"),
+            "marginal_beta_lo": c.marginal_beta[0] if c.marginal_beta else float("nan"),
+            "marginal_beta_hi": c.marginal_beta[1] if c.marginal_beta else float("nan"),
+            "marginal_unb_lo": c.marginal_unb[0] if c.marginal_unb else float("nan"),
+            "marginal_unb_hi": c.marginal_unb[1] if c.marginal_unb else float("nan"),
+            "unb_ols": c.unb_ols, "unb_se_ols": c.unb_se_ols,
+            "unb_gmm": c.unb_gmm, "unb_ols_minus_gmm": c.unb_ols - c.unb_gmm,
+            "point_gap_p3": c.point_wmm_p3,
+            "xcheck_gap_unrestricted": c.xcheck_gap_unrestricted,
+            "xcheck_gap_diff": c.xcheck_gap_diff,
+        })
+        decomp_frames.append(c.decomposition)
+    return pd.DataFrame(cell_rows), pd.concat(decomp_frames, ignore_index=True)
 
 
 def _fmt_interval(lo_pct: float, hi_pct: float) -> str:
     return f"$[{lo_pct:+.1f}\\%, {hi_pct:+.1f}\\%]$"
 
 
-def write_latex_table(res: dict, table_path) -> None:
+def _fmt_hull_pct(lo_log: float, hi_log: float) -> str:
+    """Format a log-points hull as a percent interval, honoring open ends.
+
+    An infinite upper endpoint (unbounded weak-ID region) renders as
+    $[x\\%, \\infty)$; an infinite lower endpoint as $(-100\\%, x\\%]$
+    (log -> percent maps -inf to the -100% floor).
+    """
+    if np.isinf(hi_log) and hi_log > 0:
+        hi_s, rb = r"\infty", ")"
+    else:
+        hi_s, rb = f"{log_to_pct(hi_log) * 100.0:+.1f}\\%", "]"
+    if np.isinf(lo_log) and lo_log < 0:
+        lo_s, lb = r"-100\%", "("
+    else:
+        lo_s, lb = f"{log_to_pct(lo_log) * 100.0:+.1f}\\%", "["
+    return f"${lb}{lo_s}, {hi_s}{rb}$"
+
+
+def write_latex_table(res: dict, table_path, variant: str = "v1") -> None:
     """Write the paper-facing E1 table (P3 convex-hull intervals).
 
     Self-contained float so the paper can \\input it directly. The headline
-    is the P3 misallocation gap interval and the (point) value of observed
-    migration per cell.
+    is the P3 misallocation gap interval (coverage ``variant``: v1 = joint 3D
+    projection, v2 = 2D region + Delta_unb CI fold) and the (point) value of
+    observed migration per cell.
     """
     def cell_pcts(short):
         if short == "CHN_national":
             nat = res["national"]
-            return (nat["hull_wmm_p3"], nat["point_wms_p3"])
+            return (nat[f"hull_wmm_p3_{variant}"], nat["point_wms_p3"])
         c = res["cells"][short]
-        return (c.hull_wmm_p3, c.point_wms_p3)
+        return (getattr(c, f"hull_wmm_p3_{variant}"), c.point_wms_p3)
 
     lines = [
         r"\begin{table}[htbp]",
@@ -870,14 +1328,15 @@ def write_latex_table(res: dict, table_path) -> None:
     ]
     for short in _TABLE_ORDER:
         hull_wmm, pt_wms = cell_pcts(short)
-        if not (np.isfinite(hull_wmm[0]) and np.isfinite(hull_wmm[1])
-                and np.isfinite(pt_wms)):
+        # Infinite hull endpoints are legitimate (unbounded weak-ID region,
+        # rendered as an open interval); NaN anywhere is a pipeline error.
+        if (np.isnan(hull_wmm[0]) or np.isnan(hull_wmm[1])
+                or not np.isfinite(pt_wms)):
             raise ValueError(
-                f"write_latex_table: non-finite values for {short}: "
+                f"write_latex_table: bad values for {short}: "
                 f"hull={hull_wmm}, value={pt_wms}"
             )
-        interval = _fmt_interval(log_to_pct(hull_wmm[0]) * 100.0,
-                                 log_to_pct(hull_wmm[1]) * 100.0)
+        interval = _fmt_hull_pct(hull_wmm[0], hull_wmm[1])
         value = f"${log_to_pct(pt_wms) * 100.0:+.1f}\\%$"
         lines.append(f"{_LABELS[short]} & {interval} & {value} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
@@ -964,8 +1423,9 @@ def _self_check(fresh: pd.DataFrame, baseline_path, atol_log: float = 1e-3) -> N
         a = merged[f"{col}_new"].to_numpy(dtype=float)
         b = merged[f"{col}_base"].to_numpy(dtype=float)
         both_nan = np.isnan(a) & np.isnan(b)
+        both_inf_same = np.isinf(a) & np.isinf(b) & (np.sign(a) == np.sign(b))
         diff = np.abs(a - b)
-        bad = (~both_nan) & ~(diff <= atol_log)
+        bad = (~both_nan) & (~both_inf_same) & ~(diff <= atol_log)
         for idx in np.argwhere(bad).ravel():
             r = merged.iloc[idx]
             problems.append(
@@ -987,15 +1447,17 @@ def run_counterfactuals_for_stata(
     table_path_hukou: str | None = None,
     baseline_path: str | None = None,
     regenerate_baseline: bool = False,
+    allow_drift: bool = False,
+    table_variant: str = "v1",
     atol_log: float = 1e-3,
 ) -> None:
     """Stata-facing entry point (called from 12_counterfactuals.do).
 
     Runs all E1 cells plus the E2 hukou bound, writes the persisted results
-    CSV and the paper tables (E1 misallocation and, if ``table_path_hukou`` is
-    given, the E2 hukou bound), and self-checks against the committed baseline
-    snapshot. Mirrors the role of lca_inversion.attach_inversion_for_stata for
-    the inversion step.
+    CSV, the diagnostics CSVs, and the paper tables, and self-checks against
+    the committed baseline snapshot. ``allow_drift=True`` prints the drift
+    report loudly but does not raise --- for transition runs whose numbers
+    await approval before the baseline is regenerated.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1008,29 +1470,41 @@ def run_counterfactuals_for_stata(
     df.to_csv(results_csv, index=False)
     print(f"  wrote results: {results_csv}")
 
+    diag_df, decomp_df = diagnostics_dataframes(res)
+    diag_df.to_csv(out_dir / "counterfactual_diagnostics.csv", index=False)
+    decomp_df.to_csv(out_dir / "counterfactual_decomposition.csv", index=False)
+    print(f"  wrote diagnostics: {out_dir / 'counterfactual_diagnostics.csv'}")
+
     if regenerate_baseline:
         df.to_csv(baseline_path, index=False)
         print(f"  wrote baseline snapshot: {baseline_path}")
     else:
-        _self_check(df, baseline_path, atol_log=atol_log)
-        print(f"  self-check passed against {baseline_path}")
+        try:
+            _self_check(df, baseline_path, atol_log=atol_log)
+            print(f"  self-check passed against {baseline_path}")
+        except (ValueError, FileNotFoundError) as exc:
+            if not allow_drift:
+                raise
+            print(f"  self-check DRIFT (allowed for this transition run):\n{exc}")
 
-    write_latex_table(res, table_path)
-    print(f"  wrote table: {table_path}")
+    write_latex_table(res, table_path, variant=table_variant)
+    print(f"  wrote table ({table_variant}): {table_path}")
 
     if table_path_hukou is not None:
         write_hukou_bound_table(res, table_path_hukou)
         print(f"  wrote table: {table_path_hukou}")
 
-    # Headline echo for the Stata log.
+    # Headline echo for the Stata log: both coverage variants side by side.
     for short in _TABLE_ORDER:
         if short == "CHN_national":
-            hull, pt = res["national"]["hull_wmm_p3"], res["national"]["point_wms_p3"]
+            nat = res["national"]
+            h1, h2, pt = nat["hull_wmm_p3_v1"], nat["hull_wmm_p3_v2"], nat["point_wms_p3"]
         else:
             c = res["cells"][short]
-            hull, pt = c.hull_wmm_p3, c.point_wms_p3
-        print(f"  {short:14s} misallocation P3 "
-              f"[{log_to_pct(hull[0]) * 100:+.2f}%, {log_to_pct(hull[1]) * 100:+.2f}%]"
+            h1, h2, pt = c.hull_wmm_p3_v1, c.hull_wmm_p3_v2, c.point_wms_p3
+        print(f"  {short:14s} gap v1 "
+              f"[{log_to_pct(h1[0]) * 100:+.2f}%, {log_to_pct(h1[1]) * 100:+.2f}%]"
+              f"  v2 [{log_to_pct(h2[0]) * 100:+.2f}%, {log_to_pct(h2[1]) * 100:+.2f}%]"
               f"   value {log_to_pct(pt) * 100:+.2f}%")
 
     hb = res["hukou_bound"]
