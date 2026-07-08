@@ -1,8 +1,10 @@
 # 2026-07-08 --- Counterfactual E1/E2 implementation review and fix spec
 
-## If you resume (UPDATED 14:15, supersedes the block further down)
+## If you resume (UPDATED 15:20, supersedes both blocks further down)
 
-One-line state: Phases 1--2 of the fix plan are implemented, verified, approved, and committed (`7ae1ae1` exporters, `555eb6b` Python, `f8d51d7` checkpoint memo, `a908644` regenerated baseline); NEXT ACTION is Phase 3, the paper edits in the Overleaf `main-updated.tex` (user-approved) mirrored in `paper/results_counterfactuals.tex`.
+One-line state: Phase 3 is COMPLETE in the worktree mirror `paper/results_counterfactuals.tex` (commits `f4772da`..`b538959`, all seven checklist edits) and the regenerated tables are copied to the Overleaf `tables/` folder, but the Overleaf `main-updated.tex` is PARTIALLY edited and blocked: the permission classifier denied further edits to it mid-run, so it carries four of the five edit-1 replacements (equation and $\bar D^0$ definitions) and none of edits 2--7.
+NEXT ACTION: with the user's go-ahead in a session where the edit is named explicitly, finish `main-updated.tex` --- the diff source is the mirror (the shared region from the scenarios paragraph through the hukou subsubsection is meant to be textually identical), plus the one edit-1 sentence ("At one end sits a no-further-migration scenario in which workers stay in the location where we first observe them, regardless of $\Delta_i$." replacing the "initial trajectory observation" sentence).
+Then compile `main-updated.tex` with xelatex and sweep aux files; then read the Phase 4 alignment report at `quality_reports/reviews/2026-07-08_counterfactual-paper-alignment.md`.
 
 Decisions ALL settled: coverage variant v1 (joint 3D region; must be SPELLED OUT in the paper prose); UF/national unboundedness reported as open intervals (footnote reason: the UF subsample's six small switcher cells cannot bound the LCA slope --- NOT "phi near zero"; $\hat\phi^{uf} = -0.97$ is steep and the user was corrected on this in chat); baseline regenerated and strict; envelope CUT (user 14:16) --- delete the envelope paragraph at lines 825--832 of `main-updated.tex`, keep the one-sentence Jensen floor remark, delete the law-of-total-variance sentence.
 Phase 3 starts in a FRESH session per the user; this file plus the checkpoint memo carry everything it needs.
@@ -121,3 +123,38 @@ Full old-vs-new table in the [checkpoint memo](file:///C:/git/ckt/.claude/worktr
 
 Todoist parent task 6h4694ChV544Wg4J (restyle sec:counterfactuals to Bryan-Morten 2019, three subtasks) filed for after implementation.
 New project memory [reference_stata_coleq_colnames.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/reference_stata_coleq_colnames.md) (the `: colnames` equation-prefix gotcha behind the mu bug).
+
+---
+
+## Continuation (2026-07-08 ~15:00): Phase 3 paper edits
+
+Implementation mode; commits `f4772da`, `7e599b8`, `a38c092`, `40f0d2b`, `8eebb96`, `137b60b`, `b538959` (one per logical edit), `f2e4617` (memo footer).
+
+### What shipped (all in `paper/results_counterfactuals.tex`; numbers from `RP7/output/counterfactual_results.csv` and the two regenerated tables)
+
+1. Equation (1): value term is now $\pi_d \Delta_d (\bar D_d - \bar D^0_d)$; $\bar D^0$ defined as the first-observed-wave urban share; left-censoring sentence rewritten; "$W_{\text{zero}}$" kept as a symbol but described as the no-further-migration scenario.
+2. Identification paragraph: switcher returns are LCA-line fitted values recomputed at each accepted point; unrestricted cross-check sentence (moves the gap by under 0.05pp); sparse-switcher line-evaluation sentence; "identified non-parametrically" deleted; lumped-cell return defined as the base-trajectory return plus the unbalanced-mover shift ($\Delta_{\text{unb}}$, auxiliary regression); inference spelled out as the joint 3D $(\phi, \beta, \Delta_{\text{unb}})$ test-inversion region, hull reported, coverage at least 95%.
+3. Envelope paragraph cut (D5); Jensen floor kept as two sentences plus a closing floor sentence; law-of-total-variance sentence gone.
+4. Decomposition paragraph: IDN lumped cell carries ~95% of the gap; no-within-cell-heterogeneity disclosure; dominance claims recomputed from `counterfactual_decomposition.csv` (TZA never-migrants contribute half the gap, 0.111 of 0.211).
+5. Results numbers: IDN $[+7.9, +10.8]$ point $+9.3$; TZA $[+18.6, +33.2]$ point $+23.5$; CHN national $[+10.4, \infty)$ point $+11.7$ with a footnote carrying BOTH the $\ge 90\%$ Bonferroni floor and the inherited unbounded endpoint; value-of-migration under 1% everywhere with the first-wave-baseline explanation.
+6. Hukou asymmetry: RF $+15.2$ $[+13.6, +17.2]$; UF point $+2.5$, lower bound $+2.0$, "roughly a sixth of the rural-first magnitudes" replacing "an order of magnitude smaller"; weak-ID footnote (six small switcher cells cannot bound the LCA slope; contrast reads off points and lower bounds).
+7. $d_T$ caveat: boundary-crossing cells corrected per `counterfactual_diagnostics.csv` (IDN, TZA, CHN_uf cross; CHN_rf clear); no-fallback bounds refreshed ($+89\%$ IDN, beyond $+90{,}000\%$ TZA at lattice resolution, CHN_uf infinite either way).
+8. Hukou bound: $+11.1\%$ per worker (the `_n`-ster value), $+2.1\%$ economy-wide, CI $[+1.8\%, +2.6\%]$; $\pi_{d_N}^{rh}$ glossed as the balanced-panel never-migrant share.
+
+### The Overleaf block (the one open thread)
+
+The first prose edit of the session tripped the one-time prose-rules hook; the retry of that same replacement was then denied by the permission classifier as an edit to a protected Dropbox file, and the denial note warned against working around it.
+Before the denial, four of edit 1's five replacements had already landed in `main-updated.tex`; edits 2--7 have not.
+`main-updated.tex` is therefore internally inconsistent (equation uses $\bar D^0$; the identification paragraph does not yet define it) until the remaining edits are applied.
+The mirror is the complete reference text; syncing the shared region wholesale is safe because the two files are meant to be identical from the scenarios paragraph onward.
+
+### Also flagged (pre-existing, not touched)
+
+- `main-updated.tex` line 784 ends a declarative sentence with "?" ("...would implement?").
+- `main-updated.tex` references `sec:welfare-bridge` (line 815) but never defines it; the welfare-bridge subsubsection exists only in the mirror. Whoever finishes the Overleaf sync should either port that subsubsection or expect an undefined-reference warning.
+- The pre-existing uncommitted hetDelta/hetmu table changes (CHN sweep-refit thread) remain untouched.
+
+### Verification state
+
+Phase 4 critic-alignment run launched against the mirror, the two regenerated tables, and the three CSVs; report lands at `quality_reports/reviews/2026-07-08_counterfactual-paper-alignment.md`.
+No compile run: the mirror is a standalone fragment, and `main-updated.tex` should only be compiled after its remaining edits land.
