@@ -58,7 +58,7 @@ The switcher returns $\Delta_{\underline{d}}$ for $\underline{d} \in \mathcal{D}
 As a cross-check, recomputing the aggregate with unrestricted switcher-specific returns in place of the LCA-fitted values moves the gap by less than 0.05 percentage points in every country.
 Under time-invariant $\theta_i$ and the assumptions of Section~\ref{sec:model_identification}, the trajectory-conditional ATE coincides with the trajectory-conditional realized-return mean, so each $\Delta_{\underline{d}} (\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}})$ term in equation~\eqref{eq:misallocation-decomposition} is the population mean realized urban return, net of the first-observed-wave baseline, for trajectory $\underline{d}$.
 The LCA inversion identifies the always-urban return $\Delta_{d_T}$, and the LCA extrapolation in equation~\eqref{eq:restricted-GRC} identifies the never-migrant return $\Delta_{d_N} = \beta + \phi(\mu_{d_N} - \mu_{\underline{d}_0})$.
-Individuals with unbalanced panels enter through a single lumped cell whose return $\Delta_{\text{unb}}$ is the unbalanced-mover urban premium---the base-trajectory return plus the unbalanced-mover shift---estimated by an auxiliary regression on the estimation sample.
+Individuals with unbalanced panels enter through a single lumped cell whose return $\Delta_{\text{unb}}$ is the unbalanced-mover urban premium---the base-trajectory return plus the unbalanced-mover shift---estimated as a single coefficient by an auxiliary regression on the estimation sample.
 Inference for the aggregate proceeds by test inversion: we recompute equation~\eqref{eq:misallocation-decomposition} at every point of a joint $95\%$ confidence region for $(\phi, \beta, \Delta_{\text{unb}})$ and report the convex hull of the resulting gap values (Appendix~\ref{app:inversion-preview}).
 Because the switcher returns and the lumped-cell return are recomputed at each accepted point, the reported interval propagates the sampling uncertainty in all three coordinates jointly, with coverage of at least $95\%$.
 This avoids delta-method approximations that the identification boundary at $\phi = -1$ would not support.
@@ -84,10 +84,10 @@ The value of observed migration is below $+1\%$ in every country: the no-further
 Each interval is the convex hull of the joint $(\phi, \beta, \Delta_{\text{unb}})$ confidence region propagated through equation~\eqref{eq:misallocation-decomposition}.
 
 The Chinese national figure masks an institutional asymmetry between the two hukou regimes (Table~\ref{tab:counterfactual_misallocation}).
-The rural-hukou-first subsample carries a misallocation gap of $+15.2\%$, with an interval of $[+13.6\%, +17.2\%]$, comparable in magnitude to Tanzania's.
+The rural-hukou-first subsample carries a misallocation gap of $+15.2\%$, with an interval of $[+13.6\%, +17.2\%]$, second only to Tanzania's among our samples.
 The urban-hukou-first subsample carries a point estimate of $+2.5\%$ and a lower bound of $+2.0\%$, roughly a sixth of the rural-first magnitudes, though its upper endpoint is unbounded.\footnote{The urban-hukou-first subsample's six small switcher cells cannot bound the LCA slope: the $95\%$ confidence region is unbounded in $\phi$, and along the accepted directions the LCA-fitted returns diverge, so the gap's upper endpoint is $+\infty$. The contrast between the regimes therefore reads off the points and lower bounds, not the interval widths.}
 In the rural-hukou regime, high-return workers do not sort and substantial consumption is left on the table; in the urban-hukou regime, workers are sorted close to optimum and the residual gap is small.
-The $J$-test holds within each regime, in contrast to its pooled rejection, so the regime split is the level at which the CHN contribution to the aggregate is identified, and Section~\ref{sec:hukou-counterfactual} returns to this asymmetry directly.
+The $J$-test holds within each regime (Tables~\ref{tab:GRC_CHN_hukou_rural_first_consumption_urban_unb} and \ref{tab:GRC_CHN_hukou_urban_first_consumption_urban_unb}), in contrast to its pooled rejection, so the regime split is the level at which the CHN contribution to the aggregate is identified, and Section~\ref{sec:hukou-counterfactual} returns to this asymmetry directly.
 
 % Path below must point to wherever counterfactual_misallocation.tex is placed in the Overleaf project.
 % The table is produced by 12_counterfactuals.do.
@@ -99,7 +99,7 @@ This boundary corresponds to the case $b_U = 0$, in which urban earnings are fla
 The confidence region crosses this boundary for Indonesia, Tanzania, and the China urban-hukou-first subsample; only the China rural-hukou-first region stays clear of it.
 In each case we report the misallocation gap with the $\Delta_{d_T}$ contribution dropped (set to zero) at every point in the confidence region.
 Since the per-trajectory contribution to the gap is non-negative, this delivers a defensible lower bound on the gap; the intervals quoted above are this lower-bound reading.
-Without the fallback, accepted points arbitrarily close to the boundary drive the upper bounds: they inflate to $+89\%$ for Indonesia and beyond $+90{,}000\%$ for Tanzania at our lattice resolution, reflecting the singularity rather than honest uncertainty, and the China urban-hukou-first upper bound is infinite either way.
+Without the fallback, accepted points arbitrarily close to the boundary drive the upper bounds: they inflate to $+88.5\%$ for Indonesia and beyond $+90{,}000\%$ for Tanzania at our lattice resolution, reflecting the singularity rather than honest uncertainty, and the China urban-hukou-first upper bound is infinite either way.
 
 \subsubsection{Removing the hukou wedge in China}\label{sec:hukou-counterfactual}
 
