@@ -52,8 +52,9 @@ Variant 2: the 2D region with the $\Delta_{unb}$ 95% CI combined by interval ari
 Bonferroni budgets are REJECTED (user, 2026-07-08).
 National CHN row: interval-arithmetic combination of the per-cell intervals with a transparent coverage footnote; no widening.
 
-D5 (Minor 1) dispersion envelope: OPEN, pending user go/no-go on the standalone spec [2026-07-08-dispersion-envelope.md](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/specs/2026-07-08-dispersion-envelope.md), which SUPERSEDES item 13 above.
-Regardless of go/no-go, the incorrect law-of-total-variance sentence leaves the paper.
+D5 (Minor 1) dispersion envelope: DECIDED (user, 2026-07-08 14:16) --- CUT.
+Delete the envelope paragraph (lines 825--832 of `main-updated.tex`), keep the one-sentence Jensen floor remark, and delete the incorrect law-of-total-variance sentence.
+Item 13 above is void; the standalone envelope spec is retained as a record only.
 
 D6 paper-side edits: DECIDED --- apply prose changes directly in the Overleaf `main-updated.tex` (user approval given 2026-07-08), mirrored in the worktree's `paper/results_counterfactuals.tex`.
 

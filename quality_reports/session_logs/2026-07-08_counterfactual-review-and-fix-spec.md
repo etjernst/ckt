@@ -4,7 +4,8 @@
 
 One-line state: Phases 1--2 of the fix plan are implemented, verified, approved, and committed (`7ae1ae1` exporters, `555eb6b` Python, `f8d51d7` checkpoint memo, `a908644` regenerated baseline); NEXT ACTION is Phase 3, the paper edits in the Overleaf `main-updated.tex` (user-approved) mirrored in `paper/results_counterfactuals.tex`.
 
-Decisions all settled except the envelope: coverage variant v1 (joint 3D region; must be SPELLED OUT in the paper prose); UF/national unboundedness reported as open intervals (footnote reason: the UF subsample's six small switcher cells cannot bound the LCA slope --- NOT "phi near zero"; $\hat\phi^{uf} = -0.97$ is steep and the user was corrected on this in chat); baseline regenerated and strict; envelope (D5) awaiting the user's go/cut after a re-explanation (my updated recommendation: CUT the paragraph now that the gaps are already wide; build only for appendix depth).
+Decisions ALL settled: coverage variant v1 (joint 3D region; must be SPELLED OUT in the paper prose); UF/national unboundedness reported as open intervals (footnote reason: the UF subsample's six small switcher cells cannot bound the LCA slope --- NOT "phi near zero"; $\hat\phi^{uf} = -0.97$ is steep and the user was corrected on this in chat); baseline regenerated and strict; envelope CUT (user 14:16) --- delete the envelope paragraph at lines 825--832 of `main-updated.tex`, keep the one-sentence Jensen floor remark, delete the law-of-total-variance sentence.
+Phase 3 starts in a FRESH session per the user; this file plus the checkpoint memo carry everything it needs.
 
 Phase 3 checklist (all numbers from [the checkpoint memo](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-08_counterfactual-checkpoint.md) and `RP7/output/counterfactual_results.csv`):
 1. Read `~/.claude/references/voice.md` first (prose hook).
@@ -15,7 +16,7 @@ Phase 3 checklist (all numbers from [the checkpoint memo](file:///C:/git/ckt/.cl
 6. UF $[+2.0\%, \infty)$ and national $[+10.4\%, \infty)$ open intervals with the weak-ID footnote; rewrite "an order of magnitude smaller" (survives via points and lower bounds only).
 7. Refresh every quoted number per the checkpoint table; value-of-migration column is now 0.2--0.8% (pre-panel migration no longer counted --- sharpens the pro-poor story; the prose must explain the drop).
 8. Hukou bound: $+11.6\% \to +11.1\%$ point; "$\pi_{d_N}^{rh}$" glossed as the balanced-panel never-migrant share.
-9. Cut or refresh the with-$d_T$ caveat numbers (+58%/+145%; with_dT_v1 rows in the results CSV are the corrected ones); delete the law-of-total-variance sentence; envelope paragraph per the pending D5 decision.
+9. Cut or refresh the with-$d_T$ caveat numbers (+58%/+145%; with_dT_v1 rows in the results CSV are the corrected ones); delete the law-of-total-variance sentence; DELETE the envelope paragraph (D5 = cut), keeping only the Jensen floor sentence.
 10. Process: one commit per logical edit in the worktree mirror; critic-alignment pass after (Phase 4); review-memo status footer; NEVER touch `main.tex` (only `main-updated.tex`).
 11. `12_counterfactuals.do` calls the entry point without `table_variant`, which defaults to v1 --- consistent; no driver edit needed.
 
@@ -76,3 +77,47 @@ Verified correct (so nobody re-litigates): the joint $(\phi,\beta)$ S-statistic 
 - Key reference values for the fix verification: model $\mu_{d_N}-\mu_{base}$ = IDN $-0.0081$, TZA $-0.1885$, CHN_rf $-0.0243$, CHN_uf (base 4) $+0.1880$; ster `inv_dN` = 0.07 / 0.27 / 0.11 / (UF: $-0.23$ waldmin, CI $[-0.56, 0.11]$).
 - The frozen drift baseline (`counterfactual_results_baseline.csv`) will fail after any fix by design; regenerate with `regenerate_baseline=True` once numbers are verified.
 - Pre-existing uncommitted working-tree changes (hetDelta/hetmu tables from the CHN sweep-refit thread) are unrelated; leave them alone.
+
+---
+
+## Continuation (2026-07-08 afternoon): decisions, plan review, Phases 1--2 implemented
+
+Implementation mode throughout; commits `2ca96ab` through `1ea00ab` plus the log/spec updates at wrap-up.
+
+### Decision resolution
+
+The user approved fixing all findings; four items needed design choices.
+D1 (switcher returns) went to critic-econometrics for independent adjudication (clean brief, no steering); verdict B > A > C: LCA-fitted returns recomputed at every lattice point, unrestricted returns as a cross-check, the frozen hybrid retired ([adjudication report](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-08_switcher-delta-convention-adjudication.md)).
+D3 baseline (ii): stay at first observed wave.
+D4: both coverage variants computed, Bonferroni vetoed by the user; after seeing widths (they differ by under 0.5pp) the user locked v1.
+D5 envelope: cut (see resume block).
+D6: paper edits go directly into `main-updated.tex`.
+
+### Plan review catch
+
+/review-plan (fresh-context critique) found one Red in my own plan text: as written, `delta_at(phi, beta)` froze the lumped return while the 3D sweep varied it, which would have made coverage variant 1 silently vacuous --- the same frozen-object bug class the plan exists to remove.
+Fixed by making `delta_unb` an argument of `delta_at`; five Yellows (grid width, baseline timing, sparse switchers, lumped-source naming, interface hardening) also folded into the plan before implementation.
+
+### Two substantive discoveries during implementation
+
+1. The old E1 fed `xb:unbalanced_choice` alone as the lumped-cell return, but in the GMM unbalanced individuals carry no trajectory dummy, so their urban premium is $\Delta_{base}+$ `unbalanced_choice`; the sum matches the auxiliary-OLS coefficient to the fourth decimal in all four cells.
+A fourth bug the morning review missed; it understated every gap by 2--4 points.
+Found because the OLS and GMM coefficients "disagreed" by 3--9 SEs and the plan's investigate-never-loosen rule forced the reconciliation.
+2. The CHN_uf confidence region is genuinely unbounded in $\phi$ (both sides): the min-over-$\beta$ S-statistic plateaus at 7.4 against a 12.6 critical value as $|\phi| \to \infty$ (Dufour-type unbounded weak-ID set; six small switcher cells cannot pin the LCA slope).
+The old UF interval was a grid-truncation artifact; the code now probes for open edges, marks diverging hull endpoints infinite, and formats open intervals in the table.
+
+### Approaches rejected
+
+- Hard 0.01 OLS-vs-ster $\Delta_{d_N}$ assertion for all cells: CHN_uf legitimately diverges (restricted-GMM $\mu$ vs unrestricted OLS $\alpha$ near the boundary); resolved by taking point estimates from the ster objects (the GRC tables' own pairing) and exempting UF with a 0.15 sanity cap rather than loosening globally.
+- Chasing wider $\phi$ grids for CHN_uf ($-3.5 \to -6$): the limit probe showed no finite grid closes the region; unbounded handling replaced grid-chasing.
+- OLS-vs-GMM lumped "source choice" as a user decision: dissolved once the parameterization difference was found; there is only one estimand.
+
+### Verification state
+
+Exporter filters reproduce GMM $e(N)$ exactly in all four cells; CHN_uf runs on base 4 end to end; the unrestricted-vs-LCA-line cross-check moves the gap by under 0.05pp per cell; the baseline was regenerated only after user approval (`a908644`) and the pipeline is strict again.
+Full old-vs-new table in the [checkpoint memo](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-08_counterfactual-checkpoint.md).
+
+### Also this session
+
+Todoist parent task 6h4694ChV544Wg4J (restyle sec:counterfactuals to Bryan-Morten 2019, three subtasks) filed for after implementation.
+New project memory [reference_stata_coleq_colnames.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/reference_stata_coleq_colnames.md) (the `: colnames` equation-prefix gotcha behind the mu bug).
