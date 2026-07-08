@@ -74,7 +74,7 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     di as text "  inv_dT    = " inv_dT
     di as text "  J = " %6.3f `jstat' "   df = `jdf'   p = " %5.3f `jp'
 
-    * --- 2. Read _d ster for per-trajectory unrestricted Delta_d ---
+    * --- 2. Read _d ster (per-trajectory LCA-fitted Delta_d) and detect base ---
     local dster "$output/grc_`country_short'_cuu_ca_d.ster"
     capture confirm file "`dster'"
     if _rc {
@@ -86,79 +86,150 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     local d_names : colnames bd
     di as text "  _d ster parameters: `d_names'"
 
+    * Base trajectory: the unique k with Delta_k equal to Delta_base:_cons.
+    * The _d ster values are nlcom Delta_base + phi*(mu_k - mu_base), so the
+    * base's own entry equals beta_hat to machine precision.
+    local base_traj = .
+    local n_base_matches = 0
+    foreach name of local d_names {
+        if strpos("`name'", "Delta_") == 1 {
+            local k = substr("`name'", length("Delta_") + 1, .)
+            if abs(bd[1, colnumb(bd, "`name'")] - beta_hat) < 1e-10 {
+                local base_traj `k'
+                local n_base_matches = `n_base_matches' + 1
+            }
+        }
+    }
+    if `n_base_matches' != 1 {
+        di as error "  base detection failed for `country_short': `n_base_matches' Delta_k match beta_hat"
+        exit 498
+    }
+    di as text "  base trajectory = `base_traj'"
+
+    * --- 2b. Read _n ster: the Delta_never point (E2 table point + self-check) ---
+    local nster "$output/grc_`country_short'_cuu_ca_n.ster"
+    capture confirm file "`nster'"
+    if _rc {
+        di as error "  _n ster missing for `country_short' -- required for delta_never_point"
+        exit 498
+    }
+    quietly estimates use "`nster'"
+    matrix bn = e(b)
+    scalar delta_never_point = bn[1, colnumb(bn, "Delta_never")]
+    di as text "  delta_never_point = " delta_never_point
+
     * --- 3. Reload parent ster for switcher trajectory codes / mu's ---
+    * NB: `: colnames` strips equation prefixes, so match on coleq+colnames
+    * pairs (a bare strpos on "mu:switcher_" never matches).
     quietly estimates use "`pster'"
     matrix b = e(b)
     local b_names : colnames b
+    local b_eqs   : coleq b
+    local n_bcols = colsof(b)
     local sw_traj_codes ""
-    local sw_mus ""
-    foreach name of local b_names {
-        if strpos("`name'", "mu:switcher_") == 1 {
-            local k = substr("`name'", length("mu:switcher_") + 1, .)
+    forvalues j = 1/`n_bcols' {
+        local eq : word `j' of `b_eqs'
+        local nm : word `j' of `b_names'
+        if "`eq'" == "mu" & strpos("`nm'", "switcher_") == 1 {
+            local k = substr("`nm'", length("switcher_") + 1, .)
             local sw_traj_codes "`sw_traj_codes' `k'"
-            local mu_k = b[1, colnumb(b, "`name'")]
-            local sw_mus "`sw_mus' `mu_k'"
+            local mu_ster_`k' = b[1, `j']
         }
+    }
+    if "`sw_traj_codes'" == "" {
+        di as error "  no mu:switcher_* found on parent ster for `country_short'"
+        exit 498
     }
     local mu_never = b[1, colnumb(b, "mu:never")]
     di as text "  switcher trajectory codes from parent ster: `sw_traj_codes'"
-    di as text "  mu_never (raw) = `mu_never'"
+    di as text "  mu_never (ster) = `mu_never'"
 
-    * --- 4. Load data: compute pi_d, dbar_d, n_pids per trajectory ---
+    * --- 4. Load data: compute pi_d, dbar_d, dbar0_d, n_pids per trajectory ---
+    * Filter matches the Python auxiliary fit exactly: positive consumption
+    * and hhsize_cube (Stata ln() of nonpositive is missing but np.log(0) is
+    * -inf and survives dropna, so positivity, not missingness, is the
+    * aligned condition), plus non-missing choice, period, controls, and
+    * unbalanced dummies.
     use "$dirdata/processed/`country'_unb.dta", clear
-    quietly drop if missing(consumption) | missing(choice)
+    quietly drop if missing(consumption) | consumption <= 0
+    quietly drop if missing(hhsize_cube) | hhsize_cube <= 0
+    quietly drop if missing(choice) | missing(period)
+    foreach v in female age2 education_max education_max2 unbalanced unbalanced_choice {
+        capture confirm variable `v'
+        if !_rc quietly drop if missing(`v')
+    }
 
+    * Per-individual urban share, first-observed-wave choice, and trajectory
     bysort pid: gen pid_first = (_n == 1)
     bysort pid: egen dbar_indiv = mean(choice)
-    quietly replace pid_first = 0 if missing(trajectory) & missing(unbalanced)
+    bysort pid (period): gen d0_indiv = choice[1]
+
+    quietly count
+    local n_rows_filtered = r(N)
+    quietly count if pid_first == 1
+    local n_pids_filtered = r(N)
+
     quietly gen traj_for_agg = trajectory
     quietly replace traj_for_agg = -1 if missing(trajectory) & unbalanced == 1
+    quietly count if missing(traj_for_agg)
+    if r(N) > 0 {
+        di as error "  `r(N)' rows have neither a trajectory nor unbalanced==1"
+        exit 498
+    }
 
     preserve
         quietly keep if pid_first == 1
         bysort traj_for_agg: egen n_pids = count(pid)
-        bysort traj_for_agg: egen pi_helper = total(1)
-        bysort traj_for_agg: egen dbar_d   = mean(dbar_indiv)
+        bysort traj_for_agg: egen double dbar_d  = mean(dbar_indiv)
+        bysort traj_for_agg: egen double dbar0_d = mean(d0_indiv)
         bysort traj_for_agg: gen  traj_first = (_n == 1)
         quietly keep if traj_first == 1
-        keep traj_for_agg n_pids dbar_d
+        keep traj_for_agg n_pids dbar_d dbar0_d
         quietly count
         local n_traj = r(N)
         quietly sum n_pids
         local n_total_pids = r(sum)
-        quietly gen pi_d = n_pids / `n_total_pids'
-        format pi_d dbar_d %6.4f
+        quietly gen double pi_d = n_pids / `n_total_pids'
+        format pi_d dbar_d dbar0_d %6.4f
         sort traj_for_agg
         di as text "  trajectory accounting:"
         list, noobs sep(0)
         export delimited using "`outdir'/`country_short'_e1_traj.csv", replace
     restore
 
-    * --- 5. Compute mu_d from data ---
-    quietly gen log_c = ln(consumption) if consumption > 0
+    * --- 5. mu_d CSV: ster (model, per-capita, covariate-consistent) plus the
+    * raw household-level data mean, kept only as a labeled cross-check ---
+    quietly gen log_c = ln(consumption)
     quietly gen log_c_rural = log_c if choice == 0
     bysort pid: egen ind_rural_mean = mean(log_c_rural)
 
     preserve
         quietly keep if pid_first == 1
-        bysort traj_for_agg: egen mu_d = mean(ind_rural_mean)
+        bysort traj_for_agg: egen double mu_d_raw_hh = mean(ind_rural_mean)
         bysort traj_for_agg: gen traj_first = (_n == 1)
         quietly keep if traj_first == 1
-        keep traj_for_agg mu_d
-        format mu_d %9.4f
+        keep traj_for_agg mu_d_raw_hh
+        quietly gen double mu_d_ster = .
+        quietly replace mu_d_ster = `mu_never' if traj_for_agg == 1
+        foreach k of local sw_traj_codes {
+            quietly replace mu_d_ster = `mu_ster_`k'' if traj_for_agg == `k'
+        }
+        format mu_d_raw_hh mu_d_ster %12.6f
         sort traj_for_agg
-        di as text "  mu_d by trajectory:"
+        di as text "  mu_d by trajectory (ster and raw-household cross-check):"
         list, noobs sep(0)
         export delimited using "`outdir'/`country_short'_e1_mu_d.csv", replace
     restore
 
-    * --- 6. Extract switcher Delta_d from _d ster ---
+    * --- 6. Extract switcher Delta_d from _d ster into a CSV ---
+    * These are the restricted-fit LCA-fitted values (nlcom Delta_base +
+    * phi*(mu_k - mu_base) at the GMM point estimate), named accordingly.
     quietly estimates use "`dster'"
     matrix bd = e(b)
     local d_names : colnames bd
     tempname delta_d_handle
     file open `delta_d_handle' using "`outdir'/`country_short'_e1_delta_d.csv", write replace
-    file write `delta_d_handle' "trajectory,delta_d_unrestricted" _n
+    file write `delta_d_handle' "trajectory,delta_d_lcafit_point" _n
     foreach name of local d_names {
         if strpos("`name'", "Delta_") == 1 {
             local k = substr("`name'", length("Delta_") + 1, .)
@@ -188,6 +259,10 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     file write `scalars_handle' "j_stat,`jstat'" _n
     file write `scalars_handle' "j_df,`jdf'" _n
     file write `scalars_handle' "j_pval,`jp'" _n
+    file write `scalars_handle' "base,`base_traj'" _n
+    file write `scalars_handle' "delta_never_point," (delta_never_point) _n
+    file write `scalars_handle' "n_rows_filtered,`n_rows_filtered'" _n
+    file write `scalars_handle' "n_pids_filtered,`n_pids_filtered'" _n
     file close `scalars_handle'
 
     di as text "  wrote `outdir'/`country_short'_e1_scalars.csv"

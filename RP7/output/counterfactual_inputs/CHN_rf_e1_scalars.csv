@@ -14,3 +14,7 @@ n_obs,80742
 j_stat,12.6380141501384
 j_df,8
 j_pval,.1249262440165151
+base,2
+delta_never_point,.10557798
+n_rows_filtered,80742
+n_pids_filtered,25491
