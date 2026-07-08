@@ -19,7 +19,7 @@ The restricted GRC delivers a worker-specific return $\Delta_i = \beta + \phi\th
 We use these objects to address two questions that translate the slope and intercept of our LCA line into magnitudes that the migration literature presses on.
 First, how much aggregate consumption is left on the table by the gap between observed sorting and the sorting that an optimizing planner with knowledge of $\Delta_i$ would implement?
 Second, how much of that gap in China is attributable to hukou-induced restrictions on rural-urban mobility, and what would removing those restrictions deliver?
-Both experiments stay on the consumption side of $\Delta_i$, which is what the LCA framework identifies cleanly; we return to the welfare interpretation at the end of the section.
+Both experiments stay on the consumption side of $\Delta_i$, which is what the LCA framework identifies cleanly.
 
 Two features distinguish this exercise.
 The exercise sits in a tradition of structural migration counterfactuals---\cite{bryanAggregateProductivityEffects2019} on the aggregate productivity gain from removing rural-urban frictions in Indonesia, \cite{lagakosMigrationCostsObservational2020} on the migration costs implied by observed wage gaps in panel data, and \cite{lagakosUrbanRuralGapsDeveloping2020a} on the urban-rural productivity gap more broadly.
@@ -49,7 +49,7 @@ With trajectory population shares $\pi_{\underline{d}}$, urban time shares withi
 The first piece values the location switching that occurs within the panel: $\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}}$ is the urban time a trajectory accumulates beyond its first-observed-wave share.
 The second piece measures what is left on the table because workers with positive returns failed to move, or because workers with negative returns moved.
 Reporting both lets readers locate observed migration on the available frontier: a small ``value of observed migration'' alongside a large ``misallocation gap'' would sharpen our pro-poor finding into a consumption-side reading that the workers who would gain most from migration are precisely those who do not migrate.
-Whether this consumption-side reading translates to a policy claim depends on the non-pecuniary side of utility, which we discuss in Section~\ref{sec:welfare-bridge}.
+Whether this consumption-side reading translates to a policy claim depends on the non-pecuniary side of utility, which the consumption data alone cannot price.
 
 The GRC identifies each term in equation~\eqref{eq:misallocation-decomposition}.
 The trajectory shares $\pi_{\underline{d}}$ come from the descriptive panel.
@@ -156,14 +156,3 @@ We will report results both with the original regime-specific bases used in Tabl
 The resorting version also requires choices for the scale and shape of the distribution of $\nu_{it}^U - \nu_{it}^R$, which the model leaves open beyond the i.i.d.\ assumption.
 Because the scale $\sigma_\eta$ is not separately pinned down, we report the resorting magnitude as a function of $\sigma_\eta$ on a justified grid, in parallel under a type-I extreme value distribution (logit-style choice probabilities, the empirical migration default) and a normal distribution (probit-style, the Heckman selection convention).
 Reporting both shapes at each $\sigma_\eta$ on the grid gives the reader both the shape and the scale dependence of the magnitude.
-
-\subsubsection{From consumption to welfare}\label{sec:welfare-bridge}
-
-Both experiments above report consumption-side statistics.
-Converting them to welfare statements requires a value for the non-pecuniary component of $\nu_{it}^U - \nu_{it}^R$, which the LCA framework deliberately does not identify on its own.
-A reallocation that raises consumption may also forgo non-pecuniary value that the consumption side alone cannot price, and the interpretation discussion in Section~\ref{sec:interpretation} qualifies the welfare reading accordingly.
-Our reported counterfactuals should be read as the consumption-side complement to welfare statements: the headline number is what reallocation would deliver in consumption units, with the welfare gain weakly smaller whenever non-pecuniary value at the worker's observed location is positive.
-
-A natural extension would recover the non-pecuniary side from observable correlates of location choice, following \cite{suriSelectionComparativeAdvantage2011}'s Section 7 strategy of relating residual choice probabilities to amenity proxies (distance to roads, distance to fertilizer sellers, infrastructure) rather than imputing them from a distributional assumption.
-The analogous variables in our three panels---distance from origin village, family network at origin, ethnic and community ties, marital status---are available in CFPS, IFLS, and TZNPS, with country-specific augmentations (hukou in CHN, transmigration history in IDN, linguistic region in TZA).
-Such an exercise would generalize the hukou comparison cross-country and pin down what fraction of the gap between observed sorting and rational-sorting predictions is attributable to identifiable amenity wedges versus residual unexplained variation.
