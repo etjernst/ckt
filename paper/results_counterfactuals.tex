@@ -34,19 +34,19 @@ The counterfactuals also inherit the testable piece of our identification: in sp
 \subsubsection{Aggregate consumption gap from misallocated migration}\label{sec:misallocation}
 
 The aggregate misallocation gap brackets observed migration against two extremes.
-At one end sits a no-further-migration scenario in which workers stay in the location of their initial trajectory observation regardless of $\Delta_i$.
+At one end sits a no-further-migration scenario in which workers stay in the location where we first observe them, regardless of $\Delta_i$.
 At the other end lies a world of optimal sort, in which each worker spends all periods in the location that maximizes their consumption ($D_{it} = 1$ iff $\Delta_i > 0$, $D_{it} = 0$ otherwise).
 Observed migration sits between the two.
 The contrast between the three scenarios is the readable summary statistic the counterfactual delivers.
-The no-further-migration scenario fixes intensive-margin movement (time spent in destination after initial sort) and does not undo extensive-margin migration that already occurred before the panel begins; it isolates the value of subsequent location switching rather than the value of migration over a lifetime.
+Because location histories are left-censored, the no-further-migration scenario does not undo migration completed before the panel begins; it isolates the value of within-panel location switching rather than the value of migration over a lifetime.
 
-Let $W_{\text{obs}}, W_{\text{zero}}, W_{\text{opt}}$ denote per-capita log consumption in the observed, zero-migration, and optimal-sort scenarios.
-With trajectory population shares $\pi_{\underline{d}}$, urban time shares within trajectory $\bar{D}_{\underline{d}}$, and trajectory-conditional returns $\Delta_{\underline{d}}$, the two differences are
+Let $W_{\text{obs}}, W_{\text{zero}}, W_{\text{opt}}$ denote per-capita log consumption in the observed, no-further-migration, and optimal-sort scenarios.
+With trajectory population shares $\pi_{\underline{d}}$, urban time shares within trajectory $\bar{D}_{\underline{d}}$, first-observed-wave urban shares $\bar{D}^0_{\underline{d}}$, and trajectory-conditional returns $\Delta_{\underline{d}}$, the two differences are
 \begin{equation}\label{eq:misallocation-decomposition}
-    \underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \, \Delta_{\underline{d}} \, \bar{D}_{\underline{d}}, \qquad
+    \underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \, \Delta_{\underline{d}} \left(\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}}\right), \qquad
     \underbrace{W_{\text{opt}} - W_{\text{obs}}}_{\text{misallocation gap}} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \, \bar{D}_{\underline{d}}\right].
 \end{equation}
-The first piece values the migration that actually occurs.
+The first piece values the location switching that occurs within the panel: $\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}}$ is the urban time a trajectory accumulates beyond its first-observed-wave share.
 The second piece measures what is left on the table because workers with positive returns failed to move, or because workers with negative returns moved.
 Reporting both lets readers locate observed migration on the available frontier: a small ``value of observed migration'' alongside a large ``misallocation gap'' would sharpen our pro-poor finding into a consumption-side reading that the workers who would gain most from migration are precisely those who do not migrate.
 Whether this consumption-side reading translates to a policy claim depends on the non-pecuniary side of utility, which we discuss in Section~\ref{sec:welfare-bridge}.
