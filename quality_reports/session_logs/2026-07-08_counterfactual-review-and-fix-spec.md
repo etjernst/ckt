@@ -1,6 +1,25 @@
 # 2026-07-08 --- Counterfactual E1/E2 implementation review and fix spec
 
-## If you resume
+## If you resume (UPDATED 14:15, supersedes the block further down)
+
+One-line state: Phases 1--2 of the fix plan are implemented, verified, approved, and committed (`7ae1ae1` exporters, `555eb6b` Python, `f8d51d7` checkpoint memo, `a908644` regenerated baseline); NEXT ACTION is Phase 3, the paper edits in the Overleaf `main-updated.tex` (user-approved) mirrored in `paper/results_counterfactuals.tex`.
+
+Decisions all settled except the envelope: coverage variant v1 (joint 3D region; must be SPELLED OUT in the paper prose); UF/national unboundedness reported as open intervals (footnote reason: the UF subsample's six small switcher cells cannot bound the LCA slope --- NOT "phi near zero"; $\hat\phi^{uf} = -0.97$ is steep and the user was corrected on this in chat); baseline regenerated and strict; envelope (D5) awaiting the user's go/cut after a re-explanation (my updated recommendation: CUT the paragraph now that the gaps are already wide; build only for appendix depth).
+
+Phase 3 checklist (all numbers from [the checkpoint memo](file:///C:/git/ckt/.claude/worktrees/lca-inversion/quality_reports/reviews/2026-07-08_counterfactual-checkpoint.md) and `RP7/output/counterfactual_results.csv`):
+1. Read `~/.claude/references/voice.md` first (prose hook).
+2. Equation (1): value term becomes $\pi_d \Delta_d (\bar D_d - \bar D^0_d)$, $\bar D^0$ = share urban in the FIRST OBSERVED wave (not "initial location").
+3. Identification paragraph (~line 820 of main-updated.tex): switcher returns evaluated on the estimated LCA line at each region point; unrestricted cross-check sentence (moves the gap by less than 0.05pp); sparse-switcher ster-$\mu$ sentence; delete "identified non-parametrically" as the description of what enters the aggregate.
+4. Lumped-cell disclosure: return = $\Delta_{base}$ plus the unbalanced-choice shift (the GMM's unbalanced urban premium; the old code dropped the $\Delta_{base}$ part); its uncertainty is inside the interval via the third region coordinate.
+5. Interval prose: joint 3D $(\phi, \beta, \Delta_{unb})$ test-inversion region, aggregate recomputed at every accepted point, hull reported, honest $\ge 95\%$; national row footnote "at least 90%" (Bonferroni floor under arbitrary dependence).
+6. UF $[+2.0\%, \infty)$ and national $[+10.4\%, \infty)$ open intervals with the weak-ID footnote; rewrite "an order of magnitude smaller" (survives via points and lower bounds only).
+7. Refresh every quoted number per the checkpoint table; value-of-migration column is now 0.2--0.8% (pre-panel migration no longer counted --- sharpens the pro-poor story; the prose must explain the drop).
+8. Hukou bound: $+11.6\% \to +11.1\%$ point; "$\pi_{d_N}^{rh}$" glossed as the balanced-panel never-migrant share.
+9. Cut or refresh the with-$d_T$ caveat numbers (+58%/+145%; with_dT_v1 rows in the results CSV are the corrected ones); delete the law-of-total-variance sentence; envelope paragraph per the pending D5 decision.
+10. Process: one commit per logical edit in the worktree mirror; critic-alignment pass after (Phase 4); review-memo status footer; NEVER touch `main.tex` (only `main-updated.tex`).
+11. `12_counterfactuals.do` calls the entry point without `table_variant`, which defaults to v1 --- consistent; no driver edit needed.
+
+## Original resume block (2026-07-08 morning, superseded)
 
 One-line state: the E1/E2 counterfactual review is done and committed (`9bdab00`); the fix spec is written; the session is PAUSED awaiting the user's answers to six decision points (D1--D6 in the spec) before any code is edited.
 
