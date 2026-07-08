@@ -65,12 +65,7 @@ This avoids delta-method approximations that the identification boundary at $\ph
 
 The LCA restriction identifies trajectory-conditional means $\Delta_{\underline{d}}$ but not the within-trajectory dispersion of $\Delta_i$.
 The trajectory-mean formula in equation~\eqref{eq:misallocation-decomposition} treats every never-migrant as if they share the return $\Delta_{d_N}$, which is conservative whenever $\Delta_{d_N} > 0$: by Jensen's inequality applied to $\max(0, \cdot)$, the within-trajectory expectation of the positive part weakly exceeds the positive part of the conditional mean.
-We report two magnitudes that bracket what LCA can say about the gap.
-First, a conservative floor that uses only trajectory means.
-Second, a bounded envelope that parameterizes within-trajectory dispersion of $\theta_i$ as $\sigma_{\theta \mid d_N} = c \cdot \sigma_\theta$ for $c \in [0, 1]$, integrates $\max(0, \beta + \phi\theta)$ against a Gaussian $\theta_i \mid d_N$ with that dispersion, and reports the gap as a function of $c$.
-The envelope's upper endpoint $c = 1$ corresponds to the cross-trajectory dispersion of $\mu_{\underline{d}}$, which is itself an upper bound on $\sigma_\theta$ by the law of total variance.
-We do not report a structural intermediate value derived from the model's decision rule: the equation~\eqref{eq:decision-rule} sorting prediction under $\hat\phi < 0$ would imply $\hat\Delta_{d_N} < 0$, contradicting the empirical $\hat\Delta_{d_N} > 0$, so a heterogeneity correction built from that rule would integrate the wrong density.
-The Gaussian $\theta_i \mid d_N$ assumption used inside the envelope is an auxiliary parametric assumption not implied by the GRC, imported solely to perform the integration, and our floor reading does not require it.
+The reported gap is therefore a floor with respect to within-trajectory heterogeneity.
 
 Two design choices follow our reading of the existing literature.
 We report the misallocation gap in log points and as a percent change in geometric-mean consumption (computed as $\exp(W_{\text{opt}} - W_{\text{obs}}) - 1$), with a footnote that arithmetic-mean consumption gains differ by a Jensen-style correction whose sign depends on whether the reallocation compresses or expands the within-country consumption distribution.
