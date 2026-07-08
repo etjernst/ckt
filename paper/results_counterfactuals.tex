@@ -8,7 +8,6 @@
 %   eq:decision-rule, eq:restricted-GRC, eq:gmm-moments, eq:phi-proposition1
 %     (defined in sec_model.tex; verified).
 %   sec:hukou, sec:grc-returns, sec:interpretation (sec:results.tex).
-%   app:inversion-preview (sec_model/appendix; verified).
 % Citations used (verified against CKT.bib):
 %   bryanAggregateProductivityEffects2019, lagakosMigrationCostsObservational2020,
 %   lagakosUrbanRuralGapsDeveloping2020a, suriSelectionComparativeAdvantage2011.
@@ -27,8 +26,7 @@ It also connects to the agricultural-misallocation strand exemplified by \cite{a
 \footnote{We use ``misallocation gap'' in the standard sense of the gap between observed and counterfactually-optimal allocation; our object is identified from panel switchers under the LCA restriction.}
 Our identification delivers trajectory-conditional returns identified from switchers and extrapolated to non-switchers through the LCA restriction.
 Inference propagates through the inversion confidence region rather than asymptotic standard errors, which the identification boundary at $\phi = -1$ would make unreliable.
-The structural-migration template here is closest in spirit to the dynamic-Roy migration literature (Kennan and Walker, 2011, \emph{Econometrica}; \cite{suriSelectionComparativeAdvantage2011}'s selection-and-comparative-advantage counterfactuals in Section 5.2 are the immediate precedent within the LCA tradition); our static GRC-disciplined cousin trades dynamic structure for transparent partial-equilibrium magnitudes.%
-\footnote{TODO: add bib entry for Kennan and Walker (2011) ``The Effect of Expected Income on Individual Migration Decisions,'' \emph{Econometrica}, and convert this inline cite to a \texttt{\textbackslash cite\{\}} call.}
+The structural-migration template here is closest in spirit to the dynamic-Roy migration literature (\citealt{kennanEffectExpectedIncome2011}; \cite{suriSelectionComparativeAdvantage2011}'s selection-and-comparative-advantage counterfactuals in Section 5.2 are the immediate precedent within the LCA tradition); our static GRC-disciplined cousin trades dynamic structure for transparent partial-equilibrium magnitudes.
 The counterfactuals also inherit the testable piece of our identification: in specifications where the $J$-test rejects, the magnitudes below are reported with the same caution we apply to the underlying $\Delta_{d_T}$ and $\Delta_{d_N}$ estimates, and we report results separately by hukou regime where the rejection is regime-driven.
 
 \subsubsection{Aggregate consumption gap from misallocated migration}\label{sec:misallocation}
@@ -59,7 +57,7 @@ As a cross-check, recomputing the aggregate with unrestricted switcher-specific 
 Under time-invariant $\theta_i$ and the assumptions of Section~\ref{sec:model_identification}, the trajectory-conditional ATE coincides with the trajectory-conditional realized-return mean, so each $\Delta_{\underline{d}} (\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}})$ term in equation~\eqref{eq:misallocation-decomposition} is the population mean realized urban return, net of the first-observed-wave baseline, for trajectory $\underline{d}$.
 The LCA inversion identifies the always-urban return $\Delta_{d_T}$, and the LCA extrapolation in equation~\eqref{eq:restricted-GRC} identifies the never-migrant return $\Delta_{d_N} = \beta + \phi(\mu_{d_N} - \mu_{\underline{d}_0})$.
 Individuals with unbalanced panels enter through a single lumped cell whose return $\Delta_{\text{unb}}$ is the unbalanced-mover urban premium---the base-trajectory return plus the unbalanced-mover shift---estimated as a single coefficient by an auxiliary regression on the estimation sample.
-Inference for the aggregate proceeds by test inversion: we recompute equation~\eqref{eq:misallocation-decomposition} at every point of a joint $95\%$ confidence region for $(\phi, \beta, \Delta_{\text{unb}})$ and report the convex hull of the resulting gap values (Appendix~\ref{app:inversion-preview}).
+Inference for the aggregate proceeds by test inversion: we recompute equation~\eqref{eq:misallocation-decomposition} at every point of a joint $95\%$ confidence region for $(\phi, \beta, \Delta_{\text{unb}})$ and report the convex hull of the resulting gap values.
 Because the switcher returns and the lumped-cell return are recomputed at each accepted point, the reported interval propagates the sampling uncertainty in all three coordinates jointly, with coverage of at least $95\%$.
 This avoids delta-method approximations that the identification boundary at $\phi = -1$ would not support.
 
@@ -103,10 +101,9 @@ Without the fallback, accepted points arbitrarily close to the boundary drive th
 
 \subsubsection{Removing the hukou wedge in China}\label{sec:hukou-counterfactual}
 
-A literature in macro and trade has quantified the aggregate welfare cost of hukou using general-equilibrium structural models (Tombe and Zhu, 2019, \emph{American Economic Review}; Fan, 2019, \emph{AEJ: Macroeconomics}).%
-\footnote{TODO: add bib entries for Tombe and Zhu (2019), ``Trade, Migration, and Productivity,'' and Fan (2019), ``Internal Geography, Labor Mobility, and the Distributional Impacts of Trade,'' and convert these inline cites to \texttt{\textbackslash cite\{\}} calls.}
+A literature in macro and trade has quantified the aggregate welfare cost of hukou using general-equilibrium structural models \citep{tombeTradeMigrationProductivity2019,fanInternalGeographyLabor2019}.
 \cite{gaiRuralPensionsLabor2025} extend this template using the staggered rollout of the New Rural Pension Scheme (NRPS) as an identifying shock to migration costs, embedded in a generalized-Roy general-equilibrium framework.
-Their framework builds on the Fan (2019) Hukou Index, an index of hukou-based migration barriers.
+Their framework builds on the \citet{fanInternalGeographyLabor2019} Hukou Index, an index of hukou-based migration barriers.
 Their hypothetical full hukou liberalization raises GDP by 2.04 log points.
 We report a partial-equilibrium consumption-side magnitude disciplined by GRC-identified objects, with a trajectory-level decomposition of where the misallocation lives.
 The hukou-split estimates in Section~\ref{sec:hukou} reveal a structural contrast that motivates a second counterfactual.
