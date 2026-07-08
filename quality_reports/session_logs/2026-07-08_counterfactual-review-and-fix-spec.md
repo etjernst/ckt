@@ -174,3 +174,37 @@ No compile run: the mirror is a standalone fragment, and `main-updated.tex` shou
 ---
 **Context compaction (manual) at 19:37**
 Check git log and quality_reports/plans/ for current state.
+
+---
+
+## Continuation (2026-07-08 evening): welfare bridge kill, citation wiring, dead-ref cleanup
+
+### Goals
+
+The session resumed after `/compact`.
+The user asked what questions were still open, then made three calls in one pass: kill the welfare bridge entirely, explain the document's undefined references, and supply full citations for the Kennan-Walker, Tombe-Zhu, and Fan TODO footnotes.
+Mid-session she added all three papers to Zotero and approved appending them to `CKT.bib`, approved the line-494 summary-stats repoint and the removal of the `app:inversion-preview` reference, deferred the hukou stub footnote decision, and at 21:23 decided to keep both Fan mentions for now.
+
+### What got built or changed
+
+In [main-updated.tex](file:///C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/main-updated.tex) (Overleaf, user-approved edits): the `sec:welfare-bridge` cross-reference now ends on "which the consumption data alone cannot price"; the Kennan-Walker inline cite converted to `\citealt`; the Tombe-Zhu/Fan parenthetical converted to `\citep`; "the Fan (2019) Hukou Index" converted to `\citet`; both TODO footnotes deleted, which also removed three `\emph{}` journal names; line 494's three dead per-country balanced summary-stats references repointed to `tab:summary_stats_combined_bal`; the dangling `(Appendix~\ref{app:inversion-preview})` parenthetical dropped from the inference sentence.
+The same counterfactual-section edits landed in the worktree mirror, [results_counterfactuals.tex](file:///C:/git/ckt/.claude/worktrees/lca-inversion/paper/results_counterfactuals.tex), plus the entire "From consumption to welfare" subsubsection deleted, the intro clause "we return to the welfare interpretation at the end of the section" removed, and the header comment about `app:inversion-preview` removed, across commits `0275668` (welfare bridge) and `cf09fad` (citations plus the inversion-preview cleanup).
+[CKT.bib](file:///C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean/CKT.bib) gained three append-only entries: `kennanEffectExpectedIncome2011`, `tombeTradeMigrationProductivity2019`, `fanInternalGeographyLabor2019`.
+A full xelatex-bibtex-xelatex cycle ran clean afterward: zero errors, zero undefined citations, and the only undefined reference left anywhere in the document is the hukou stub footnote at line 754.
+Aux files were swept once verification finished.
+
+### Decisions, with the why
+
+The welfare bridge died by deletion rather than by porting it into `main-updated.tex`, per the user's call; the surrounding cross-references were rewritten to end on "which the consumption data alone cannot price" so the honest non-pecuniary caveat survives without pointing at a section that no longer exists.
+Citation metadata came from Zotero rather than from memory, which caught that Fan's DOI is 10.1257/mac.20150055---the recalled guess was wrong---while every other field matched.
+The Kennan-Walker citekey was normalized to `kennanEffectExpectedIncome2011` with no "a" suffix; the suffix traced to a duplicate Zotero item (`L8VL7CQB` / `8PT5AIBU`), and since `CKT.bib` is hand-maintained the clean key was safe to use, with a note to merge the Zotero duplicates later.
+`CKT.bib` was only touched after explicit user approval, per the standing ask-first rule for that file, and the write was append-only so nothing existing was disturbed.
+`\citealt` went on Kennan-Walker because it sits inside parentheses already in force, `\citep` on the Tombe-Zhu/Fan pair, and `\citet` on the Fan Hukou Index sentence, matching the document's existing natbib conventions.
+The `app:inversion-preview` parenthetical was dropped rather than backed by a ported methods appendix, since the joint 3D test-inversion procedure is now spelled out directly in the surrounding sentences and the appendix pointer had become redundant.
+Fan (2019) stays in both spots for now (user, 21:23): the GE-literature parenthetical clearly belongs there, and she will reassess the Hukou Index sentence on a full read-through.
+
+### Open items
+
+The hukou stub footnote (`\footnote{Tables \ref{hukou}}`, line 754) is still undecided---the user is choosing between deleting it and pointing it at the appendix hukou tables, and it is the document's only remaining undefined reference, so it should not be touched without her word.
+The duplicate Kennan-Walker items in Zotero still want merging.
+The Bryan-Morten restyle Todoist task (`6h4694ChV544Wg4J`) remains open from earlier in the day.
