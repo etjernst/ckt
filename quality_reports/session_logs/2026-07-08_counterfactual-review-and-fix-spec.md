@@ -1,6 +1,17 @@
 # 2026-07-08 --- Counterfactual E1/E2 implementation review and fix spec
 
-## If you resume (UPDATED 15:45, supersedes both blocks further down)
+## If you resume (UPDATED 21:25, supersedes all blocks further down)
+
+Evening cleanup pass, all in `main-updated.tex` (user-approved) with the counterfactual-section edits mirrored in `paper/results_counterfactuals.tex`:
+1. Welfare bridge KILLED (user decision): the `From consumption to welfare` subsubsection deleted from the mirror, both `sec:welfare-bridge` cross-references rewritten to end on "which the consumption data alone cannot price" (mirror commit `0275668`).
+2. Kennan-Walker (2011), Tombe-Zhu (2019), and Fan (2019) appended to `CKT.bib` (user-approved additive edit; metadata verified against Zotero, keys `kennanEffectExpectedIncome2011`, `tombeTradeMigrationProductivity2019`, `fanInternalGeographyLabor2019`); inline cites converted to `\citealt`/`\citep`/`\citet`; both TODO footnotes deleted (mirror commit `cf09fad`).
+3. Line 494's three dead per-country balanced summary-stats refs repointed to `tab:summary_stats_combined_bal`; the dangling `(Appendix~\ref{app:inversion-preview})` parenthetical dropped from the inference sentence in both files.
+4. Full xelatex+bibtex cycle: zero errors, zero undefined citations; the ONLY remaining undefined reference in the document is the stub footnote `\footnote{Tables \ref{hukou}}` at line 754 --- the user is deciding what it should point to (delete vs point at the appendix hukou tables); do NOT touch it without her word.
+5. Fan (2019) stays in both spots for now (user decision 21:23: "the first mention clearly belongs"; she will reassess the Hukou Index sentence on a full read-through). Kennan-Walker is duplicated in Zotero (items L8VL7CQB / 8PT5AIBU); suggest merging at some point.
+NEXT ACTION: nothing pending except the `hukou` footnote decision.
+Remaining open items: the Bryan-Morten restyle Todoist task (6h4694ChV544Wg4J).
+
+## Superseded resume block (15:45)
 
 One-line state: Phases 3 AND 4 are COMPLETE --- all paper edits are in BOTH `paper/results_counterfactuals.tex` (commits `f4772da`..`bd8384e`) and the Overleaf `main-updated.tex` (user re-authorized after a mid-run permission block; shared region verified byte-identical), the regenerated tables are in the Overleaf `tables/` folder, the critic-alignment pass ran (report + adjudication at `quality_reports/reviews/2026-07-08_counterfactual-paper-alignment.md`; its one CRITICAL resolved as a parameterization misread, all findings addressed), and `main-updated.tex` compiles clean (xelatex+bibtex, zero errors, zero undefined citations, aux swept).
 NEXT ACTION: nothing pending in this thread.
@@ -158,3 +169,8 @@ The mirror is the complete reference text; syncing the shared region wholesale i
 
 Phase 4 critic-alignment run launched against the mirror, the two regenerated tables, and the three CSVs; report lands at `quality_reports/reviews/2026-07-08_counterfactual-paper-alignment.md`.
 No compile run: the mirror is a standalone fragment, and `main-updated.tex` should only be compiled after its remaining edits land.
+
+
+---
+**Context compaction (manual) at 19:37**
+Check git log and quality_reports/plans/ for current state.
