@@ -1,0 +1,3 @@
+# Stata writes generated tables with CRLF line endings; store LF in the repo
+# and check out CRLF so regeneration runs do not show line-ending-only churn.
+RP7/output/tables/*.tex text eol=crlf
