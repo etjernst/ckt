@@ -61,9 +61,9 @@ if "`c(username)'"=="maand" {
 	* Path varies by worktree. Pick ONE --- uncomment the active line.
 	* global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
-	global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
-	* global dir = "C:/git/ckt/RP7"
+	global dir = "C:/git/ckt/RP7"
 	* Overleaf-Dropbox lives in Monash Enterprise Dropbox (not Personal).
 	global overleaf = "C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean"
 }
@@ -81,8 +81,7 @@ if "`c(username)'"=="maand" {
 	global copyOverleaf 1
 
 * 6. Refresh dashboard cache + Verdier comparison memo? 1 = will run Python.
-*    Default 0; coauthors do not need Python. Set to 1 only on a machine
-*    that has Python installed and that runs the headlines-cache dashboard.
+*    Default 0, this requires Python to run
 	global runDashboard 0
 
 * 7. Run the E1 counterfactual misallocation accounting? 1 = will run.
