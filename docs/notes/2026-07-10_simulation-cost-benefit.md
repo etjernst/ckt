@@ -3,7 +3,7 @@
 2026-07-10.
 Question from Emilia: would the paper benefit from simulations that "prove" the estimator is "correct," what does NOT having them do to referee composition and pr(reject), and is this a case where we deliberately leave the ask on the table for referees?
 Inputs: the simulations worktree inventory, the existing coverage evidence on the lca-inversion side, the simulation-conventions standards (MCSE discipline, R sizing), and the journal profiles.
-Settled the same morning: the target is Econometrica, econometric referees are preferred over applied-micro referees, and the estimator's provenance is the comment paper on Suri (2011) by Tjernström, Ghanem, Michuda, Barriga-Cabanillas, Lybbert, and Michler ([docs/TGMBLM-2026.tex](file:///C:/git/ckt/docs/TGMBLM-2026.tex); cited in the draft as `tjernstromCommentSuri2011`, currently unpublished per the `@misc` bib entry).
+Settled the same morning: the target is Econometrica, econometric referees are preferred over applied-micro referees, and the estimator's provenance is the comment paper on Suri (2011) by Tjernström, Ghanem, Michuda, Barriga-Cabanillas, Lybbert, and Michler ([docs/TGMBLM-2026.tex](file:///C:/git/ckt/docs/TGMBLM-2026.tex); cited in the draft as `tjernstromCommentSuri2011`), which is ACCEPTED at Econometrica as a comment.
 That comment paper introduces the GrRC recast, the weak-identification diagnosis, and the test-inversion CI for $\phi$, and validates all three in a $T=2$ simulation calibrated to the Suri Kenya setting.
 Those facts drive the recommendation below.
 
@@ -14,7 +14,8 @@ The exposure surface has three distinct pieces, and simulations speak to them ve
 First, the GRC estimator and the inversion CI in their core form.
 These are introduced and simulation-validated in the comment paper: its $T=2$ Suri-calibrated study shows that the CRC and restricted-GrRC estimators are biased and mis-covered under weak identification while the weak-identification robust CI covers close to 95% regardless of identification strength.
 So the base machinery has citable validation, and CKT should not re-prove the $T=2$ case; duplicating the comment paper's simulation weakens both papers.
-Two caveats limit how much weight that citation carries at ECMA: the comment paper is unpublished and by the same team, so the validation the paper leans on is a self-citation; and its validated design is the smallest possible one---$T=2$, two switcher trajectories, a single Wald restriction, no covariates, a balanced panel of ~1,200 households.
+The comment is accepted at Econometrica itself, so the citation carries full weight: the base machinery's validation has cleared ECMA's own review, and the editor and referees for CKT will plausibly know it.
+The remaining caveat is the design regime: the comment's validated design is the smallest possible one---$T=2$, two switcher trajectories, a single Wald restriction, no covariates, a balanced panel of ~1,200 households.
 CKT runs the procedure at $T$ up to 5, up to $K=27$ switcher trajectories (26 restrictions), 75,000+ individuals, over 90% non-switchers, unbalanced-cell pooling, and covariates---and the known failure mode of the chi-squared inversion (finite-sample bias growing with the number of restrictions $J_R$) is exactly the dimension along which CKT leaves the validated regime.
 
 Second, the LCA inversion confidence intervals, including the joint 3D $(\phi, \beta, \Delta_{\text{unb}})$ region behind the counterfactual table.
@@ -51,7 +52,8 @@ Since econometric referees are the referees we want, that genre shift is a benef
 
 The target is Econometrica, and there the answer is yes, materially.
 ECMA's screen is explicit ("are the asymptotic properties of the estimator established?"), and its bar for applied papers is that they bring a new estimator or identification argument---which is precisely how this paper must position itself for the econometric referees we want.
-The estimator arrives with citable validation only at $T=2$, from an unpublished companion by the same authors; the version CKT actually runs (high $K$, unbalanced pooling, extrapolated $\Delta_{d_N}$ as the headline estimand, joint inversion regions) has no finite-sample evidence anywhere, and at ECMA that gap is a genuine reject trigger, not an R&R ask.
+The estimator arrives with ECMA-accepted validation only at $T=2$; the version CKT actually runs (high $K$, unbalanced pooling, extrapolated $\Delta_{d_N}$ as the headline estimand, joint inversion regions) has no finite-sample evidence anywhere, and at ECMA that gap is a genuine reject trigger, not an R&R ask.
+The acceptance also cuts one new way: with the GrRC cast and the inversion CI now published at ECMA in the comment, CKT cannot present those as its methodological contribution, so a referee's "what is new here beyond the comment?" has to be answered by the extension itself---general-$T$ trajectory structure, unbalanced pooling, the extrapolation estimands, and inference for counterfactual aggregates---which makes the simulation study validating that extension part of demonstrating the contribution exists, not just part of defending it.
 For calibration: at AER/QJE/ReStud the missing simulation would be a near-certain R&R demand but rarely the reject reason; at ECMA the referee pool is drawn to evaluate the methodological contribution itself, and an unvalidated estimator IS the contribution failing its own screen.
 
 ## The "leave something for the referees" logic, examined
@@ -84,8 +86,9 @@ This formal pass is a separate work item from the simulations and probably the h
 The Hansen J size/power study and the OLS/FE-vs-GRC selection-gap quantification are the referee asks we can welcome: predictable, bounded, safe, and deliverable inside an R&R clock.
 The already-run Verdier equivalence simulation also stays in reserve for the "why not Verdier" question at no new cost.
 
-4. Track the comment paper's publication status as part of the CKT submission strategy.
-The inheritance argument for the base machinery rests on `tjernstromCommentSuri2011`, which the bib currently records as unpublished; if it lands at a journal before CKT is submitted, the self-citation caveat weakens substantially and CKT's simulation section can stay tightly scoped to the extension.
+4. Two housekeeping items follow from the acceptance.
+Update the `tjernstromCommentSuri2011` bib entry from `@misc` to forthcoming, Econometrica (a `CKT.bib` edit, so it needs Emilia's explicit approval).
+And revisit the draft's line-97 innovation sentence ("Our methodological innovation is to cast this model as a group random coefficient model..."): with the GrRC cast now published at ECMA in the comment, the sentence should claim the extension---the migration/Roy setting, general $T$, extrapolation to non-migrants, and inference for counterfactual aggregates---rather than the cast itself, or an ECMA referee who knows the comment will read the claim as overreach.
 
 ## Bottom line
 
