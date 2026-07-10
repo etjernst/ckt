@@ -58,3 +58,47 @@ Decision: three-arm extension study in the submitted draft (appendix + main-text
 - RESOLVED 12:26: the in-support figure goes in ROBUSTNESS, first thing next session (see the resume block).
 - New TODO added: quadratic comparative-advantage restriction as an empirical robustness row (estimate quadratic GRC, test $\phi_2=0$, report $\Delta_{d_N}$ movement); Emilia confirmed the logic (if truly linear, $\hat\phi_2 \to 0$). Pairs with the in-support figure and the sim study's curvature arm.
 - The two remaining pocket exercises stay deliberately unbuilt.
+
+---
+
+# Afternoon continuation (13:26-15:45): figure shipped, subsection inserted, plan drafted and reviewed
+
+## If you resume (supersedes the morning resume block)
+
+Both morning handoff tasks are DONE.
+The single open thread: the implementation plan for the extension simulation study is DRAFTED, fresh-context REVIEWED, amended, and AWAITING EMILIA'S APPROVAL at [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md).
+Do not start P0 (worktree scaffold) until she approves.
+She may instead hand the plan to an external reviewer first; the packet is spec + plan (the plan's M/S/D references resolve only against the spec), optionally the cost-benefit memo and the review record; she was offered a concatenated self-contained version and has not yet asked for it.
+Four plan decisions carry recommendations she has probed but not formally confirmed: A fixed-design DGP (she asked what endogenous would look like; explained), B inversion-CI-first coverage with time-boxed SE/J fix ("not too excited but fine it's important"), C arm-3 dial anchored to the CHN hukou gap magnitude (clarified China is NOT a cell, only the dial anchor; she thought this meant China was back in), D pilot-first compute gate (she endorsed).
+
+## Task 1: in-support figure (DONE, five feedback rounds)
+
+Final figure: [RP7/output/figures/extrapolation_support_combined.pdf](file:///C:/git/ckt/RP7/output/figures/extrapolation_support_combined.pdf), copied to Overleaf figures/ (additive).
+Generator: [explorations/2026-05-18_extrapolation_support_diagnostic.do](file:///C:/git/ckt/explorations/2026-05-18_extrapolation_support_diagnostic.do) (main tree copy is canonical now; $dir fallback repointed to C:/git/ckt/RP7).
+Design settled through Emilia's iterations: lumped densities + gray per-trajectory rug (chosen over the 27-density per-trajectory spaghetti; she asked what rug plots are, kept them once explained), cranberry/blue palette (she vetoed orange+blue), NO hull min/max lines (she leaned drop, rug carries it), solid transparent medthick never-migrant mean line, direct labels on EVERY panel (Never-migrants, Switchers, Never-migrant mean, two-line gray "Switcher trajectory means"), rug label side+offset now per-country driver args (IDN left; CHN right 0.05; TZA right 0.02), paper order IDN-CHN-TZA, Density ytitle leftmost only, common-grid kdensity evaluation (kills the IDN truncation cliff), tight integer x ticks.
+Numbers unchanged from the 2026-05-18 memo (verified: 10.21/[9.82,11.31]; 11.83/[11.50,12.83]; 14.57/[14.51,15.35]).
+Commits: 90ab111, 4ed9e25, eda8c09, ae4401b, 1cc69cf.
+LESSON RE-LEARNED: run batch Stata with `stata-mp -e` (never `-b`, which always pops the completion modal); body wrapped in capture-noisily. Emilia caught two popups before I fixed it.
+
+## Task 2: robustness subsection (DONE, Emilia approved the text verbatim)
+
+New subsection "Support for the never-migrant extrapolation" (label subsec:extrapolation-support) + figure env (label fig:extrapolation_support) inserted at the END of the robustness section of Overleaf main-updated.tex, after the cluster-pooling subsection.
+Text approved by Emilia 14:0x ("The text is quite nice feel free to insert it"); descriptive clauses were updated to the final figure (no hull lines, solid line) before insertion.
+Compiled clean twice; only undefined ref remains the pre-existing hukou stub (line ~761, Emilia's open decision, untouched); aux swept.
+Two stale `main-updated.tex.tmp.48680.*` files sit in the Overleaf root from an earlier session; flagged, she has not said delete.
+
+## Task 3: simulation implementation plan (drafted, reviewed, amended; NOT yet approved)
+
+Plan: [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md) (commits e665460 draft, b2bc645 post-review, dc8f008 conventions audit).
+Review record with per-finding dispositions: [quality_reports/reviews/2026-07-10_simulation-plan-review.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_simulation-plan-review.md) (fresh-context critic, session-model tier, plan+spec only per the clean-prompt rule; verdict REVISE; all 13 findings adopted except its unverified claim that IDN $\hat\phi = -2.44$---the exporter CSV says $-0.5247$).
+Load-bearing design facts discovered en route (Explore/sonnet code survey):
+- The two grc_gmm.py copies (simulations vs lca-inversion worktrees) are byte-identical; ~16 min/fit at IDN full N; SE($\phi$) known broken (~2.75x Stata, pinv rank-deficiency, BLOCKER.md item A); Hansen J ALSO differs from Stata (97.74@29df vs 86.52@27df, collinear-column handling)---both go in the P2 time box.
+- The inversion CIs (lca_inversion.py compute_all_inversion_cis) run entirely off a cheap auxiliary saturated OLS, never the GMM variance---this is what makes decision B safe. Five chi2.cdf call sites are the M9 F-adjustment plug-in points. Delta inversions are minimized-Wald, so the BMS df adjustment is not mechanical there.
+- Delta_unb is NOT among the four inverted parameters (the review's CRITICAL); its CI comes from the auxiliary-OLS Wald on U_i x D_it.
+- synth_overid.py configures via module globals (unusable as-is; refactor into config dataclass planned).
+Plan cornerstones: fixed-design DGP (trajectories/patterns/X held at empirical design; only unobservables simulated; truths closed-form), truth-definitions section (lumped cell weighting-invariant by within-cell homogeneity; two-regime pooled truths regime-share-weighted), island-membership coverage, per-cell grid bounds + hit-bound flags, stages P0-P10 with hard gates at P2 (harness sanity vs production estimates) and P5 (R=20 pilot -> compute memo -> Emilia go/no-go; IDN arm 1 ~24-30h at R=1000 on 14 cores; full IDN matrix plausibly 4-5 days local, the server-option case).
+Conventions audit (Emilia asked mid-session): plan checked against pedrohcgs simulation-conventions.md + simulation-study SKILL.md (the memo's "simulation-conventions standards" source); already compliant on the core contract; added estimand-alignment statement, P4b critic-python harness review gate, no-per-rep-printing + NaN/Inf hygiene.
+
+## Mode
+
+Maintenance (figure + approved insertion) and Implementation-planning (spec approved this morning; plan written, approval pending).
