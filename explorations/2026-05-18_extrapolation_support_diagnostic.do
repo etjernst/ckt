@@ -31,7 +31,7 @@ global c_never  "cranberry"
 
 program drop _all
 program define plot_one_country
-    args country textcountry leftmost ruglab_side
+    args country textcountry leftmost ruglab_side ruglab_off
     di as text _newline(2) "==== `country' ===="
 
     use "$proc/`country'_bal.dta", clear
@@ -96,8 +96,9 @@ program define plot_one_country
     * Direct labels on every panel; the rug label sits left of the
     * smallest switcher mean or right of the largest, whichever side
     * the country's densities leave clear
+    if "`ruglab_off'" == "" local ruglab_off 0.02
     if "`ruglab_side'" == "right" {
-        local x_ruglab = `sw_max' + 0.02 * (`xmax' - `xmin')
+        local x_ruglab = `sw_max' + `ruglab_off' * (`xmax' - `xmin')
         local rugplace e
     }
     else {
@@ -139,8 +140,8 @@ end
 capture noisily {
     * Paper order: Indonesia, China, Tanzania; y-title on the leftmost panel
     plot_one_country IDN "Indonesia" 1 left
-    plot_one_country CHN "China"     0 right
-    plot_one_country TZA "Tanzania"  0 right
+    plot_one_country CHN "China"     0 right 0.05
+    plot_one_country TZA "Tanzania"  0 right 0.02
 
     * Combined 1x3 paper figure
     graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
