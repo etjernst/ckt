@@ -2,8 +2,10 @@
 
 ## If you resume
 
-One-line state: the implementation plan and its spec are both written and reviewed, and the only blocking gate on this thread is Emilia's plan/spec feedback, which she deliberately deferred to a fresh-context session at wrap-up.
-Do not start plan stage P0 (worktree scaffold) until she approves the plan.
+SUPERSEDED by the late-evening section at the bottom of this file: Emilia approved the plan (after external-review dispositions were folded in) and P0 is DONE on the new `extension-sims` worktree.
+The open thread is stage P1 (calibrate.py, design snapshots, per-cell configs), best started in a fresh session.
+
+One-line state as of the afternoon (historical): the implementation plan and its spec are both written and reviewed, and the only blocking gate on this thread is Emilia's plan/spec feedback, which she deliberately deferred to a fresh-context session at wrap-up.
 
 Read first, in order:
 1. The plan: [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md) (commits e665460 draft, b2bc645 post-review, dc8f008 conventions audit).
@@ -123,3 +125,24 @@ I answered her question about the external-review packet: the minimum is the spe
 An earlier `r(691)` PDF-export failure turned out to be a file lock rather than a script bug, because Emilia had the combined PDF open; closing it resolved the error, and the capture-noisily wrapper surfaced the lock cleanly with no popup, worth remembering for future exports.
 
 Emilia deferred her feedback on the plan and spec to a fresh-context session and asked for a wrap-up, which produced this log.
+
+---
+
+# Late evening (21:20-22:40): external review folded in, plan approved, P0 done
+
+Emilia brought an external review of the spec-plus-plan packet (verdict REVISE, six Reds, six Yellows, three Greens).
+My assessment, with per-finding dispositions and the code checks I ran, is at [quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md).
+The two catches that mattered: R1 (a two-regime mixture with regime membership independent of trajectory and theta is exactly LCA-true pooled, so the misspecification arm could have had nothing to detect) and R4 (score coverage by evaluating the test at the truth, not by grid membership).
+I verified the reviewer's stale-source claim: `grc_gmm.py` now has `_drop_collinear` mirroring Stata's `_rmcoll`, so the recorded J discrepancy (97.74@29df vs 86.52@27df) predates the current port and P2 re-measures it.
+
+Emilia's rulings: fold in all adopted dispositions (done, commits `7e43b56`, `2f3bd4b`); the R2 J-parity failure branch is decided at the P2 gate, not pre-committed; server transfer is NOT a governance blocker because the replication data are fully public, with a moments-only config as fallback.
+She probed whether a moments-approximated design would be "more general"; resolution: fixed design stays primary (conditional coverage at the paper's own design is the referee-relevant claim and the closed-form truths depend on it), and an individual-resampling design-robustness sensitivity went into the spec as MAY item M-c, explicitly a maybe.
+
+Plan APPROVED at 22:22 (`84c5274`).
+P0 executed: worktree `extension-sims` (branch `worktree-extension-sims`, NO junctions into it per plan decision D), `sims/{src,configs,data,output,results}` layout, requirements pinned (joblib and pyarrow added), byte copies of `grc_gmm.py` and `lca_inversion.py` with md5 hashes recorded in the README, `sims/data/` gitignored (microdata snapshots).
+P0 gate PASSED: headless import of both modules, `RestrictedGRC` and `compute_all_inversion_cis` exposed, all six pinned packages present in the Anaconda env.
+Committed as `0a1a307` on the worktree branch.
+
+Next: stage P1 (calibrate.py: read the hub `C:/git/ckt/RP7/data/processed/{IDN,TZA}_unb.dta` and `RP7/output/counterfactual_inputs/` READ-ONLY, snapshot design matrices to parquet, extract per-cell parameters including the within-person residual autocovariance for the dependent-error baseline, emit configs and the calibration report).
+P1's gate needs a zero-noise simulated panel, so a minimal dgp stub comes with it.
+Reminder for that session: the P1 data reads are the only contact with shared Dropbox-adjacent state; everything else lives inside the worktree.
