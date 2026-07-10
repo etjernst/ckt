@@ -31,7 +31,7 @@ global c_never  "cranberry"
 
 program drop _all
 program define plot_one_country
-    args country textcountry leftmost
+    args country textcountry leftmost ruglab_side
     di as text _newline(2) "==== `country' ===="
 
     use "$proc/`country'_bal.dta", clear
@@ -93,12 +93,22 @@ program define plot_one_country
     local x_swright = r(min)
     if `x_swright' >= . local x_swright = `xmax'
 
-    * Direct labels on every panel
+    * Direct labels on every panel; the rug label sits left of the
+    * smallest switcher mean or right of the largest, whichever side
+    * the country's densities leave clear
+    if "`ruglab_side'" == "right" {
+        local x_ruglab = `sw_max' + 0.02 * (`xmax' - `xmin')
+        local rugplace e
+    }
+    else {
+        local x_ruglab = `sw_min'
+        local rugplace w
+    }
     local labels ///
         text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$c_never") place(w) size(small)) ///
         text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$c_switch") place(e) size(small)) ///
         text(0.88 `mu_dN' "Never-migrant mean", color("$c_never") place(e) size(small)) ///
-        text(0.07 `sw_min' "Switcher trajectory" "means", color(gs6) place(w) size(small))
+        text(0.07 `x_ruglab' "Switcher trajectory" "means", color(gs6) place(`rugplace') size(small))
     local ytit ""
     if `leftmost' local ytit "Density"
 
@@ -128,9 +138,9 @@ end
 
 capture noisily {
     * Paper order: Indonesia, China, Tanzania; y-title on the leftmost panel
-    plot_one_country IDN "Indonesia" 1
-    plot_one_country CHN "China"     0
-    plot_one_country TZA "Tanzania"  0
+    plot_one_country IDN "Indonesia" 1 left
+    plot_one_country CHN "China"     0 right
+    plot_one_country TZA "Tanzania"  0 right
 
     * Combined 1x3 paper figure
     graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
