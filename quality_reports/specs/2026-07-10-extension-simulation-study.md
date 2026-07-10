@@ -1,7 +1,8 @@
 # Spec: extension simulation study for the ECMA draft
 
 2026-07-10.
-Status: DRAFT, awaiting Emilia's approval on the spec and the open decisions D1-D5.
+Status: APPROVED; Emilia resolved D1-D5 the same day (resolutions recorded at the bottom).
+Next step: implementation plan (fresh session; see the handoff in the 2026-07-10 simulation session log).
 Context: [the cost-benefit memo](file:///C:/git/ckt/docs/notes/2026-07-10_simulation-cost-benefit.md).
 The comment paper (`tjernstromCommentSuri2011`, forthcoming Econometrica) validates the GrRC machinery at $T=2$ with a single Wald restriction.
 This study validates the extension CKT actually runs and claims as its methodological contribution: longer unbalanced panels with many trajectories, extrapolated estimands, and weak-identification robust inference at high restriction counts.
@@ -30,9 +31,13 @@ Failed or non-converged replications are counted and reported, never silently dr
 
 ## SHOULD
 
-- S1. Cell coverage: the four production cells (IDN, TZA, CHN rural-first, CHN urban-first), matching the paper's tables; CHN urban-first doubles as the weak-cell stress test, where the unbounded-interval frequency should be reported (the Dufour-type behavior the paper already documents empirically).
+- S1. Cell coverage (resolved by D1): two cells, IDN and TZA.
+IDN is the high-$K$ stress case (27 switcher trajectories, 26 restrictions, the largest chi-squared-bias exposure) and TZA is the small-sample case that doubles as the extrapolation boundary case ($\hat\mu_{d_N}$ sits 8% from the lower edge of the switcher hull per the 2026-05-18 support diagnostic, and its $\hat\mu_{d_N}-\hat\mu_{base}$ gap of $-0.19$ log points is by far the largest of the three countries).
+The CHN cells are excluded deliberately: rural-first replicates IDN's stress dimensions at added compute, and urban-first is a weakly identified cell where an LCA-true calibration is ill-posed---the empirical $\phi^{uf}$ region is unbounded, so any single "true" $\phi$ is arbitrary and coverage numbers there would test the calibration choice, not the procedure.
+The paper's weak-identification defense for that cell is the Dufour-type unbounded-set argument, which is theoretical, plus the two-regime arm below.
 - S2. The violation family for M8 mirrors the paper's own story: a two-regime DGP ($\phi$ differing across latent regimes, the hukou situation) as the primary violation, so the arm shows that pooled estimation is detected (J rejects, region empties) and split estimation recovers truth---turning the China wrinkle into evidence the procedure works.
 A smooth-curvature violation (quadratic term in $\theta$) is the secondary family if time permits.
+If a referee asks whether curvature can be accommodated rather than merely detected, the principled answer exists and should be kept in the pocket: with three or more switcher trajectories, a quadratic comparative-advantage restriction $\Delta_i = \beta + \phi_1\theta_i + \phi_2\theta_i^2$ is estimable from the same $(\mu_{\underline{d}}, \Delta_{\underline{d}})$ variation (three distinct points pin a parabola), which is impossible in the comment paper's $T=2$ design---another consequence of the extension, not a patch.
 - S3. Runtime engineering: parallelize replications across cores with `joblib`; reuse the profiling knowledge in `explorations/python-grc/profile_hot_paths.py`.
 - S4. Deliverable prose: one appendix section plus one main table (bias / empirical SE / RMSE / coverage with MCSEs, by cell and parameter), framed explicitly as validating the extension from the comment paper's $T=2$ design.
 - S5. Mechanical implementation legs delegated to `model: "sonnet"` subagents per rules/model-routing.md; design, calibration choices, and results interpretation stay in the main thread.
@@ -49,13 +54,15 @@ A smooth-curvature violation (quadratic term in $\theta$) is the secondary famil
 - Bootstrap-calibrated critical values: escalation path only if the F adjustment fails to close a coverage gap.
 - Any change to empirical results, tables, or the estimation pipeline.
 
-## Open decisions for Emilia
+## Decisions (Emilia, 2026-07-10)
 
-- D1. Cells: the four production cells per S1, or fewer (e.g., IDN as the high-$K$ worst case plus TZA)?
-- D2. Violation family priority per S2: two-regime first (recommended; matches the hukou narrative), curvature second?
-- D3. Where code and outputs live: proposal is a new `explorations/simulations/` in the main tree (Python, not part of the coauthor Stata handoff), with only the final generated table copied into `RP7/output/tables/`.
-- D4. Compute ceiling: the pilot will produce a projected wall-clock; is there a budget above which we scale R down (with the MCSE consequence made explicit) rather than up?
-- D5. Placement in the paper: appendix section with a one-paragraph main-text pointer (recommended), or a main-text subsection?
+- D1. Cells: IDN and TZA only, with the exclusion rationale spelled out per S1; Emilia specifically judged the flat-$\phi$ urban-first cell a poor simulation case.
+- D2. Two-regime (hukou-style mixing) is the primary violation family; curvature stays time-permitting, with the quadratic-restriction fix noted in S2 kept as a pocket answer.
+- D3. The work happens in a dedicated git worktree, in Python, and does NOT go into RP7 for now---but the directory must be built replication-package-ready from day one: pinned environment (requirements or conda env file), seed discipline per M6, a README mapping scripts to outputs, deterministic regeneration of every table from raw per-rep results.
+Parallelism is a design requirement (replication-level, embarrassingly parallel), but runs start small per the M5 pilot gate.
+- D4. Emilia is investigating server compute access, which reinforces Python-only execution: the per-replication path must run headless with no Stata dependency (the validated `grc_gmm.py` port plus `lca_inversion.py` satisfy this).
+The M5 compute gate stands: pilot first, project the wall-clock, then decide local vs server.
+- D5. Appendix section with a one-paragraph pointer from the main text.
 
 ## Verification
 
