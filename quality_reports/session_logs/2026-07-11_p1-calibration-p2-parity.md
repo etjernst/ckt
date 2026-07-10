@@ -20,6 +20,19 @@ Either way the SE(phi) time box (BLOCKER item A) remains open in P2; the certifi
 
 Implementation (plan-governed, stages P1-P2 of the approved extension-simulation plan).
 
+## Goals
+
+Emilia's asks, in order: pick back up from the 2026-07-10 handoff (stage P1); a scope question ("we're not really running code anytime soon?"), answered no-heavy-compute-today; "how many fits do we need to run" (answered: 2 for P2, ~7,000/cell for the full study); "just kick them off" (the P2 sanity fits, post-midnight); and "let's add Stata protocol" (the morning reconciliation).
+
+## Approaches rejected, with the reason
+
+- Sparse-moment threshold 0 as the parity fix: rerun still failed; the drop was not the binding difference (the iteration scheme was).
+- Naive two-step with L-BFGS-B + Nelder-Mead: stalls far above Stata's criterion (J 121 vs 28); the generic optimizer does not track Gauss-Newton on this surface.
+- Pure full-step Gauss-Newton: slides past Stata's stopping point into a degenerate near-exact root (Q to 1e-17) because undamped steps jump basins on the ill-conditioned normal matrix.
+- Levenberg-Marquardt from Stata's crude initials: early damped path diverges from Stata's giant clean first step, and the root still attracts once damping shrinks.
+- Exact solver-trajectory replication (matching quickderivatives noise and Mata optimize stopping): judged brittle and wrong-headed as an estimand; kept only as the "extend" branch of Emilia's pending decision.
+- pinv for W2 and the GN direction solve: retains near-null S directions with enormous weight instead of sweeping them; replaced by `_invsym_ginv`.
+
 ## What happened, in order
 
 ### P1 (late evening 2026-07-10, committed 2febbfb)
