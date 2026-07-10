@@ -50,6 +50,7 @@ If a referee asks whether curvature can be accommodated rather than merely detec
 
 - M-a. A reduced-$N$ scaling check (does coverage degrade as synthetic $N$ shrinks) if the pilot shows fits are cheap.
 - M-b. Persist a reusable synthesizer API so the pocket exercises (J-test power, OLS/FE-vs-GRC gap) can be run during R&R without redesign.
+- M-c. A design-robustness sensitivity that redraws the design per replication by resampling individuals (with their trajectory labels, observation patterns, and covariate rows intact) from the empirical pool, perturbing trajectory composition and $J_R$ realistically without specifying a design-formation model; truths remain computable from the same calibrated line per resampled design (decided 2026-07-10: kept as a maybe, not committed).
 
 ## Out of scope
 
