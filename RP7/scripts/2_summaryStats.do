@@ -211,6 +211,22 @@ This code:
 	
 
 *******************************************************************************
+* 2b - Combined summary stats (all three countries side by side, landscape)
+*******************************************************************************
+* One wide table per balance, replacing the three per-country tables above.
+	sumstats_combined_table, balance(unb) outputdir($output/tables) ///
+		filename(summary_stats_combined_unb)
+  if $copyOverleaf == 1 {
+    copyOverleaf "$output/tables/summary_stats_combined_unb.tex", subdir(tables)
+  }
+
+	sumstats_combined_table, balance(bal) outputdir($output/tables) ///
+		filename(summary_stats_combined_bal)
+  if $copyOverleaf == 1 {
+    copyOverleaf "$output/tables/summary_stats_combined_bal.tex", subdir(tables)
+  }
+
+*******************************************************************************
 * 3 - Consumption | Non-ag | Unbalanced | Means & differences
 *******************************************************************************
 * ************

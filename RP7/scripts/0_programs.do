@@ -686,7 +686,103 @@ program 				define sumstats_table
 
 	file write myfile "\bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}"
 	file close myfile
-		
+
+end
+
+* **********************************************************************
+* Combined summary stats table (three countries side by side, landscape)
+* **********************************************************************
+capture program 	drop sumstats_combined_table
+program 			define sumstats_combined_table
+	syntax, BALance(string asis) OUTputdir(string asis) FILEname(string asis)
+
+	* Balance-dependent caption suffix and note wording
+	local balance_caption ""
+	local balance_word    "unbalanced"
+	if "`balance'" == "bal" {
+		local balance_caption ", Balanced Panel"
+		local balance_word    "balanced"
+	}
+
+	* Build each country's summary block; stash its four data columns keyed by row
+	foreach c in IDN CHN TZA {
+		use "$dirdata/processed/`c'_`balance'.dta", clear
+		quietly count if !mi(ln_income)
+		local inc_`c' = string(r(N), "%9.0fc")
+		country_summary_stats `c' urban consumption `balance'
+		gen long _row = _n
+		if "`c'" == "IDN" {
+			keep _row v1 v3 v5 v7 v9
+		}
+		else {
+			keep _row v3 v5 v7 v9
+		}
+		rename (v3 v5 v7 v9) (`c'_all `c'_rural `c'_urban `c'_diff)
+		tempfile t`c'
+		save `t`c''
+	}
+	use `tIDN', clear
+	merge 1:1 _row using `tCHN', nogen
+	merge 1:1 _row using `tTZA', nogen
+	sort _row
+
+	* Open the output file
+	file close _all
+	local filepath    "`outputdir'/`filename'${vsfx}.tex"
+	local table_label "tab:`filename'"
+	file open myfile using "`filepath'", write replace
+
+	file write myfile "\begin{sidewaystable} \centering" _n
+	file write myfile "\caption{Summary Statistics`balance_caption'}\label{`table_label'}" _n
+	file write myfile "\begin{threeparttable}" _n
+	file write myfile "\begin{tabular}{l cccc cccc cccc} \toprule" _n
+	file write myfile "& \multicolumn{4}{c}{Indonesia} & \multicolumn{4}{c}{China} & \multicolumn{4}{c}{Tanzania} \\" _n
+	file write myfile "\cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}" _n
+	file write myfile "& All & Rural & Urban & Diff. & All & Rural & Urban & Diff. & All & Rural & Urban & Diff. \\" _n
+
+	quietly {
+		local nrows = _N
+		forvalues i = 1/`nrows' {
+			local lab = v1[`i']
+			* cmidrule marker row: emit a rule spanning all data columns
+			if "`lab'" == "\cmidrule{2-5}" {
+				file write myfile "\cmidrule(lr){2-13}" _n
+				continue
+			}
+			local i_all = IDN_all[`i']
+			local i_rur = IDN_rural[`i']
+			local i_urb = IDN_urban[`i']
+			local i_dif = IDN_diff[`i']
+			local c_all = CHN_all[`i']
+			local c_rur = CHN_rural[`i']
+			local c_urb = CHN_urban[`i']
+			local c_dif = CHN_diff[`i']
+			local t_all = TZA_all[`i']
+			local t_rur = TZA_rural[`i']
+			local t_urb = TZA_urban[`i']
+			local t_dif = TZA_diff[`i']
+			* skip fully-blank leftover rows from iebaltab
+			if "`lab'" == "" & "`i_all'" == "" & "`c_all'" == "" & "`t_all'" == "" {
+				continue
+			}
+			local cells "`lab' & `i_all' & `i_rur' & `i_urb' & `i_dif' & `c_all' & `c_rur' & `c_urb' & `c_dif' & `t_all' & `t_rur' & `t_urb' & `t_dif'"
+			if `i' == 1 {
+				file write myfile "`cells' \\  \addlinespace \addlinespace" _n
+			}
+			else if mod(`i', 2) == 1 {
+				file write myfile "`cells' \\  \addlinespace" _n
+			}
+			else {
+				file write myfile "`cells' \\" _n
+			}
+		}
+	}
+
+	file write myfile "\bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{Summary statistics for the `balance_word' panel. Sources: IFLS (Indonesia), China survey (China), and Tanzania survey (Tanzania). The table reports means and standard deviations (in parentheses) based on individual-year pairs. The All column reports the country-wide mean; Rural and Urban report location-specific means, and Diff. reports their difference, with stars from a \$t\$-test of equality. See Section \ref{sec:data} for further details. All variables have the same number of observations within a country, except income, which is missing for some observations: it has `inc_IDN', `inc_CHN', and `inc_TZA' observations in Indonesia, China, and Tanzania, respectively.} \end{tablenotes}" _n
+	file write myfile "\end{threeparttable}" _n
+	file write myfile "\end{sidewaystable}" _n
+	file close myfile
+
 end
 
 * **********************************************************************
@@ -1054,7 +1150,7 @@ program define create_panel_tex_table
         using "$output/tables/`filename'${vsfx}.tex", ///
 		se b(%8.3f)                            ///           
         keep(`keep') fragment booktabs         ///
-        collabels("")                          ///
+        collabels(none)                        ///
         starlevels(* 0.10 ** 0.05 *** 0.01)    ///
 		s(N N_clust r2_a, label("Observations" "Individuals" "Adj. R\$^{2}\$") ///
         fmt(%9.0fc %9.0fc a2))                 ///
@@ -1184,23 +1280,21 @@ capture program drop reghdfe_regressions
 program define reghdfe_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
-	* Run col 7 first as it has the smallest sample, then use e(sample)
-    eststo reg7_`country': reghdfe lndepvar choice			 					///
+	* Run col 6 first as it has the smallest sample, then use e(sample)
+    eststo reg6_`country': reghdfe lndepvar choice			 					///
 				$covs_all				 										///
 				, vce(cluster pid) absorb(pid period)
 		gen regression_sample = e(sample)
-	
-    eststo reg1_`country': reghdfe lndepvar choice		 						///
-		if regression_sample, noabsorb vce(cluster pid)
-	  eststo reg2_`country': reghdfe lndepvar choice			 				///
+
+	  eststo reg1_`country': reghdfe lndepvar choice			 				///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg3_`country': reghdfe lndepvar choice $covs_1 						///
+    eststo reg2_`country': reghdfe lndepvar choice $covs_1 						///
 		if regression_sample, vce(cluster pid) absorb(period)
-	  eststo reg4_`country': reghdfe lndepvar choice $covs_2 					///
+	  eststo reg3_`country': reghdfe lndepvar choice $covs_2 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg5_`country': reghdfe lndepvar choice $covs_all 					///
+    eststo reg4_`country': reghdfe lndepvar choice $covs_all 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg6_`country': reghdfe lndepvar choice $covs_all 			 		///
+    eststo reg5_`country': reghdfe lndepvar choice $covs_all 			 		///
 		if regression_sample & switcher, vce(cluster pid) absorb(period)
 end
 
@@ -1540,6 +1634,116 @@ program define heterogeneity_plots
 	
 		graph save "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_`country'_Fnocovars${vsfx}.pdf", replace
 
+end
+
+* **********************************************************************
+* Robustness coefplot: phi, Delta_never, Delta_avg across the main ca
+* spec plus each extra-regressor robustness spec (experience family +
+* urban birth). Specs on the y-axis, one panel per estimand. Reads
+* existing sters only --- no GMM re-fit. Plain GMM SEs (95% CI).
+* **********************************************************************
+capture program drop grc_robustness_coefplot
+program define grc_robustness_coefplot
+	args country
+	if "`country'" == "IDN" local textcountry "Indonesia"
+	if "`country'" == "TZA" local textcountry "Tanzania"
+
+	* Spec stems (ster family token; "main" carries no family token).
+	* IDN has the urban-birth cell on disk; TZA does not.
+	if "`country'" == "IDN" {
+		local stems main exp maxexp expsh maxexpsh birth
+	}
+	else {
+		local stems main exp maxexp expsh maxexpsh
+	}
+	local nspec : word count `stems'
+
+	* One row vector (+ se vector) per estimand; columns index the specs.
+	tempname bphi sephi bdn sedn bdg sedg
+	matrix `bphi'  = J(1, `nspec', .)
+	matrix `sephi' = J(1, `nspec', .)
+	matrix `bdn'   = J(1, `nspec', .)
+	matrix `sedn'  = J(1, `nspec', .)
+	matrix `bdg'   = J(1, `nspec', .)
+	matrix `sedg'  = J(1, `nspec', .)
+
+	local j = 0
+	foreach s of local stems {
+		local ++j
+		if "`s'" == "main" local base "grc_`country'_cuu_ca"
+		else               local base "grc_`country'_cuu_`s'_ca"
+
+		* phi from the main ster
+		estimates use "$output/`base'${vsfx}.ster"
+		matrix `bphi'[1,`j']  = _b[phi:_cons]
+		matrix `sephi'[1,`j'] = _se[phi:_cons]
+
+		* Delta_never from the _n ster
+		estimates use "$output/`base'_n${vsfx}.ster"
+		matrix `bdn'[1,`j']  = _b[Delta_never]
+		matrix `sedn'[1,`j'] = _se[Delta_never]
+
+		* Delta_avg from the _g ster
+		estimates use "$output/`base'_g${vsfx}.ster"
+		matrix `bdg'[1,`j']  = _b[Delta_avg]
+		matrix `sedg'[1,`j'] = _se[Delta_avg]
+	}
+	matrix colnames `bphi'  = `stems'
+	matrix colnames `sephi' = `stems'
+	matrix colnames `bdn'   = `stems'
+	matrix colnames `sedn'  = `stems'
+	matrix colnames `bdg'   = `stems'
+	matrix colnames `sedg'  = `stems'
+
+	* Pretty row labels (labels for absent specs, e.g. birth on TZA, are ignored)
+	local cl coeflabels(main = "Main" exp = "+ Experience" maxexp = "+ Max experience" expsh = "+ Experience share" maxexpsh = "+ Max exp. share" birth = "+ Urban birth")
+
+	* One color per group: Main (anchor), the four experience variants, birth.
+	local cmain  "16 62 106"
+	local cexp   "128 116 168"
+	local cbirth "216 128 60"
+
+	* Shared twoway options: force 0 into every panel (also pins the y-axis
+	* line to 0 instead of floating next to the data), zero reference line.
+	local gopts `cl' grid(none) xscale(range(0)) ///
+		xline(0, lwidth(thin) lcolor(%40)) ylabel(, labsize(small)) ///
+		xlabel(#6, labsize(small)) legend(off)
+
+	* birth plot-spec: IDN only (no urban-birth cell on disk for TZA)
+	local birth_phi ""
+	local birth_dn  ""
+	local birth_dg  ""
+	if "`country'" == "IDN" {
+		local birth_phi (matrix(`bphi'), se(`sephi') keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+		local birth_dn  (matrix(`bdn'),  se(`sedn')  keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+		local birth_dg  (matrix(`bdg'),  se(`sedg')  keep(birth) msymb(S) mcolor("`cbirth'") ciopts(lwidth(thick) lcolor("`cbirth'")))
+	}
+
+	coefplot ///
+		(matrix(`bphi'), se(`sephi') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bphi'), se(`sephi') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_phi' ///
+		, `gopts' title("{&phi}") saving(robplot_phi_`country', replace)
+
+	coefplot ///
+		(matrix(`bdn'), se(`sedn') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bdn'), se(`sedn') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_dn' ///
+		, `gopts' title("{&Delta}{subscript:never}") saving(robplot_dn_`country', replace)
+
+	coefplot ///
+		(matrix(`bdg'), se(`sedg') keep(main) msymb(S) mcolor("`cmain'") ciopts(lwidth(thick) lcolor("`cmain'"))) ///
+		(matrix(`bdg'), se(`sedg') keep(exp maxexp expsh maxexpsh) msymb(S) mcolor("`cexp'") ciopts(lwidth(thick) lcolor("`cexp'"))) ///
+		`birth_dg' ///
+		, `gopts' title("Average {&Delta}") saving(robplot_dg_`country', replace)
+
+	graph combine robplot_phi_`country'.gph robplot_dn_`country'.gph ///
+		robplot_dg_`country'.gph, row(1) xsize(19) ysize(6)
+	graph export "$output/figures/robustness_coefplot_`country'${vsfx}.pdf", replace
+	graph export "$output/figures/robustness_coefplot_`country'${vsfx}.png", replace as(png) width(3600)
+	if $copyOverleaf == 1 {
+		copyOverleaf "$output/figures/robustness_coefplot_`country'${vsfx}.pdf", subdir(figures)
+	}
 end
 
 * **********************************************************************
@@ -2006,14 +2210,13 @@ program define run_grc
 	  local Delta_avg_nlcom ""
 	  foreach s of numlist $switchers {
 	  	estimates restore `estname'   // make sure the results are in memory
-        * Within-switcher trajectory share: condition on `switcher == 1` so
-        * num_`s' sums to 1 across $switchers. The previous form
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
         *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
-        * gave N_s / N_total (an over-all-sample share summing to switcher_frac),
-        * which made Delta_avg = switcher_frac * E[Delta | switcher] instead of
-        * E[Delta | switcher].
-        * See quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md
-        * (cherry-picked from `lca-inversion` commit 5cfe158).
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
         sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)   // proportion of sample in this trajectory
 		if `first_loop' == 0 {
@@ -2323,14 +2526,13 @@ program define run_grc_onestep
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        * Within-switcher trajectory share: condition on `switcher == 1` so
-        * num_`s' sums to 1 across $switchers. The previous form
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
         *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
-        * gave N_s / N_total (an over-all-sample share summing to switcher_frac),
-        * which made Delta_avg = switcher_frac * E[Delta | switcher] instead of
-        * E[Delta | switcher].
-        * See quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md
-        * (cherry-picked from `lca-inversion` commit 5cfe158).
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
         sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
@@ -2645,14 +2847,13 @@ program define run_grc_robust
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        * Within-switcher trajectory share: condition on `switcher == 1` so
-        * num_`s' sums to 1 across $switchers. The previous form
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
         *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
-        * gave N_s / N_total (an over-all-sample share summing to switcher_frac),
-        * which made Delta_avg = switcher_frac * E[Delta | switcher] instead of
-        * E[Delta | switcher].
-        * See quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md
-        * (cherry-picked from `lca-inversion` commit 5cfe158).
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
         sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
@@ -3007,14 +3208,13 @@ program define run_grc_robust_vv
     local Delta_avg_nlcom ""
     foreach s of numlist $switchers {
         estimates restore `estname'
-        * Within-switcher trajectory share: condition on `switcher == 1` so
-        * num_`s' sums to 1 across $switchers. The previous form
+        * Within-switcher trajectory share: condition on switcher == 1 so
+        * num_s sums to 1 across $switchers. The previous form
         *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
-        * gave N_s / N_total (an over-all-sample share summing to switcher_frac),
-        * which made Delta_avg = switcher_frac * E[Delta | switcher] instead of
-        * E[Delta | switcher].
-        * See quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md
-        * (cherry-picked from `lca-inversion` commit 5cfe158).
+        * gave N_s / N_total (an over-all-sample share summing to the
+        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
+        * instead of E[Delta | switcher]. See
+        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
         sum 1.switcher_`s' if e(sample) & switcher == 1
         local num_`s' = r(mean)
         if `first_loop' == 0 {
@@ -3071,10 +3271,29 @@ program define grc_tex_table_trend
              COUNTRY(string asis) KEEP(string) varlabel(string) ///
              POSTfoot(string asis)                              ///
              COEFLABels(string asis) TEXTdepvar(string asis)    ///
-             [SPEC(string) COVS2set(string)]
+             [SPEC(string) COVS2set(string) SHOWalways INVci]
 
     if "`covs2set'" == "" {
-        local covs2set "c0 ct c1 c2 ca"
+        local covs2set "ct c1 c2 ca"
+    }
+
+    * invci gate: only the main-results tables (main GRC IDN/CHN/TZA plus
+    * the two main hukou cells) carry the LCA weak-identification-robust
+    * inversion-CI rows. Robustness / extras tables call without invci, so
+    * their sters (which have no inversion CI attached) do not emit an empty
+    * "95\% inv. CI" label row. When off, the three CI stats() options are
+    * empty and the phi bottom block omits the inv_phi_ci95_str row.
+    if "`invci'" != "" {
+        local ci_never  `"stats(inv_dN_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_avg    `"stats(inv_davg_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_always `"stats(inv_dT_ci95_str, fmt(s) labels("95\% inv. CI"))"'
+        local ci_bottom `"s(inv_phi_ci95_str N_clust N Jstat Jpval converged_str, label("95\% inv. CI" "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") fmt(s %9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))"'
+    }
+    else {
+        local ci_never  ""
+        local ci_avg    ""
+        local ci_always ""
+        local ci_bottom `"s(N_clust N Jstat Jpval converged_str, label("Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))"'
     }
 
     * Build ster path stem and stored-name stem. Diverges based on whether
@@ -3101,7 +3320,20 @@ program define grc_tex_table_trend
 		local table_postfoot 	""
 		local posthead 			""
     local table_prehead "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
-		local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
+    * Tablenote explaining multi-island CIs. The Delta_always inversion
+    * CI splits into two intervals at the singularity phi = -1 in the
+    * LCA mapping; the inversion CI strings emit the union form
+    * `[$-\infty$, x] $\cup$ [y, $+\infty$]` for those cells, and this
+    * note tells readers what that union notation means.
+    * The Mobius/multi-island note only applies when the Delta_always row is
+    * shown (its inversion CI is the one that renders as a union interval).
+    if "`showalways'" != "" {
+        local mobius_note "\multicolumn{`cmid'}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.}"
+        local table_postfoot "\cmidrule{2-`cmid'} `postfoot' `mobius_note' \\ \bottomrule \end{tabular}"
+    }
+    else {
+        local table_postfoot "\cmidrule{2-`cmid'} `postfoot' \bottomrule \end{tabular}"
+    }
 
     * Phase 1b.5b: load estimates from disk inside the program, so callers
     * don't need to do `estimates use/store` boilerplate. This means a
@@ -3122,50 +3354,82 @@ program define grc_tex_table_trend
         estimates store `_stem'_`estname'_n
         estimates use "$dir/output/`_stem'_`estname'_g${vsfx}"
         estimates store `_stem'_`estname'_g
+        * Only load the always (_a) ster when it will be shown; otherwise a
+        * missing _a ster would abort a table that does not report it.
+        if "`showalways'" != "" {
+            estimates use "$dir/output/`_stem'_`estname'_a${vsfx}"
+            estimates store `_stem'_`estname'_a
+        }
       }
 
     * Empty locals to store estimate-name lists for esttab
-    local ests_never = ""
-	local ests_avg = ""
-    local ests = ""
+    local ests_never  = ""
+	local ests_avg    = ""
+    local ests_always = ""
+    local ests        = ""
 
     * Generate the list of stored estimates for the current panel.
     * After M11, ster filenames and stored-estimate names use the same
     * `grc_<country>_<spec3>_<covs2>{,_n,_a,_d,_g}` shorthand, so no
     * Option-B "long disk / short memory" bridge is needed.
       foreach estname in `covs2set' {
-        local ests_never = "`ests_never' `_stem'_`estname'_n"
-        local ests_avg   = "`ests_avg' `_stem'_`estname'_g"
-        local ests       = "`ests' `_stem'_`estname'"
+        local ests_never  = "`ests_never' `_stem'_`estname'_n"
+        local ests_avg    = "`ests_avg' `_stem'_`estname'_g"
+        local ests_always = "`ests_always' `_stem'_`estname'_a"
+        local ests        = "`ests' `_stem'_`estname'"
       }
 
-      * Output Delta-never row
+      * Output Delta-never row plus its LCA inversion CI rows (90% and
+      * 95%). The CI rows consume pre-formatted bracketed string macros
+      * set on each _n ster by attach_inversion_ci.
       esttab `ests_never'                    ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      `ci_never'                             ///
       varwidth(20) 	                         ///
       nolines nomtitles `colnumbers'         ///
       prehead(`table_prehead')               ///
       posthead(`table_posthead')             ///
-      coeflabels(Delta_never "$\Delta_{\text{never}}$" Delta_always "$\Delta_{\text{always}}$") ///
+      coeflabels(Delta_never "$\Delta_{\text{never}}$") ///
       replace substitute(\_ _)
 
-      * Output Delta average row
+      * Output Delta-average row plus its LCA inversion CI rows.
       esttab `ests_avg'   		             ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
       fragment booktabs noobs                ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      `ci_avg'                               ///
       varwidth(20) 	                         ///
       nolines nomtitles nonum 		         ///
       coeflabels(Delta_avg "$\bar{\Delta}$") ///
       append substitute(\_ _)
 
-    * Output other estimates
+      * Output Delta-always row plus its LCA inversion CI rows. The
+      * Delta_always inversion CI is the one most likely to render as
+      * a multi-island union --- see the M\"obius tablenote in postfoot.
+      * Gated off by default: the main-text tables report only never and
+      * average. Pass showalways to include it (appendix robustness).
+      if "`showalways'" != "" {
+      esttab `ests_always'   		         ///
+      using "$output/tables/`filename'${vsfx}.tex", ///
+	  se b(%8.3f)                            ///
+      fragment booktabs noobs                ///
+      collabels("")                          ///
+      starlevels(* 0.10 ** 0.05 *** 0.01)    ///
+      `ci_always'                            ///
+      varwidth(20) 	                         ///
+      nolines nomtitles nonum 		         ///
+      coeflabels(Delta_always "$\Delta_{\text{always}}$") ///
+      append substitute(\_ _)
+      }
+
+    * Output other estimates plus phi inversion CI rows and existing
+    * diagnostics. The phi CI rows ride on the parent (unsuffixed) ster.
       esttab `ests'	                         ///
       using "$output/tables/`filename'${vsfx}.tex", ///
 	  se b(%8.3f)                            ///
@@ -3175,19 +3439,36 @@ program define grc_tex_table_trend
       fragment booktabs                      ///
       collabels("")                          ///
       starlevels(* 0.10 ** 0.05 *** 0.01)    ///
-      s(N_clust N Jstat Jpval converged_str, label( "Individuals" "Observations" "J-stat" "J-stat (p-value)" "Converged") ///
-      fmt(%9.0fc %9.0fc %8.1fc %8.3fc %8.0fc))      ///
+      `ci_bottom'                            ///
       varwidth(20)                           ///
       nolines nomtitles nonum                ///
       postfoot("`table_postfoot'")           ///
       append substitute(\_ _)
 
     * Phase 1b.6: strip esttab's spurious blank tabular rows.
-    * Same workaround as 2_summaryStats.do, specialized for 6-column GRC
-    * tables. Removes the literal pattern emitted between fragments by
-    * varwidth(20) + nomtitles + noobs. Leaves \addlinespace intact.
+    * Same workaround as 2_summaryStats.do, specialized for 5-column GRC
+    * tables (label + 4 covariate columns after dropping c0). Removes the
+    * literal pattern emitted between fragments by varwidth(20) +
+    * nomtitles + noobs. Leaves \addlinespace intact.
     removeStringFromTex "$output/tables/`filename'${vsfx}.tex" ///
-        , remove("                    &               &               &               &               &               \BS\BS")
+        , remove("                    &               &               &               &               \BS\BS")
+
+    * Strip the \addlinespace that esttab inserts between the SE row and
+    * the inversion CI row of the same block, so the CI row visually
+    * attaches to its parameter rather than reading as a separate block.
+    * Pattern: "\\\n\addlinespace\n95\% inv. CI" -> "\\\n95\% inv. CI".
+    * The \addlinespace BETWEEN blocks is left intact because the line
+    * before it is a CI row (or coef row in covs2 columns where the CI
+    * row is "empty"), not an SE row immediately followed by a CI row.
+    * Only runs when invci is on; without CI rows there is no "95\% inv. CI"
+    * string to attach, so the filter would be a no-op rewrite.
+    if "`invci'" != "" {
+        tempfile _addlspc_tmp
+        filefilter "$output/tables/`filename'${vsfx}.tex" "`_addlspc_tmp'", ///
+            from("\BS\BS\r\n\BSaddlinespace\r\n95\BS% inv. CI")            ///
+            to("\BS\BS\r\n95\BS% inv. CI")
+        copy "`_addlspc_tmp'" "$output/tables/`filename'${vsfx}.tex", replace
+    }
 
     * Drop the ~15 estimates this call stored. Without cleanup the
     * stored-estimates namespace fills up after ~20 cells (Stata limit ~300)
@@ -3620,5 +3901,124 @@ program define het_table_mu
     prefoot(`table_prefoot')   	             ///
     postfoot("`table_postfoot'")             ///
     replace substitute(\_ _)
-   
+
+end
+
+* **********************************************************************
+* attach_inversion_ci: weak-ID-robust LCA inversion CIs for phi and the
+* three trajectory-specific deltas (never, avg, always), attached to a
+* saved GRC estimate.
+*
+* Calls into Python via lca_inversion.compute_all_inversion_cis. Stores
+* point estimates, 90% and 95% convex-hull CIs as e()-scalars, plus
+* pre-formatted bracketed LaTeX strings as e()-macros so that
+* grc_tex_table_trend can consume them via esttab's stats() clause.
+* Re-saves the .ster so the scalars persist.
+*
+* Decoupled from run_grc: callers run the GMM pipeline first (writes
+* _g/_n/_a sters per STER_NAMING.md), then call attach_inversion_ci on
+* each saved ster. This keeps the (slow) GMM step independent of the
+* inversion pass, so the latter can be re-run on its own when the
+* inference machinery changes (F adjustment, bootstrap calibration,
+* etc.) without redoing the GMM.
+* **********************************************************************
+
+* file-level python: set sys.path so subsequent imports find lca_inversion.
+* Runs once per do-of-this-file; idempotent against repeats.
+python:
+import sys, os
+from sfi import Macro
+_DIR = Macro.getGlobal("dir")
+if _DIR:
+    _EXPLOR = os.path.normpath(
+        os.path.join(_DIR, "..", "explorations", "python-grc")
+    )
+    if _EXPLOR not in sys.path:
+        sys.path.insert(0, _EXPLOR)
+del _DIR
+end
+
+capture program drop attach_inversion_ci
+program define attach_inversion_ci, eclass
+    syntax , ESTbase(string)                                     ///
+             OUTcome(string) TRAJ(string) CHOICE(string)         ///
+             HHID(string) BASE(integer)                          ///
+             [CONTrols(varlist fv)]                              ///
+             [STERdir(string asis)]                              ///
+             [THReshold(integer 5)]
+
+    * `string asis' preserves outer double quotes from callers like
+    * `sterdir("${inversion_sterdir}")', which would otherwise produce a
+    * malformed path when concatenated. Strip them so subsequent
+    * `confirm file' / `estimates use' / `estimates save' calls see a
+    * plain path. File paths on Windows and POSIX cannot contain `"', so
+    * a blanket subinstr is safe here.
+    local sterdir = subinstr(`"`sterdir'"', `"""', "", .)
+
+    * estbase is the (country, spec) cell base name without suffix under
+    * the STER_NAMING.md convention, e.g. "grc_IDN_cuu_ca". The program
+    * looks for and updates the four sters {estbase}.ster, {estbase}_n.ster,
+    * {estbase}_g.ster, {estbase}_a.ster (parent / never / avg / always)
+    * --- attaching the same inversion macros to each via a single python
+    * compute, since the inversion math is identical across suffixes (the
+    * four sters all rest on the same underlying GMM fit).
+
+    * 1. fv-expand controls so the python helper sees plain variable names
+    local ctrl_list `controls'
+    if "`controls'" != "" {
+        fvexpand `controls'
+        local ctrl_list = r(varlist)
+    }
+
+    * 2. ONE python call computes all four inversions for this cell.
+    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"))
+
+    * 3. iterate over the four suffixes, ereturn-ing the macros and
+    * re-saving each ster. Skips suffixes whose .ster does not exist.
+    * Suffix tokens follow the post-refactor naming in STER_NAMING.md:
+    *   ""  parent (main GMM result)
+    *   _n  Delta_never extrapolation (was _never)
+    *   _g  Delta_avg average across switchers (was _avg)
+    *   _a  Delta_always extrapolation (was _always)
+    local n_attached = 0
+    foreach suffix in "" "_n" "_g" "_a" {
+        local target "`sterdir'/`estbase'`suffix'.ster"
+        capture confirm file "`target'"
+        if _rc != 0 {
+            di as text "  attach_inversion_ci: SKIP `estbase'`suffix' (no ster)"
+            continue
+        }
+        estimates use "`target'"
+
+        foreach prefix in inv_phi inv_dN inv_davg inv_dT {
+            ereturn scalar `prefix'_at_waldmin     = ``prefix'_at_waldmin'
+            ereturn scalar `prefix'_wald_min       = ``prefix'_wald_min'
+            ereturn scalar `prefix'_J_R            = ``prefix'_J_R'
+            ereturn scalar `prefix'_n_kept         = ``prefix'_n_kept'
+            ereturn scalar `prefix'_ci90_lo        = ``prefix'_ci90_lo'
+            ereturn scalar `prefix'_ci90_hi        = ``prefix'_ci90_hi'
+            ereturn scalar `prefix'_ci95_lo        = ``prefix'_ci95_lo'
+            ereturn scalar `prefix'_ci95_hi        = ``prefix'_ci95_hi'
+            ereturn scalar `prefix'_island_count95 = ``prefix'_island_count95'
+            ereturn scalar `prefix'_island_count90 = ``prefix'_island_count90'
+            ereturn local  `prefix'_ci90_str       `"``prefix'_ci90_str'"'
+            ereturn local  `prefix'_ci95_str       `"``prefix'_ci95_str'"'
+        }
+
+        estimates save "`target'", replace
+        local ++n_attached
+    }
+
+    * 4. pretty print summary (once per cell, not once per suffix)
+    di as text "{hline 72}"
+    di as text "Inversion CIs attached to " as result "`estbase'"   ///
+        as text "  (`n_attached' of 4 sters updated)"
+    di as text "{hline 72}"
+    di as text "  J_R = " as result `inv_phi_J_R'                ///
+        as text ",  switchers kept = " as result `inv_phi_n_kept'
+    foreach prefix in inv_phi inv_dN inv_davg inv_dT {
+        di as text "  `prefix' point = " as result %9.4f ``prefix'_at_waldmin'
+        di as text "    95% CI: " as result `"``prefix'_ci95_str'"'
+        di as text "    90% CI: " as result `"``prefix'_ci90_str'"'
+    }
 end

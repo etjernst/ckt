@@ -1,0 +1,174 @@
+* ============================================================
+* Title:   Step 0.5 stability test: REVERSED ORDER. 5x J=5000 first, then 5x J=2000.
+* Author:  Emilia (with Claude)
+* Date:    2026-05-06
+* Purpose: Distinguish "summclust caches state across calls" (H1) from
+*          "thermal/freq throttling" (H2). If H1, the J=2000 phase that
+*          follows J=5000 should NOT see a fast rep 1 (~30s); rep 1 should
+*          look like a warm call (~95s). If H2, the J=2000 phase after
+*          the long J=5000 phase should run at full speed once thermal
+*          load drops.
+*          Same fixed seed each replicate so subsamples are reproducible.
+* Input:   IDN_unb.dta, grc_IDN_urban_covs_trend.ster (for phi_hat)
+* Output:  output/stability_dual_reverse_<stamp>.csv
+*          output/stability_dual_reverse_<stamp>.log
+* Notes:   Run via:  stata-mp -e do stability_test_dual_reverse.do
+*          Differs from stability_test_dual.do only in the outer J loop:
+*          J=5000 first, then J=2000.
+* ============================================================
+
+clear all
+set more off
+set varabbrev off
+
+if "`c(username)'" == "maand" {
+    global dir       "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
+    global sweep_out "C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/stata/step0_5_summclust_preflight/output"
+}
+
+include "$dir/scripts/0_path_config.do"
+quietly {
+    include "$dir/scripts/0_programs.do"
+}
+
+cd "$sweep_out"
+capture log close
+
+local _d  "`c(current_date)'"
+local _dd : word 1 of `_d'
+local _mm : word 2 of `_d'
+local _yy : word 3 of `_d'
+local _t  "`c(current_time)'"
+local _ts = subinstr("`_t'", ":", "", .)
+local stamp = "`_yy'`_mm'`_dd'_`_ts'"
+
+log using "stability_dual_reverse_`stamp'.log", replace text
+
+local csvfile "stability_dual_reverse_`stamp'.csv"
+file open csvfh using "`csvfile'", write replace
+file write csvfh "J_target,rep,J_actual,N_obs,n_active_z,wall_seconds,rc,start_clock,end_clock" _n
+file close csvfh
+
+capture noisily {
+    local choice  urban
+    local depvar  consumption
+    local balance unb
+
+    di as txt _n "============================================================"
+    di as txt "Reverse-order stability test: 5x J=5000 then 5x J=2000, IDN `balance'"
+    di as txt "============================================================"
+
+    use "$dirdata/processed/IDN_`balance'.dta", clear
+    replace lndepvar = log(consumption/hhsize_cube)
+    setup_grc_estimation
+
+    capture estimates use "$output/staging/grc_IDN_urban_covs_trend.ster"
+    if _rc {
+        di as err "ster not found at $output/staging/grc_IDN_urban_covs_trend.ster"
+        exit 198
+    }
+    scalar phi_hat = _b[/phi]
+    di as txt "phi_hat = " %12.8f scalar(phi_hat)
+
+    use "$dirdata/processed/IDN_`balance'.dta", clear
+    replace lndepvar = log(consumption/hhsize_cube)
+    setup_grc_estimation
+
+    quietly initial_values lndepvar,                         ///
+        switchers($switchers) balance(`balance')             ///
+        estname(initial_IDN_dual_rev)
+    local base = `r(base)'
+
+    quietly tab period, gen(period_)
+    local n_periods = r(r)
+    local periodFE
+    forvalues p = 2/`n_periods' {
+        local periodFE `periodFE' period_`p'
+    }
+
+    foreach s of numlist $switchers {
+        if `s' != `base' {
+            quietly gen z_`s' = switcher_`s'_choice - scalar(phi_hat) * switcher_`s'
+        }
+    }
+
+    quietly bys pid: gen _n_pid = _N
+    drop if _n_pid == 1
+    drop _n_pid
+
+    tempfile prepped
+    save `prepped'
+
+    foreach J of numlist 5000 2000 {
+        di as txt _n _n "############################################################"
+        di as txt "######   Outer cell: J = `J'"
+        di as txt "############################################################"
+
+        forvalues rep = 1/5 {
+            di as txt _n "============================================================"
+            di as txt "J=`J'  Replicate `rep' of 5"
+            di as txt "============================================================"
+
+            use `prepped', clear
+
+            preserve
+                keep pid
+                duplicates drop
+                set seed 20260504
+                quietly gen _u = runiform()
+                sort _u
+                quietly keep if _n <= `J'
+                tempfile keep_pids
+                save `keep_pids'
+            restore
+            quietly merge m:1 pid using `keep_pids', keep(match) nogen
+            quietly bys pid: gen _f = (_n == 1)
+            quietly count if _f
+            local J_actual = r(N)
+            drop _f
+            quietly count
+            local N_obs = r(N)
+
+            local zvars_active
+            foreach s of numlist $switchers {
+                if `s' != `base' {
+                    quietly sum switcher_`s'_choice
+                    if r(sd) > 0 & r(sd) < . {
+                        local zvars_active `zvars_active' z_`s'
+                    }
+                }
+            }
+            local n_active : word count `zvars_active'
+            di as txt "J=`J' Replicate `rep': J_actual=`J_actual', N_obs=`N_obs', active z=`n_active'"
+
+            local start_clock = "`c(current_date)' `c(current_time)'"
+            timer clear 1
+            timer on 1
+            capture noisily summclust lndepvar `zvars_active' `periodFE',  ///
+                cluster(pid)                                                ///
+                fevar(trajectory)                                           ///
+                jackknife                                                   ///
+                nograph
+            local sc_rc = _rc
+            timer off 1
+            local end_clock = "`c(current_date)' `c(current_time)'"
+            quietly timer list 1
+            local t_wall = r(t1)
+            di as txt _n "J=`J' Replicate `rep' rc=`sc_rc'  wall=`t_wall'  start=`start_clock'  end=`end_clock'"
+
+            file open csvfh using "`csvfile'", write append
+            file write csvfh "`J',`rep',`J_actual',`N_obs',`n_active',`t_wall',`sc_rc',`start_clock',`end_clock'" _n
+            file close csvfh
+        }
+    }
+
+    di as txt _n "============================================================"
+    di as txt "Reverse-order dual stability test complete. CSV: `csvfile'"
+    di as txt "============================================================"
+}
+
+local saved_rc = _rc
+capture log close
+if `saved_rc' != 0 {
+    di as error ">>> stability_test_dual_reverse.do FAILED with rc=`saved_rc'"
+}

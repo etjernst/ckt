@@ -1,0 +1,19 @@
+scenario,c,mu_common_tag,wedge,kappa,sigma_eta,anchor_status,realized,unrealized,modeled_never,switcher_share,sigma_theta,never_target
+barrier-only,0.0,pooled_never,0.20326053774353414,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+barrier-only,0.5,pooled_never,0.20326053774353414,0.10163026887176707,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.3693]",,,,,0.4,0.6543
+barrier-only,1.0,pooled_never,0.20326053774353414,0.20326053774353414,0.052075030633904076,ok,0.07388679627578426,0.0021242177754504255,0.6542999999964578,0.10102285826347109,0.4,0.6543
+regime-convergence,0.0,pooled_never,0.20326053774353414,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+regime-convergence,0.5,pooled_never,0.20326053774353414,0.10163026887176707,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.3693]",,,,,0.4,0.6543
+regime-convergence,1.0,pooled_never,0.20326053774353414,0.20326053774353414,0.052075030633904076,ok,0.27042649825239046,0.0008680161095627409,0.6542999999964578,0.10102285826347109,0.4,0.6543
+barrier-only,0.0,rh_base,0.2274111537683004,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+barrier-only,0.5,rh_base,0.2274111537683004,0.1137055768841502,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.5161]",,,,,0.4,0.6543
+barrier-only,1.0,rh_base,0.2274111537683004,0.2274111537683004,0.06569947990198666,ok,0.07185118778772676,0.004227382579135774,0.6542999999564345,0.10102570976103109,0.4,0.6543
+regime-convergence,0.0,rh_base,0.2274111537683004,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+regime-convergence,0.5,rh_base,0.2274111537683004,0.1137055768841502,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.5161]",,,,,0.4,0.6543
+regime-convergence,1.0,rh_base,0.2274111537683004,0.2274111537683004,0.06569947990198666,ok,0.271308144313729,0.001140624922562279,0.6542999999564345,0.10102570976103109,0.4,0.6543
+barrier-only,0.0,uh_base,0.0898922904707,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+barrier-only,0.5,uh_base,0.0898922904707,0.04494614523535,,"INFEASIBLE: target 0.6543 outside attainable [0.0002, 0.0472]",,,,,0.4,0.6543
+barrier-only,1.0,uh_base,0.0898922904707,0.0898922904707,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.1226]",,,,,0.4,0.6543
+regime-convergence,0.0,uh_base,0.0898922904707,0.0,,"INFEASIBLE: target 0.6543 outside attainable [0.0000, 0.0472]",,,,,0.4,0.6543
+regime-convergence,0.5,uh_base,0.0898922904707,0.04494614523535,,"INFEASIBLE: target 0.6543 outside attainable [0.0002, 0.0472]",,,,,0.4,0.6543
+regime-convergence,1.0,uh_base,0.0898922904707,0.0898922904707,,"INFEASIBLE: target 0.6543 outside attainable [0.0472, 0.1226]",,,,,0.4,0.6543

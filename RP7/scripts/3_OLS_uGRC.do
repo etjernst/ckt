@@ -81,10 +81,10 @@ eststo clear
 * Table label
 	local table_label "`" \label{tab:OLS_cons_urb_unb} "'" 	
 * Table notes
-	local table_notes "The dependent variable is the log of total consumption per capita. Columns (2) to (7) include time (survey wave) fixed effects, column (3) adds a female indicator, column (4) adds age squared, and columns (5) to (7) add education (years of schooling, maximum across periods) and its square. Column (6) restricts the sample to migrants, i.e. those who we observe switching between rural and urban at least once in our data, and column (7) adds individual fixed effects. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
+	local table_notes "The dependent variable is the log of total consumption per capita. All columns include time (survey wave) fixed effects. Column (2) adds a female indicator, column (3) adds age squared, and columns (4) to (6) add education (years of schooling, maximum across periods) and its square. Column (5) restricts the sample to migrants, i.e. those who we observe switching between rural and urban at least once in our data, and column (6) adds individual fixed effects. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
 
 * Table footer	
-	local postfoot_str Covariates & & & Female & \& Age$^2$ & All & All & All \\ Time FE & & Y & Y & Y & Y & Y & Y \\ Individual FE & & & & & & & Y \\ Migrants only & & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+	local postfoot_str Time FE & Y & Y & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All & All & All \\ Individual FE & & & & & & Y \\ Migrants only & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 	
 /* Settings for multi-panel table
 Panels(integer): 			Number of panels
@@ -99,7 +99,7 @@ TEXTdepvar(string asis): 	Dependent variable as string
 */
 	
 * Run program to create multi-panel table
-	create_panel_tex_table, panels(3) columns(7) 						///
+	create_panel_tex_table, panels(3) columns(6) 						///
 					countries(IDN CHN TZA) 								///
 					filename(OLS_`depvar'_`choice'_`balance')			///
 					keep(choice) 										///
@@ -163,7 +163,7 @@ eststo clear
 
 
 * Table footer	
-	local postfoot_str Covariates & & & Female & \& Age$^2$ & All & All & All \\ Time FE & & Y & Y & Y & Y & Y & Y \\ Individual FE & & & & & & & Y \\ Migrants only & & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+	local postfoot_str Time FE & Y & Y & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All & All & All \\ Individual FE & & & & & & Y \\ Migrants only & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 	
 /* Settings for multi-panel table
 Panels(integer): 			Number of panels
@@ -177,7 +177,7 @@ COEFlabels(string asis):	How to label vars (if different from var label)
 */
 	
 * Run program to create multi-panel table
-	create_panel_tex_table, panels(3) columns(7) 						///
+	create_panel_tex_table, panels(3) columns(6) 						///
 					countries(IDN CHN TZA) 								///
 					filename(OLS_`depvar'_`choice'_`balance')			///
 					keep(choice) 										///
@@ -229,10 +229,10 @@ eststo clear
 	local table_notes "This table repeats the analyses of Table \ref{tab:OLS_cons_urb_unb}  for non-agricultural employment, which is an indicator equal to one for individuals who report working in the non-agricultural sector. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:OLS_cons_urb_unb} for additional information on the variables. The dependent variable is the log of total consumption per capita. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
 	
 * Table footer	
-	local postfoot_str Covariates & & & Female & \& Age$^2$ & All & All & All \\ Time FE & & Y & Y & Y & Y & Y & Y \\ Individual FE & & & & & & & Y \\ Migrants only & & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+	local postfoot_str Time FE & Y & Y & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All & All & All \\ Individual FE & & & & & & Y \\ Migrants only & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 
 * Run program to create multi-panel table
-	create_panel_tex_table, panels(1) columns(7) 						///
+	create_panel_tex_table, panels(1) columns(6) 						///
 					countries(IDN) 								        ///
 					filename(OLS_`depvar'_`choice'_`balance')			///
 					keep(choice) 										///
@@ -301,7 +301,7 @@ eststo clear
 	local table_notes "This table repeats the analyses of Table \ref{tab:OLS_cons_urb_unb} with log income per capita as the dependent variable. Please refer to Section \ref{sec:data} for further details on the data and to the notes of Table \ref{tab:OLS_cons_urb_unb} for additional information on the variables. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$."
 
 * Table footer	
-	local postfoot_str Covariates & & & Female & \& Age$^2$ & All & All & All \\ Time FE & & Y & Y & Y & Y & Y & Y \\ Individual FE & & & & & & & Y \\ Migrants only & & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
+	local postfoot_str Time FE & Y & Y & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All & All & All \\ Individual FE & & & & & & Y \\ Migrants only & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{`table_notes'} \end{tablenotes} \end{threeparttable} \end{table}
 	
 /* Settings for multi-panel table
 Panels(integer): 			Number of panels
@@ -316,7 +316,7 @@ TEXTdepvar(string asis): 	Dependent variable as string
 */
 	
 * Run program to create multi-panel table
-	create_panel_tex_table, panels(3) columns(7) 						///
+	create_panel_tex_table, panels(3) columns(6) 						///
 					countries(IDN CHN TZA) 								///
 					filename(OLS_`depvar'_`choice'_`balance')			///
 					keep(choice) 										///

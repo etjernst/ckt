@@ -125,8 +125,17 @@ This code:
 	graph export "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_Fnocovars.png", replace		
 
     if $copyOverleaf == 1 {
-		copyOverleaf "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_Fnocovars.pdf", subdir(figures)	
+		copyOverleaf "$output/figures/hetplotmu_`depvar'_`choice'_`balance'_Fnocovars.pdf", subdir(figures)
     }
+
+* **********************************************************************
+* Robustness coefplots: phi, Delta_never, Delta_avg across the main ca
+* spec plus each extra-regressor robustness spec. Reads existing sters
+* (no GMM re-fit). IDN has urban birth; TZA does not.
+* **********************************************************************
+  grc_robustness_coefplot IDN
+  grc_robustness_coefplot TZA
+
 /*******************************************************************************
 Section 2 of 11_make_figures.do
 Version: May 2026

@@ -89,10 +89,12 @@ local iterations $grc_max_iter
 * Estimate restricted GMM model, uses `switcherpars' & `initial' from above
 * ************
 * No covariates
+/* c0 (no covariates) no longer estimated (2026-07-01): dropped from the
+   tables and often non-convergent. Uncomment to restore.
 run_grc, estname(grc_`country'_cnu_c0)                             ///
     switchers($switchers) base(`base') initial(`initial') ///
     balance(`balance')                                             ///
-    iterate(`iterations')
+    iterate(`iterations') */
 
 * Add time FE
 run_grc, estname(grc_`country'_cnu_ct)                         ///

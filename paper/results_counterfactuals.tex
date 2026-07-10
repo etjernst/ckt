@@ -1,0 +1,155 @@
+% Results-section addendum: counterfactual experiments.
+% Drafted 2026-05-13 for inclusion at the end of Section~\ref{sec:results},
+% after the hukou subsubsection (sec:hukou) and after the interpretation
+% addendum (sec:interpretation, see results_interpretation_addendum.tex).
+% Standalone .tex; paste directly into sec_results.tex.
+%
+% Cross-references used:
+%   eq:decision-rule, eq:restricted-GRC, eq:gmm-moments, eq:phi-proposition1
+%     (defined in sec_model.tex; verified).
+%   sec:hukou, sec:grc-returns, sec:interpretation (sec:results.tex).
+% Citations used (verified against CKT.bib):
+%   bryanAggregateProductivityEffects2019, lagakosMigrationCostsObservational2020,
+%   lagakosUrbanRuralGapsDeveloping2020a, suriSelectionComparativeAdvantage2011.
+
+\subsection{Counterfactual experiments}\label{sec:counterfactuals}
+
+The restricted GRC delivers a worker-specific return $\Delta_i = \beta + \phi\theta_i$ and a full set of trajectory-conditional averages $\Delta_{\underline{d}}$.
+We use these objects to address two questions that translate the slope and intercept of our LCA line into magnitudes that the migration literature presses on.
+First, how much aggregate consumption is left on the table by the gap between observed sorting and the sorting that an optimizing planner with knowledge of $\Delta_i$ would implement?
+Second, how much of that gap in China is attributable to hukou-induced restrictions on rural-urban mobility, and what would removing those restrictions deliver?
+Both experiments stay on the consumption side of $\Delta_i$, which is what the LCA framework identifies cleanly.
+
+Two features distinguish this exercise.
+The exercise sits in a tradition of structural migration counterfactuals---\cite{bryanAggregateProductivityEffects2019} on the aggregate productivity gain from removing rural-urban frictions in Indonesia, \cite{lagakosMigrationCostsObservational2020} on the migration costs implied by observed wage gaps in panel data, and \cite{lagakosUrbanRuralGapsDeveloping2020a} on the urban-rural productivity gap more broadly.
+It also connects to the agricultural-misallocation strand exemplified by \cite{adamopoulosMisallocationSelectionProductivity2022} and the broader Hsieh--Klenow tradition.%
+\footnote{We use ``misallocation gap'' in the standard sense of the gap between observed and counterfactually-optimal allocation; our object is identified from panel switchers under the LCA restriction.}
+Our identification delivers trajectory-conditional returns identified from switchers and extrapolated to non-switchers through the LCA restriction.
+Inference propagates through the inversion confidence region rather than asymptotic standard errors, which the identification boundary at $\phi = -1$ would make unreliable.
+The structural-migration template here is closest in spirit to the dynamic-Roy migration literature (\citealt{kennanEffectExpectedIncome2011}; \cite{suriSelectionComparativeAdvantage2011}'s selection-and-comparative-advantage counterfactuals in Section 5.2 are the immediate precedent within the LCA tradition); our static GRC-disciplined cousin trades dynamic structure for transparent partial-equilibrium magnitudes.
+The counterfactuals also inherit the testable piece of our identification: in specifications where the $J$-test rejects, the magnitudes below are reported with the same caution we apply to the underlying $\Delta_{d_T}$ and $\Delta_{d_N}$ estimates, and we report results separately by hukou regime where the rejection is regime-driven.
+
+\subsubsection{Aggregate consumption gap from misallocated migration}\label{sec:misallocation}
+
+The aggregate misallocation gap brackets observed migration against two extremes.
+At one end sits a no-further-migration scenario in which workers stay in the location where we first observe them, regardless of $\Delta_i$.
+At the other end lies a world of optimal sort, in which each worker spends all periods in the location that maximizes their consumption ($D_{it} = 1$ iff $\Delta_i > 0$, $D_{it} = 0$ otherwise).
+Observed migration sits between the two.
+The contrast between the three scenarios is the readable summary statistic the counterfactual delivers.
+Because location histories are left-censored, the no-further-migration scenario does not undo migration completed before the panel begins; it isolates the value of within-panel location switching rather than the value of migration over a lifetime.
+
+Let $W_{\text{obs}}, W_{\text{zero}}, W_{\text{opt}}$ denote per-capita log consumption in the observed, no-further-migration, and optimal-sort scenarios.
+With trajectory population shares $\pi_{\underline{d}}$, urban time shares within trajectory $\bar{D}_{\underline{d}}$, first-observed-wave urban shares $\bar{D}^0_{\underline{d}}$, and trajectory-conditional returns $\Delta_{\underline{d}}$, the two differences are
+\begin{equation}\label{eq:misallocation-decomposition}
+    \underbrace{W_{\text{obs}} - W_{\text{zero}}}_{\text{value of observed migration}} = \sum_{\underline{d}} \pi_{\underline{d}} \, \Delta_{\underline{d}} \left(\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}}\right), \qquad
+    \underbrace{W_{\text{opt}} - W_{\text{obs}}}_{\text{misallocation gap}} = \sum_{\underline{d}} \pi_{\underline{d}} \left[\max(0, \Delta_{\underline{d}}) - \Delta_{\underline{d}} \, \bar{D}_{\underline{d}}\right].
+\end{equation}
+The first piece values the location switching that occurs within the panel: $\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}}$ is the urban time a trajectory accumulates beyond its first-observed-wave share.
+The second piece measures what is left on the table because workers with positive returns failed to move, or because workers with negative returns moved.
+Reporting both lets readers locate observed migration on the available frontier: a small ``value of observed migration'' alongside a large ``misallocation gap'' would sharpen our pro-poor finding into a consumption-side reading that the workers who would gain most from migration are precisely those who do not migrate.
+Whether this consumption-side reading translates to a policy claim depends on the non-pecuniary side of utility, which the consumption data alone cannot price.
+
+The GRC identifies each term in equation~\eqref{eq:misallocation-decomposition}.
+The trajectory shares $\pi_{\underline{d}}$ come from the descriptive panel.
+The urban time shares $\bar{D}_{\underline{d}}$ and $\bar{D}^0_{\underline{d}}$ are deterministic functions of the trajectory definitions for enumerated trajectories and sample means for the lumped unbalanced cell.
+The switcher returns $\Delta_{\underline{d}}$ for $\underline{d} \in \mathcal{D}_S$ enter as fitted values on the estimated LCA line, $\Delta_{\underline{d}} = \beta + \phi(\mu_{\underline{d}} - \mu_{\underline{d}_0})$; switcher trajectories too sparse to receive their own GMM cell are evaluated on the same line at their estimated $\mu_{\underline{d}}$.
+As a cross-check, recomputing the aggregate with unrestricted switcher-specific returns in place of the LCA-fitted values moves the gap by less than 0.05 percentage points in every country.
+Under time-invariant $\theta_i$ and the assumptions of Section~\ref{sec:model_identification}, the trajectory-conditional ATE coincides with the trajectory-conditional realized-return mean, so each $\Delta_{\underline{d}} (\bar{D}_{\underline{d}} - \bar{D}^0_{\underline{d}})$ term in equation~\eqref{eq:misallocation-decomposition} is the population mean realized urban return, net of the first-observed-wave baseline, for trajectory $\underline{d}$.
+The LCA inversion identifies the always-urban return $\Delta_{d_T}$, and the LCA extrapolation in equation~\eqref{eq:restricted-GRC} identifies the never-migrant return $\Delta_{d_N} = \beta + \phi(\mu_{d_N} - \mu_{\underline{d}_0})$.
+Individuals with unbalanced panels enter through a single lumped cell whose return $\Delta_{\text{unb}}$ is the unbalanced-mover urban premium---the base-trajectory return plus the unbalanced-mover shift---estimated as a single coefficient by an auxiliary regression on the estimation sample.
+Inference for the aggregate proceeds by test inversion: we recompute equation~\eqref{eq:misallocation-decomposition} at every point of a joint $95\%$ confidence region for $(\phi, \beta, \Delta_{\text{unb}})$ and report the convex hull of the resulting gap values.
+Because the switcher returns and the lumped-cell return are recomputed at each accepted point, the reported interval propagates the sampling uncertainty in all three coordinates jointly, with coverage of at least $95\%$.
+This avoids delta-method approximations that the identification boundary at $\phi = -1$ would not support.
+
+The LCA restriction identifies trajectory-conditional means $\Delta_{\underline{d}}$ but not the within-trajectory dispersion of $\Delta_i$.
+The trajectory-mean formula in equation~\eqref{eq:misallocation-decomposition} treats every never-migrant as if they share the return $\Delta_{d_N}$, which is conservative whenever $\Delta_{d_N} > 0$: by Jensen's inequality applied to $\max(0, \cdot)$, the within-trajectory expectation of the positive part weakly exceeds the positive part of the conditional mean.
+The reported gap is therefore a floor with respect to within-trajectory heterogeneity.
+
+Two design choices follow our reading of the existing literature.
+We report the misallocation gap in log points and as a percent change in geometric-mean consumption (computed as $\exp(W_{\text{opt}} - W_{\text{obs}}) - 1$), with a footnote that arithmetic-mean consumption gains differ by a Jensen-style correction whose sign depends on whether the reallocation compresses or expands the within-country consumption distribution.
+This convention follows \cite{bryanAggregateProductivityEffects2019}, who report counterfactual gains as percentage changes in productivity.
+We also report a decomposition of the gap into the contribution of never-migrants ($d_N$), enumerated balanced-panel switchers, individuals whose panel is unbalanced and who therefore enter the GMM through a single lumped-switcher cell, and always-urban workers ($d_T$).
+The four-way decomposition matters because the lumped-switcher cell can carry a substantial share of the sample in unbalanced panels: in our IDN sample roughly nine in ten individuals sit in that cell, and the cell contributes about $95\%$ of the estimated gap.
+The lumped cell's return $\Delta_{\text{unb}}$ is a single coefficient applied to every individual in the cell, so the decomposition attributes no within-cell heterogeneity; its sampling uncertainty enters the reported interval through the third coordinate of the confidence region.
+The decomposition by panel trajectory shows where the misallocation lives: under our pro-poor finding never-migrants contribute half the gap in TZA, while in IDN the lumped-switcher cell carries nearly all of both the gap and the value of observed migration.
+
+The estimated misallocation gap differs sharply across the three countries (Table~\ref{tab:counterfactual_misallocation}).
+Indonesia delivers the smallest gap, with a point estimate of $+9.3\%$ of geometric-mean consumption and a confidence interval of $[+7.9\%, +10.8\%]$.
+Tanzania delivers the largest, $+23.5\%$ with an interval of $[+18.6\%, +33.2\%]$.
+Tanzania is also where the conditional from Section~\ref{sec:misallocation} is sharpest: never-migrants contribute half the gap there, and the large misallocation gap coexists with almost no value from observed migration, which is the pattern that sharpens our pro-poor finding into a consumption-side statement that the workers who would gain most from migration are precisely those who do not migrate.
+China lands between them with a point estimate of $+11.7\%$ and an interval of $[+10.4\%, \infty)$, computed as the population-weighted aggregate of the rural-hukou-first ($74\%$ of CHN individuals with defined hukou status) and urban-hukou-first ($26\%$) subsamples; we do not report a pooled CHN gap because the pooled $J$-test rejects on the unbalanced sample.\footnote{The $74\%$/$26\%$ shares are the fractions of CHN individuals classified as rural-hukou-first versus urban-hukou-first among those with defined hukou status in the estimation sample (CFPS). The national interval sums the two subsample hulls, so its joint coverage is at least $90\%$, a floor that holds under arbitrary dependence between the subsamples; its unbounded upper endpoint is inherited from the urban-hukou-first subsample.}
+The value of observed migration is below $+1\%$ in every country: the no-further-migration baseline starts workers at their first observed wave, so the value term prices only within-panel switching, and most urban time in these panels was already accumulated at first observation.
+Each interval is the convex hull of the joint $(\phi, \beta, \Delta_{\text{unb}})$ confidence region propagated through equation~\eqref{eq:misallocation-decomposition}.
+
+The Chinese national figure masks an institutional asymmetry between the two hukou regimes (Table~\ref{tab:counterfactual_misallocation}).
+The rural-hukou-first subsample carries a misallocation gap of $+15.2\%$, with an interval of $[+13.6\%, +17.2\%]$, second only to Tanzania's among our samples.
+The urban-hukou-first subsample carries a point estimate of $+2.5\%$ and a lower bound of $+2.0\%$, roughly a sixth of the rural-first magnitudes, though its upper endpoint is unbounded.\footnote{The urban-hukou-first subsample's six small switcher cells cannot bound the LCA slope: the $95\%$ confidence region is unbounded in $\phi$, and along the accepted directions the LCA-fitted returns diverge, so the gap's upper endpoint is $+\infty$. The contrast between the regimes therefore reads off the points and lower bounds, not the interval widths.}
+In the rural-hukou regime, high-return workers do not sort and substantial consumption is left on the table; in the urban-hukou regime, workers are sorted close to optimum and the residual gap is small.
+The $J$-test holds within each regime (Tables~\ref{tab:GRC_CHN_hukou_rural_first_consumption_urban_unb} and \ref{tab:GRC_CHN_hukou_urban_first_consumption_urban_unb}), in contrast to its pooled rejection, so the regime split is the level at which the CHN contribution to the aggregate is identified, and Section~\ref{sec:hukou-counterfactual} returns to this asymmetry directly.
+
+% Path below must point to wherever counterfactual_misallocation.tex is placed in the Overleaf project.
+% The table is produced by 12_counterfactuals.do.
+\input{tables/counterfactual_misallocation.tex}
+
+A caveat applies to the always-urban return $\Delta_{d_T}$.
+The LCA formula for $\Delta_{d_T}$ scales with $(1+\phi)^{-1}$, so as the slope approaches the identification boundary at $\phi = -1$ from above, the implied always-urban return inflates without bound.
+This boundary corresponds to the case $b_U = 0$, in which urban earnings are flat in workers' rural-priced skill: observing always-urban workers' urban outcomes carries no information about their underlying comparative advantage.
+The confidence region crosses this boundary for Indonesia, Tanzania, and the China urban-hukou-first subsample; only the China rural-hukou-first region stays clear of it.
+In each case we report the misallocation gap with the $\Delta_{d_T}$ contribution dropped (set to zero) at every point in the confidence region.
+Since the per-trajectory contribution to the gap is non-negative, this delivers a defensible lower bound on the gap; the intervals quoted above are this lower-bound reading.
+Without the fallback, accepted points arbitrarily close to the boundary drive the upper bounds: they inflate to $+88.5\%$ for Indonesia and beyond $+90{,}000\%$ for Tanzania at our lattice resolution, reflecting the singularity rather than honest uncertainty, and the China urban-hukou-first upper bound is infinite either way.
+
+\subsubsection{Removing the hukou wedge in China}\label{sec:hukou-counterfactual}
+
+A literature in macro and trade has quantified the aggregate welfare cost of hukou using general-equilibrium structural models \citep{tombeTradeMigrationProductivity2019,fanInternalGeographyLabor2019}.
+\cite{gaiRuralPensionsLabor2025} extend this template using the staggered rollout of the New Rural Pension Scheme (NRPS) as an identifying shock to migration costs, embedded in a generalized-Roy general-equilibrium framework.
+Their framework builds on the \citet{fanInternalGeographyLabor2019} Hukou Index, an index of hukou-based migration barriers.
+Their hypothetical full hukou liberalization raises GDP by 2.04 log points.
+We report a partial-equilibrium consumption-side magnitude disciplined by GRC-identified objects, with a trajectory-level decomposition of where the misallocation lives.
+The hukou-split estimates in Section~\ref{sec:hukou} reveal a structural contrast that motivates a second counterfactual.
+The rural-hukou subsample carries a large unrealized return on a flat LCA slope.
+The urban-hukou subsample carries an essentially zero return on a steep slope.
+Both regimes pass the $J$-test within their own subsample, so the LCA restriction is not refuted in either regime.
+Read against the model's decision rule in equation~\eqref{eq:decision-rule}, the two estimates tell a coherent story: where the institutional barrier is absent, workers sort on comparative advantage and the residual never-migrants have approximately zero pecuniary returns to migration; where the barrier binds, sorting is suppressed and high-return rural-hukou workers remain rural.
+The counterfactual quantifies what removing the barrier would deliver to the rural-hukou population.
+
+We report two versions, parallel to the literature's bound-and-magnitude convention.
+First, a lower bound from the identified objects alone.
+Take the flat $\phi^{rh}$ at face value as genuine uniformity of returns within the rural-hukou regime, so that every rural-hukou never-migrant carries the same return $\Delta_{d_N}^{rh}$.
+The aggregate consumption gain from moving the rural-hukou never-migrants to their optimal location is then
+\begin{equation}\label{eq:hukou-bound}
+    \text{Consumption gain (lower bound)} = \pi^{rh} \cdot \pi_{d_N}^{rh} \cdot \Delta_{d_N}^{rh},
+\end{equation}
+where $\pi^{rh}$ is the rural-hukou share of the CHN sample and $\pi_{d_N}^{rh}$ is the balanced-panel never-migrant share within the rural-hukou subsample.
+The expression is a bound rather than a magnitude: if the flat $\phi^{rh}$ reflects suppressed sorting rather than uniformity of returns, the true gain from removing the barrier exceeds this floor because optimal sort would select the high-return tail of the rural-hukou never-migrant distribution rather than averaging across it.
+
+Applied to the rural-hukou regime, this floor is modest in economy-wide terms yet sizable per relocated worker (Table~\ref{tab:hukou_bound}).
+Each rural-hukou never-migrant carries a return $\Delta_{d_N}^{rh}$ of $+11.1\%$ in consumption, with a $95\%$ inversion confidence interval of $[+9.4\%, +13.9\%]$.
+Rural-hukou never-migrants make up $\pi^{rh}\cdot\pi_{d_N}^{rh} \approx 0.74 \times 0.27 \approx 0.20$ of the defined-hukou population.
+Averaging their gain over the whole population delivers an economy-wide consumption gain of $+2.1\%$, with a $95\%$ interval of $[+1.8\%, +2.6\%]$.\footnote{We treat the shares $\pi^{rh}$ and $\pi_{d_N}^{rh}$ as fixed population quantities, because their sampling variation is an order of magnitude smaller than the inversion uncertainty in $\Delta_{d_N}^{rh}$: a binomial standard error near $0.003$ on $\pi_{d_N}^{rh}$ against a confidence-interval half-width near $0.02$ on $\Delta_{d_N}^{rh}$. The reported interval therefore scales the $\Delta_{d_N}^{rh}$ inversion interval by the constant $\pi^{rh}\pi_{d_N}^{rh}$.}
+This economy-wide figure reads low precisely because it spreads a double-digit per-worker gain across a population in which four in five workers contribute nothing to the floor.
+We read it as a partial-equilibrium consumption floor conditional on the estimated rural-hukou base trajectory, not a general-equilibrium welfare magnitude of the kind the structural-migration literature targets.
+
+% Path below must point to wherever hukou_bound.tex is placed in the Overleaf project.
+% The table is produced by 12_counterfactuals.do.
+\input{tables/hukou_bound.tex}
+
+Second, a resorting version that delivers a magnitude rather than a bound.
+The model's decision rule in equation~\eqref{eq:decision-rule} already specifies how workers choose location given their type; we use it as written.
+We parameterize the hukou barrier as an additive cost that shifts the rural-hukou intercept $\beta^{rh}$ down to the urban-hukou intercept $\beta^{uh}$, so removing the barrier sets the wedge to zero and the rule operates without institutional distortion.
+The intercept gap $\beta^{rh} - \beta^{uh}$ absorbs four sources in principle.
+First, the pecuniary urban premium net of cost-of-living.
+Second, cost-of-living differences between the regions where the two regimes' workers tend to reside.
+Third, compensating differentials for non-pecuniary location amenities.
+Fourth, any residual selection not captured by $\phi\theta_i$.
+Reading the full gap as institutional is the maintained assumption that the other three sources are equalized across regimes; we report results under this maintained assumption as the headline and include in an appendix figure a sensitivity that sweeps the wedge over $c \in [0, 1]$, where $c$ is the fraction of the intercept gap treated as institutional.
+The resorting version then simulates which rural-hukou workers would select urban under the no-barrier rule and computes the aggregate consumption gain.
+It then decomposes that gain into the piece realized by the marginal migrant (who moves under no-hukou but did not move under hukou) and the piece left unrealized in the residual never-migrant pool.
+Inference propagates the inversion confidence intervals on $\phi^{rh}$ and $\phi^{uh}$ through the simulation.
+
+Two open implementation choices will be reported transparently.
+The rural-hukou and urban-hukou regimes are estimated with separate base trajectories $\underline{d}_0^{rh}$ and $\underline{d}_0^{uh}$, so the magnitude of the bound depends on the choice of base.
+We will report results both with the original regime-specific bases used in Tables~\ref{tab:GRC_CHN_hukou_rural_first_consumption_urban_unb} and \ref{tab:GRC_CHN_hukou_urban_first_consumption_urban_unb} and with a common base re-estimated for the counterfactual, and report the range.
+The resorting version also requires choices for the scale and shape of the distribution of $\nu_{it}^U - \nu_{it}^R$, which the model leaves open beyond the i.i.d.\ assumption.
+Because the scale $\sigma_\eta$ is not separately pinned down, we report the resorting magnitude as a function of $\sigma_\eta$ on a justified grid, in parallel under a type-I extreme value distribution (logit-style choice probabilities, the empirical migration default) and a normal distribution (probit-style, the Heckman selection convention).
+Reporting both shapes at each $\sigma_\eta$ on the grid gives the reader both the shape and the scale dependence of the magnitude.
