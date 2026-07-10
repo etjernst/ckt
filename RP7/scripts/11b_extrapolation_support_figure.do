@@ -130,8 +130,8 @@ program define plot_one_country
           xtitle("Rural mean log consumption", size(medsmall)) ///
           ytitle("`ytit'", size(medsmall)) ///
           xlabel(`xlo'(1)`xhi', labsize(small)) ///
-          ylabel(#4, labsize(small) nogrid) ///
-          yscale(range(0 `=1.16*`pk_all'')) ///
+          ylabel(0(.2)`=0.2*ceil(`pk_all'/0.2)', labsize(small) nogrid) ///
+          yscale(range(0 `=1.14*`pk_all'')) ///
           graphregion(color(white) margin(small)) plotregion(lcolor(none) margin(small)) ///
           name(support_`country', replace) ///
           saving(support_`country', replace)
