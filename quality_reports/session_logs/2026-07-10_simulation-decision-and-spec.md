@@ -1,30 +1,33 @@
 # 2026-07-10 --- Simulation cost-benefit, ECMA framing edits, extension-study spec
 
-## If you resume (handoff: write the implementation plan)
+## If you resume
 
-One-line state: the extension-simulation-study SPEC IS APPROVED with all five decisions resolved ([quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md)).
-
-Next session runs TWO tasks in this order (Emilia's sequencing, 2026-07-10 12:26):
-1. FIRST: promote the in-support figure into the paper's ROBUSTNESS section (her decision; do not relitigate the identification-adjacent placement I had argued for). Polish the figure per the TODO pre-reqs (thicker switcher min-max hull lines, choose lumped vs per-trajectory variant, match paper figure style; TZA needs a textual flag as the boundary case at 8% from the hull edge), regenerate via [explorations/2026-05-18_extrapolation_support_diagnostic.do](file:///C:/git/ckt/explorations/2026-05-18_extrapolation_support_diagnostic.do), write the accompanying description, and insert into `main-updated.tex`'s robustness section with per-edit approval. Numbers: $\hat\mu_{d_N}$ inside the switcher hull in all three countries (CHN 26%, IDN 24%, TZA 8% from the lower edge); memo at [docs/notes/2026-05-18_extrapolation_support_diagnostic.md](file:///C:/git/ckt/docs/notes/2026-05-18_extrapolation_support_diagnostic.md). Deliver this first so Emilia reviews it while task 2 proceeds.
-2. THEN: write the implementation plan for the extension simulation study to `quality_reports/plans/` and get it approved before any code.
+One-line state: the implementation plan and its spec are both written and reviewed, and the only blocking gate on this thread is Emilia's plan/spec feedback, which she deliberately deferred to a fresh-context session at wrap-up.
+Do not start plan stage P0 (worktree scaffold) until she approves the plan.
 
 Read first, in order:
-1. The spec (above). It is the contract; the MUSTs are non-negotiable and the Decisions section records Emilia's calls verbatim-adjacent.
-2. The cost-benefit memo for the why: [docs/notes/2026-07-10_simulation-cost-benefit.md](file:///C:/git/ckt/docs/notes/2026-07-10_simulation-cost-benefit.md).
-3. The old exploratory design (rich, never coded, user never formally approved it---mine it, don't inherit it): `explorations/SIMULATION_PLAN.md` on the `simulations` worktree (`C:/git/ckt/.claude/worktrees/simulations/`).
-4. The machinery the plan builds on: `grc_gmm.py` (validated Python port of the production GMM, ~16 min/fit at IDN's real N; matches Stata $\hat\phi$ to 0.003) and its validation harness in `explorations/python-grc/` on the simulations worktree; `lca_inversion.py` + `synth_overid.py` in `explorations/python-grc/` on the lca-inversion worktree (synth_overid is the closest existing ancestor of the coverage harness: it produced the T=3 coverage 0.90 / T=4 $\Delta_{avg}$ 0.84 warning numbers).
-5. `docs/TODO.md` entries "Empirically calibrated coverage test for the inversion CI" and "Imbens-Kolesár (2016)..." (the F-adjustment contingency M9 builds on the latter; a prior F-adjustment plan exists at `quality_reports/plans/2026-05-01-f-adjustment-inversion.md` on the lca worktree).
+1. The plan: [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md) (commits e665460 draft, b2bc645 post-review, dc8f008 conventions audit).
+2. The spec: [quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md); the plan's M/S/D references resolve only against this spec.
+3. The review record: [quality_reports/reviews/2026-07-10_simulation-plan-review.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_simulation-plan-review.md).
 
-Plan-writing constraints and facts the fresh session must know:
-- Two cells only: IDN and TZA (D1). CHN excluded; rationale in spec S1.
-- Two-regime violation family primary, curvature time-permitting (D2); the quadratic-restriction pocket answer is in S2.
-- Work happens in a NEW dedicated git worktree (D3), Python-only execution path (D4: server compute possible, Emilia investigating---design headless, no Stata at runtime), replication-package-ready structure from day one.
-- WORKTREE SETUP DANGER: if the new worktree needs `RP7/data`, junction it to the hub `C:/git/ckt/RP7/data` with `cmd /c mklink /J` (never Git Bash `ln -s`), and never `git worktree remove --force` or `rm -rf` a worktree without checking junctions first (see [project_data_loss_2026-06-23.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/project_data_loss_2026-06-23.md)).
-- Calibration inputs live in the MAIN tree now: 310 `.ster` files in `C:/git/ckt/RP7/output/` (merged + copied 2026-07-10) and the exporter CSVs in `RP7/output/counterfactual_inputs/`; processed data at the hub `C:/git/ckt/RP7/data/processed/`.
-- Pilot gate (M5): R=20 per cell, measure wall time, PRESENT projected cost before any full run (command-safety: estimation runs over 60s need approval anyway). Target R=1,000; floor R=500.
-- Seeding: numpy `SeedSequence.spawn` per M6, master seed 20260710-style.
-- Run /review-plan (fresh-context critique) on the drafted plan before presenting it; the 2026-07-08 counterfactual plan review caught a coverage-vacuity Red this way.
-- Mechanical implementation legs delegate to `model: "sonnet"` subagents (S5, rules/model-routing.md); DGP design, calibration choices, and results interpretation stay in the main thread.
+If Emilia wants to send the plan out for external review, the minimum packet is the spec plus the plan, since the plan's M/S/D references resolve only against the spec.
+Optional additions are the cost-benefit memo ([docs/notes/2026-07-10_simulation-cost-benefit.md](file:///C:/git/ckt/docs/notes/2026-07-10_simulation-cost-benefit.md)) and the review record; a concatenated, self-contained packet was offered and she has not yet asked for it.
+
+Four plan decisions she probed at length but has not formally confirmed:
+1. Decision A, the fixed-design DGP.
+2. Decision B, inversion-CI-first coverage with a time-boxed SE/J fix; she accepted this reluctantly ("not too excited but fine it's important").
+3. Decision C, the arm-3 dial anchored to the CHN hukou-gap magnitude; China is not itself a simulation cell, only the dial's anchor, a distinction that needed clarifying.
+4. Decision D, the pilot-first compute gate, which she endorsed.
+
+Two side items from earlier today are fully done and need no further action.
+The in-support figure and its robustness subsection are both in the paper, and the figure's canonical generator is now [RP7/scripts/11b_extrapolation_support_figure.do](file:///C:/git/ckt/RP7/scripts/11b_extrapolation_support_figure.do); the old explorations copy is deleted.
+Any future figure tweak: edit that file, run it with `stata-mp -e do 11b_extrapolation_support_figure.do` from `RP7/scripts` (never `-b`, which pops a completion modal), then copy `RP7/output/figures/extrapolation_support_combined.pdf` to the Overleaf `figures/` folder.
+
+Other open items, none blocking:
+- The hukou stub footnote in `main-updated.tex` around line 761 is Emilia's decision to make; untouched.
+- Two stale `main-updated.tex.tmp.48680.*` files sit in the Overleaf root; flagged, not deleted.
+- Whether `11b_extrapolation_support_figure.do` gets wired into `0_master.do` is undecided; it changes the coauthor-facing pipeline, so it needs Emilia's call.
+- Emilia's server-compute investigation (plan decision D4) is still open.
 
 ## Mode
 
@@ -63,7 +66,7 @@ Decision: three-arm extension study in the submitted draft (appendix + main-text
 
 # Afternoon continuation (13:26-15:45): figure shipped, subsection inserted, plan drafted and reviewed
 
-## If you resume (supersedes the morning resume block)
+## State as of 15:45 (superseded by the top resume block)
 
 Both morning handoff tasks are DONE.
 The single open thread: the implementation plan for the extension simulation study is DRAFTED, fresh-context REVIEWED, amended, and AWAITING EMILIA'S APPROVAL at [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md).
@@ -102,3 +105,21 @@ Conventions audit (Emilia asked mid-session): plan checked against pedrohcgs sim
 ## Mode
 
 Maintenance (figure + approved insertion) and Implementation-planning (spec approved this morning; plan written, approval pending).
+
+---
+
+# Late afternoon (15:45-16:10): script promoted to the pipeline, final figure rounds, wrap-up
+
+Emilia gave two more feedback rounds on the extrapolation-support figure after the 15:45 wrap-up point.
+Round 6 fixed the China rug label, which needed a small rightward nudge; the fix is a per-country offset argument in the driver calls (IDN left, CHN right 0.05, TZA right 0.02), committed at 1cc69cf.
+Round 7 vetoed a forced common y-axis across the three panels; panels now use free per-panel y-scales, which required making every direct-label y-coordinate peak-relative, anchored to each panel's own density maximum, so the labels stay inside the plot region.
+
+At Emilia's request, the figure's generator moved from `explorations/2026-05-18_extrapolation_support_diagnostic.do` (deleted via `git rm`) to [RP7/scripts/11b_extrapolation_support_figure.do](file:///C:/git/ckt/RP7/scripts/11b_extrapolation_support_figure.do), named to sit beside `11_make_figures.do` per the existing 1b/5b/17b naming pattern.
+The moved script uses namespaced globals (`xsup_proc`, `xsup_fig`, `xsup_log`, `xsup_cnever`, `xsup_cswitch`) because its old `$logs` global would otherwise clash with `0_path_config.do`'s `$logs` and repoint pipeline logging if the script ran inside a master run.
+It runs standalone, setting `$dir` itself when empty, or after `0_master.do`, and I verified it from the new location; commit 60aa810.
+It is deliberately not wired into `0_master.do`; that change touches the coauthor-facing pipeline and is Emilia's decision to make.
+
+I answered her question about the external-review packet: the minimum is the spec plus the plan, the cost-benefit memo and the review record are optional additions, and a concatenated self-contained packet was offered but not yet requested.
+An earlier `r(691)` PDF-export failure turned out to be a file lock rather than a script bug, because Emilia had the combined PDF open; closing it resolved the error, and the capture-noisily wrapper surfaced the lock cleanly with no popup, worth remembering for future exports.
+
+Emilia deferred her feedback on the plan and spec to a fresh-context session and asked for a wrap-up, which produced this log.
