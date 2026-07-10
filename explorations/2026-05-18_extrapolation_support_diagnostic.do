@@ -31,7 +31,7 @@ global c_never  "cranberry"
 
 program drop _all
 program define plot_one_country
-    args country textcountry labeled leftmost
+    args country textcountry leftmost
     di as text _newline(2) "==== `country' ===="
 
     use "$proc/`country'_bal.dta", clear
@@ -93,15 +93,12 @@ program define plot_one_country
     local x_swright = r(min)
     if `x_swright' >= . local x_swright = `xmax'
 
-    * Direct labels on the leftmost panel only
-    local labels ""
-    if `labeled' {
-        local labels ///
-            text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$c_never") place(w) size(small)) ///
-            text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$c_switch") place(e) size(small)) ///
-            text(0.88 `mu_dN' "never-migrant mean", color("$c_never") place(e) size(vsmall)) ///
-            text(0.05 `sw_min' "switcher trajectory means", color("$c_switch") place(w) size(vsmall))
-    }
+    * Direct labels on every panel
+    local labels ///
+        text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$c_never") place(w) size(small)) ///
+        text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$c_switch") place(e) size(small)) ///
+        text(0.88 `mu_dN' "Never-migrant mean", color("$c_never") place(e) size(small)) ///
+        text(0.07 `sw_min' "Switcher trajectory" "means", color(gs6) place(w) size(small))
     local ytit ""
     if `leftmost' local ytit "Density"
 
@@ -112,14 +109,12 @@ program define plot_one_country
     twoway ///
         (area fx_dN grid, color("$c_never%25") lwidth(none)) ///
         (line fx_sw grid, lcolor("$c_switch") lwidth(medthick)) ///
-        (scatter zero mu_d_traj if traj_tag & is_switcher, msymbol(pipe) msize(large) mcolor("$c_switch")) ///
-        , xline(`mu_dN', lcolor("$c_never") lwidth(medium) lpattern(dot)) ///
-          xline(`sw_min', lcolor("$c_switch") lwidth(medthick)) ///
-          xline(`sw_max', lcolor("$c_switch") lwidth(medthick)) ///
+        (scatter zero mu_d_traj if traj_tag & is_switcher, msymbol(pipe) msize(large) mcolor(gs6)) ///
+        , xline(`mu_dN', lcolor(cranberry%70) lwidth(medthick)) ///
           `labels' legend(off) ///
           title("`textcountry'", size(medium) color(black)) ///
-          xtitle("Rural mean log consumption", size(small)) ///
-          ytitle("`ytit'", size(small)) ///
+          xtitle("Rural mean log consumption", size(medsmall)) ///
+          ytitle("`ytit'", size(medsmall)) ///
           xlabel(`xlo'(1)`xhi', labsize(small)) ///
           ylabel(0(.2).8, labsize(small) nogrid) yscale(range(0 0.92)) ///
           graphregion(color(white) margin(small)) plotregion(lcolor(none) margin(small)) ///
@@ -132,10 +127,10 @@ program define plot_one_country
 end
 
 capture noisily {
-    * Paper order: Indonesia, China, Tanzania; labels on the leftmost panel
-    plot_one_country IDN "Indonesia" 1 1
-    plot_one_country CHN "China"     0 0
-    plot_one_country TZA "Tanzania"  0 0
+    * Paper order: Indonesia, China, Tanzania; y-title on the leftmost panel
+    plot_one_country IDN "Indonesia" 1
+    plot_one_country CHN "China"     0
+    plot_one_country TZA "Tanzania"  0
 
     * Combined 1x3 paper figure
     graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
