@@ -3,17 +3,19 @@
 2026-07-10.
 Question from Emilia: would the paper benefit from simulations that "prove" the estimator is "correct," what does NOT having them do to referee composition and pr(reject), and is this a case where we deliberately leave the ask on the table for referees?
 Inputs: the simulations worktree inventory, the existing coverage evidence on the lca-inversion side, the simulation-conventions standards (MCSE discipline, R sizing), and the journal profiles.
-Settled the same morning: the target is Econometrica, the estimator is not Suri's (2011), and econometric referees are preferred over applied-micro referees.
-Those three facts drive the recommendation below.
+Settled the same morning: the target is Econometrica, econometric referees are preferred over applied-micro referees, and the estimator's provenance is the comment paper on Suri (2011) by Tjernström, Ghanem, Michuda, Barriga-Cabanillas, Lybbert, and Michler ([docs/TGMBLM-2026.tex](file:///C:/git/ckt/docs/TGMBLM-2026.tex); cited in the draft as `tjernstromCommentSuri2011`, currently unpublished per the `@misc` bib entry).
+That comment paper introduces the GrRC recast, the weak-identification diagnosis, and the test-inversion CI for $\phi$, and validates all three in a $T=2$ simulation calibrated to the Suri Kenya setting.
+Those facts drive the recommendation below.
 
 ## What referees would actually be asked to believe
 
 The exposure surface has three distinct pieces, and simulations speak to them very differently.
 
-First, the GRC/GMM estimator itself.
-It builds on Suri's (2011) CRC framework but is not the same estimator: the trajectory-based GRC cast, the unbalanced-cell pooling, the LCA restriction with extrapolation to non-switchers, and the GMM implementation are this paper's own.
-No published Monte Carlo covers this estimator at this design; the GRC companion paper's simulation is $T=2$, Suri-calibrated, and a related but distinct estimator, so a referee cannot be pointed to existing validation.
-At Econometrica that makes finite-sample evidence on bias, RMSE, and coverage at CKT-calibrated designs part of establishing the contribution, not decoration.
+First, the GRC estimator and the inversion CI in their core form.
+These are introduced and simulation-validated in the comment paper: its $T=2$ Suri-calibrated study shows that the CRC and restricted-GrRC estimators are biased and mis-covered under weak identification while the weak-identification robust CI covers close to 95% regardless of identification strength.
+So the base machinery has citable validation, and CKT should not re-prove the $T=2$ case; duplicating the comment paper's simulation weakens both papers.
+Two caveats limit how much weight that citation carries at ECMA: the comment paper is unpublished and by the same team, so the validation the paper leans on is a self-citation; and its validated design is the smallest possible one---$T=2$, two switcher trajectories, a single Wald restriction, no covariates, a balanced panel of ~1,200 households.
+CKT runs the procedure at $T$ up to 5, up to $K=27$ switcher trajectories (26 restrictions), 75,000+ individuals, over 90% non-switchers, unbalanced-cell pooling, and covariates---and the known failure mode of the chi-squared inversion (finite-sample bias growing with the number of restrictions $J_R$) is exactly the dimension along which CKT leaves the validated regime.
 
 Second, the LCA inversion confidence intervals, including the joint 3D $(\phi, \beta, \Delta_{\text{unb}})$ region behind the counterfactual table.
 This is nonstandard inference, and the draft currently justifies it in one sentence (the identification boundary at $\phi = -1$ makes asymptotic standard errors unreliable) with zero citations to the weak-identification literature and zero finite-sample evidence.
@@ -35,7 +37,7 @@ At $T=3$ ($K=6$) the inversion CI covers at 0.90 (MC SE 0.030, R=100)---fine.
 At $T=4$ ($K=14$) coverage of $\Delta_{\text{avg}}$ is 0.84 against nominal 0.95, four MC SEs below, with the mechanism documented (chi-squared finite-sample bias growing with $J_R$).
 IDN's empirical spec has $K=27$.
 So we privately hold evidence that the exact object a referee would probe may under-cover at exactly the country where the gap should be largest.
-The GRC companion paper's own $T=2$ simulation (1,000 reps, Suri-calibrated shares) shows that the inversion CI covers close to nominal, which is citable support but at the wrong $(T, K)$.
+The comment paper's own $T=2$ simulation (1,000 reps, Suri-calibrated shares) shows that the inversion CI covers close to nominal, which is citable support but at the wrong $(T, K)$.
 
 ## Will not having simulations change which referees we get?
 
@@ -49,7 +51,7 @@ Since econometric referees are the referees we want, that genre shift is a benef
 
 The target is Econometrica, and there the answer is yes, materially.
 ECMA's screen is explicit ("are the asymptotic properties of the estimator established?"), and its bar for applied papers is that they bring a new estimator or identification argument---which is precisely how this paper must position itself for the econometric referees we want.
-A partly novel estimator plus a nonstandard inference procedure, with neither formal finite-sample evidence nor a citable validation, is a genuine reject trigger at ECMA, not an R&R ask.
+The estimator arrives with citable validation only at $T=2$, from an unpublished companion by the same authors; the version CKT actually runs (high $K$, unbalanced pooling, extrapolated $\Delta_{d_N}$ as the headline estimand, joint inversion regions) has no finite-sample evidence anywhere, and at ECMA that gap is a genuine reject trigger, not an R&R ask.
 For calibration: at AER/QJE/ReStud the missing simulation would be a near-certain R&R demand but rarely the reject reason; at ECMA the referee pool is drawn to evaluate the methodological contribution itself, and an unvalidated estimator IS the contribution failing its own screen.
 
 ## The "leave something for the referees" logic, examined
@@ -62,10 +64,14 @@ If under-coverage is real, we want to adopt the Imbens-Kolesár F-adjustment and
 
 ## Recommendation
 
-1. Build the simulation study for the submitted draft, scoped in three arms and in this priority order.
-Arm one, estimator validation (the old plan's Exercise 1): bias, empirical SE, RMSE, and coverage for $\phi$, $\Delta_{d_N}$, $\Delta_{\text{avg}}$, and $\Delta_{d_T}$ under an LCA-true DGP at per-country CKT calibration (empirical trajectory shares, empirical unbalanced share, production controls, the sparse-switcher rule).
+1. Build the simulation study for the submitted draft, scoped as a validation of the EXTENSION from the comment paper's $T=2$ case to CKT's design, never a rerun of what the comment paper already shows.
+This framing matches the paper's own methodological pitch (line 97 of the draft claims the GRC cast with extrapolation to non-migrants as the innovation, inspired by Suri and the comment paper), so the simulation validates exactly what the paper claims as new.
+Three arms, in priority order.
+Arm one, the CKT-specific estimands (the old plan's Exercise 1, rescoped): bias, empirical SE, RMSE, and coverage for the objects with no published evidence anywhere, namely the extrapolated $\Delta_{d_N}$, $\Delta_{\text{avg}}$, $\Delta_{d_T}$, and the lumped unbalanced-cell return, under an LCA-true DGP at per-country CKT calibration (empirical trajectory shares, empirical unbalanced share, production controls, the sparse-switcher rule).
 Arm two, inference validation: coverage of the LCA inversion CI at the empirical $(N, T, K)$, which comes from the same replications at the cost of one extra metric, with the Imbens-Kolesár F-adjustment as the pre-planned fix if the $T=4$ warning sign materializes at IDN's $K=27$.
-Arm three, misspecification (Exercise 4): an LCA-violation arm that quantifies how the estimates and the J-test behave when the linear restriction fails, because an ECMA referee will probe the identifying functional form as a matter of course and this arm converts that probe into a table we already printed.
+This is the arm the comment paper cannot cover: its Wald has one restriction, CKT's has up to 26, and the chi-squared finite-sample bias grows with exactly that count.
+Arm three, misspecification (Exercise 4): an LCA-violation arm that quantifies how the estimates, the J-test, and the inversion CI behave when the linear restriction fails, because an ECMA referee will probe the identifying functional form as a matter of course and this arm converts that probe into a table we already printed.
+The comment paper's own footnote notes that the over-identified inversion CI can come up empty when the restrictions are violated (the Anderson-Rubin analogy), and CKT's pooled-China CI IS empty empirically, which the paper resolves by splitting on hukou; this arm shows that the empty-CI-then-split logic is a principled diagnostic rather than a patch, which turns the paper's known China wrinkle into evidence that the procedure detects misspecification.
 Size it honestly: R=100 gives a coverage MCSE of $\pm 2.2$pp near 0.95, which cannot distinguish 0.93 from 0.95; R=1,000 ($\pm 0.7$pp) is the ECMA-grade target.
 Realistic cost: the Python GMM port is validated and the old plan is a serviceable spec, so this is roughly two to three weeks of calendar work, with the compute overnight-scale per country once parallelized.
 
@@ -78,8 +84,11 @@ This formal pass is a separate work item from the simulations and probably the h
 The Hansen J size/power study and the OLS/FE-vs-GRC selection-gap quantification are the referee asks we can welcome: predictable, bounded, safe, and deliverable inside an R&R clock.
 The already-run Verdier equivalence simulation also stays in reserve for the "why not Verdier" question at no new cost.
 
+4. Track the comment paper's publication status as part of the CKT submission strategy.
+The inheritance argument for the base machinery rests on `tjernstromCommentSuri2011`, which the bib currently records as unpublished; if it lands at a journal before CKT is submitted, the self-citation caveat weakens substantially and CKT's simulation section can stay tightly scoped to the extension.
+
 ## Bottom line
 
-For Econometrica the question is no longer whether to add simulations but how to scope them: the estimator is the paper's methodological contribution, no published Monte Carlo covers it, and ECMA referees screen on exactly that gap.
-Run the three-arm study (estimator validation, inversion CI coverage, LCA violation) before submission and put it in the draft; hold the J-test power and selection-gap exercises back as the deliberate referee asks.
+For Econometrica the question is no longer whether to add simulations but how to scope them: the comment paper validates the base machinery only at $T=2$ with a single restriction, and CKT leaves that regime along exactly the dimension of the inversion's known finite-sample failure mode ($J_R$ up to 26) while adding estimands (the extrapolated $\Delta_{d_N}$, the lumped unbalanced cell, the joint counterfactual regions) that no simulation anywhere has touched.
+Run the three-arm extension study (CKT-specific estimands, inversion CI coverage at high $K$, LCA violation) before submission and put it in the draft; hold the J-test power and selection-gap exercises back as the deliberate referee asks.
 The known $T=4$ under-coverage warning makes the pre-submission timing non-negotiable: if the F-adjustment is needed, we adopt it before a referee ever sees the intervals.
