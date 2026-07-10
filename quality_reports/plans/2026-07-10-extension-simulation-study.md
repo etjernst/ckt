@@ -50,6 +50,7 @@ Baseline arm: $\Delta_{\underline{d}} = \beta + \phi(\mu_{\underline{d}} - \mu_{
 $\Delta_{\text{unb}}$: unbalanced individuals draw $\theta_i$ from one conditional distribution with mean calibrated to the lumped cell's empirical mean (`traj_for_agg = -1`), which makes the lumped truth $\beta + \phi(\mu_{\text{unb}} - \mu_{\underline{d}_0})$ invariant to the estimator's within-person weighting; this within-cell homogeneity is a disclosed calibration choice, and a heterogeneous-means sensitivity stays in the pocket.
 Two-regime arm: pooled truths are regime-share-weighted, e.g. $\Delta_{d_N} = \sum_r \lambda_r \left(\beta_r + \phi_r\, E[\theta_i \mid d_N, r]\right)$, and analogously for $\Delta_{\text{avg}}$ and $\Delta_{d_T}$; split-estimation truths are the within-regime lines.
 P3's unit checks verify that large-sample simulated moments converge to these definitions before any coverage number is trusted.
+Estimand alignment (the simulation-conventions contract): every reported estimator names the estimand it targets, and each is scored only against its own truth---the GMM $\hat\Delta_{d_N}$ and the inversion region both target the $\Delta_{d_N}$ defined above; the auxiliary-OLS lumped coefficient targets $\Delta_{\text{unb}}$ as defined above (weighting-invariant by the homogeneity choice); a mismatch discovered at P3 is a bug, never a finding.
 
 ### D. Worktree and data safety
 
@@ -102,6 +103,11 @@ Unit checks: truth functions against hand-computed cases; simulated moments agai
 
 P4. Per-replication pipeline and orchestrator (1-2 days).
 Wire GMM fit, `delta_never`/`delta_always`, and `compute_all_inversion_cis` into `run_one.py`; typed failure capture; parquet schema per M7.
+
+P4b. Harness code review (0.5 day).
+critic-python pass over `dgp.py`, `run_one.py`, `orchestrate.py`, and `metrics.py` before the pilot, hunting specifically for the simulation-killers named in the conventions: coverage checked against an estimate instead of the truth, estimand-truth mismatch, seeding inside the loop, silent failure drops, and missing MCSEs.
+Convention hygiene enforced at this gate: no per-replication console printing (a single progress counter at the orchestrator level only), and NaN/Inf guards on estimates with a documented count-as-failure rule.
+Sources: [simulation-conventions.md](https://github.com/pedrohcgs/claude-code-my-workflow/blob/be53c12f235996dff41fb7f21580506fd2dd8d50/.claude/rules/simulation-conventions.md) and [simulation-study SKILL.md](https://github.com/pedrohcgs/claude-code-my-workflow/blob/be53c12f235996dff41fb7f21580506fd2dd8d50/.claude/skills/simulation-study/SKILL.md) (R-oriented; the contract, metric definitions, and pitfall list transfer directly).
 
 P5. Pilot and compute gate (0.5 day plus compute).
 R=20 per cell (M5), wall time measured per stage (GMM fit vs inversion vs overhead).
