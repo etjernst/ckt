@@ -62,6 +62,14 @@ Overleaf edits are the user's to make (never sync from here).
 **Cost:** ~1 day once the prototype is locked. Best done after the rcond fix and the ster-filename rename PR land.
 **Dependency:** ster-filename collision fix (separate TODO via the coauthor email) should land first to avoid mixing inversion CIs across choice / experience specs.
 
+### Quadratic comparative-advantage restriction as an empirical robustness check
+**Added:** 2026-07-10.
+**Context:** With three or more switcher trajectories, $\Delta_i = \beta + \phi_1\theta_i + \phi_2\theta_i^2$ is estimable from the same $(\mu_{\underline{d}}, \Delta_{\underline{d}})$ variation that identifies the linear LCA restriction (impossible at $T=2$, so this is a dividend of the CKT extension).
+If the truth is linear, $\hat\phi_2$ converges to zero and the quadratic fit stays consistent, so the check is: estimate the quadratic GRC, test $\phi_2 = 0$, and report how much $\Delta_{d_N}$ moves.
+Never-migrant extrapolation carries over unchanged ($\theta_{d_N}$ comes from the observed $\mu_{d_N}$); the always-urban backout acquires a quadratic root-selection wrinkle, and $\phi_2$ may be weakly identified where the switcher $\mu$-spread is narrow, so scope this as point estimates plus a specification test, not full weak-ID inversion inference on $(\phi_1, \phi_2)$.
+**Action:** implement as a robustness row alongside the in-support figure; pairs with the curvature arm of the extension simulation study (spec S2).
+**Estimated cost:** modest---one extra restriction parameter in the GMM per cell plus a table row; no new data work.
+
 ### Paper figure: density of trajectory rural log consumption with never-migrants highlighted
 **Added:** 2026-05-18.
 **Branch:** lca-inversion.

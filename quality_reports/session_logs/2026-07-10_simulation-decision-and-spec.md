@@ -2,7 +2,11 @@
 
 ## If you resume (handoff: write the implementation plan)
 
-One-line state: the extension-simulation-study SPEC IS APPROVED with all five decisions resolved ([quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md)); the next action is writing the implementation plan to `quality_reports/plans/` and getting it approved before any code.
+One-line state: the extension-simulation-study SPEC IS APPROVED with all five decisions resolved ([quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md)).
+
+Next session runs TWO tasks in this order (Emilia's sequencing, 2026-07-10 12:26):
+1. FIRST: promote the in-support figure into the paper's ROBUSTNESS section (her decision; do not relitigate the identification-adjacent placement I had argued for). Polish the figure per the TODO pre-reqs (thicker switcher min-max hull lines, choose lumped vs per-trajectory variant, match paper figure style; TZA needs a textual flag as the boundary case at 8% from the hull edge), regenerate via [explorations/2026-05-18_extrapolation_support_diagnostic.do](file:///C:/git/ckt/explorations/2026-05-18_extrapolation_support_diagnostic.do), write the accompanying description, and insert into `main-updated.tex`'s robustness section with per-edit approval. Numbers: $\hat\mu_{d_N}$ inside the switcher hull in all three countries (CHN 26%, IDN 24%, TZA 8% from the lower edge); memo at [docs/notes/2026-05-18_extrapolation_support_diagnostic.md](file:///C:/git/ckt/docs/notes/2026-05-18_extrapolation_support_diagnostic.md). Deliver this first so Emilia reviews it while task 2 proceeds.
+2. THEN: write the implementation plan for the extension simulation study to `quality_reports/plans/` and get it approved before any code.
 
 Read first, in order:
 1. The spec (above). It is the contract; the MUSTs are non-negotiable and the Decisions section records Emilia's calls verbatim-adjacent.
@@ -51,5 +55,6 @@ Decision: three-arm extension study in the submitted draft (appendix + main-text
 - Write the implementation plan (the handoff above).
 - Emilia: server compute access investigation (D4).
 - Emilia: hukou stub footnote decision (carried over).
-- Emilia: where the in-support figure goes (robustness vs identification-adjacent); the figure polish TODO remains.
+- RESOLVED 12:26: the in-support figure goes in ROBUSTNESS, first thing next session (see the resume block).
+- New TODO added: quadratic comparative-advantage restriction as an empirical robustness row (estimate quadratic GRC, test $\phi_2=0$, report $\Delta_{d_N}$ movement); Emilia confirmed the logic (if truly linear, $\hat\phi_2 \to 0$). Pairs with the in-support figure and the sim study's curvature arm.
 - The two remaining pocket exercises stay deliberately unbuilt.
