@@ -2,10 +2,25 @@
 
 ## If you resume
 
-SUPERSEDED by the late-evening section at the bottom of this file: Emilia approved the plan (after external-review dispositions were folded in) and P0 is DONE on the new `extension-sims` worktree.
-The open thread is stage P1 (calibrate.py, design snapshots, per-cell configs), best started in a fresh session.
+One-line state: the extension-simulation plan is APPROVED (Emilia, 2026-07-10 evening, after the external-review dispositions were folded in), stage P0 is DONE and gate-passed on the new `extension-sims` worktree, and the open thread is stage P1.
 
-One-line state as of the afternoon (historical): the implementation plan and its spec are both written and reviewed, and the only blocking gate on this thread is Emilia's plan/spec feedback, which she deliberately deferred to a fresh-context session at wrap-up.
+Read first, in order:
+1. The plan (approved, governs stages): [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md).
+2. The spec (amended same evening: M1-M5, M8, new D6, new MAY M-c): [quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md).
+3. The external-review dispositions with Emilia's rulings: [quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md).
+
+Next concrete action (P1, in the worktree): build `sims/src/calibrate.py` plus `sims/src/config.py`; read the hub `C:/git/ckt/RP7/data/processed/{IDN,TZA}_unb.dta` and `C:/git/ckt/RP7/output/counterfactual_inputs/{IDN,TZA}_e1_*.csv` READ-ONLY; snapshot design matrices to `sims/data/*.parquet` (gitignored); extract per-cell parameters INCLUDING the within-person residual autocovariance (the dependent-error baseline is now spec M2, not a disclosure); emit per-cell configs and a calibration report.
+The P1 gate (a zero-noise simulated panel reproduces the calibration targets exactly) needs a minimal `dgp.py` stub, so start that alongside.
+Mechanical extraction legs go to `model: "sonnet"` subagents per rules/model-routing.md; calibration design choices stay in the main thread.
+
+Cached state:
+- Worktree `C:/git/ckt/.claude/worktrees/extension-sims`, branch `worktree-extension-sims`, tip `0a1a307`; deliberately NO junctions into it (plan decision D), so the P1 hub reads are the only contact with shared state.
+- P0 gate PASSED: headless import of `sims/src/grc_gmm.py` (md5 `d66dbac7d085b76ac06061f6a062b6b8`) and `sims/src/lca_inversion.py` (md5 `dbc5ba2f1115d0b948626f8043861378`), byte copies of `explorations/python-grc/`; joblib 1.4.2 and pyarrow 14.0.2 confirmed in the Anaconda env.
+- Main-tree commits this evening: `7b7aab6` (dispositions memo), `7e43b56` (plan and spec amendments), `2f3bd4b` (MAY M-c), `84c5274` (plan approved), `a7091ad` (session log).
+- Emilia's rulings on the three open decisions: fold in all adopted dispositions (done); the J-parity failure branch is decided AT the P2 gate, not pre-committed; server transfer is NOT a governance blocker (replication data fully public), with a moments-only config as the fallback if a host requires it.
+- The next EMILIA DECISION POINT is P5a (full-run budget and venue); the P1-P4 gates are self-checking.
+
+Carried-over items not on this thread: the hukou stub footnote in Overleaf `main-updated.tex` ~line 761 (her call), two stale `main-updated.tex.tmp.48680.*` files in the Overleaf root (flagged, not deleted), whether `11b_extrapolation_support_figure.do` gets wired into `0_master.do` (her call), and her server-compute access investigation (now feeding P5a).
 
 Read first, in order:
 1. The plan: [quality_reports/plans/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/plans/2026-07-10-extension-simulation-study.md) (commits e665460 draft, b2bc645 post-review, dc8f008 conventions audit).
@@ -142,6 +157,18 @@ Plan APPROVED at 22:22 (`84c5274`).
 P0 executed: worktree `extension-sims` (branch `worktree-extension-sims`, NO junctions into it per plan decision D), `sims/{src,configs,data,output,results}` layout, requirements pinned (joblib and pyarrow added), byte copies of `grc_gmm.py` and `lca_inversion.py` with md5 hashes recorded in the README, `sims/data/` gitignored (microdata snapshots).
 P0 gate PASSED: headless import of both modules, `RestrictedGRC` and `compute_all_inversion_cis` exposed, all six pinned packages present in the Anaconda env.
 Committed as `0a1a307` on the worktree branch.
+
+Approaches rejected this evening, with the reason:
+- A moments-only synthetic design as the PRIMARY DGP (Emilia asked whether approximating the design "seems more general").
+Rejected because the referee-relevant claim is conditional coverage at the paper's own design, the closed-form truths and the empirical $J_R = 26$ depend on the fixed design, and regenerating designs from moments would require a trajectory-formation model, reintroducing the calibration layer decision A rejected.
+Kept in two weakened forms: a moments-only config as the server-transfer fallback, and the individual-resampling design-robustness sensitivity as MAY M-c (resample individuals with trajectory labels, patterns, and covariate rows intact, so $J_R$ varies realistically without a design model).
+- Pre-committing the J-parity failure branch (descope vs extend).
+Rejected by Emilia: decide at the P2 gate with the measured gap in hand.
+- The external review's Y5 (implement the F adjustment before the full run).
+Adopted at half strength only: the mathematics is resolved on paper at P3, implementation stays contingent on the M9 coverage trigger, because full early implementation buys nothing if coverage is fine.
+- The external review's G3 (make model routing portable for Codex).
+Declined; the routing language targets this Claude Code setup.
+- One pushback recorded against the review's R6: the $\Delta_{\text{unb}}$ weighting-invariance claim does hold under the homogeneity calibration (auxiliary-OLS weights are functions of $(X, D)$ only while $\theta_i$ has a common conditional mean), so the resolution is to write the derivation into the estimand registry and unit-test it at P3 rather than treat the claim as wrong.
 
 Next: stage P1 (calibrate.py: read the hub `C:/git/ckt/RP7/data/processed/{IDN,TZA}_unb.dta` and `RP7/output/counterfactual_inputs/` READ-ONLY, snapshot design matrices to parquet, extract per-cell parameters including the within-person residual autocovariance for the dependent-error baseline, emit configs and the calibration report).
 P1's gate needs a zero-noise simulated panel, so a minimal dgp stub comes with it.
