@@ -92,3 +92,10 @@ The R=1,000 full-run cost is unchanged; test-at-truth coverage is cheaper than f
 1. Adopt the disposition set above and fold it into the plan (and the M1/M3/M8 spec amendments), or trim specific items.
 2. The R2 failure branch: if J parity cannot be reached inside the time box, descope the production-J claims by spec amendment or extend the reconciliation; my recommendation is to decide only at the gate, with the stale-source finding suggesting parity is likelier than the recorded numbers imply.
 3. The Y4 governance item: whether server execution of the consumption-microdata snapshot is permissible under the data-use terms, which only Emilia can check.
+
+## Rulings (Emilia, 2026-07-10 evening)
+
+1. All adopted dispositions folded into the plan and spec (same-day commits; spec amendment recorded as D6).
+2. The R2 failure branch is decided at the P2 gate with the measured gap in hand, not pre-committed.
+3. Server execution is not a governance blocker: the replication data are fully public, so the design snapshot may travel; calibrating locally and shipping only a moments-based config (parameters, not microdata) stays available as a fallback if a specific host requires it.
+The fixed-design snapshot remains the primary DGP input because decision A's rationale is statistical (closed-form truths, exact match to the empirical trajectory and covariate design, $J_R$ reproduced by construction), not data logistics; a moments-only synthetic design would approximate the design the study exists to stress.

@@ -1,7 +1,7 @@
 # Spec: extension simulation study for the ECMA draft
 
 2026-07-10.
-Status: APPROVED; Emilia resolved D1-D5 the same day (resolutions recorded at the bottom).
+Status: APPROVED; Emilia resolved D1-D5 the same day (resolutions recorded at the bottom); amended the same evening per the external-review dispositions ([2026-07-10_external-simulation-review-dispositions.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md)), with D6 recording her rulings.
 Next step: implementation plan (fresh session; see the handoff in the 2026-07-10 simulation session log).
 Context: [the cost-benefit memo](file:///C:/git/ckt/docs/notes/2026-07-10_simulation-cost-benefit.md).
 The comment paper (`tjernstromCommentSuri2011`, forthcoming Econometrica) validates the GrRC machinery at $T=2$ with a single Wald restriction.
@@ -17,15 +17,19 @@ Produce a referee-grade simulation exhibit for the submitted draft answering thr
 
 ## MUST
 
-- M1. One parameterized DGP function per country cell, returning data plus the true value of every target parameter computed from the DGP parameters, never from an estimate.
+- M1. One parameterized DGP entry point accepting a per-cell configuration, returning data plus the true value of every target parameter computed from the DGP parameters, never from an estimate; the complete DGP (outcome equations, every distribution, every covariance and conditional-independence restriction) is written out mathematically before coding.
 - M2. LCA-true baseline DGP calibrated per cell to the empirical design: trajectory shares and counts, unbalanced share, $T$, $N$, $(\hat\phi, \hat\beta)$ from the production sters, and residual variance components; covariates enter by holding the empirical covariate matrix fixed (snapshot from the production data) and simulating only the unobservables, per the 2026-04-22 SIMULATION_PLAN design.
+Transitory shocks are serially dependent within person, calibrated to the empirical residual autocovariance; iid shocks are a favorable sensitivity only.
 - M3. Per replication, run the production estimation path, not a simplified stand-in: the validated Python GMM port (`grc_gmm.py`) with the same sparse-switcher rule, base-selection logic, and settings as the Stata production pipeline, plus the inversion CI machinery (`lca_inversion.py`) for arm two.
+Production-path fidelity includes the Hansen J's reference distribution: instrument and rank handling, GMM iteration scheme, J statistic, degrees of freedom, and p-value must pass a parity gate against production Stata before any synthetic run; if parity fails inside its time box, the production-J claims are descoped by explicit spec amendment or the reconciliation extended, decided by Emilia at the gate (D6), never defaulted.
 - M4. Metrics per parameter and cell, each with its Monte Carlo standard error: bias, empirical SE, RMSE, and coverage defined as the share of replications whose CI contains the DGP truth.
+Coverage of inverted sets is scored by evaluating the test at the truth, not by grid membership; empty sets are valid noncoverage outcomes, not failures; unconditional coverage (failures counted as misses) and conditional coverage (among valid fits) are both reported.
 Failed or non-converged replications are counted and reported, never silently dropped.
-- M5. Replication budget: pilot at R=20 per cell to measure wall time, then a compute gate (present the projected cost before launching the full run); full run targets R=1,000 per cell-arm (coverage MCSE $\pm 0.7$pp near 0.95). R below 500 does not ship (cannot distinguish 0.93 from 0.95).
+- M5. Replication budget: timing pilot at R=20 per cell, an $R \approx 100$ validation tranche covering every distinct execution path (code and configuration hashes frozen when it passes), then a compute gate (present the projected cost before launching the full run); full run targets R=1,000 per cell-arm, where the coverage MCSE near 0.95 is 0.69pp (one MCSE; the corresponding 95 percent Monte Carlo half-width is about 1.35pp), with analogous precision targets stated for J rejection rates and failure frequencies. R below 500 does not ship (cannot distinguish 0.93 from 0.95).
 - M6. Seeding: one master seed (YYYYMMDD), independent streams per replication via `numpy` `SeedSequence.spawn`; seed and R recorded in every saved output.
 - M7. Storage: per-replication raw results (parquet or csv: cell, arm, rep, parameter, estimate, se, ci_lo, ci_hi, converged) saved alongside the summary table; the paper table is generated from the summary by script, never hand-edited.
-- M8. Arm three (misspecification): at least one LCA-violation DGP family with a violation-size dial, reporting J-test rejection rates (size under the arm-one LCA-true DGP, power under violation), inversion-region empty-set frequency, and bias of the extrapolated $\Delta_{d_N}$ under violation.
+- M8. Arm three (misspecification): at least one LCA-violation DGP family with a violation-size dial, reporting J-test rejection rates (size under the arm-one LCA-true DGP, power under violation, both nominal and size-adjusted), inversion-region empty-set frequency, and bias of the extrapolated $\Delta_{d_N}$ under violation.
+The violation family must nest the arm-one baseline exactly at dial zero, and the population LCA residual vector must be verified analytically to be zero at dial zero and monotonically increasing in the dial; a two-regime mixture with regime membership independent of trajectory and $\theta$ is exactly LCA-true when pooled and violates nothing, so regime shares and conditional means must vary by trajectory.
 - M9. Pre-registered contingency: if arm two shows coverage more than 2 MCSEs below nominal for any headline parameter at R=1,000, implement the Imbens-Kolesár Bell-McCaffrey-Satterthwaite F adjustment (already spec'd in docs/TODO.md) and report the adjusted intervals in the paper; the chi-squared row is then disclosed alongside, not replaced silently.
 - M10. No edits to the production Stata pipeline or any data-processing script; the study is additive and lives in its own directory.
 
@@ -63,6 +67,7 @@ Parallelism is a design requirement (replication-level, embarrassingly parallel)
 - D4. Emilia is investigating server compute access, which reinforces Python-only execution: the per-replication path must run headless with no Stata dependency (the validated `grc_gmm.py` port plus `lca_inversion.py` satisfy this).
 The M5 compute gate stands: pilot first, project the wall-clock, then decide local vs server.
 - D5. Appendix section with a one-paragraph pointer from the main text.
+- D6 (evening). The external-review dispositions are folded into this spec and the plan; the M3 parity failure branch is decided at the P2 gate, not pre-committed; and server execution is not a data-governance blocker because the replication data are fully public, with a moments-only config (calibrated parameters travel, microdata do not) as the fallback if a host requires it.
 
 ## Verification
 
