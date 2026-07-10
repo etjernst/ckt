@@ -1,7 +1,7 @@
 # Plan: extension simulation study for the ECMA draft
 
 2026-07-10.
-Status: REVISED per the external-review dispositions ([2026-07-10_external-simulation-review-dispositions.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md)), adopted items folded in on Emilia's 2026-07-10 instruction; awaiting her final go-ahead to start P0.
+Status: APPROVED by Emilia 2026-07-10 evening, after the external-review dispositions ([2026-07-10_external-simulation-review-dispositions.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-10_external-simulation-review-dispositions.md)) were folded in; P0 started the same evening.
 Spec (approved, governs scope): [quality_reports/specs/2026-07-10-extension-simulation-study.md](file:///C:/git/ckt/quality_reports/specs/2026-07-10-extension-simulation-study.md).
 Context memo: [docs/notes/2026-07-10_simulation-cost-benefit.md](file:///C:/git/ckt/docs/notes/2026-07-10_simulation-cost-benefit.md).
 Prior exploratory design (mined, not inherited): `explorations/SIMULATION_PLAN.md` on the simulations worktree.
