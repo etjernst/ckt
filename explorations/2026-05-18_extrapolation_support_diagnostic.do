@@ -25,13 +25,13 @@ cap mkdir "$logs"
 
 log using "$logs/extrapolation_support_diagnostic.smcl", replace
 
-* House palette (matches the robustness coefplots in 0_programs.do)
+* Palette: blue for switchers (coefplot anchor), red for never-migrants
 global c_switch "16 62 106"
-global c_never  "216 128 60"
+global c_never  "cranberry"
 
 program drop _all
 program define plot_one_country
-    args country textcountry
+    args country textcountry labeled leftmost
     di as text _newline(2) "==== `country' ===="
 
     use "$proc/`country'_bal.dta", clear
@@ -70,19 +70,59 @@ program define plot_one_country
     egen byte traj_tag = tag(trajectory)
     gen zero = 0
 
+    * Densities evaluated on a common grid spanning the pooled support,
+    * so the area fill tails off smoothly instead of stopping at the
+    * subsample's own data range.
+    quietly sum ind_rural_mean
+    local xmin = r(min)
+    local xmax = r(max)
+    gen grid = `xmin' + (_n - 1) * (`xmax' - `xmin') / 199 in 1/200
+    kdensity ind_rural_mean if is_dN, gen(fx_dN) at(grid) nograph
+    kdensity ind_rural_mean if is_switcher, gen(fx_sw) at(grid) nograph
+
+    * Anchors for direct labels
+    quietly sum fx_dN
+    local pk_dN = r(max)
+    quietly sum grid if fx_dN > 0.5 * `pk_dN'
+    local x_dNleft = r(min)
+    quietly sum fx_sw
+    local pk_sw = r(max)
+    quietly sum grid if float(fx_sw) == float(`pk_sw')
+    local x_swmode = r(mean)
+    quietly sum grid if fx_sw < 0.3 * `pk_sw' & grid > `x_swmode'
+    local x_swright = r(min)
+    if `x_swright' >= . local x_swright = `xmax'
+
+    * Direct labels on the leftmost panel only
+    local labels ""
+    if `labeled' {
+        local labels ///
+            text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$c_never") place(w) size(small)) ///
+            text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$c_switch") place(e) size(small)) ///
+            text(0.88 `mu_dN' "never-migrant mean", color("$c_never") place(e) size(vsmall)) ///
+            text(0.05 `sw_min' "switcher trajectory means", color("$c_switch") place(w) size(vsmall))
+    }
+    local ytit ""
+    if `leftmost' local ytit "Density"
+
+    * Tight integer x ticks to avoid whitespace beyond the data
+    local xlo = ceil(`xmin')
+    local xhi = floor(`xmax')
+
     twoway ///
-        (kdensity ind_rural_mean if is_dN, lwidth(thick) lcolor("$c_never") recast(area) color("$c_never%25")) ///
-        (kdensity ind_rural_mean if is_switcher, lwidth(medthick) lcolor("$c_switch")) ///
+        (area fx_dN grid, color("$c_never%25") lwidth(none)) ///
+        (line fx_sw grid, lcolor("$c_switch") lwidth(medthick)) ///
         (scatter zero mu_d_traj if traj_tag & is_switcher, msymbol(pipe) msize(large) mcolor("$c_switch")) ///
-        , xline(`mu_dN', lcolor("$c_never") lwidth(thick) lpattern(dash)) ///
+        , xline(`mu_dN', lcolor("$c_never") lwidth(medium) lpattern(dot)) ///
           xline(`sw_min', lcolor("$c_switch") lwidth(medthick)) ///
           xline(`sw_max', lcolor("$c_switch") lwidth(medthick)) ///
-          legend(off) ///
+          `labels' legend(off) ///
           title("`textcountry'", size(medium) color(black)) ///
-          xtitle("rural-period mean log consumption", size(small)) ///
-          ytitle("density", size(small)) ///
-          xlabel(, labsize(small)) ylabel(, labsize(small)) ///
-          graphregion(color(white)) plotregion(lcolor(none)) ///
+          xtitle("Rural mean log consumption", size(small)) ///
+          ytitle("`ytit'", size(small)) ///
+          xlabel(`xlo'(1)`xhi', labsize(small)) ///
+          ylabel(0(.2).8, labsize(small) nogrid) yscale(range(0 0.92)) ///
+          graphregion(color(white) margin(small)) plotregion(lcolor(none) margin(small)) ///
           name(support_`country', replace) ///
           saving(support_`country', replace)
 
@@ -91,20 +131,25 @@ program define plot_one_country
     di as text "  saved: $figures/extrapolation_support_`country'.{pdf,png}"
 end
 
-plot_one_country CHN "China"
-plot_one_country IDN "Indonesia"
-plot_one_country TZA "Tanzania"
+capture noisily {
+    * Paper order: Indonesia, China, Tanzania; labels on the leftmost panel
+    plot_one_country IDN "Indonesia" 1 1
+    plot_one_country CHN "China"     0 0
+    plot_one_country TZA "Tanzania"  0 0
 
-* Combined 1x3 paper figure (matches the robustness coefplot layout)
-graph combine support_CHN.gph support_IDN.gph support_TZA.gph, ///
-    row(1) xsize(19) ysize(7) graphregion(color(white))
-graph export "$figures/extrapolation_support_combined.pdf", replace
-graph export "$figures/extrapolation_support_combined.png", replace width(3600)
-di as text "  saved: $figures/extrapolation_support_combined.{pdf,png}"
+    * Combined 1x3 paper figure
+    graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
+        row(1) xsize(20) ysize(6) imargin(2 2 2 2) graphregion(color(white) margin(small))
+    graph export "$figures/extrapolation_support_combined.pdf", replace
+    graph export "$figures/extrapolation_support_combined.png", replace width(3600)
+    di as text "  saved: $figures/extrapolation_support_combined.{pdf,png}"
 
-* Sweep intermediate .gph files
-foreach c in CHN IDN TZA {
-    capture erase support_`c'.gph
+    * Sweep intermediate .gph files
+    foreach c in CHN IDN TZA {
+        capture erase support_`c'.gph
+    }
 }
+local rc = _rc
+if `rc' di as error "RUN FAILED with rc = `rc'"
 
 log close
