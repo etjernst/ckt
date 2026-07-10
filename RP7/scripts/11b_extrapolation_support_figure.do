@@ -1,11 +1,13 @@
 * ============================================================
-* In-support diagnostic for the LCA never-migrant extrapolation
+* In-support figure for the LCA never-migrant extrapolation
+* (paper figure: fig:extrapolation_support, robustness section)
 * For each country, plot the density of individual rural-period
 * mean log consumption for never-migrants and (lumped) switchers,
-* overlay a dashed line at mu_dN, solid lines at the min/max of
-* switcher trajectory means, and a rug of per-trajectory means
-* showing the interior of the switcher hull is populated.
-* Exports per-country panels plus a combined 1x3 paper figure.
+* a vertical line at mu_dN, and a rug of per-trajectory switcher
+* means showing where mu_dN sits inside the switcher range.
+* Runs standalone (sets $dir if empty) or after 0_master.do.
+* Outputs: extrapolation_support_{IDN,CHN,TZA,combined}.{pdf,png}
+* in $dir/output/figures.
 * ============================================================
 
 version 17
@@ -15,26 +17,26 @@ set varabbrev off
 capture log close
 
 if "$dir" == "" global dir "C:/git/ckt/RP7"
-global proc    "$dir/data/processed"
-global figures "$dir/output/figures"
-global logs    "$dir/output/logs"
+global xsup_proc "$dir/data/processed"
+global xsup_fig  "$dir/output/figures"
+global xsup_log  "$dir/output/logs"
 
 cap mkdir "$dir/output"
-cap mkdir "$figures"
-cap mkdir "$logs"
+cap mkdir "$xsup_fig"
+cap mkdir "$xsup_log"
 
-log using "$logs/extrapolation_support_diagnostic.smcl", replace
+log using "$xsup_log/extrapolation_support_figure.smcl", replace
 
 * Palette: blue for switchers (coefplot anchor), red for never-migrants
-global c_switch "16 62 106"
-global c_never  "cranberry"
+global xsup_cswitch "16 62 106"
+global xsup_cnever  "cranberry"
 
 program drop _all
 program define plot_one_country
     args country textcountry leftmost ruglab_side ruglab_off
     di as text _newline(2) "==== `country' ===="
 
-    use "$proc/`country'_bal.dta", clear
+    use "$xsup_proc/`country'_bal.dta", clear
     quietly drop if missing(consumption) | missing(trajectory) | missing(choice)
 
     quietly sum trajectory
@@ -42,7 +44,7 @@ program define plot_one_country
     di as text "  trajectory levels: 1 to `max_traj'"
 
     * consumption in the processed .dta files is in levels (local currency).
-    * The paper's $\mu_{\underline{d}}$ is mean log consumption, so transform.
+    * The paper's mu_d is mean log consumption, so transform.
     gen log_consumption = ln(consumption) if consumption > 0 & !missing(consumption)
     gen log_cons_rural  = log_consumption if choice == 0
     bysort pid: egen ind_rural_mean = mean(log_cons_rural)
@@ -80,7 +82,8 @@ program define plot_one_country
     kdensity ind_rural_mean if is_dN, gen(fx_dN) at(grid) nograph
     kdensity ind_rural_mean if is_switcher, gen(fx_sw) at(grid) nograph
 
-    * Anchors for direct labels
+    * Anchors for direct labels (peak-relative so each panel's free
+    * y-scale keeps the labels inside the plot region)
     quietly sum fx_dN
     local pk_dN = r(max)
     quietly sum grid if fx_dN > 0.5 * `pk_dN'
@@ -92,10 +95,10 @@ program define plot_one_country
     quietly sum grid if fx_sw < 0.3 * `pk_sw' & grid > `x_swmode'
     local x_swright = r(min)
     if `x_swright' >= . local x_swright = `xmax'
+    local pk_all = max(`pk_dN', `pk_sw')
 
-    * Direct labels on every panel; the rug label sits left of the
-    * smallest switcher mean or right of the largest, whichever side
-    * the country's densities leave clear
+    * Rug label sits left of the smallest switcher mean or right of the
+    * largest, whichever side the country's densities leave clear
     if "`ruglab_off'" == "" local ruglab_off 0.02
     if "`ruglab_side'" == "right" {
         local x_ruglab = `sw_max' + `ruglab_off' * (`xmax' - `xmin')
@@ -106,10 +109,10 @@ program define plot_one_country
         local rugplace w
     }
     local labels ///
-        text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$c_never") place(w) size(small)) ///
-        text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$c_switch") place(e) size(small)) ///
-        text(0.88 `mu_dN' "Never-migrant mean", color("$c_never") place(e) size(small)) ///
-        text(0.07 `x_ruglab' "Switcher trajectory" "means", color(gs6) place(`rugplace') size(small))
+        text(`=0.5*`pk_dN'' `x_dNleft' "Never-migrants", color("$xsup_cnever") place(w) size(small)) ///
+        text(`=0.3*`pk_sw'' `x_swright' "Switchers", color("$xsup_cswitch") place(e) size(small)) ///
+        text(`=1.10*`pk_all'' `mu_dN' "Never-migrant mean", color("$xsup_cnever") place(e) size(small)) ///
+        text(`=0.09*`pk_all'' `x_ruglab' "Switcher trajectory" "means", color(gs6) place(`rugplace') size(small))
     local ytit ""
     if `leftmost' local ytit "Density"
 
@@ -118,8 +121,8 @@ program define plot_one_country
     local xhi = floor(`xmax')
 
     twoway ///
-        (area fx_dN grid, color("$c_never%25") lwidth(none)) ///
-        (line fx_sw grid, lcolor("$c_switch") lwidth(medthick)) ///
+        (area fx_dN grid, color("$xsup_cnever%25") lwidth(none)) ///
+        (line fx_sw grid, lcolor("$xsup_cswitch") lwidth(medthick)) ///
         (scatter zero mu_d_traj if traj_tag & is_switcher, msymbol(pipe) msize(large) mcolor(gs6)) ///
         , xline(`mu_dN', lcolor(cranberry%70) lwidth(medthick)) ///
           `labels' legend(off) ///
@@ -127,14 +130,15 @@ program define plot_one_country
           xtitle("Rural mean log consumption", size(medsmall)) ///
           ytitle("`ytit'", size(medsmall)) ///
           xlabel(`xlo'(1)`xhi', labsize(small)) ///
-          ylabel(0(.2).8, labsize(small) nogrid) yscale(range(0 0.92)) ///
+          ylabel(#4, labsize(small) nogrid) ///
+          yscale(range(0 `=1.16*`pk_all'')) ///
           graphregion(color(white) margin(small)) plotregion(lcolor(none) margin(small)) ///
           name(support_`country', replace) ///
           saving(support_`country', replace)
 
-    graph export "$figures/extrapolation_support_`country'.pdf", replace
-    graph export "$figures/extrapolation_support_`country'.png", replace width(2400)
-    di as text "  saved: $figures/extrapolation_support_`country'.{pdf,png}"
+    graph export "$xsup_fig/extrapolation_support_`country'.pdf", replace
+    graph export "$xsup_fig/extrapolation_support_`country'.png", replace width(2400)
+    di as text "  saved: $xsup_fig/extrapolation_support_`country'.{pdf,png}"
 end
 
 capture noisily {
@@ -146,9 +150,9 @@ capture noisily {
     * Combined 1x3 paper figure
     graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
         row(1) xsize(20) ysize(6) imargin(2 2 2 2) graphregion(color(white) margin(small))
-    graph export "$figures/extrapolation_support_combined.pdf", replace
-    graph export "$figures/extrapolation_support_combined.png", replace width(3600)
-    di as text "  saved: $figures/extrapolation_support_combined.{pdf,png}"
+    graph export "$xsup_fig/extrapolation_support_combined.pdf", replace
+    graph export "$xsup_fig/extrapolation_support_combined.png", replace width(3600)
+    di as text "  saved: $xsup_fig/extrapolation_support_combined.{pdf,png}"
 
     * Sweep intermediate .gph files
     foreach c in CHN IDN TZA {
@@ -156,6 +160,5 @@ capture noisily {
     }
 }
 local rc = _rc
-if `rc' di as error "RUN FAILED with rc = `rc'"
-
 log close
+if `rc' di as error "RUN FAILED with rc = `rc'"
