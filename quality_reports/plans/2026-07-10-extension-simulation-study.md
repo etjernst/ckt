@@ -49,6 +49,10 @@ The dial is the slope gap $|\phi_1 - \phi_2|$, scaled so the largest value repro
 J rejection rates are reported both nominal and size-adjusted.
 I recommend three dial points (zero, half-gap, full empirical gap) at R=1,000 each, with the zero point doubling as the J-test size check under LCA-truth (it reuses the arm-one replications, so only two dial points cost new compute).
 Within each cell, dial points share common random numbers at the replication level (same rep seed across dials), which sharpens the power curve at no cost while replications stay independent of each other.
+AMENDED 2026-07-12 (Emilia): the reuse of arm-one replications as the dial-zero point is dropped; arm one runs the Gaussian baseline as its own tranche and arm three runs all three dial points itself.
+The reuse was priced at sixteen minutes per iterated-GMM IDN replication; the aux-direct estimator (D7) cut that to about one minute, so the extra dial-zero tranche costs roughly 50-70 core-hours, absorbed by the P5a compute plan (server access pending).
+Decoupling keeps the headline arm-one table on Gaussian person effects, keeps the dial curve on one distributional family (the J-size point at dial zero is measured on the mixture draw, as spec section 4.3 requires), and turns the Gaussian-vs-mixture contrast at dial zero into a reported shape-robustness check.
+CRN across dial points is unchanged (the seed rule never depended on the reuse).
 Curvature family ($\Delta_i = \beta + \phi_1\theta_i + \phi_2\theta_i^2$) stays time-permitting per D2, same dial logic.
 Regime membership is recorded in the simulated data so split estimation can be run exactly as the paper splits on hukou, demonstrating detect-then-split recovers truth (S2); the appendix prose discloses that the simulation splits on the true recorded regime label, the best case relative to splitting on observed hukou.
 Cost note: each arm-three replication runs one pooled fit plus two split fits, roughly doubling per-replication GMM time relative to arm one; the P5 memo prices this explicitly.
