@@ -39,6 +39,8 @@ Set topology and finite-set length are reported alongside coverage.
 A related P2 task: J-test parity with production Stata is part of the P2 gate, covering instrument construction, collinearity and rank handling, the GMM iteration scheme, the J statistic, its degrees of freedom, and the p-value, with predefined tolerances for every headline point estimate and source hashes recorded in the parity report.
 The recorded discrepancy ($J = 97.74$ at 29 df versus $86.52$ at 27 df) predates the port's current `_drop_collinear` step, which mirrors the suspected cause (Stata's `_rmcoll` handling), so P2 re-measures the gap rather than citing it.
 If parity fails inside the time box, the choice between descoping the production-J claims by explicit spec amendment and extending the reconciliation is Emilia's, made at the gate with the measured gap in hand, never defaulted (ruled 2026-07-10: no pre-commitment).
+RESOLVED 2026-07-11 (spec D7): Emilia ruled descope; the simulation estimator is the `stata_twostep` + `aux-direct` variant, the amended spec M3 carries the replacement fidelity requirements (exact-J certification at production estimates, matching df via the rank-sweep rule, published real-data parity table, one-sentence solver-dependence disclosure), and the reconciliation record is `sims/output/p2_parity_notes.md` on the extension-sims worktree.
+A side benefit: the aux-direct fit runs in about a minute per IDN replication versus sixteen for iterated GMM, so the P5a compute projections shrink accordingly.
 
 ### C. Arm-three dial and budget
 

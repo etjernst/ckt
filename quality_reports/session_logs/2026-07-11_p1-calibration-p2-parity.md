@@ -2,7 +2,7 @@
 
 ## If you resume
 
-One-line state: stages P0-P1 of the extension simulation study are DONE and gate-passed; stage P2's point-estimate parity gate is FAILED-with-full-diagnosis, a well-posed estimator variant (`aux-direct`) is built and lands within 0.005-0.05 of production on headline parameters, and the open thread is EMILIA'S DECISION between descoping exact parity by spec amendment and extending the reconciliation (plan decision B / D6 branch).
+One-line state: stages P0-P1 are DONE and gate-passed, and the P2 parity branch is RESOLVED (Emilia, 2026-07-11 11:01, "option 1 for sure"): exact point parity is descoped by spec amendment D7, the simulation estimator is `RestrictedGRC(stata_twostep=True, initials="aux-direct", sparse_moment_threshold=0)`, and the open thread is finishing P2 (SE(phi) re-measure for the aux-direct variant via a cuu_ca e(V) dump, plus the inversion-CI parity leg) and then P3 (DGP and truth module).
 
 Read first, in order:
 1. [sims/output/p2_parity_notes.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/output/p2_parity_notes.md) on the worktree --- the complete parity record: what is certified, what is solved, the irreducible finding, and the two branches.
@@ -81,7 +81,7 @@ The paper's inversion-CI-first inference already covers this conceptually, but a
 
 ## Open items
 
-- EMILIA: the P2 branch decision (descope vs extend), presented in chat 2026-07-11 morning.
+- RESOLVED 11:01: the P2 branch decision went to descope (spec amendment D7); see the resume block.
 - SE(phi) time box: re-measure the aux-direct variant's SEs against production (e(V) dump exists for c0 only; cuu_ca would need a small ster dump like the W one).
 - The inversion-CI leg of P2 (arm-two machinery parity) has not run yet; it is independent of the GMM parity question since it runs off the auxiliary OLS.
 - Carried over: hukou stub footnote (Emilia), `11b_extrapolation_support_figure.do` wiring into 0_master.do (Emilia), server-compute investigation feeding P5a (Emilia).
