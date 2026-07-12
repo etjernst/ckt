@@ -273,6 +273,30 @@ Use bias-corrected percentile intervals.
 The IDN unbalanced $K = 27$ specs are the highest priority because that's where the chi-squared bias is most likely to bite.
 **Estimated cost:** $B = 500$ means 500 GMM fits per country-spec; parallelizable across cores; ~few hours per country.
 
+### Exclude individuals missing on the strict spec from the estimation sample (PRE-SUBMISSION, production fix)
+**Added:** 2026-07-13.
+**Status:** Decided, deferred to the final full-pipeline re-run before submission (not today, per user 2026-07-13).
+**Context:** Surfaced while validating the extension simulation's design snapshot.
+IDN has 29 individuals (0.1% of 29,692) with `hhsize_cube` missing in exactly one wave (consumption itself is present), so log per-capita consumption is undefined for that person-wave.
+Production drops only that row via the row-level `regression_sample = e(sample)` restriction from the strictest column ([0_programs.do:1287](file:///C:/git/ckt/RP7/scripts/0_programs.do)), while the `unbalanced` flag is fixed earlier ([0_programs.do:321](file:///C:/git/ckt/RP7/scripts/0_programs.do)) before that restriction, so these 29 stay flagged balanced and enter their trajectory cells with 4 waves instead of 5.
+Verified against the exporter CSVs: every trajectory's `n_pids` includes them, so this is the sample the current `.ster` and `{IDN}_e1_*.csv` were built on.
+The intended sample restricts to individuals non-missing on the strictest specification (the last GRC column), i.e. an individual missing household size in any wave should not be in the sample at all, not merely have one wave dropped.
+**Action:** apply the strict-spec restriction at the individual level before computing the balance flag (drop the person, or equivalently recompute `unbalanced` after the `lndepvar` restriction so the incomplete individuals leave the balanced cells), then regenerate the affected `.ster` and the E1 exporter CSVs.
+Confirm the IDN headline numbers barely move first (29 of 29,692 people, one wave each; expected shift order 1e-4).
+Only TZA is unaffected (no balanced individual there is missing household size); CHN untouched by inspection but re-check.
+**Downstream:** the extension simulation's design snapshot and truths are calibrated to the current exporter, so after the production sample changes, rebuild the sim from the corrected exporter and re-run the P2 parity certification before any further simulation freeze.
+**Why it matters:** correctness of the actual estimation sample for an Econometrica submission; numerically tiny but it is the right sample definition, and leaving it makes the balanced GRC quietly include incomplete-panel individuals.
+
+### Leave-one-trajectory-out and drop-sparse-trajectory robustness checks
+**Added:** 2026-07-13.
+**Status:** Decided, to build after the P5b freeze.
+**Context:** The estimator identifies $\phi$ from cross-trajectory variation in $(\mu_{\underline{d}}, \Delta_{\underline{d}})$, and the thin switcher cells are high-leverage: TZA trajectory 3 has one person, and several IDN switchers have fewer than 20.
+The existing `drop_sparse_switchers` (keep switchers with at least five unique treated individuals) is applied only to the auxiliary-OLS lumped coefficient and the inversion's kept-set average return, NOT to the main GMM, which runs at `sparse_moment_threshold=0` and keeps every switcher including singletons.
+So the sparse cells still drive the headline GMM and the extrapolated returns, and a referee could reasonably ask both "why the threshold of five" and "is $\phi$ robust to the thinnest cells."
+**Action:** (empirical) report $\phi$ and the extrapolated returns ($\Delta_{d_N}$, $\Delta_{\text{avg}}$, $\Delta_{d_T}$) under leave-one-trajectory-out and under a swept minimum-count threshold, prefer the deterministic leave-one-out over random trajectory dropping; (simulation) since the truth is known, quantify the variance cost of the threshold, dropping sparse trajectories should raise the variance of $\hat\phi$ without adding bias, which is the clean defense of the threshold rule.
+**Connections:** pairs with the "why five" question about `drop_sparse_switchers` and with the curvature/extrapolation robustness family already listed here.
+**Estimated cost:** empirical, a table of refits per country (leave-one-out is a handful of trajectories per cell); simulation, a variant scoring pass on the existing harness.
+
 ---
 
 ## Active (low priority)
