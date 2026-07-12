@@ -2,16 +2,23 @@
 
 ## If you resume
 
-One-line state: P0-P4 (including P4b) are done and committed; the P5a pilot ran clean (60/60 replications, zero failures) and the compute-gate memo is committed; the session is paused at Emilia's three P5a decisions.
-The decisions in front of Emilia, from [sims/docs/p5a_compute_memo.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/docs/p5a_compute_memo.md): venue (wait for server vs local at 12 workers), sensitivity-pocket R (1,000 / 500 / defer), and whether to spend a time-boxed day vectorizing the inversion (only relevant if local-only, and it forces a parity re-run because `lca_inversion.py` is parity-certified).
-Claude's recommendation, delivered in chat: if the server is likely within a week, skip vectorization, run P5b locally now (~5.5 h at 12 workers, must include IDN two-regime, the untimed cell-arm), hold the full matrix for the server.
+One-line state: P0-P5a are done; Emilia resolved the compute gate on 2026-07-12 evening, and the next work is the P7 split-fit leg followed by the local P5b validation tranche.
 
-Next concrete action once Emilia rules: run P5b (R = 100 per cell over every execution path, including IDN two-regime, sensitivity pockets at reduced R, and the split-fit leg once P7 lands), then freeze code and config hashes.
-Note that P7's split-estimation leg (two extra GMM fits per two-regime replication, on the true regime label) is NOT yet implemented in `run_one.py`; it is now trivially cheap (GMM is 6 s) and should land before or with P5b so the tranche covers it.
+The P5a rulings, recorded in [sims/docs/p5a_compute_memo.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/docs/p5a_compute_memo.md) (RESOLVED section) and committed at `1944436`:
+1. Venue: the full matrix waits for the server; Emilia expects access within days; P5b still runs locally in the meantime.
+2. Sensitivity pockets at R = 1,000 (server makes the +198 core-hours immaterial).
+3. Inversion vectorization skipped, banking on the server; `lca_inversion.py` stays untouched and the P2 parity certificate stays intact.
 
-Worktree: [C:/git/ckt/.claude/worktrees/extension-sims](file:///C:/git/ckt/.claude/worktrees/extension-sims), branch `worktree-extension-sims`, tip `ffd7e78`, clean.
-Worktree commits this session: `3085b47` (multiplier), `5dee220` (P4), `a009b74` (P4b fixes), the spec-amendment commit, `71dd586` (appendix draft), `aad6b3a` (metrics), `ffd7e78` (memo).
-Main-tree commit: `b6d10b9` (plan decision C amendment).
+Next concrete action: implement the P7 split-estimation leg in [sims/src/run_one.py](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/src/run_one.py) (two extra GMM fits per two-regime replication on the recorded true regime label, scored against the split truths `estimands.delta_d_split` and $\phi_r$; trivially cheap now that a GMM fit is 6 s), with tests; THEN run P5b locally at 12 workers (R = 100 per cell covering every execution path: baseline and two_regime at all three dials, both cells, split fits included; roughly 5.5 h), check it with `metrics.py`, and freeze code and config hashes when it passes.
+Hash freeze is the gate consequence of ruling 3: after P5b passes, no edits to the estimator or inversion modules without re-running the tranche.
+Under the master seed 20260710 the P5b replications are the first 100 of the full run, so the tranche's compute is not wasted by the server wait.
+
+Watch-items to re-check at P5b precision (from the R = 20 pilot, 5pp MCSE): erratic GMM $\Delta_{d_T}$ point estimates against well-behaved inversion sets in both cells; J power at TZA's full dial (1/20 rejections at $J_R = 3$); IDN GMM Wald relative SE bias for $\phi$ at $-0.42$.
+
+Worktree: [C:/git/ckt/.claude/worktrees/extension-sims](file:///C:/git/ckt/.claude/worktrees/extension-sims), branch `worktree-extension-sims`, tip `1944436`, clean.
+Worktree commits this session: `3085b47` (multiplier), `5dee220` (P4), `a009b74` (P4b fixes), the spec-amendment commit, `71dd586` (appendix draft), `aad6b3a` (metrics), `ffd7e78` (memo), `1944436` (P5a rulings).
+Main-tree commits: `b6d10b9` (plan decision C amendment), `ae99dbe` (this log's first version).
+Pilot raw results live in `sims/results/raw/` (gitignored, regenerable from the master seed).
 
 ## Mode
 
@@ -82,3 +89,15 @@ IDN two-regime has never run; P5b must include it.
 Watch-items from the R = 20 preview (5pp MCSE, nothing conclusive): erratic GMM $\Delta_{d_T}$ point estimates against well-behaved inversion sets in both cells; J power at TZA's full dial (1/20 rejections at $J_R = 3$); IDN GMM Wald relative SE bias for $\phi$ at $-0.42$.
 Carried over for Emilia: hukou stub footnote, `11b_extrapolation_support_figure.do` wiring, server-access request (in progress, feeds the venue decision).
 Carried over for the paper: the solver-dependence disclosure sentence (spec M3) is drafted in the appendix; the appendix results section fills at P8.
+
+---
+
+## Evening addendum (21:00): P5a gate resolved
+
+Emilia ruled on the three compute-gate decisions after asking for them spelled out in full (options, costs, interactions, and recommendations were delivered in chat before she ruled).
+1. Venue: the full matrix waits for the server, which she expects within days; P5b still runs locally.
+2. Sensitivity pockets at R = 1,000, since the server absorbs the +198 core-hours.
+3. Vectorization skipped, banking on server access; the parity-certified `lca_inversion.py` stays untouched.
+The rulings were recorded in a RESOLVED section of [sims/docs/p5a_compute_memo.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/docs/p5a_compute_memo.md) and committed (`1944436`).
+The gate consequence spelled out there: hashes freeze when P5b passes, and the P7 split-fit leg must land in `run_one.py` before P5b so the tranche covers every execution path of the full run.
+The resume block at the top of this file was rewritten to match.
