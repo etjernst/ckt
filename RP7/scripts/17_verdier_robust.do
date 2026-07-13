@@ -204,18 +204,20 @@ foreach step in onestep twostep {
 }
 
 * **********************************************************************
-* Paper-facing outputs for the "Robustness to cluster pooling" subsection:
-*   (1) the onestep per-country tables under the GRC_{country}_..._cluster
-*       name that the paper \input{}s, and
-*   (2) the baseline-vs-cluster summary table, built by cluster_comparison_table
-*       from the baseline (grc_<c>_cuu_ca) and cluster (vv_<c>_os_covs_all)
-*       .ster files, like the other paper tables.
+* Paper-facing output for the "Robustness to cluster pooling" subsection:
+* the onestep per-country tables under the GRC_{country}_..._cluster
+* name that the paper \input{}s.
+*
+* The baseline-vs-cluster summary table (cluster_comparison_`depvar'_`balance'.tex)
+* is NOT built here. It is produced solely by 17b_cluster_summary.do, which
+* covers all five rows (IDN, CHN, CHN rural-first, CHN urban-first, TZA)
+* including the hukou splits; building it here too would clobber that
+* 5-row table with a 3-country version.
 * **********************************************************************
 foreach country in IDN TZA CHN {
     copy "$output/tables/verdier_robust_onestep_`country'_`depvar'_`choice'_`balance'.tex" ///
          "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'_cluster.tex", replace
 }
-cluster_comparison_table, filename(cluster_comparison_`depvar'_`balance')
 
 * **********************************************************************
 * Generate the onestep-vs-twostep comparison markdown.

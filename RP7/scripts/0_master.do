@@ -126,6 +126,8 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/11_make_figures.do"
 * Run Verdier-style robust GRC (cluster-residualized instruments)
 	include			"$dir/scripts/17_verdier_robust.do"
+* Sole producer of cluster_comparison_consumption_unb.tex (5 rows incl. hukou splits)
+	include			"$dir/scripts/17b_cluster_summary.do"
 * Refresh the headlines cache (one CSV per fit) the dashboard reads instead
 * of pystata round-trips. Reads only stems whose ster mtimes have changed.
 * Gated behind $runDashboard so coauthors without Python don't hit errors.

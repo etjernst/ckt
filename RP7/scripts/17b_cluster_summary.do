@@ -19,6 +19,10 @@
 *          docs/TODO.md).
 * ============================================================
 
+* Resume-on-interrupt: skip cells whose final .ster (_g) already exists.
+* Set to 0 to force every cell to re-estimate.
+global skip_if_exists 1
+
 cd "$logs"
 capture log close
 log using 17b_cluster_summary.log, replace
