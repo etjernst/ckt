@@ -1132,12 +1132,25 @@ program define create_panel_tex_table
 		local table_prehead 	""
 		local table_postfoot 	""
 		local posthead 			""
+
+		* C3: resolve the panel's country from the countries() argument and
+		* build the label from it, so single-country tables (e.g. the CHN
+		* hukou tables) are not mislabeled by panel position.
+		local country : word `i' of `countries'
+		local panel_letter : word `i' of A B C D E F G
+		local cname "`country'"
+		if      "`country'" == "IDN"    local cname "Indonesia"
+		else if "`country'" == "CHN"    local cname "China"
+		else if "`country'" == "TZA"    local cname "Tanzania"
+		else if "`country'" == "CHN_rf" local cname "China (rural-first)"
+		else if "`country'" == "CHN_uf" local cname "China (urban-first)"
+
 		if `i' == 1 & `i' == `num_panels' {
 			local replace replace
 			local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
 			local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
 			local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-			local table_posthead "\textbf{Panel A: Indonesia} \\"
+			local table_posthead "\textbf{Panel `panel_letter': `cname'} \\"
 			local table_postfoot "\cmidrule{2 -`cmid'} `postfoot'"
 		}
 		if `i' == 1 & `i' != `num_panels' {
@@ -1145,17 +1158,17 @@ program define create_panel_tex_table
 			local table_prehead1 "`"\begin{table}[htbp] \centering \begin{threeparttable}"'"
 			local table_prehead2 "`"\begin{tabular}{l `ccc'} \toprule  \textbf{Dep. var:} `textdepvar'"'"
 			local table_prehead "`table_prehead1' `prehead' `table_prehead2'"
-			local table_posthead "\textbf{Panel A: Indonesia} \\"
+			local table_posthead "\textbf{Panel `panel_letter': `cname'} \\"
 			local table_postfoot "\cmidrule{2 -`cmid'}"
 		}
 		if `i' == 2 {
 			local colnumbers nonum
-			local table_posthead "\textbf{Panel B: China} \\"
+			local table_posthead "\textbf{Panel `panel_letter': `cname'} \\"
 			local table_postfoot "\cmidrule{2-`cmid'}"
 		}
 		if `i' == 3 {
 			local colnumbers nonum
-			local table_posthead "\textbf{Panel C: Tanzania} \\"
+			local table_posthead "\textbf{Panel `panel_letter': `cname'} \\"
 			local table_postfoot "\cmidrule{2-`cmid'} `postfoot'"
 		}
 
