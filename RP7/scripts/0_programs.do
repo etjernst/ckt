@@ -396,10 +396,17 @@ program define handle_trajectory_groups
 	gen switcher_temp = ((trajectory > 1 & trajectory < `max_trajectory'))
 	bys pid: egen switcher = min(switcher_temp)
 	label variable switcher "Switcher"
-	gen non_switcher_temp = trajectory == 1 | trajectory == `max_trajectory'
-	bys pid: egen non_switcher = min(non_switcher_temp)
+	* C10: non_switcher counts observed non-movers (all rural or all urban
+	* across a worker's OBSERVED waves), so unbalanced workers---who have a
+	* missing balanced-only trajectory and were previously counted as neither
+	* switcher nor non-switcher---are classified correctly in the unbalanced
+	* summary statistics. switcher stays trajectory-based because it feeds the
+	* GRC average-return weights and the OLS migrants-only column.
+	bys pid: egen byte pid_any_urban = max(choice == 1)
+	bys pid: egen byte pid_any_rural = max(choice == 0)
+	gen byte non_switcher = !(pid_any_urban & pid_any_rural)
 	label variable non_switcher "Non-switcher"
-	drop switcher_temp non_switcher_temp
+	drop switcher_temp pid_any_urban pid_any_rural
 	
 	bysort pid: egen obs_per_individual = count(pid)
 	label variable obs_per_individual "Number of obs per pid"
