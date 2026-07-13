@@ -299,7 +299,9 @@ program define handle_depvar
     clonevar depvar = `depvar'
     drop if mi(depvar) | depvar <= 0
 	display as text "Note: Dropped `r(N_drop)' observations due to missing/negative values in `depvar' "
-    gen lndepvar = ln(depvar)
+    * per-capita (adult-equivalent cube) outcome, built once at source so every
+    * downstream estimator inherits it; hhsize_cube arrives with the raw panel
+    gen lndepvar = log(depvar/hhsize_cube)
 	label var lndepvar "Log (`depvar')"
 	
 	gen ln_income		= ln(income)
