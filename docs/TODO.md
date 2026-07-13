@@ -289,15 +289,18 @@ Only TZA is unaffected (no balanced individual there is missing household size);
 
 ### Make the switcher-inclusion rule internally consistent across GMM, aux OLS, and inversion (PRE-SUBMISSION, methods decision)
 **Added:** 2026-07-13.
-**Status:** Decided in principle (user 2026-07-13: "first thing we need to do is make everything internally consistent"); design and implementation pending, pairs with the final pre-submission re-run.
+**Status:** Baseline rule decided (user 2026-07-13); spec and plan to be written next session in fresh context, implementation pairs with the final pre-submission re-run.
 **Context:** Right now three estimators use three different switcher sets.
 The main GMM runs at `sparse_moment_threshold=0` and keeps every switcher trajectory including singletons (TZA trajectory 3 has one person).
 The auxiliary OLS and the inversion drop switchers via `drop_sparse_switchers`, which keeps a trajectory only if it has at least five unique individuals with a treated (urban, `choice==1`) observation.
 That threshold is also one-sided: it counts only individuals observed in the urban state, never checking whether the trajectory has enough individuals on the rural side, even though a switcher's return is identified off the within-person urban-versus-rural contrast and needs representation on both.
 The consequence is that the GMM average return $\Delta_{\text{avg,full}}$ and the inversion average return $\Delta_{\text{avg,kept5}}$ are different estimands over different switcher sets, which is a poke point for a referee and a genuine internal inconsistency.
 This holds in production, not just the simulation; the sim faithfully mirrors it.
-**Action:** decide one switcher-inclusion criterion and apply it identically in the GMM, the auxiliary OLS, and the inversion.
-Design questions: the threshold count (keep at five or justify another), whether it is symmetric (require at least $N$ individuals observed in both the urban and rural states, not just urban), and whether the GMM should adopt the same drop (which changes the headline estimates and the estimand, so it is a coauthor-level methods decision, not a mechanical edit).
+**Decided baseline rule (2026-07-13):** keep a switcher trajectory if and only if it has at least five unique individuals observed in both an urban and a rural period, written in the symmetric both-states form (which equals the cell size once the sample-restriction fix above removes incomplete individuals, so it is self-documenting insurance rather than a live correction).
+Apply the identical rule in the GMM, the auxiliary OLS, and the inversion, so $\Delta_{\text{avg,full}}$ (GMM) and $\Delta_{\text{avg,kept5}}$ (inversion) become the same estimand over the same switcher set.
+The GMM moves from `sparse_moment_threshold=0` to this rule (user confirmed no coauthor decision needed; it changes headline estimates and requires the re-run, which is acceptable).
+Individuals in a dropped sparse trajectory are lumped into the unbalanced cell (traj $-1$), not deleted (user 2026-07-13); note this shifts what $\Delta_{\text{unb}}$ estimates and must be disclosed.
+The count is by individual for the main spec; the Verdier-robust specs count by cluster (village), per the separate VV cluster-count TODO, so "consistent" means individual-count on the main path and cluster-count on the VV path.
 Then sweep the threshold in the robustness check below.
 **Downstream:** changing the GMM switcher set changes the paper estimates and breaks P2 parity, so this is a production methods change that then propagates to the sim (regenerate `.ster` + exporter, rebuild sim, re-run parity), sequenced with the sample-restriction fix above at the final re-run.
 Write a spec and plan before touching code (this alters the estimand).
