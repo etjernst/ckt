@@ -2,34 +2,26 @@
 
 ## If you resume
 
-One-line state: the extension-simulation code is stable and committed; P5b is held (not running) by deliberate choice; the next action is to write a spec and a plan, in fresh context, for making the switcher-inclusion rule internally consistent across the estimators.
+One-line state: the two production changes (Change A sample restriction, Change B switcher-inclusion consistency) are specced, econ-reviewed, and revised; a full-pipeline adversarial code review ran and its 14 CRITICALs are verified and triaged into a fix batch; nothing is running; no new docs are committed.
 
-Read first: this log end to end, then the three new pre-submission entries in [docs/TODO.md](file:///C:/git/ckt/docs/TODO.md).
+Read first: this log end to end, then the verdicts doc [2026-07-13-critical-findings-verdicts.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-13-critical-findings-verdicts.md), the switcher spec [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/specs/2026-07-13-switcher-inclusion-consistency.md) and its plan [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-switcher-inclusion-consistency.md), and the parallel-launcher plan [2026-07-13-parallel-master-orchestrator.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-parallel-master-orchestrator.md).
 
-Open thread: two production methods changes are queued for the final pre-submission full pipeline re-run, and both change the estimand and break P2 parity, so each needs a spec and a plan, then the re-run, then a sim rebuild and a parity re-certification.
-First, exclude individuals missing household size on the strictest specification: an individual missing `hhsize_cube` in any wave should not be in the sample at all, not merely have that one wave dropped.
-Second, make the switcher-inclusion rule identical across the GMM, the auxiliary OLS, and the inversion.
+Open thread: implement one combined fix batch in the Stata code (Change A + Change B + the verified code bugs), then build the six-lane parallel launcher, then do one definitive full-pipeline re-run into a fresh output dir, then rebuild the extension simulation and re-certify P2 parity, then freeze and switch to writing only.
 
-Decided baseline for that second change, locked 2026-07-13: keep a switcher trajectory if and only if it has at least five unique individuals observed in both an urban period and a rural period; apply it identically in all three estimators; the GMM moves from `sparse_moment_threshold=0` to this rule.
-Individuals in a dropped sparse trajectory get lumped into the unbalanced cell (trajectory -1), not deleted.
-Count by individual on the main specification and by cluster (village) on the Verdier-robust path.
+Next concrete action: implement the fix batch.
+Start with the per-capita outcome fix at the source (make handle_depvar build lndepvar = log(depvar/hhsize_cube) once, in 0_programs.do, so every script inherits per-capita and the scattered replaces become redundant).
+The batch also includes: Change A (recompute unbalanced in handle_balance so strict-spec-incomplete individuals leave the balanced cells, keeping their valid waves), Change B (one switcher keep-set authored in Stata, consumed by GMM/exporter/Python; VV path counts clusters at threshold two), and the code bugs C3 (hukou Panel-A-Indonesia mislabel, 0_programs.do:1115/1123), C5 (two scripts overwrite cluster_comparison_consumption_unb.tex; make 17b the sole producer and add to 0_master.do), C10 (redefine switcher in the unbalanced sample by observed movement, not full trajectory), and C12 (add the constant-sample statement to the generated table notes).
+Also build both a balanced-only and a full-sample version of the trajectories figure (C2) to compare.
 
-Next concrete action: write the spec, then the plan, for the internal-consistency change (the switcher-inclusion rule), per the workflow, in fresh context.
-Emilia asked for this to happen after wrap-up, in a new session.
+Cached state worth knowing: nothing is running.
+The full-pipeline review ran as workflow wf_5bca9072-a88 (67 findings: 14 CRITICAL, 30 MAJOR, 23 MINOR), consolidated at [2026-07-13-full-pipeline-review-findings.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-13-full-pipeline-review-findings.md).
+Only the 14 CRITICALs were verified (workflow wf_e97548dc-42b) and triaged; the 30 MAJOR and 23 MINOR are NOT yet verified or triaged, which is an open item.
+The main analysis is nominal-values Stata; the canonical paper file is now main-updated.tex (user, 2026-07-13), superseding main-sections.tex; memory was updated.
+Six new docs from this session are uncommitted: the switcher spec and plan, the three review docs (adversarial-review plan, consolidated findings, critical verdicts), the parallel-launcher plan, and the git-versionable-estimates memo.
+The user is fixing the hidden /review-plan skill config herself (disable-model-invocation plus an archive duplicate).
+P5b and the simulation hash freeze remain held behind the definitive re-run.
 
-Cached state worth knowing:
-P5b is held, not running.
-Relaunching now would validate the current inconsistent procedure that we have already agreed to revise, so relaunch only after the consistency change ships, so that P5b validates the version that actually gets submitted.
-The sim code is stable at the extension-sims worktree tip.
-Worktree commits this session: `44ae12a` (P7 split-fit leg), `4225bf0` (appendix disclosures), `d793f01` (review fix batch, 13 fixes, 36/36 tests).
-Main-tree commits this session: `9aaaa62` (first session log), `ce24063`, `339a188`, and `0eaa72d` (the three TODO entries).
-The stale pre-fix P5b batches still sit in [sims/results/p5b/](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/results/p5b/); a move to shelve them failed on a transient permission error, not on anything in our own process.
-On relaunch, write to a fresh output directory rather than reuse that one.
-The 24 Python processes on the machine are MCP servers plus Emilia's own `bednets_application.py` run, active since July 9 with four workers; none of them are ours.
-Emilia is investigating the rogue bednets run herself, so leave it alone.
-Once both production changes land, P2 parity needs re-certification before any simulation hash freeze.
-
-Worktree: [C:/git/ckt/.claude/worktrees/extension-sims](file:///C:/git/ckt/.claude/worktrees/extension-sims), branch `worktree-extension-sims`, tip `d793f01`, clean.
+---
 
 ## Mode
 
@@ -153,3 +145,121 @@ Land both production changes, the sample restriction and the consistency rule, t
 Keep P5b held; relaunch it after the consistency change ships so it validates the shipping procedure, and write to a fresh output directory because the stale batches in [sims/results/p5b/](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/results/p5b/) are transiently locked.
 Emilia is investigating her own rogue bednets run; hands off.
 The hash freeze stays deferred until P5b passes on the final procedure.
+
+## Continuation (2026-07-13 midday): switcher spec+plan, econ review, parallelization plan, pipeline review launch
+
+This block covers the fresh-context session that wrote the switcher-inclusion spec and plan, put them through an econometrics critic, then branched into pipeline-speed and code-review planning.
+
+### Goals
+
+Emilia's asks, in order: pick back up and write the spec then plan for the switcher-inclusion consistency change; fold in three decisions (merge the sample fix into one spec, Stata single source of truth, looser VV threshold); "/review-plan" (skill is hidden from me by `disable-model-invocation`, so I ran critic-econometrics instead); apply the four review decisions; answer whether anything forces an early re-run and whether to port the pipeline to Python; explain the shorthand (P5b, Change A/B, JIT); find the old parallelization spec and scope the work; version the `.ster` before a clean re-run and think about a git-friendly results format; launch an adversarial full-pipeline code review farmed out one script per agent; cap the parallel run at 6 instances.
+
+### What got written
+
+Combined spec [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/specs/2026-07-13-switcher-inclusion-consistency.md): Change A (individual-level strict-spec sample restriction, lumping the 29 incomplete IDN individuals into the unbalanced cell) plus Change B (one switcher-inclusion rule across GMM, aux OLS, inversion), sequenced A-then-B at the final re-run.
+Plan [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-switcher-inclusion-consistency.md): Design 2 (a Stata-authored keep-list artifact consumed by GMM, exporter, and Python), plus a "Review resolutions" section.
+Critic report [2026-07-13-switcher-inclusion-plan-review.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-13-switcher-inclusion-plan-review.md): 1 CRITICAL (downgraded), 7 MAJOR, 4 MINOR.
+Adversarial-review farm-out plan [2026-07-13-full-pipeline-adversarial-review.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-full-pipeline-adversarial-review.md).
+Parallel-master plan [2026-07-13-parallel-master-orchestrator.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-parallel-master-orchestrator.md).
+Tool-concept memo [2026-07-13_git-versionable-stata-estimates.md](file:///C:/git/ckt/docs/notes/2026-07-13_git-versionable-stata-estimates.md).
+
+### Decisions, with the why
+
+Merge the sample fix and the switcher rule into one spec (DA1): they share the final re-run and interact (the sample fix must precede the keep-set, because the incomplete individuals are the only ones for whom the symmetric both-states count differs from cell size).
+Stata authors the keep-set once, Python consumes it (D6): removes any two-language drift; the VV-path conflict rules out baking the lump into the `.dta`.
+VV threshold set to two clusters in both states, looser than the main path's five individuals (D7): five clusters would empty most thin trajectories; swept in the robustness check anyway.
+Lump the 29 incomplete individuals rather than delete them (DA3, after review finding M4): a full `drop` discards ~116 valid person-waves and contradicts the never-discard principle; recompute `unbalanced` in `handle_balance` instead.
+Accept the VV switcher-set confound rather than re-run VV on the main-path set (D8, after M6): VV is already a robustness check; disclose that its set differs.
+No Python port of the estimation: verified it is not faster (IDN cell, Stata 616.9 s vs Python 975.9 s, ~1.6x slower, [BLOCKER.md:73](file:///C:/git/ckt/.claude/worktrees/verdier-fresh/explorations/python-grc/BLOCKER.md)); the bigger blocker is that the replication package and the coauthors are Stata-only.
+Parallelize Stata instead, capped at six concurrent instances (user): keep `0_master.do`, add a launcher that cleans once, fans estimations across six lanes with `${skip_if_exists}`, writes to a fresh output dir, assembles once.
+Do not git-track the 310 binary `.ster` (gitignored because binary/undiffable); version results by exporting their contents to text.
+
+### Verifications that moved review findings
+
+C1 (estimand equivalence) downgraded to wording: [lca_inversion.py:419](file:///C:/git/ckt/.claude/worktrees/lca-inversion/explorations/python-grc/lca_inversion.py) `grid_delta_avg_md_inversion` targets the same LCA-line share-weighted form as the GMM, not an unrestricted-beta average; residual point is that under LCA rejection the inversion can return an empty CI while the GMM forces a number.
+M5 (clustering mismatch) dissolved: [5b_inversion.do:145](file:///C:/git/ckt/RP7/scripts/5b_inversion.do) passes `hhid(pid)`, so the aux OLS and inversion cluster and count on `pid`, matching the GMM's `vce(cluster pid)`.
+Verified counterpoint from the critic carried into the plan: because `unbalanced_choice` is a free just-identified absorber, the lumping cannot bias phi or the extrapolated returns; exposure is in claims and validation apparatus (report Hansen J before/after; pin the base trajectory across runs).
+
+### Approaches rejected, with the reason
+
+Using the hidden `/review-plan` skill directly: it carries `disable-model-invocation: true`, so it does not appear in my skill list and I cannot invoke it; ran critic-econometrics (what it would have dispatched anyway). Emilia is fixing the config herself; there is also a duplicate `review-plan` in `~/.claude/skills/archive/` with the same `name:`, a latent collision.
+Iteration-capping the Python GMM to speed the sim: it changes the estimate and would break P2 parity; JIT (numba/JAX) is the parity-safe speed lever if the sim needs one.
+Running all twelve parallel slices at once: caps the machine; six-lane rolling pool instead, longest slices first.
+
+### Open items
+
+Adversarial full-pipeline review is RUNNING in the background: Workflow run `wf_5bca9072-a88` (task `wpiq2sqik`), 15 agents (sonnet, high effort), one script each, checking code against the paper and against Change A+B.
+On completion, consolidate and triage the findings into a review report under `quality_reports/reviews/`, adversarially escalating any uncertain CRITICAL/MAJOR to a fresh verifier before anything reaches a fix list.
+Change A+B is specced and planned but NOT implemented; implementation lands at the definitive re-run.
+The parallel launcher is planned but NOT built; pre-reqs are a read of `9_GRC_extras.do` block structure and the per-instance log globals.
+Pending Emilia decisions: whether to add TODO entries for the near-term full-CSV results export and the longer-term JSON estimate-serialization tool; she already OK'd the fresh-output-dir versioning approach.
+None of these six new docs are committed yet.
+
+### How to pick back up
+
+The immediate next event is the pipeline-review Workflow finishing; consolidate its findings first.
+Then the standing sequence: implement Change A+B, let the adversarial review clear, build the six-lane parallel launcher, run the definitive pipeline once into a fresh output dir, rebuild the sim and re-certify P2 parity, then freeze and move to writing only.
+
+## Continuation (2026-07-13 afternoon): full-pipeline adversarial review, CRITICAL verification, fix-batch decisions
+
+### Goals
+
+The user's afternoon asks, in order: whether anything in the switcher plan forces an early re-run (answer: no, the old baseline is the committed sters); whether to port the estimation pipeline to Python for speed; explain the shorthand (P5b, Change A/B, JIT) in plain terms; find the earlier parallelization spec and scope the work; version the .ster files before a clean re-run and think about a git-friendly results format; launch an annoyingly-detailed adversarial code review of the whole pipeline, farmed out one do-file per agent, to make sure the code is correct; search the Stata universe for whether the git-versionable-estimates tool already exists and review the .ster documentation for uses a JSON round-trip could not replicate; verify the per-capita discrepancy directly; run a verification pass on all the CRITICAL findings; decide the fixes; wrap up.
+
+### What got built or changed
+
+- [2026-07-13-parallel-master-orchestrator.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-parallel-master-orchestrator.md): parallel-launcher plan, six-lane concurrency cap, fresh output dir.
+- [2026-07-13-full-pipeline-adversarial-review.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-full-pipeline-adversarial-review.md): the one-script-per-agent review farm-out.
+- [2026-07-13-full-pipeline-review-findings.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-13-full-pipeline-review-findings.md): 67 consolidated findings.
+- [2026-07-13-critical-findings-verdicts.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-13-critical-findings-verdicts.md): the 14 CRITICAL verdicts plus the decided fix approaches.
+- [2026-07-13_git-versionable-stata-estimates.md](file:///C:/git/ckt/docs/notes/2026-07-13_git-versionable-stata-estimates.md): the tool concept, with prior-art and .ster-parity findings.
+- [docs/TODO.md](file:///C:/git/ckt/docs/TODO.md): added a per-capita-description paper-update entry.
+- Memory files [reference_overleaf_paths.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/reference_overleaf_paths.md) and [MEMORY.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/MEMORY.md): main-updated.tex recorded as canonical.
+
+### Decisions, with the why
+
+- Do not port the estimation pipeline to Python.
+  Why: verified not faster (IDN cell, Stata 616.9 s vs Python 975.9 s, ~1.6x slower, BLOCKER.md:73), and the replication package plus the coauthors are Stata-only.
+- The Python speedups are relevant only to the simulation, and JIT is the parity-safe lever.
+  Why: capping iterated-GMM iterations changes the estimate and would break P2 parity, while JIT (numba/JAX) is the same math compiled.
+- Parallelize the Stata run with a separate launcher, capped at six concurrent instances.
+  Why: keep 0_master.do canonical, run clean-once then fan-out then assemble, and six lanes leave the laptop headroom; the skip_if_exists idempotence lever already exists in run_grc.
+- Version results by a fresh output dir plus a snapshot, not by git-tracking the sters.
+  Why: the 310 sters are binary and undiffable (gitignored on purpose); the git-friendly path is exporting their contents to text, which is a real unfilled niche (estwrite owns rich binary storage including e(sample); jsonio serializes data not estimates; per the manual a .ster restores all of e() except e(sample), so a full-namespace JSON round-trip reaches parity).
+- main-updated.tex is the canonical paper file.
+  Why: user stated it 2026-07-13; it is a single consolidated manuscript superseding the sectioned main-sections.tex build.
+- Fix the per-capita outcome at the source in handle_depvar, not in three scattered scripts.
+  Why: building lndepvar = log(depvar/hhsize_cube) once kills the whole drift class and stops a future script forgetting the transform.
+- C2 trajectories figure: build both a balanced-only and a full-sample version and compare.
+  Why: it is unclear which sample the figure should show, so produce both before deciding.
+- C10 non-switcher count: in the unbalanced sample define a switcher by observed movement (both a choice-0 and a choice-1 round across observed waves), not by the balanced-only trajectory; in the balanced sample keep trajectory-based classification and exclude unbalanced individuals.
+  Why: this gives the overall-sample "never move" count using the less-strict observed-switching sense, and correctly handles individuals seen in fewer than the full waves.
+- C12 education drop is by-design (constant sample across columns), so add the constant-sample statement to the generated table notes.
+  Why: the drop holds the sample at the most restrictive column, which is intended and defensible, but the verifier could not find the disclosure in the paper, so make it explicit.
+- Queue the fix batch (C1, C3, C4, C5, C6, plus C10 redefinition, C2 two-figure, C12 table-note) alongside Change A and Change B for the single definitive re-run.
+  Why: fix the code once, re-run once, then the stale-paper prose edits follow with final numbers.
+
+### Verification outcome
+
+The 14 CRITICALs verified as 7 code bugs, 6 stale-paper, 1 by-design, 0 refuted, all high confidence.
+Code bugs: per-capita on OLS (C6), hukou-OLS (C4), and the heterogeneity figure (C1); hukou Panel-A-Indonesia mislabel (C3); the non-switcher miscount (C10); the two-scripts-overwrite-one-table clash (C5); the balanced-only trajectories figure (C2).
+Stale-paper: the OLS 6-vs-7 column narrative (C7), the GRC nonexistent time-trend column (C8, C14), the Delta-never numbers matching archived pre-refactor tables (C9), the rural-first hukou stale J-column (C11), and the CHN GRC table never regenerated after the 2026-07-01 four-column refactor (C13).
+By-design: the education drop (C12).
+Independent confirmation from a direct grep: every GRC-family script overwrites lndepvar with log(consumption/hhsize_cube) while 3_OLS_uGRC.do, 6_OLS_uGRC_hukou.do, and 11_make_figures.do do not, so the OLS, hukou-OLS, and figure outcomes are raw household consumption.
+
+### Approaches rejected, with the reason
+
+- Porting the estimation to Python: the speed premise is false and it forks the pipeline from the Stata-only coauthors.
+- Git-tracking the sters: binary and undiffable, which is why they are gitignored.
+- Fixing per-capita in three scattered scripts: the source fix in handle_depvar is cleaner and drift-proof.
+- Launching P5b or the parallel run now: both wait until the fix batch and the definitive re-run.
+
+### Open items
+
+- Implement the combined fix batch; none of it is coded yet.
+- Verify and triage the 30 MAJOR and 23 MINOR review findings; only the 14 CRITICALs were verified.
+- Build the parallel launcher; pre-reqs are a read of the 9_GRC_extras block structure and the per-instance log globals.
+- After the re-run: rebuild the sim, re-certify P2 parity, freeze, then do the stale-paper prose edits (C7, C8, C9, C14) on main-updated.tex with final numbers.
+- Confirm the C12 constant-sample disclosure is added to the table notes.
+- Commit the six new session docs (currently uncommitted); decide whether to add TODOs for the full-CSV results export and the JSON estimate-serialization tool.
+- The user is fixing the /review-plan skill config herself.
