@@ -324,6 +324,22 @@ program define handle_balance
 	gen unbalanced_choice = unbalanced*choice
 	lab var unbalanced "Unbalanced panel = 1"
 	lab var unbalanced_choice "Unbalanced panel * choice"
+
+	* Change A: strict-spec sample restriction. An individual missing any
+	* strictest-column regressor in any wave is reflagged unbalanced, so they
+	* leave the balanced trajectory cells and land in the unbalanced cell with
+	* their valid waves kept (lumped, not deleted). Raw names hardcoded because
+	* set_covariates (which defines the covariate globals) runs later.
+	tempvar miss_row
+	gen byte `miss_row' = missing(hhsize_cube) | hhsize_cube <= 0 | ///
+		missing(female) | missing(age) | missing(education_max)
+	bysort pid: egen byte pid_miss_strict = max(`miss_row')
+	quietly count if pid_miss_strict & !unbalanced
+	di as text "handle_balance: Change A reflagging `r(N)' person-waves (strict-spec-incomplete individuals) as unbalanced"
+	replace unbalanced = 1 if pid_miss_strict
+	replace unbalanced_choice = unbalanced*choice
+	drop pid_miss_strict
+
     if "`balance'" == "bal" {
 		keep if unbalanced == 0
 	}
