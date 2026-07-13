@@ -2982,7 +2982,7 @@ program define run_grc_robust_vv
 
     * ----------------------------------------------------------------
     * Resume-on-interrupt. If ${skip_if_exists} == "1" and the
-    * last-written .ster for this estname exists (the _avg subgroup,
+    * last-written .ster for this estname exists (the _g subgroup,
     * saved at the very end of run_grc_robust_vv), skip the whole block.
     * Lets an interrupted master pipeline pick up from the next missing
     * cell on relaunch. To force a fresh run, either delete
@@ -2990,9 +2990,9 @@ program define run_grc_robust_vv
     * Pattern ported from grc-pipeline-refactor branch's run_grc.
     * ----------------------------------------------------------------
     if "${skip_if_exists}" == "1" {
-        capture confirm file "$dir/output/`estname'_avg.ster"
+        capture confirm file "$dir/output/`estname'_g${vsfx}.ster"
         if _rc == 0 {
-            di as text "run_grc_robust_vv: SKIP `estname' (`estname'_avg.ster present)"
+            di as text "run_grc_robust_vv: SKIP `estname' (`estname'_g${vsfx}.ster present)"
             exit
         }
     }
