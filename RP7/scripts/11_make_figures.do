@@ -294,6 +294,152 @@ keep if pid_first_obs == 1 & mega_trajectories != .
 	}
 
 * **********************************************************************
+* Consumption | Urban | Unbalanced | Figures | Full sample
+* **********************************************************************
+* Full-sample counterpart to the balanced-only chart above. trajectory
+* (used above) is defined only for individuals observed in every wave
+* (handle_trajectory_groups keeps if !unbalanced), so despite loading the
+* `_unb` dataset that chart silently drops unbalanced individuals.
+* trajectory_2waves (from handle_trajectory_groups_2waves, pid_obs >= 2)
+* is the most inclusive pre-built trajectory encoding available for all
+* three countries: it excludes only single-wave individuals, for whom no
+* trajectory can be defined. trajectory_3waves (pid_obs >= 3) is not used
+* here because for TZA (max 3 waves observed) that threshold requires
+* every wave, i.e. it collapses back to the balanced-only sample.
+
+* ************
+* INDONESIA
+* ************
+	eststo clear
+
+  local country 	IDN
+* Choices
+	local choice 		urban
+	local depvar    consumption
+	local balance		unb
+
+* Open dataset
+  use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
+
+* Create value label
+  label define mega_trajectories_fullsample 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
+
+* Generate trajectory grouping variable
+  gen     mega_trajectories_fullsample = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000" | trajectory_2waves == "00000"
+  replace mega_trajectories_fullsample = 2 if trajectory_2waves == "00001" | trajectory_2waves == "0001" | trajectory_2waves == "00011" | trajectory_2waves == "001" | trajectory_2waves == "0011" | trajectory_2waves == "00111" | trajectory_2waves == "01" | trajectory_2waves == "011" | trajectory_2waves == "0111" | trajectory_2waves == "01111"
+  replace mega_trajectories_fullsample = 3 if trajectory_2waves == "00010" | trajectory_2waves == "0010" | trajectory_2waves == "00100" | trajectory_2waves == "00101" | trajectory_2waves == "00110" | trajectory_2waves == "010" | trajectory_2waves == "0100" | trajectory_2waves == "01000" | trajectory_2waves == "01001" | trajectory_2waves == "0101" | trajectory_2waves == "01010" | trajectory_2waves == "01011" | trajectory_2waves == "0110" | trajectory_2waves == "01100" | trajectory_2waves == "01101" | trajectory_2waves == "01110"
+  replace mega_trajectories_fullsample = 4 if trajectory_2waves == "10001" | trajectory_2waves == "1001" | trajectory_2waves == "10010" | trajectory_2waves == "10011" | trajectory_2waves == "101" | trajectory_2waves == "1010" | trajectory_2waves == "10100" | trajectory_2waves == "10101" | trajectory_2waves == "1011" | trajectory_2waves == "10110" | trajectory_2waves == "10111" | trajectory_2waves == "11001" | trajectory_2waves == "1101" | trajectory_2waves == "11010" | trajectory_2waves == "11011" | trajectory_2waves == "11101"
+  replace mega_trajectories_fullsample = 5 if trajectory_2waves == "10" | trajectory_2waves == "100" | trajectory_2waves == "1000" | trajectory_2waves == "10000" | trajectory_2waves == "110" | trajectory_2waves == "1100" | trajectory_2waves == "11000" | trajectory_2waves == "1110" | trajectory_2waves == "11100" | trajectory_2waves == "11110"
+  replace mega_trajectories_fullsample = 6 if trajectory_2waves == "11" | trajectory_2waves == "111" | trajectory_2waves == "1111" | trajectory_2waves == "11111"
+
+* Label values
+  label values mega_trajectories_fullsample mega_trajectories_fullsample
+
+keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_fullsample != .
+
+* Generate bar graph for Indonesia
+  graph bar, over(mega_trajectories_fullsample) asyvars stack           ///
+        subtitle(Indonesia) ytitle("Percent", margin(zero) size(10pt)) legend(off) 		///
+				fxsize(65) plotregion(margin(zero)) graphregion(margin(zero))  scheme(tab3) ///
+        bar(1, color("128 116 168")) bar(2, color("155 147 201"))           ///
+        bar(3, color("198 193 240")) bar(4, color("255 190 209"))           ///
+        bar(5, color("244 152 182")) bar(6, color("196 100 135"))
+  graph save mega_IDN_fullsample.gph, replace
+
+* ************
+* CHINA
+* ************
+	eststo clear
+
+  local country 	CHN
+* Choices
+	local choice 		urban
+	local depvar    consumption
+	local balance		unb
+
+* Open dataset
+  use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
+
+* Create value label
+  label define mega_trajectories_fullsample 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
+
+* Generate trajectory grouping variable
+  gen     mega_trajectories_fullsample = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000"
+  replace mega_trajectories_fullsample = 2 if trajectory_2waves == "0001" | trajectory_2waves == "001" | trajectory_2waves == "0011" | trajectory_2waves == "01" | trajectory_2waves == "011" | trajectory_2waves == "0111"
+  replace mega_trajectories_fullsample = 3 if trajectory_2waves == "0010" | trajectory_2waves == "010" | trajectory_2waves == "0100" | trajectory_2waves == "0101" | trajectory_2waves == "0110"
+  replace mega_trajectories_fullsample = 4 if trajectory_2waves == "101" | trajectory_2waves == "1011" | trajectory_2waves == "1101"
+  replace mega_trajectories_fullsample = 5 if trajectory_2waves == "10" | trajectory_2waves == "100" | trajectory_2waves == "1000" | trajectory_2waves == "110" | trajectory_2waves == "1100" | trajectory_2waves == "1110"
+  replace mega_trajectories_fullsample = 6 if trajectory_2waves == "11" | trajectory_2waves == "111" | trajectory_2waves == "1111"
+
+* Label values
+  label values mega_trajectories_fullsample mega_trajectories_fullsample
+
+keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_fullsample != .
+
+* Generate bar graph for China
+  graph bar, over(mega_trajectories_fullsample) asyvars stack           ///
+        subtitle(China) yscale(off) legend(off)  fxsize(50)                 ///
+        plotregion(margin(zero)) graphregion(margin(zero))  scheme(tab3)    ///
+        bar(1, color("128 116 168")) bar(2, color("155 147 201"))           ///
+        bar(3, color("198 193 240")) bar(4, color("255 190 209"))           ///
+        bar(5, color("244 152 182")) bar(6, color("196 100 135"))
+
+
+  graph save mega_CHN_fullsample.gph, replace
+
+* ************
+* TANZANIA
+* ************
+	eststo clear
+
+  local country 	TZA
+* Choices
+	local choice 		urban
+	local depvar    consumption
+	local balance		unb
+
+* Open dataset
+  use 						"$dirdata/processed/`country'_`balance'_2waves.dta", clear
+
+* Create value label
+  label define mega_trajectories_fullsample 1 "Always rural"  2 "Rural to urban" 3 "Multiple moves, start rural" 4 "Multiple moves, start urban" 5 "Urban to rural" 6 "Always urban", replace
+
+* Generate trajectory grouping variable
+  gen     mega_trajectories_fullsample = 1 if trajectory_2waves == "00" | trajectory_2waves == "000"
+  replace mega_trajectories_fullsample = 2 if trajectory_2waves == "001" | trajectory_2waves == "01" | trajectory_2waves == "011"
+  replace mega_trajectories_fullsample = 3 if trajectory_2waves == "010"
+  replace mega_trajectories_fullsample = 4 if trajectory_2waves == "101"
+  replace mega_trajectories_fullsample = 5 if trajectory_2waves == "10" | trajectory_2waves == "100" | trajectory_2waves == "110"
+  replace mega_trajectories_fullsample = 6 if trajectory_2waves == "11" | trajectory_2waves == "111"
+
+* Label values
+  label values mega_trajectories_fullsample mega_trajectories_fullsample
+
+keep if pid_first_obs_2waves == 1 & pid_obs >= 2 & mega_trajectories_fullsample != .
+
+* Generate bar graph for Tanzania
+  graph bar, over(mega_trajectories_fullsample) asyvars stack           ///
+        subtitle(Tanzania)                                                  ///
+        yscale(off) legend(order(6 5 4 3 2 1) pos(4) cols(1) size(10pt)      ///
+        region(margin(zero))) fxsize(100) plotregion(margin(zero))          ///
+        graphregion(margin(zero))  scheme(tab3)        ///
+        bar(1, color("128 116 168")) bar(2, color("155 147 201"))           ///
+        bar(3, color("198 193 240")) bar(4, color("255 190 209"))           ///
+        bar(5, color("244 152 182")) bar(6, color("196 100 135"))
+  graph save mega_TZA_fullsample.gph, replace
+
+* **********************************************************************
+* Combine graphs
+* **********************************************************************
+
+  graph combine mega_IDN_fullsample.gph mega_CHN_fullsample.gph mega_TZA_fullsample.gph, col(3)
+	graph export "$output/figures/trajectories_fullsample.pdf", replace
+	graph export "$output/figures/trajectories_fullsample.png", replace as(png) width(3600)
+    if $copyOverleaf == 1 {
+		copyOverleaf "$output/figures/trajectories_fullsample.pdf", subdir(figures)
+	}
+
+* **********************************************************************
 * Consumption | Urban | Unbalanced | Figures | At least 2 waves
 * **********************************************************************
 
