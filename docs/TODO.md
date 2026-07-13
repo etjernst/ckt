@@ -287,6 +287,22 @@ Only TZA is unaffected (no balanced individual there is missing household size);
 **Downstream:** the extension simulation's design snapshot and truths are calibrated to the current exporter, so after the production sample changes, rebuild the sim from the corrected exporter and re-run the P2 parity certification before any further simulation freeze.
 **Why it matters:** correctness of the actual estimation sample for an Econometrica submission; numerically tiny but it is the right sample definition, and leaving it makes the balanced GRC quietly include incomplete-panel individuals.
 
+### Make the switcher-inclusion rule internally consistent across GMM, aux OLS, and inversion (PRE-SUBMISSION, methods decision)
+**Added:** 2026-07-13.
+**Status:** Decided in principle (user 2026-07-13: "first thing we need to do is make everything internally consistent"); design and implementation pending, pairs with the final pre-submission re-run.
+**Context:** Right now three estimators use three different switcher sets.
+The main GMM runs at `sparse_moment_threshold=0` and keeps every switcher trajectory including singletons (TZA trajectory 3 has one person).
+The auxiliary OLS and the inversion drop switchers via `drop_sparse_switchers`, which keeps a trajectory only if it has at least five unique individuals with a treated (urban, `choice==1`) observation.
+That threshold is also one-sided: it counts only individuals observed in the urban state, never checking whether the trajectory has enough individuals on the rural side, even though a switcher's return is identified off the within-person urban-versus-rural contrast and needs representation on both.
+The consequence is that the GMM average return $\Delta_{\text{avg,full}}$ and the inversion average return $\Delta_{\text{avg,kept5}}$ are different estimands over different switcher sets, which is a poke point for a referee and a genuine internal inconsistency.
+This holds in production, not just the simulation; the sim faithfully mirrors it.
+**Action:** decide one switcher-inclusion criterion and apply it identically in the GMM, the auxiliary OLS, and the inversion.
+Design questions: the threshold count (keep at five or justify another), whether it is symmetric (require at least $N$ individuals observed in both the urban and rural states, not just urban), and whether the GMM should adopt the same drop (which changes the headline estimates and the estimand, so it is a coauthor-level methods decision, not a mechanical edit).
+Then sweep the threshold in the robustness check below.
+**Downstream:** changing the GMM switcher set changes the paper estimates and breaks P2 parity, so this is a production methods change that then propagates to the sim (regenerate `.ster` + exporter, rebuild sim, re-run parity), sequenced with the sample-restriction fix above at the final re-run.
+Write a spec and plan before touching code (this alters the estimand).
+**Why it matters:** internal consistency of the estimand across the estimators the paper reports side by side; the current split is defensible only as an accident of implementation, not a considered choice.
+
 ### Leave-one-trajectory-out and drop-sparse-trajectory robustness checks
 **Added:** 2026-07-13.
 **Status:** Decided, to build after the P5b freeze.
