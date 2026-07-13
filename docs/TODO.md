@@ -8,7 +8,14 @@ Move completed items to the bottom with the resolution date.
 
 ## Active
 
-### Full cluster-pooling robustness run (twostep + hukou appendix tables + Overleaf)
+### Update the per-capita consumption description in the paper (cube-root equivalence scale)
+**Added:** 2026-07-13.
+**Context:** the pipeline review found that `main-updated.tex` (around line 632) describes per-capita consumption as total household consumption divided by the number of household members, but the code divides by `hhsize_cube = hhsize^(1/3)`, a cube-root equivalence scale (`databuild/1_build_IDN.do:151` and siblings; applied as `log(consumption/hhsize_cube)` throughout the GRC family).
+**Action:** update the paper's outcome definition to state the cube-root equivalence scale, and cite the existing robustness figure that shows the results are insensitive to the choice of equivalence scale (locate that figure; it exists somewhere in the outputs).
+This is a paper-text edit on the canonical `main-updated.tex`, with user approval; the code is correct and stays as is.
+**Cost:** small, mostly locating the robustness figure and wording the sentence.
+
+
 **Added:** 2026-07-01
 **Context:** The "Robustness to cluster pooling" subsection (`paper/verdier_robust.tex`) reports a baseline-vs-cluster-residualized summary of $\phi$ and $\Delta_{\text{never}}$.
 Option 1 (done 2026-07-01) ran only the five onestep / full-controls cluster fits (IDN, CHN, CHN rural-first, CHN urban-first, TZA) via `RP7/scripts/17b_cluster_summary.do`, feeding `cluster_comparison_table` (in `0_programs.do`).
