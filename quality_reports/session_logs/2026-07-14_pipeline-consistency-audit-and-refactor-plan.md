@@ -163,3 +163,83 @@ Once confirmed, rebuilding the hub with current source is the true first step, a
 Change B (switcher-inclusion consistency) stays folded in as Stage 9.
 The paper's OLS consumption tables are currently raw-scale and need correcting via the rebuild and re-run.
 None of the Stage 0 do-files, the Stage 0 reports, or the three planning artifacts are committed to git yet; this wrap-up commits only the session log.
+
+---
+
+## Continuation (evening): stale-hub confirmation, three-commit characterization, plan revision, review adjudication
+
+### Mode
+
+Implementation, planning phase (Mode 2) continued: no pipeline code edited; the plan and review artifacts were updated.
+
+### What was verified together with the user
+
+The stale-hub diagnosis was walked through step by step at the user's request and every link confirmed against code and git.
+Commit `47b60e3` changed `handle_depvar` from `gen lndepvar = ln(depvar)` to `gen lndepvar = log(depvar/hhsize_cube)`; the source at [0_programs.do](file:///C:/git/ckt/RP7/scripts/0_programs.do) carries the fix; the hub on disk predates it.
+The GRC family (`4_GrRC`, `5_GrRC_NonAg`, `5b`, `5c`, `7_GrRC_hukou`, `8_learning`, `17`, `17b`, plus `10_make_tables` at three sites) each carry the load-time per-capita `replace`; `3_OLS_uGRC` and `6_OLS_uGRC_hukou` carry none, which is exactly the safe-vs-wrong divergence.
+`3_OLS_uGRC` additionally mixes cached-`use` (stale raw today) and live-`data_setup` (per-capita today) provenance, so its current consumption cells are a mix of scales, not uniformly raw.
+The user ran lines 14-23 of `1_processData.do` mid-session, which rebuilt `IDN_unb.dta` through current code; the file is deliberately kept, not reverted, as a byte-identity determinism probe for the coming rebuild.
+
+### The user's pushback that reshaped the plan
+
+The user pushed back on the expectation that the fresh hub would match the old hub except for `lndepvar`: if the earlier code had errors, the new data should not match.
+Git confirmed this: three commits since the 2026-06-24 hub build change the saved data, `47b60e3` (per-capita scale), `a11e013` (Change A, strict-spec reflagging: `_bal` cells lose individuals, `_unb` cells change `unbalanced`/`unbalanced_choice` values), and `1e10113` (C10, `non_switcher` reclassified by observed movement, moves only for unbalanced workers).
+Consequence: the current GRC sters are correct on scale but fit on pre-Change-A samples, so the entire current ster population is stale relative to committed source and cannot serve as the refactor gate baseline.
+This supersedes the earlier "GRC sters are correct" line: correct on scale only.
+
+### Decisions, with the why
+
+The old-vs-fresh hub comparison is characterization, not equivalence: every diff must be attributable to exactly one of the three commit signatures, and any unattributable diff stops the stage.
+The full GRC re-run happens exactly once, as late as possible (the definitive end run), because GRC fits are expensive; only the small gate panel is refit at Stage 0 to freeze the baseline (user decision).
+The OLS movement is reported as a combined delta (scale plus Change A), not decomposed (user accepted the recommendation).
+Until the definitive run, the paper's GRC tables stay pre-Change-A, so nothing ships to coauthors or Overleaf in between.
+
+### Files changed
+
+The plan [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md) was revised before any run, per the user's instruction: Stage 0 rewritten around rebuild-first sequencing, gate baseline repointed to the Stage 0 panel refit on the rebuilt hub, D-1/D-2/D-3 marked resolved, Stage 2 aligned to the parameterized `logpc_` rename and the keep-building-income decision, end run documented as triple duty.
+A fresh-context plan review arrived at [2026-07-14-pipeline-frontload-refactor-review.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14-pipeline-frontload-refactor-review.md) (verdict REVISE, two Reds).
+My adjudication is at [2026-07-14_frontload-plan-review-adjudication.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_frontload-plan-review-adjudication.md): nine fixes accepted (full environment pinning restored, sortseed mechanism and Tier 2 failure path, fail-fast determinism preflight on the current hub, sign-off as characterization review, synthetic contract tests for Stages 5/6, end-sweep re-adjudication of Tier 3 acceptances, harness self-test, mixed tolerance criterion max(1e-12, 1e-10 x |old|), executability appendix, rollback sentence), two rejected (interim delivery checkpoint, would ship mixed-generation tables; pre-Stage 0 CHN_hukou relocation, an unguarded edit before a baseline exists).
+
+### Open items
+
+Awaiting user approval to fold the nine accepted review fixes into the plan.
+After that, the rebuild go-ahead: create `RP7/data_rebuild/` (empty `processed/`, `countries` junction), run `1_processData.do` unmodified via a `$dirdata`-repointing driver, confirming first that it does not include `0_CHN_hukou_restrictions.do`.
+The Stage 0 artifacts and planning documents remain uncommitted.
+
+---
+
+## Continuation (late evening): Stage 0 executed through the sign-off package
+
+### What ran
+
+The nine accepted review fixes were folded into the plan (tiered-gate section, fail-fast preflight, characterization-review sign-off, synthetic contract tests for Stages 5/6, end-sweep Tier 3 re-adjudication, harness self-test, mixed tolerance criterion, rollback section, gate-panel appendix).
+The hub rebuild then ran: [rebuild_hub.do](file:///C:/git/ckt/RP7/tests/stage0/rebuild_hub.do) rebuilt all 34 cells into `RP7/data_rebuild/processed/` (fresh dir, `countries` junction to existing raw, `1_processData.do` unmodified, canonical hub untouched), clean log, minutes not hours.
+The characterization ran via [compare_hubs.do](file:///C:/git/ckt/RP7/tests/stage0/compare_hubs.do) after one abort: a header comment containing `processed/*.dta` tripped the `/*` block-comment gotcha (same trap as stage0_checks last session) and silently commented out the whole script.
+The OLS re-run ran via [ols_rerun_new.do](file:///C:/git/ckt/RP7/tests/stage0/ols_rerun_new.do) into `RP7/tests/stage0/ols_new/` (copyOverleaf pinned 0, own $logs, auto-log slot freed before the scripts' `log using`).
+
+### Results
+
+Characterization: every hub difference attributed to the three commits; memo at [hub_characterization_memo.md](file:///C:/git/ckt/quality_reports/staging/stage0/hub_characterization_memo.md).
+The 3 unpredicted CHN bal drops are one pid (620123103) whose 2014 wave has missing age: old code kept the pid balanced then silently dropped that wave post-balance; Change A now reflags them, which is the exact inconsistency it was written to fix.
+Determinism probe: batch rebuild of IDN_unb is `cf _all`-identical to the user's 19:45 interactive build; byte diffs are header timestamp plus uninitialized label-block padding only, so raw byte-compare of .dta across invocation modes is the wrong instrument (sters/e(b) dumps remain the gate instrument).
+OLS movement: memo at [ols_movement_memo.md](file:///C:/git/ckt/quality_reports/staging/stage0/ols_movement_memo.md), full CSV at [ols_movement.csv](file:///C:/git/ckt/quality_reports/staging/stage0/ols_movement.csv).
+Headline: pooled urban coefficient IDN 0.338 to 0.323, CHN 0.422 to 0.474, TZA 0.669 to 0.710; FE column IDN 0.072 to 0.084, CHN 0.105 to 0.142, TZA 0.094 to 0.110; no significance flips.
+Verified mechanism: the column-1 shift equals minus the urban-rural gap in mean ln(hhsize_cube) (-0.0515 CHN, +0.0087 IDN, -0.0405 TZA); IDN also loses 793 person-waves whose hhsize_cube is missing, rows GRC already excluded.
+Old hukou tables carry pre-C3 panel labels (all said Indonesia), so the table parser matches hukou rows by coefficient label.
+
+### Open items
+
+The user requested one fresh critic-stata pass over the data-construction pipeline before promotion; it is running, output due at [2026-07-14_pipeline-frontend-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-frontend-critic-stata.md).
+Promotion (swap rebuilt hub to canonical, retain old as backup) is on hold pending that report plus the user's review of the two memos.
+After promotion: gate-panel baseline refit (step five), then Stages 1-8.
+Stage 0 artifacts, plan revisions, and this log remain uncommitted.
+
+### Promotion (user-approved, 22:37)
+
+The user approved promotion after reviewing the package (characterization memo, OLS movement memo, critic report, adjudication).
+Executed: `RP7/data/processed` renamed to `RP7/data/processed_stale_2026-07-14` (backup, 34 files, retained until the definitive run); `RP7/data_rebuild/processed` moved in as canonical `RP7/data/processed` (34 files); the `data_rebuild/countries` junction removed with `rmdir` (junction-safe) and the empty `data_rebuild` deleted.
+The critic pass artifacts: report at [2026-07-14_pipeline-frontend-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-frontend-critic-stata.md) (3 CRITICAL / 7 MAJOR / 5 MINOR, verdict do-not-promote), adjudication at [2026-07-14_frontend-critic-adjudication.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_frontend-critic-adjudication.md) (both CRITICALs verified empirically: C1 real at 9/4/2 person-waves, shared identically by both hubs; C2 closed by regenerating all four hukou intermediates cf-identical; recommendation promote, findings frozen into Stages 3/4/8).
+The adjudication caught a hazard in the critic's C2 fix: including the hukou-restriction script in the rebuild driver would write through the countries junction into the raw folder.
+Verification drivers persisted: [verify_c1.do](file:///C:/git/ckt/RP7/tests/stage0/verify_c1.do), [regen_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/regen_hukou.do).
+Still pending user decision: the two driver-hygiene fixes (username guard, junction precondition) and formal sign-off on freezing the critic findings into Stages 3/4/8.
+Next step: Stage 0 step five, refit the gate panel on the new canonical hub with unchanged code to freeze the baseline, plus the double-fit determinism proof.
