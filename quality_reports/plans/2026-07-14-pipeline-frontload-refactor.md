@@ -1,6 +1,6 @@
 # Plan: front-load the pipeline, staged with a tiered equivalence gate
 
-Date: 2026-07-14 (revised after fresh-context plan critique).
+Date: 2026-07-14 (revised after fresh-context plan critique; revised again the same evening after the stale-hub discovery, which restructured Stage 0 and re-based the gate baseline).
 Spec: [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/specs/2026-07-14-pipeline-frontload-refactor.md).
 Review: [2026-07-14_pipeline-consistency-audit.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-consistency-audit.md).
 
@@ -15,6 +15,7 @@ Citations below are by program name and anchor string, not line numbers, because
 
 The April 2026 M4 verification already showed that refits reproduce the committed sters bit-for-bit on this machine, so byte-identity is attainable, not aspirational.
 The gate is therefore tiered rather than a single pass/fail line.
+The baseline the gate compares against is the gate-panel refit produced in Stage 0 on the rebuilt hub, not the current ster population: the current sters predate the 2026-07-13 front-end commits (per-capita outcome and Change A) and are stale relative to committed source.
 
 Tier 1, provenance (exact, always required).
 Per cell: `e(N)` and `count if e(sample)` match baseline exactly; the trajectory partition (count of always / never / each switcher trajectory) matches exactly; the `e(sample)` membership is identical.
@@ -22,12 +23,17 @@ A provenance mismatch is a real change and stops the stage regardless of coeffic
 
 Tier 2, byte-identity (the target for stages that do not reorder rows).
 Full-precision `%24.16e` dump of `e(b)`/`e(V)` is identical to baseline.
-Stages 1 and 2 remove value-identical no-ops without touching row order, so they must be byte-identical; anything else is a bug.
+Stages 1 and 2 remove value-identical no-ops without touching row order or executing sorts, so they must be byte-identical.
+A Tier 2 red on these stages means stop and diagnose; one benign mechanism exists.
+Stata's `sort` is not stable on ties and tie order depends on the sortseed state; batch runs reset that state identically at launch, which is why unchanged code reproduces bit-for-bit, but an edit that changes the number or order of sorts executed before a tied sort can flip tie order without changing any value.
+If diagnosis traces a Tier 2 red to tie order alone (provenance exact, coefficients within the Tier 3 criterion), record it and adjudicate that stage at Tier 3; any other cause is a bug.
 
 Tier 3, tolerance adjudication (only when a stage legitimately reorders rows).
 Stages 3 and 4 move construction and reorder drops, so `vce(cluster pid)` summation order can flip low-order bits under float non-associativity.
-When Tier 2 goes red but Tier 1 passes and coefficients/SEs match to relative `1e-10`, the red is a benign reorder: accept and record it in the stage's gate artifact.
-If Tier 1 fails or the tolerance is exceeded, stop and surface it.
+When Tier 2 goes red but Tier 1 passes and every element of `e(b)` and `e(V)` satisfies |new - old| <= max(1e-12, 1e-10 x |old|), the red is a benign reorder: accept and record it in the stage's gate artifact.
+The mixed criterion (absolute floor plus relative band) keeps near-zero coefficients from blowing up a relative-only check.
+If Tier 1 fails or the criterion is exceeded, stop and surface it.
+Every Tier 3 acceptance is re-adjudicated against the full population at the end sweep (see after all stages).
 
 Every stage commits its gate artifact (the provenance table and the diff result) alongside the code, so "why did cell X move" is answerable from history.
 
@@ -37,18 +43,48 @@ Per-stage verification runs a fixed gate panel, not ad hoc cells, chosen to exer
 The panel prioritizes fast cells so a stage gate is minutes, not hours.
 The full `.ster` population is swept once at the end, when the definitive re-run happens, and compared cell-by-cell against baseline; that end sweep is the exhaustive characterization check, so no stage needs a full refit.
 
-## Stage 0: freeze the baseline and prove the gate is meaningful (no pipeline change)
+## Stage 0: rebuild the stale hub, then freeze the baseline (no refactor change)
 
-Preconditions, confirmed before any refactor:
-pin `version`, the Stata flavor and MP core count (mata reduction order depends on it), and the installed package set, and record them in the gate artifact;
-confirm the local data hub `C:/git/ckt/RP7/data` is populated and that `1_processData.do` regenerates the processed files it holds.
+The 2026-07-14 Stage 0 diagnostics restructured this stage: the processed hub at `C:/git/ckt/RP7/data/processed/` was built 2026-06-24 and predates three committed front-end changes, so the hub and every current `.ster` are stale relative to source.
+The three commits, each with a checkable on-disk signature:
+`47b60e3` builds `lndepvar` per-capita at source, so every consumption and income cell's `lndepvar` moves by exactly `ln(hhsize_cube)`.
+`a11e013` (Change A) reflags strict-spec-incomplete individuals as unbalanced: `_bal` cells lose those individuals (lower N), and `_unb` cells keep their rows with changed `unbalanced` and `unbalanced_choice` values.
+`1e10113` (C10) reclassifies `non_switcher` by observed movement, which moves values only for unbalanced workers.
+Because of Change A, the current GRC sters are correct on scale but fit on pre-Change-A samples, so the current ster population cannot serve as the gate baseline.
 
-Deliverables committed at Stage 0:
-a golden-master harness that refits a cell into a fresh output dir and runs the three-tier comparison against the baseline ster;
-a reproducibility proof that the gate panel refits byte-identically on unchanged code (if any panel cell does not, the pipeline is not run-to-run deterministic and that must be resolved before trusting the gate);
-the no-op inventory, an enumerated before/after variable diff for every `replace`/global the consistency stages will remove, run across all three countries, proving each is a no-op on the current data (this is the evidence base for Stages 1-2, not a plan assertion);
-a per-cell N-reconciliation baseline table (`e(N)`, `e(sample)` count, trajectory partition) for the whole `.ster` population, cheap because it needs `data_setup` + counts, not refits;
-an early 11b materiality probe: recompute the figure's mu quantities on the per-capita outcome (a mean recomputation, no GMM refit) and report whether the corrected scale changes the in-support conclusion, since a flip would change what the frozen results claim.
+Stage 0 therefore runs in this order.
+
+Before the rebuild, three fail-fast checks that need nothing but the current hub (folded in from the 2026-07-14 review adjudication).
+Pin the environment in the gate artifact: `version`, Stata flavor and MP core count (mata reduction order depends on it), and the installed package set; confirm once that the mainline pipeline has no randomized step (no bootstrap, simulation, or sampling), so no seed control is needed beyond the sortseed mechanism documented in the gate section.
+Run the determinism preflight: double-fit one fast GRC cell on the current hub and byte-compare the two sters; determinism is a property of machine plus code, not of which hub is loaded, so this proves the tiering premise before any rebuild work and refreshes the April M4 evidence.
+Self-test the harness before it gates anything: a known-good pair (a ster against itself) must pass all tiers, and a deliberately perturbed pair (one coefficient nudged at the 12th decimal) must fail Tier 2 and trip the Tier 3 criterion when the nudge exceeds it.
+
+First, rebuild the hub to a fresh location, never in place.
+Create `RP7/data_rebuild/` with an empty `processed/` and a `countries` junction to the existing raw folder, then run `1_processData.do` unmodified via a small driver that repoints `$dirdata`.
+The driver must not run `0_CHN_hukou_restrictions.do`, which writes into the raw `countries/` folder; the derived hukou files it once produced already exist there and are read, not rebuilt.
+
+Second, characterize the old hub against the fresh hub cell by cell.
+Every difference must be attributable to exactly one of the three commit signatures above; a difference that matches none stops the stage.
+`IDN_unb.dta` doubles as a determinism probe: it was rebuilt through current code on 2026-07-14 at 19:45, so the fresh copy must match it byte for byte.
+
+Third, re-run `3_OLS_uGRC` and `6_OLS_uGRC_hukou` against the fresh hub into a fresh output directory and table the combined per-cell movement (scale fix plus Change A) against the current tables.
+This is the number that says how far the paper's OLS consumption tables move; the movement is reported combined, not decomposed, per the author's 2026-07-14 decision.
+
+Fourth, author review of the characterization artifact (the attributed cell-by-cell hub diff and the OLS movement table), not a bare approval, then promote: swap the fresh hub in as canonical and keep the old hub as a backup until the definitive run.
+
+Fifth, freeze the gate baseline on the new hub.
+Refit the gate panel with unchanged code and store those sters as the baseline for Stages 1-8.
+Double-fit at least two panel cells and byte-compare as the run-to-run determinism proof; if any cell does not reproduce, the pipeline is not deterministic and that must be resolved before trusting the gate.
+The panel refit is the only GRC cost pulled forward; the full population re-run stays at the end, because GRC fits are expensive.
+
+Carried Stage 0 deliverables, re-based on the new hub:
+the golden-master harness (drafted as `gate_harness.do`, not yet run);
+the no-op inventory for every `replace`/global the consistency stages will remove, which is meaningful only against the rebuilt hub (against the stale hub, the GRC load-time replaces were the sole source of the per-capita scale, not no-ops);
+the per-cell N-reconciliation baseline recomputed on the new hub.
+Environment pinning moved to the fail-fast preflight above (first values recorded 2026-07-14: StataNow 19.5 MP, 4 processors).
+The 11b materiality probe already ran on 2026-07-14; its result is recorded under D-3 below.
+
+Until the definitive run at the end, the paper's GRC tables remain pre-Change-A, so nothing ships to coauthors or Overleaf before that run completes.
 
 ## Stage 1: single source of truth for the covariate ladder (consistency, Tier 2)
 
@@ -59,24 +95,32 @@ Commit with gate artifact.
 
 ## Stage 2: de-mutate and rename the outcome, remove income (consistency, Tier 2)
 
-Build the per-capita outcome once in `handle_depvar`, parameterized by `` `depvar' ``, and rename `lndepvar` to `logpc_consumption`.
+Build the per-capita outcome once in `handle_depvar`, parameterized by `` `depvar' ``, and rename `lndepvar` to `logpc_` followed by the outcome name, giving `logpc_consumption` for consumption cells and `logpc_income` for income cells.
 Remove every redundant `replace ... = log(consumption/hhsize_cube)` site (enumerated by the Stage 0 inventory) and the central one in `run_grc_with_extra_regressor`, updating every consumer to the new name.
-Remove the income pathway (the `_income.dta` builds in `1_processData.do` and the income blocks in `3_OLS_uGRC`/`4_GrRC`/`7_GrRC_hukou` and the `iuu` extras), pending the author's confirmation that income is cut from the paper, not merely dormant.
-No row-order change, so the gate panel (consumption cells) must be byte-identical; income cells leave the panel with the pathway.
+Per D-2, keep the `_income.dta` builds in `1_processData.do` but remove the income estimation blocks (in `3_OLS_uGRC`/`4_GrRC`/`7_GrRC_hukou` and the `iuu` extras), so income data stay buildable while no income results are produced.
+No row-order change, so the gate panel (consumption cells) must be byte-identical; income cells leave the panel with the estimation blocks.
 Commit with gate artifact.
 
 ## Stage 3: front-load the estimation scaffolding, document the trajectory contract (consistency, Tier 3 allowed)
 
 Move the `always`/`never`/`switcher_*` construction and the `trajectory` sentinel into the front-end build so the processed `.dta` carries them, with a documented value label on the sentinel, and persist the data-driven `$switchers` list as a dataset characteristic the estimator reads back.
 Reduce the analysis scripts to `use` + estimate; remove the now-redundant `drop if mi(logpc_consumption)|mi(choice)` re-filters in 5b/5c.
+Critic finding MAJOR-4 (2026-07-14 review) lands here, with the author's decision already made: rows with missing or non-positive `hhsize_cube` KEEP a missing per-capita outcome in the saved data (no drop at source, never any imputation); `handle_depvar` gains a `count if mi(lndepvar)` diagnostic so the attrition each estimator inherits is visible per cell.
 Build-time construction may reorder rows, so Tier 3 applies: Tier 1 provenance must be exact; a Tier 2 red is accepted only under the `1e-10` tolerance and recorded.
 Commit with gate artifact.
 
 ## Stage 4: split set_covariates, tidy non_switcher and the partition (consistency, Tier 3 allowed)
 
 Separate covariate definition from the sample drops; replace the two hand-enumerated `non_switcher` string lists with a computed rule; collapse the three partition re-implementations to one shared indicator.
+Five critic findings from the 2026-07-14 review land here.
+CRITICAL-1: recompute `nr_periods_obs`, `obs_per_individual`, and `pid_first_obs` after the `set_covariates` drops (or move the drops ahead of the descriptor construction), then re-apply the singleton drop on the corrected count.
+The predicted diff is enumerated in advance from [verify_c1.do](file:///C:/git/ckt/RP7/tests/stage0/verify_c1.do): stale descriptors on 9/4/2 person-waves (CHN/IDN/TZA unb), 2/0/2 rows of pids lacking a first-obs flag, and 0/1/2 surviving singleton rows whose removal will change N in those cells; the Stage 4 gate artifact must show exactly this diff and nothing else, with author sign-off since N moves.
+MAJOR-1: add an `isid pid period` assert in `use_data` before any transformation.
+MAJOR-2: replace the `r(N_drop)` display strings in `handle_choice`/`handle_depvar` (a return value `drop` never sets) with counted attrition messages.
+MAJOR-3: give the three `set_covariates` drops real before/after counts.
+MAJOR-7: delete the dead `depvar` argument and its stale comment in `set_covariates`.
 Rebuild all processed files and diff variable-by-variable against the Stage 0 processed snapshot; the reordered drops make Tier 3 applicable to the sters.
-Provenance (N, partition, `e(sample)`) must be exact; coefficients within tolerance.
+Provenance (N, partition, `e(sample)`) must be exact except for the CRITICAL-1 singleton rows predicted above; coefficients within tolerance.
 Commit with gate artifact.
 
 ## Stage 5: inversion CIs key off e(sample) (correctness, contract not exercised today)
@@ -85,6 +129,7 @@ Change `attach_inversion_ci` (5b/5c) to compute on the fitted ster's `e(sample)`
 This establishes a contract that is not currently exercised (zero missingness in the present covariates), so the CIs should match baseline today; a future data refresh with missingness would move them, which is the point.
 Document the invariant.
 Verify: refit the inversion panel cells; Tier 1 exact, Tier 2 expected; if any CI moves the reconstruction was already diverging, so stop and surface.
+Byte-identity alone cannot distinguish the new code from the old here, so the stage also commits a synthetic contract test: a scratch dataset with injected missingness, where the reconstruction and `e(sample)` disagree by construction, asserting the CI computes on `e(sample)`.
 Author sign-off, then commit.
 
 ## Stage 6: clean up run_grc_robust_vv (correctness, contract not exercised today)
@@ -92,6 +137,7 @@ Author sign-off, then commit.
 Make the Verdier loop start each spec from the same baseline sample (preserve/restore or a scoped working copy), so the internal `drop if missing(vfirst)` no longer persists across specs.
 Same contract framing as Stage 5: expected byte-identical today, corrected for the general case.
 Verify: refit the Verdier panel cells for all three countries; if any move, the persistence was affecting results and that is a finding, not something to absorb.
+Same contract-test obligation as Stage 5: a synthetic spec sequence on scratch data, where the old code's persisted `drop if missing(vfirst)` would shrink later specs, asserting each spec starts from the full baseline sample.
 Author sign-off, then commit.
 
 ## Stage 7: fix the 11b figure scale (correctness, figure changes)
@@ -102,10 +148,12 @@ Author sign-off (a numeric change is expected), then commit.
 
 ## Stage 8: config hygiene (no estimate change)
 
-Move the derived `CHN_hukou_*.dta` out of `data/countries/` (raw) into `data/processed/` and repoint the readers.
+Move the derived `CHN_hukou_*.dta` out of `data/countries/` (raw) into `data/processed/` and repoint the readers (critic MAJOR-6, confirmed; the intermediates were verified cf-identical to a fresh regeneration on 2026-07-14, so the move is pure relocation).
+Warning recorded from the critic adjudication: any driver that regenerates the hukou files must not do so through a `countries` junction into the raw folder.
+The named master log (critic MAJOR-5) is now required, not optional, per the author's 2026-07-14 decision: a timestamped, named, text-format log covering the data-construction path, following the AEA pattern in the project conventions.
 Script-folder taxonomy (user preference, 2026-07-14, to settle by discussion first): the leading underscore is currently overloaded, marking both throwaway dev scratch (`_smoke_*`, `_probe_*`, `_refit_*`, `test_*`) and load-bearing include-only helpers (`_export_e1_inputs.do`, `_export_e1_inputs_hukou.do`, included by `12_counterfactuals.do`).
 Proposed convention: a `scripts/helpers/` subdirectory for include-only helpers and a `tests/` or `dev/` subdirectory for the scratch, so the pipeline folder shows only numbered pipeline scripts plus clearly-marked entry points.
-Optionally add the named master log, the hukou eststo-naming fix, the learning edge-case flag, and the 1b cross-check assertion.
+Optionally add the hukou eststo-naming fix, the learning edge-case flag, and the 1b cross-check assertion.
 Verify: full clean run of the cleaning path; confirm every processed file regenerates and the hukou readers resolve.
 Commit.
 
@@ -118,17 +166,37 @@ Author approval, then commit.
 
 ## After all stages
 
-Run the full pipeline once (serial or via the parallel launcher, the next project) on final code, and compare the full `.ster` population cell-by-cell against baseline as the exhaustive end characterization sweep.
+Run the full pipeline once (serial or via the parallel launcher, the next project) on final code.
+This single run is deliberately the latest possible point for the full GRC refit, per the author's 2026-07-14 decision, and it does three jobs at once: it is the definitive Change A plus per-capita update of the full `.ster` population, the source of the final paper tables, and the exhaustive end characterization sweep.
+Compare the full population cell-by-cell against the pre-rebuild sters to characterize the movement (expected: scale plus Change A in OLS cells, Change A alone in GRC cells), and hold the gate-panel cells to the Stage 0 baseline within the tiers.
+Re-adjudicate every Tier 3 acceptance recorded during the stages against the full population; any cell exceeding the mixed criterion reopens the stage that accepted it.
 Promote the fresh output to canonical and copy `RP7/{scripts,output}/` to Dropbox as the replication handoff.
 
-## Decisions to resolve before Stage 1 (batched to avoid serial waits)
+## Decisions (all resolved 2026-07-14)
 
-D-1. C2, the IDN cnu x urbanbirth cell: keep the documented urban-dataset override (and footnote it) or align it to the nonag definition (changes one extras number); may need a coauthor's memory of why urban was used.
-D-2. Income: cut from the paper (remove the code paths in Stage 2) or dormant (leave the paths, do not rebuild)? Project card currently lists log income as the secondary outcome.
-D-3. 11b materiality: after the Stage 0 probe reports whether the in-support conclusion flips, decide whether the fix is cosmetic or claim-affecting.
+D-1. C2, the IDN cnu x urbanbirth cell: align it to the nonag definition; this changes one extras number.
+D-2. Income: keep building the income processed data but do not run income results, and cut income from the paper text (easy to restore if a referee asks); the outcome name is parameterized as `logpc_` plus the outcome so income cells stay honestly named.
+D-3. 11b materiality: the Stage 0 probe shows TZA's never-migrant target moves from inside the switcher support on the raw scale to below it on the per-capita scale (a gap of about 0.055 log points), while IDN and CHN stay inside on both scales; the fix is claim-affecting for TZA and cosmetic for IDN and CHN.
 
 ## Review and human gates
 
 Each consistency stage: fixer applies, the harness confirms the tier result, `critic-stata` on the touched programs, then commit with the gate artifact.
 Correctness and estimand stages (5, 6, 7, 9) and decisions D-1/D-2/D-3 require author sign-off before commit, since they can change reported numbers or a treatment definition.
 Maximum five review-fix rounds per stage; unresolved issues stop the stage and surface.
+
+## Rollback
+
+Each stage is a branch, per the standing git convention; a mid-stage hard-stop reverts the branch and the pipeline stays on the last gated commit.
+Un-promoting the hub means repointing back to the retained backup, which is kept until the definitive run completes.
+
+## Appendix: gate panel and operator pointers
+
+The gate panel below is the concrete cell list; runtimes are measured at the determinism preflight, and a slow cell may be swapped for a faster cell on the same code path with author approval.
+OLS/FE: `3_OLS_uGRC` consumption for CHN, IDN, TZA, unbalanced and balanced.
+Main GRC: `4_GrRC` consumption unbalanced for CHN, IDN, TZA, plus one balanced cell (TZA_bal, the smallest).
+Non-ag GRC: `5_GrRC_NonAg` IDN unbalanced (the only nonag family).
+Hukou GRC: `7_GrRC_hukou` CHN rural-first unbalanced, plus CHN urban-first unbalanced as the designated switcher-sparse cell.
+Extras: one `run_grc_with_extra_regressor` stem (experience) on its usual cell.
+Inversion: `5b_inversion` on the main GRC panel cells.
+Verdier: `17_verdier_robust` on TZA per gate run (the fastest country), all three countries at the end sweep.
+Operator pointers: the `$dirdata`-repointing rebuild driver and `gate_harness.do` live in `RP7/tests/stage0/`; the Stage 1 and 2 edit-site anchors are enumerated in the Stage 0 no-op inventory ([noop_lndepvar.csv](file:///C:/git/ckt/quality_reports/staging/stage0/noop_lndepvar.csv) and successors), which this appendix references rather than duplicates.
