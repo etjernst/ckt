@@ -17,7 +17,7 @@ The environment is StataNow 19.5 MP, 4 processors.
 Stage 0 do-files live in [C:/git/ckt/RP7/tests/stage0/](file:///C:/git/ckt/RP7/tests/stage0/) and reports in [C:/git/ckt/quality_reports/staging/stage0/](file:///C:/git/ckt/quality_reports/staging/stage0/).
 Uncommitted work includes all Stage 0 files, the three planning artifacts, and this log.
 
-Two author decisions from the morning session are still open and block Stage 1 (not Stage 0): income status (cut vs dormant) and C2 (the cnu x urbanbirth cell).
+Both morning decisions are now resolved: C2 (the cnu x urbanbirth cell) will be fixed by aligning it to the nonag definition; income data keeps being built, but income results are not run and income is cut from the paper text (restore if a referee asks), with the outcome name parameterized `logpc_`depvar'` so income cells stay honestly named.
 `gate_harness.do` is drafted but not yet run; the gate-panel byte-reproducibility proof is held pending go-ahead on the rebuild above.
 
 ---
