@@ -1,0 +1,13 @@
+stage0_checks environment capture
+c(stata_version)  = 19.5
+c(version)        = 17
+c(MP)             = 1
+c(SE)             = 1
+c(processors)     = 4
+c(processors_max) = 4
+c(maxvar)         = 5000
+c(os)             = Windows
+c(machine_type)   = PC (64-bit x86-64)
+values            = nominal
+vsfx              = 
+dirdata           = C:/git/ckt/RP7/data
