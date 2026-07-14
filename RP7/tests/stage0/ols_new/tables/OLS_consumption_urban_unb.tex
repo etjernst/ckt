@@ -1,0 +1,29 @@
+\begin{table}[htbp] \centering \begin{threeparttable}
+ \caption{OLS Estimates of the Returns to Urban Location on log Consumption} 
+ \label{tab:OLS_cons_urb_unb} 
+\begin{tabular}{l cccccc} \toprule  \textbf{Dep. var:}  log(consumption) 
+                    &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   \\
+\textbf{Panel A: Indonesia} \\
+Urban               &       0.323***&       0.323***&       0.323***&       0.323***&       0.118***&       0.084***\\
+                    &     (0.007)   &     (0.007)   &     (0.007)   &     (0.007)   &     (0.021)   &     (0.009)   \\
+\addlinespace
+Observations        &      92,244   &      92,244   &      92,244   &      92,244   &       6,555   &      92,244   \\
+Individuals         &      29,491   &      29,491   &      29,491   &      29,491   &       1,311   &      29,491   \\
+Adj. R$^{2}$        &        0.21   &        0.21   &        0.21   &        0.21   &        0.23   &        0.55   \\
+\cmidrule{2 -7}
+\textbf{Panel B: China} \\
+Urban               &       0.474***&       0.474***&       0.474***&       0.474***&       0.009   &       0.142***\\
+                    &     (0.007)   &     (0.007)   &     (0.007)   &     (0.007)   &     (0.029)   &     (0.015)   \\
+\addlinespace
+Observations        &     109,535   &     109,535   &     109,535   &     109,535   &       4,664   &     109,535   \\
+Individuals         &      34,746   &      34,746   &      34,746   &      34,746   &       1,166   &      34,746   \\
+Adj. R$^{2}$        &        0.17   &        0.17   &        0.17   &        0.17   &        0.14   &        0.52   \\
+\cmidrule{2-7}
+\textbf{Panel C: Tanzania} \\
+Urban               &       0.710***&       0.710***&       0.710***&       0.710***&       0.172***&       0.110***\\
+                    &     (0.011)   &     (0.011)   &     (0.011)   &     (0.011)   &     (0.017)   &     (0.014)   \\
+\addlinespace
+Observations        &      29,862   &      29,862   &      29,862   &      29,862   &       3,414   &      29,862   \\
+Individuals         &      11,010   &      11,010   &      11,010   &      11,010   &       1,138   &      11,010   \\
+Adj. R$^{2}$        &        0.25   &        0.25   &        0.25   &        0.25   &       0.088   &        0.71   \\
+\cmidrule{2-7} Time FE & Y & Y & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All & All & All \\ Individual FE & & & & & & Y \\ Migrants only & & & & & Y & \\ \bottomrule \end{tabular} \begin{tablenotes}[flushleft] \footnotesize \item{The dependent variable is the log of total consumption per capita. All columns include time (survey wave) fixed effects. Column (2) adds a female indicator, column (3) adds age squared, and columns (4) to (6) add education (years of schooling, maximum across periods) and its square. Column (5) restricts the sample to migrants, i.e. those who we observe switching between rural and urban at least once in our data, and column (6) adds individual fixed effects. We report robust standard errors, clustered at the individual level, in parentheses. Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.} \end{tablenotes} \end{threeparttable} \end{table}
