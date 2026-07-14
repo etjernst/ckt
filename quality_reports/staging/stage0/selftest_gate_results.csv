@@ -1,0 +1,4 @@
+estname,N_base,N_new,provenance_ok,bit_identical,max_crit_ratio,tier_verdict
+selftest_base,200,200,1,1,0.0000000000000000e+00,PASS_BITWISE
+selftest_base,200,200,1,0,1.9945326886170949e+06,FAIL_TOLERANCE
+selftest_base,200,200,1,0,1.9945328536456891e-01,PASS_TOLERANCE

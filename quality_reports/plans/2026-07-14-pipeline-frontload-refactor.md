@@ -106,6 +106,7 @@ Commit with gate artifact.
 Move the `always`/`never`/`switcher_*` construction and the `trajectory` sentinel into the front-end build so the processed `.dta` carries them, with a documented value label on the sentinel, and persist the data-driven `$switchers` list as a dataset characteristic the estimator reads back.
 Reduce the analysis scripts to `use` + estimate; remove the now-redundant `drop if mi(logpc_consumption)|mi(choice)` re-filters in 5b/5c.
 Critic finding MAJOR-4 (2026-07-14 review) lands here, with the author's decision already made: rows with missing or non-positive `hhsize_cube` KEEP a missing per-capita outcome in the saved data (no drop at source, never any imputation); `handle_depvar` gains a `count if mi(lndepvar)` diagnostic so the attrition each estimator inherits is visible per cell.
+REMIND THE AUTHOR AT STAGE 3 KICKOFF (requested 2026-07-14): keep-with-missing and drop-at-source are equivalent for every estimate (all estimators condition on the outcome, and the tables enforce a common sample), so the live choice is only whether summary-stat denominators and the wave-counting bookkeeping describe the estimable sample; the author may flip to drop-at-source here, and the gate enumerates the affected rows either way.
 Build-time construction may reorder rows, so Tier 3 applies: Tier 1 provenance must be exact; a Tier 2 red is accepted only under the `1e-10` tolerance and recorded.
 Commit with gate artifact.
 
