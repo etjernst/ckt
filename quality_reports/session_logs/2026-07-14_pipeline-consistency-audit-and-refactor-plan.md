@@ -15,12 +15,14 @@ Then open Stage 1 (single source for the covariate ladder, Tier 2 byte-identity 
 Cached state, hub: the canonical processed data is now the rebuilt hub at [C:/git/ckt/RP7/data/processed](file:///C:/git/ckt/RP7/data/processed/) (per-capita outcome, Change A, C10).
 The old hub is retained at [C:/git/ckt/RP7/data/processed_stale_2026-07-14](file:///C:/git/ckt/RP7/data/processed_stale_2026-07-14/) until the definitive run, and rollback is just swapping the rename back.
 
-Cached state, baseline run: the driver [gate_baseline.do](file:///C:/git/ckt/RP7/tests/stage0/gate_baseline.do) launched around 23:30 via `stata-mp -e` from `RP7/tests/stage0`.
+Cached state, baseline run: the first launch (23:30, whole-script legs) was KILLED at 00:20 after the user flagged that the first fit grinding for 45 minutes was the `_ct` no-covariate spec, a column dropped from the tables as a bad, slow spec; zero sters had been written, so nothing was lost.
+The driver [gate_baseline.do](file:///C:/git/ckt/RP7/tests/stage0/gate_baseline.do) was RELAUNCHED around 00:25 on 2026-07-15 via `stata-mp -e` from `RP7/tests/stage0`, now with every leg a slice: [gate_panel_main.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_main.do) (4_GrRC consumption blocks, cuu+cub x 3 countries, c1/c2/ca specs, 18 fits), [gate_panel_nonag.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_nonag.do) (IDN cnu, 3 fits), [gate_panel_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_hukou.do) (CHN_rf_cuu and CHN_uf_cuu, 6 fits), [gate_panel_extras.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_extras.do) (experience IDN cuu stem), and [gate_panel_verdier.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_verdier.do) (TZA only, full onestep/twostep x 5-spec VV grid, 10 fits).
+Excluded from the baseline by author decision: every `_ct` (period-FE-only) call, dropped from the tables 2026-07-15; every income (`iuu`) block, per D-2; Verdier IDN/CHN, per the plan appendix.
+The slices were built programmatically with content assertions ([build_slices.py](file:///C:/Users/maand/AppData/Local/Temp/claude/C--git-ckt/6f4531b7-aa10-4c73-a728-e6fd75436c40/scratchpad/build_slices.py) in the session scratchpad); slice logs are `gate_panel_main/nonag/hukou/extras.log` in `RP7/scripts/logs/` and `gate_panel_verdier.log` in `RP7/tests/stage0/`.
 The shadow root [baseline_root](file:///C:/git/ckt/RP7/tests/stage0/baseline_root/) has `scripts/` and `data/` junctions into the live tree---remove only with `cmd /c rmdir`, never a recursive delete, and the directory is git-excluded via `.git/info/exclude`---plus a real `output/` that receives the baseline sters.
-The panel covers the whole `4_GrRC` (45 `run_grc` calls), the whole `5_GrRC_NonAg` (5 calls), the whole `17_verdier_robust` (9 calls), the sliced [gate_panel_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_hukou.do) (`CHN_rf_cuu` and `CHN_uf_cuu`, 10 calls), and the sliced [gate_panel_extras.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_extras.do) (experience IDN cuu, 1 stem).
 
 Cached state, deviations to remember: `5b_inversion` is excluded from the baseline because its Python module resolves paths relative to `$dir`, which the shadow root breaks, so the inversion baseline gets refit from the frozen GRC sters when Stage 5 arrives.
-The whole-script legs mean more fits than the plan appendix's panel; if runtime is unacceptable, the run can be killed and `4_GrRC` sliced too, keeping the sters already written.
+FOLLOW-UP FOR STAGE 2: the dead `_ct` calls (and the commented `_c0` calls) still sit in `4_GrRC.do`, `5_GrRC_NonAg.do`, and `7_GrRC_hukou.do`; the author confirmed the column is dropped from the tables, so removing those calls should ride along with Stage 2's income-block removal, gated as usual.
 
 Cached state, gate harness: [gate_harness.do](file:///C:/git/ckt/RP7/tests/stage0/gate_harness.do)'s `gate_compare` now enforces a pass iff |new - old| <= max(1e-12, 1e-10 x |old|) per element (CSV column `max_crit_ratio`, <= 1 passes), takes a `basedir()` option pointing at the frozen baseline directory, and passed the three-way self-test in [selftest_gate.do](file:///C:/git/ckt/RP7/tests/stage0/selftest_gate.do).
 
@@ -28,7 +30,7 @@ Standing reminders: nothing ships to coauthors or Overleaf until the definitive 
 At Stage 3 kickoff, remind the user about the MAJOR-4 keep-vs-drop choice (the plan's Stage 3 section carries the reminder text).
 At Stage 4, the CRITICAL-1 fix has its predicted diff enumerated in the plan.
 
-Uncommitted: `gate_baseline.do`, `gate_panel_hukou.do`, and `gate_panel_extras.do` (commit after the baseline run verifies).
+Uncommitted: `gate_baseline.do` and all five `gate_panel_*.do` slices (commit after the baseline run verifies).
 Everything else from today is committed: `71c6d93` (Stage 0 evidence), `d8fecfe` (plan and reviews), `90a802e` (session log), and `76b6ea1` (harness and self-test).
 
 ---
