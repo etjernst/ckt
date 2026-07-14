@@ -2,23 +2,34 @@
 
 ## If you resume
 
-One-line state: Stage 0 ran and found that the processed data hub is stale, still holding raw log consumption from before last session's per-capita fix, so the OLS and hukou-OLS consumption outputs are currently on the wrong scale and the true first step is rebuilding the hub with current source before any refactor edit proceeds.
+One-line state: the rebuilt data hub is promoted to canonical, the critic pass is adjudicated with findings frozen into Stages 3/4/8, the gate harness passed its self-test after two bug fixes, and the Stage 0 gate-panel baseline refit (roughly 70 GMM fits) is running as an independent stata-mp batch that survives the session ending.
 
-Read first: this log in full, then the findings report [2026-07-14_pipeline-consistency-audit.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-consistency-audit.md), the spec [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/specs/2026-07-14-pipeline-frontload-refactor.md), and the plan [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md).
+Read first: this log in full, then the plan [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md), the critic report [2026-07-14_pipeline-frontend-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-frontend-critic-stata.md), and its adjudication [2026-07-14_frontend-critic-adjudication.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_frontend-critic-adjudication.md).
 
-Open thread: the processed data hub at [C:/git/ckt/RP7/data/processed/](file:///C:/git/ckt/RP7/data/processed/) is stale, because it holds raw log consumption from before last session's per-capita fix, so the OLS and hukou-OLS consumption outputs are currently on the wrong scale.
+Next concrete action: check whether the baseline refit finished.
+The rc file is [gate_baseline_rc.txt](file:///C:/git/ckt/RP7/tests/stage0/gate_baseline_rc.txt), where rc=0 means clean.
+The ster count lives in [baseline_root/output/](file:///C:/git/ckt/RP7/tests/stage0/baseline_root/output/), and the logs to check are `4_GrRC.log` and `5_GrRC_NonAg.log` in `RP7/scripts/logs/`, `gate_panel_hukou.log` and `gate_panel_extras.log` in the same place, and `17_verdier_robust.log` in `RP7/tests/stage0/`.
+If everything is clean, run the determinism double-fit: re-run the `5_GrRC_NonAg` leg into a second output directory and `gate_compare` every ster pair against the baseline, expecting PASS_BITWISE.
+Then open Stage 1 (single source for the covariate ladder, Tier 2 byte-identity gate).
 
-Next concrete action: once the user finishes inspecting [C:/git/ckt/RP7/scripts/](file:///C:/git/ckt/RP7/scripts/) to confirm the stale-data finding, rebuild the processed hub with current source into a fresh location rather than overwriting the current hub, confirm that the depvar is per-capita everywhere, and quantify how far the OLS and hukou-OLS consumption numbers move from raw to per-capita.
-Then re-establish a clean per-capita baseline and resume the staged refactor.
+Cached state, hub: the canonical processed data is now the rebuilt hub at [C:/git/ckt/RP7/data/processed](file:///C:/git/ckt/RP7/data/processed/) (per-capita outcome, Change A, C10).
+The old hub is retained at [C:/git/ckt/RP7/data/processed_stale_2026-07-14](file:///C:/git/ckt/RP7/data/processed_stale_2026-07-14/) until the definitive run, and rollback is just swapping the rename back.
 
-Cached state: `$dir` for user maand is `C:/git/ckt/RP7`, and the working code lives in [C:/git/ckt/RP7/scripts/](file:///C:/git/ckt/RP7/scripts/).
-The stale hub is [C:/git/ckt/RP7/data/processed/](file:///C:/git/ckt/RP7/data/processed/), and the sters are in [C:/git/ckt/RP7/output/](file:///C:/git/ckt/RP7/output/) (310 total, 54 are `grc_*_g` files).
-The environment is StataNow 19.5 MP, 4 processors.
-Stage 0 do-files live in [C:/git/ckt/RP7/tests/stage0/](file:///C:/git/ckt/RP7/tests/stage0/) and reports in [C:/git/ckt/quality_reports/staging/stage0/](file:///C:/git/ckt/quality_reports/staging/stage0/).
-Uncommitted work includes all Stage 0 files, the three planning artifacts, and this log.
+Cached state, baseline run: the driver [gate_baseline.do](file:///C:/git/ckt/RP7/tests/stage0/gate_baseline.do) launched around 23:30 via `stata-mp -e` from `RP7/tests/stage0`.
+The shadow root [baseline_root](file:///C:/git/ckt/RP7/tests/stage0/baseline_root/) has `scripts/` and `data/` junctions into the live tree---remove only with `cmd /c rmdir`, never a recursive delete, and the directory is git-excluded via `.git/info/exclude`---plus a real `output/` that receives the baseline sters.
+The panel covers the whole `4_GrRC` (45 `run_grc` calls), the whole `5_GrRC_NonAg` (5 calls), the whole `17_verdier_robust` (9 calls), the sliced [gate_panel_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_hukou.do) (`CHN_rf_cuu` and `CHN_uf_cuu`, 10 calls), and the sliced [gate_panel_extras.do](file:///C:/git/ckt/RP7/tests/stage0/gate_panel_extras.do) (experience IDN cuu, 1 stem).
 
-Both morning decisions are now resolved: C2 (the cnu x urbanbirth cell) will be fixed by aligning it to the nonag definition; income data keeps being built, but income results are not run and income is cut from the paper text (restore if a referee asks), with the outcome name parameterized `logpc_`depvar'` so income cells stay honestly named.
-`gate_harness.do` is drafted but not yet run; the gate-panel byte-reproducibility proof is held pending go-ahead on the rebuild above.
+Cached state, deviations to remember: `5b_inversion` is excluded from the baseline because its Python module resolves paths relative to `$dir`, which the shadow root breaks, so the inversion baseline gets refit from the frozen GRC sters when Stage 5 arrives.
+The whole-script legs mean more fits than the plan appendix's panel; if runtime is unacceptable, the run can be killed and `4_GrRC` sliced too, keeping the sters already written.
+
+Cached state, gate harness: [gate_harness.do](file:///C:/git/ckt/RP7/tests/stage0/gate_harness.do)'s `gate_compare` now enforces a pass iff |new - old| <= max(1e-12, 1e-10 x |old|) per element (CSV column `max_crit_ratio`, <= 1 passes), takes a `basedir()` option pointing at the frozen baseline directory, and passed the three-way self-test in [selftest_gate.do](file:///C:/git/ckt/RP7/tests/stage0/selftest_gate.do).
+
+Standing reminders: nothing ships to coauthors or Overleaf until the definitive run regenerates all sters and tables, since the current sters and paper tables were fit on the old hub.
+At Stage 3 kickoff, remind the user about the MAJOR-4 keep-vs-drop choice (the plan's Stage 3 section carries the reminder text).
+At Stage 4, the CRITICAL-1 fix has its predicted diff enumerated in the plan.
+
+Uncommitted: `gate_baseline.do`, `gate_panel_hukou.do`, and `gate_panel_extras.do` (commit after the baseline run verifies).
+Everything else from today is committed: `71c6d93` (Stage 0 evidence), `d8fecfe` (plan and reviews), `90a802e` (session log), and `76b6ea1` (harness and self-test).
 
 ---
 
@@ -243,3 +254,66 @@ The adjudication caught a hazard in the critic's C2 fix: including the hukou-res
 Verification drivers persisted: [verify_c1.do](file:///C:/git/ckt/RP7/tests/stage0/verify_c1.do), [regen_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/regen_hukou.do).
 Still pending user decision: the two driver-hygiene fixes (username guard, junction precondition) and formal sign-off on freezing the critic findings into Stages 3/4/8.
 Next step: Stage 0 step five, refit the gate panel on the new canonical hub with unchanged code to freeze the baseline, plus the double-fit determinism proof.
+
+---
+
+## Continuation (night): critic adjudication, promotion executed, gate baseline launched, harness self-test
+
+### Goals
+
+Adjudicate the user-requested critic-stata pass before promotion, execute promotion, write the approved decisions into the plan, run Stage 0 step five (the gate-panel baseline) and the harness self-test while it runs, and wrap up for a fresh-context session.
+
+### Critic pass
+
+The fresh-context critic (sonnet) returned 3 CRITICAL, 7 MAJOR, and 5 MINOR findings, with a do-not-promote verdict.
+The critic session had no Write tool, so the parent session persisted the report verbatim to [2026-07-14_pipeline-frontend-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-frontend-critic-stata.md).
+Both data-relevant CRITICALs were verified empirically before adjudicating, via [verify_c1.do](file:///C:/git/ckt/RP7/tests/stage0/verify_c1.do) and [regen_hukou.do](file:///C:/git/ckt/RP7/tests/stage0/regen_hukou.do).
+CRITICAL-1 (the descriptors `nr_periods_obs`, `obs_per_individual`, and `pid_first_obs` go stale after `set_covariates` row drops) is real: 9/4/2 stale person-waves in CHN/IDN/TZA unb, 2/0/2 rows of pids lacking a first-obs flag, and 0/1/2 surviving singleton rows, identical in both hubs, so the defect cannot distinguish between them.
+CRITICAL-2 (the rebuild driver skipped the hukou-intermediates prerequisite) closed empirically: all four `CHN_hukou_*.dta` files regenerate `cf`-identical from current source.
+The adjudication at [2026-07-14_frontend-critic-adjudication.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_frontend-critic-adjudication.md) also caught a hazard in the critic's proposed C2 fix: including the hukou-restriction script in the rebuild driver would write through the countries junction into the raw folder.
+
+### Decisions, with the why
+
+The user approved promotion at 22:37 despite the critic's do-not-promote verdict, because the verdict reviewed the pipeline in absolute terms while the actual decision was old hub versus new hub, and every verified defect is shared identically by both hubs while the new hub corrects the outcome scale and carries Change A and C10.
+Promotion was executed as renames: the old `processed` directory became `processed_stale_2026-07-14` (34 files, kept as rollback), the rebuilt hub moved in as the canonical `processed` (34 files), and the `data_rebuild` junction was removed with `rmdir`.
+
+The user declined the `rebuild_hub.do` hygiene fixes (a username guard and a junction precondition), because no future hub rebuilds are planned and any future parallelization should be built more cleanly than this driver; the findings stay on record in the adjudication.
+
+The user approved the findings-to-stages mapping and it is now written into the plan: MAJOR-4 goes to Stage 3, with the ruling that rows with missing or non-positive `hhsize_cube` keep a missing per-capita outcome (no drop, no imputation) plus a diagnostic; CRITICAL-1 and MAJOR-1/2/3/7 go to Stage 4, with the predicted diff enumerated; MAJOR-5 (a named master log) is now required in Stage 8; and MAJOR-6 (hukou files written out of the raw folder) is confirmed for Stage 8.
+
+### Discussion: MAJOR-4 equivalence
+
+The user pushed back on the MAJOR-4 ruling: since tables restrict to a common `e(sample)` across columns, keep-with-missing is effectively a drop.
+The answer: the two approaches are equivalent for every estimate, since all estimators condition on the outcome, but not equivalent for summary-statistic denominators and wave-counting bookkeeping.
+The user asked to be reminded at Stage 3 kickoff, and that reminder now sits in the plan's Stage 3 section.
+
+### Baseline launch
+
+Sters save to hardcoded `$dir/output` paths, so repointing `$output` alone does not redirect them.
+The solution is a shadow root ([baseline_root](file:///C:/git/ckt/RP7/tests/stage0/baseline_root/)) whose `scripts/` and `data/` are junctions to the live tree and whose `output/` is real, with the global `dir` pointed at it.
+The shadow root is excluded from git via `.git/info/exclude`, because git would otherwise index the whole scripts tree twice through the junction.
+The plan uses whole-script legs for `4_GrRC`, `5_GrRC_NonAg`, and `17_verdier` (bounded cost, no slicing-drift risk) and verbatim slices only for the two most expensive scripts (`7_GrRC_hukou`, cut from 60 to 10 calls, and `9_GRC_extras`, cut from 44 to 1 call).
+The user noted this adds up to more fits than expected and accepted it, with the option to kill the run and slice `4_GrRC` too if it drags.
+
+### Harness self-test
+
+The user approved updating `gate_compare` to the plan's mixed criterion plus a `basedir()` option, then self-testing it on three known-answer pairs.
+The self-test caught two real bugs on the first run.
+A mata block's bare `end` inside `program define` terminated the program definition early, so every `gate_compare` call died with `r(198)` (the same parser collision the Stata conventions document for `python:` blocks), fixed by moving the logic to a file-level mata function `gate_cmp_mata` with a single-line invocation.
+Mata's `fopen("w")` errors when the dump file already exists, so repeat gate runs would have crashed, fixed with `_unlink` before `fopen`.
+A third snag: the self-test's explicit log name collided with the `-e` auto-log of the same name (`r(608)`), fixed by renaming to `selftest_gate_run.log`.
+Final verdicts: PASS_BITWISE on a ster compared against itself, FAIL_TOLERANCE at a criterion ratio of 2e6 on a 1e-2 nudge, and PASS_TOLERANCE at a ratio of 0.2 on a 1e-9 nudge, with comfortable margins in both directions.
+
+### Approaches rejected, with the reason
+
+Running all five estimation scripts whole for the baseline was rejected: about 163 fits is definitive-run cost and contradicts the run-GRC-once-late decision.
+Slicing every script was rejected: each hand-copied block is a drift risk against production code, so slices are used only where the savings are large.
+Including `5b_inversion` in the baseline was rejected, for the Python path-resolution reason above.
+
+### Open items
+
+The baseline run is in progress; check the rc file and ster count on resume.
+The determinism double-fit is pending.
+Commit the three uncommitted Stage 0 drivers after the run verifies.
+Stage 1 opens after that.
+Decision 2 (driver hygiene) remains declined, with the findings on record.
