@@ -1,3 +1,11 @@
 # Stata writes generated tables with CRLF line endings; store LF in the repo
 # and check out CRLF so regeneration runs do not show line-ending-only churn.
 RP7/output/tables/*.tex text eol=crlf
+
+# Same rationale for other Stata/Windows-generated text artifacts (CSV
+# evidence tables, plain-text dumps, .log/.smcl logs): declaring the handling
+# explicitly stops the "CRLF will be replaced by LF" warning on git add.
+*.csv text eol=crlf
+*.txt text eol=crlf
+*.log text eol=crlf
+*.smcl text eol=crlf
