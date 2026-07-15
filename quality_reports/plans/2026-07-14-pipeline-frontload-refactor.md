@@ -173,7 +173,12 @@ Compare the full population cell-by-cell against the pre-rebuild sters to charac
 Re-adjudicate every Tier 3 acceptance recorded during the stages against the full population; any cell exceeding the mixed criterion reopens the stage that accepted it.
 Promote the fresh output to canonical and copy `RP7/{scripts,output}/` to Dropbox as the replication handoff.
 
-## Decisions (all resolved 2026-07-14)
+## Decisions
+
+D-4 (OPEN, raised 2026-07-15). The manuscript promises the sectoral (nonag) analysis in prose ("we repeat our analysis for sectoral choice in Indonesia", main-updated.tex line ~574) but inputs no nonag table anywhere; an earlier "documented in the Appendix" sentence is commented out.
+Either drop nonag from the paper (trim the promise, remove nonag from the gate panel and the definitive run) or restore a nonag appendix table at the definitive run; the author leans low-priority on nonag (2026-07-15) but has not decided.
+
+## Decisions resolved 2026-07-14
 
 D-1. C2, the IDN cnu x urbanbirth cell: align it to the nonag definition; this changes one extras number.
 D-2. Income: keep building the income processed data but do not run income results, and cut income from the paper text (easy to restore if a referee asks); the outcome name is parameterized as `logpc_` plus the outcome so income cells stay honestly named.
