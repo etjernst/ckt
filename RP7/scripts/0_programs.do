@@ -577,11 +577,6 @@ program define set_covariate_globals
 	global covs_gmm     "female"
 	global covs_gmm2    "$covs_gmm age2"
 	global covs_gmm_all "$covs_gmm2 education_max education_max2"
-
-	global covs_gmm_hukou   	"hukou"
-	global covs_gmm2_hukou   	"$covs_gmm_hukou female"
-	global covs_gmm3_hukou		"$covs_gmm2_hukou age2"
-	global covs_gmm_all_hukou 	"$covs_gmm3_hukou education_max education_max2"
 end
 
 capture program drop set_covariates
@@ -608,12 +603,7 @@ program define set_covariates
 	global 	covs_1 					"female"
 	global 	covs_2					"$covs_1 c.age#c.age"
 	global 	covs_all				"$covs_2 c.education_max##c.education_max"
-	
-	global  covs_1_hukou			"hukou"
-	global 	covs_2_hukou 			"$covs_1_hukou female"
-	global 	covs_3_hukou			"$covs_2_hukou c.age#c.age"
-	global 	covs_all_hukou			"$covs_3_hukou c.education_max##c.education_max"
-	
+
 	* gmm doesn't play nice with some factor variables
 	* so reluctantly generating the interaction terms
 	* factor variables also drastically increase the computation time for gmm
