@@ -2,6 +2,8 @@
 
 ## If you resume
 
+SUPERSEDED: Stage 0 closed on 2026-07-16; resume from [2026-07-16_stage0-close-determinism-proof.md](file:///C:/git/ckt/quality_reports/session_logs/2026-07-16_stage0-close-determinism-proof.md), which carries the Stage 1 hand-off; this file remains the Stage 0 history.
+
 One-line state (2026-07-16): the gate-panel BASELINE IS COMPLETE AND FROZEN (both rc files rc=0, 250 sters = all 50 fit families, finished 01:27 before the overnight laptop restart); the determinism double-fit of the hukou leg is running detached (launched 12:20) with a Monitor watching for its rc file, and [gate_determinism_compare.do](file:///C:/git/ckt/RP7/tests/stage0/gate_determinism_compare.do) is ready to byte-compare all 30 ster pairs the moment it lands.
 
 Next after the determinism proof passes: commit the determinism artifacts, then open Stage 1 (single source for the covariate ladder, Tier 2 byte-identity gate against the frozen baseline in baseline_root/output via gate_compare basedir()).
