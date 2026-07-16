@@ -139,6 +139,8 @@ Make the Verdier loop start each spec from the same baseline sample (preserve/re
 Same contract framing as Stage 5: expected byte-identical today, corrected for the general case.
 Verify: refit the Verdier panel cells for all three countries; if any move, the persistence was affecting results and that is a finding, not something to absorb.
 Same contract-test obligation as Stage 5: a synthetic spec sequence on scratch data, where the old code's persisted `drop if missing(vfirst)` would shrink later specs, asserting each spec starts from the full baseline sample.
+REQUIRED FIX, found 2026-07-16 during the baseline sweep: the tail of `17_verdier_robust.do` loads sters under the pre-rename suffixes (`_never`, `_avg`) while fits save `_n`/`_a`, so the load fails silently and `grc_tex_table_trend_robust` skip-and-warns, meaning NO run since the suffix rename can regenerate the paper's Verdier robustness tables (the production `verdier_robust_*.tex` are frozen 2026-05-06 artifacts, two months older than their sters).
+Fix the two suffixes, regenerate the tables, and diff against the May versions; without this fix the definitive run silently ships stale VV tables.
 Author sign-off, then commit.
 
 ## Stage 7: fix the 11b figure scale (correctness, figure changes)
