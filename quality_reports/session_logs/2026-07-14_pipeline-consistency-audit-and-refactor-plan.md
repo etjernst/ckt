@@ -2,7 +2,11 @@
 
 ## If you resume
 
-One-line state: the rebuilt data hub is promoted to canonical, the critic pass is adjudicated with findings frozen into Stages 3/4/8, the gate harness passed its self-test after two bug fixes, and the Stage 0 gate-panel baseline refit runs as TWO DETACHED StataMP processes (relaunched 2026-07-15 12:45 via PowerShell Start-Process) after the harness's idle reaper killed the tracked background batches at 01:26.
+One-line state (2026-07-16): the gate-panel BASELINE IS COMPLETE AND FROZEN (both rc files rc=0, 250 sters = all 50 fit families, finished 01:27 before the overnight laptop restart); the determinism double-fit of the hukou leg is running detached (launched 12:20) with a Monitor watching for its rc file, and [gate_determinism_compare.do](file:///C:/git/ckt/RP7/tests/stage0/gate_determinism_compare.do) is ready to byte-compare all 30 ster pairs the moment it lands.
+
+Next after the determinism proof passes: commit the determinism artifacts, then open Stage 1 (single source for the covariate ladder, Tier 2 byte-identity gate against the frozen baseline in baseline_root/output via gate_compare basedir()).
+New finding for Stage 6: 17_verdier_robust.do's tail reporting block reads the pre-rename `_never` ster suffix while fits save `_n`, so it fails r(601) inside its capture on every run (production included); harmless to sters, fix at Stage 6.
+The skip_if_exists resume guard is now baked into both baseline drivers and VERIFIED (a no-op rerun of gate_baseline_ct.do skipped all 9 fits); drivers and slices committed as 612ba2f.
 
 Read first: this log in full, then the plan [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md), the critic report [2026-07-14_pipeline-frontend-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_pipeline-frontend-critic-stata.md), and its adjudication [2026-07-14_frontend-critic-adjudication.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-14_frontend-critic-adjudication.md).
 
@@ -327,3 +331,8 @@ The determinism double-fit is pending.
 Commit the three uncommitted Stage 0 drivers after the run verifies.
 Stage 1 opens after that.
 Decision 2 (driver hygiene) remains declined, with the findings on record.
+
+
+---
+**Context compaction (manual) at 12:15**
+Check git log and quality_reports/plans/ for current state.
