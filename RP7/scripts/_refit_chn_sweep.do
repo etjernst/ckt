@@ -29,9 +29,7 @@ log using "$logs/_refit_chn_sweep.smcl", replace
 capture noisily {
 
 * GMM covariates (mirror 4_GrRC.do / 7_GrRC_hukou.do)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 global keepvars lndepvar trajectory choice pid
 global keepvars $keepvars period unbalanced* switcher non_switcher

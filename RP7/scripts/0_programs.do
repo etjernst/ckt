@@ -569,6 +569,21 @@ end
 * Covariate management
 * **********************************************************************
 
+* Single source of truth for the GMM covariate ladder ($covs_gmm*).
+* Every estimation script and program references these globals; do not
+* redeclare the ladder anywhere else.
+capture program drop set_covariate_globals
+program define set_covariate_globals
+	global covs_gmm     "female"
+	global covs_gmm2    "$covs_gmm age2"
+	global covs_gmm_all "$covs_gmm2 education_max education_max2"
+
+	global covs_gmm_hukou   	"hukou"
+	global covs_gmm2_hukou   	"$covs_gmm_hukou female"
+	global covs_gmm3_hukou		"$covs_gmm2_hukou age2"
+	global covs_gmm_all_hukou 	"$covs_gmm3_hukou education_max education_max2"
+end
+
 capture program drop set_covariates
 program define set_covariates
   args 			depvar country
@@ -605,16 +620,10 @@ program define set_covariates
 	gen baseline_age2  = baseline_age*baseline_age
     gen age2           = age*age
 	gen education_max2 = education_max*education_max
-	global covs_gmm   "female"
-// 	global covs_gmm2  "$covs_gmm baseline_age baseline_age2"
-    global covs_gmm2  "$covs_gmm age2"
-
-	global covs_gmm_all "$covs_gmm2 education_max education_max2"
-	
-	global covs_gmm_hukou   	"hukou"
-	global covs_gmm2_hukou   	"$covs_gmm_hukou female"
-    global covs_gmm3_hukou		"$covs_gmm2_hukou age2"
-	global covs_gmm_all_hukou 	"$covs_gmm3_hukou education_max education_max2"
+	set_covariate_globals
+	* stash the resolved ladder in the built dataset so consumers can
+	* read back exactly which covariates the build assumed
+	char define _dta[covs_gmm_all] "$covs_gmm_all"
 
   drop if mi(education_max)
 	drop if mi(age)
@@ -2409,11 +2418,13 @@ program define run_grc_with_extra_regressor
     local base    "`r(base)'"
     local initial "`r(initial)'"
 
-    * --- 8. Per-fit covariate strings (locals; no global pollution) ---
+    * --- 8. Per-fit covariate strings: the extra regressor prepended to
+    *        the shared ladder ($covs_gmm*) ---
+    set_covariate_globals
     local covs1   "`regressor'"
-    local covs2   "`regressor' female"
-    local covs3   "`regressor' female age2"
-    local covsall "`regressor' female age2 education_max education_max2"
+    local covs2   "`regressor' $covs_gmm"
+    local covs3   "`regressor' $covs_gmm2"
+    local covsall "`regressor' $covs_gmm_all"
 
     * --- 9. Four fits with progressive covariates ---
     run_grc, estname(grc_`country'_`spec3'_`fam'_c1)               ///

@@ -49,9 +49,7 @@ local depvar  consumption
 local balance unb
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
 global keepvars lndepvar trajectory choice pid 
@@ -286,9 +284,7 @@ local depvar  consumption
 local balance bal
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
 global keepvars lndepvar trajectory choice pid 
