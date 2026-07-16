@@ -8,7 +8,9 @@
 *          refactored code. The Verdier leg is excluded: its source
 *          (17_verdier_robust.do) is untouched until Stage 6. Every
 *          refit ster must be bit-identical to the frozen baseline
-*          (Tier 2); gate_stage1_compare.do adjudicates.
+*          (Tier 2); gate_stage1_compare.do adjudicates. The ct
+*          supplement runs in parallel via gate_stage1_ct.do (ster
+*          names are disjoint), mirroring the Stage 0 batch split.
 * Input:   RP7/data/processed (canonical hub, via the data junction)
 * Output:  RP7/tests/stage0/stage1_root/output/ (refit sters)
 * *******************************************************************
@@ -38,9 +40,6 @@ capture noisily {
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_nonag.do"
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_hukou.do"
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_extras.do"
-    include "C:/git/ckt/RP7/tests/stage0/gate_panel_ct_main.do"
-    include "C:/git/ckt/RP7/tests/stage0/gate_panel_ct_nonag.do"
-    include "C:/git/ckt/RP7/tests/stage0/gate_panel_ct_hukou.do"
 }
 local saved_rc = _rc
 capture log close
