@@ -6,6 +6,7 @@ Stages 1 and 2 are COMPLETE and gated: the bundled Stage 1+2 refit ran on the pr
 Branch stage1-covariate-ladder carries the full arc: 577f0d2 (implementation), ffcaa27 (hub-rename verification), 83bd3af (gate PASS).
 The next work is Stage 3 of the plan (front-load the estimation scaffolding, document the trajectory contract; Tier 3 allowed), which is Mode 2: it needs the Stage 3 plan section re-read, the MAJOR-4 keep-with-missing reminder DELIVERED TO THE AUTHOR AT KICKOFF (plan requires this), and a decision on whether Stage 3 bundles its gate with Stage 4 per D-5.
 Consider merging or PR-ing stage1-covariate-ladder first; the author decides.
+Cached state a resumer should know: the canonical hub at RP7/data/processed carries logpc_* (backups processed_prelogpc_2026-07-17 and processed_stale_2026-07-14 stay until the definitive run); stage1_root/output holds the 250 gated refit sters, and the gate drivers carry skip_if_exists=1, so a relaunch is a no-op; the frozen baseline at baseline_root/output is untouched and remains the reference for Stages 3-8; branch commits this session are 577f0d2, ffcaa27, 1bff215, 5a6abc0, 83bd3af, c54111f plus the wrap-up log commit.
 
 ## Goals
 
@@ -68,3 +69,13 @@ RP7/data_rebuild currently holds the verified rebuilt processed files and a coun
 D-4, whether the manuscript keeps its nonag promise, remains open with the author.
 The run_extras_birth/run_extras_maxexpsh slice drivers still point $dir at the old grc-pipeline-refactor worktree; stale-scratch taxonomy is Stage 8 business.
 Pre-existing untracked working-tree items (selftest/, older staging folders, stage0 gate dump txts) were left alone.
+
+## Evening close: gate PASSED, Stages 1 and 2 complete
+
+The main batch finished at 21:16 (rc=0, 250 sters); gate_stage1_compare.do verified all 250 pairs PASS_BITWISE with max_crit_ratio 0 throughout, and the artifact was committed (83bd3af), followed by the plan and log closure (c54111f).
+Gate wall-clock was roughly nine hours across the two parallel batches; the ct supplement finished at 14:24, the extras stem was the slow tail (about 35 minutes per column at IDN size).
+The per-cell b/V dumps stay untracked in quality_reports/staging/stage1/ next to the committed CSV, matching the Stage 0 convention.
+The merge-or-stack decision on stage1-covariate-ladder is the author's; Stage 3 has not been specced beyond its plan section.
+
+Side thread: the NCI Gadi allocation answers were reconstructed (the draft lived in the home-workspace 2026-07-11 session log, not the simulations worktree) and finalized at [2026-07-17_gadi-allocation-answers.md](file:///C:/Users/maand/.claude/quality_reports/session_logs/2026-07-17_gadi-allocation-answers.md): Tier 1, NCI Gadi, 20 KSU over Q3-Q4 2026 at 10 per quarter, title "Simulation validation of a GMM estimator of migration returns", fresh 100-word description, DMP number FoRA 21164.
+The Tier 0 sandbox path (self-register into project sa4 at my.nci.org.au, no application needed, approval by MQ's HPC team) was explained for harness smoke-testing while Tier 1 processes.
