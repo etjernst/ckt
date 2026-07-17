@@ -77,8 +77,10 @@
 	* handle_choice						sets 'treatment' variable
 	* handle_depvar						sets choice dimension 
 	* handle_balance					sets balanced/unbalanced panel
-	* handle_trajectory_groups			creates trajectories and switcher variable 
-	* gen_time_trend					creates time trend variable	
+	* handle_trajectory_groups			creates trajectories and switcher variable
+	* handle_grc_scaffolding			builds GRC dummies + trajectory contract at source
+	* handle_estimable_sample			drops person-waves with missing per-capita outcome
+	* gen_time_trend					creates time trend variable
 	* set_covariates					sets covariates
 	* fix_varlabels						fixes variable labels
 	* sumstats_table 					creates summary stats LaTeX table
@@ -88,7 +90,7 @@
 	* create_panel_tex_table			creates three-part LaTeX table
 	* reghdfe_regressions				OLS regressions (using reghdfe)
 	* heterogeneity_plots				makes heterogeneity plots
-	* setup_grc_estimation				get data ready for GRC regs
+	* setup_grc_estimation				reads back the GRC trajectory contract
 	* ugrc_regressions					uGRC regressions
 	* initial_values					creates initial values for GRC
 	* define_switcherpars				defines switcher parameters
@@ -207,6 +209,12 @@ program define data_setup
   set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 capture program drop data_setup_2waves
@@ -237,6 +245,12 @@ program define data_setup_2waves
   set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 capture program drop data_setup_3waves
@@ -267,6 +281,12 @@ program define data_setup_3waves
   set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 * **********************************************************************
@@ -533,6 +553,74 @@ program define handle_trajectory_groups_3waves
 	bysort pid (year): g pid_first_obs_3waves = _n == 1
 	label variable pid_first_obs_3waves "Indicator for pid's first obs"
 end	
+
+* **********************************************************************
+* GRC estimation scaffolding, built at source
+* **********************************************************************
+* Generates the always/never/switcher_* dummies and their choice
+* interactions from the balanced-panel trajectory codes, and stashes the
+* data-driven trajectory contract in dataset characteristics
+* (_dta[grc_switchers], _dta[grc_always]) that setup_grc_estimation
+* reads back at load time. trajectory stays missing for individuals
+* outside the balanced enumeration: writing a numeric sentinel into the
+* saved data would pull those rows into the i.trajectory regressions in
+* scripts that never call setup_grc_estimation (3_OLS_uGRC,
+* 6_OLS_uGRC_hukou), so the 999 recode happens only at load.
+capture program drop handle_grc_scaffolding
+program define handle_grc_scaffolding
+    quietly tab trajectory
+    local always = r(r)
+    * encode assigns codes 1..K with never=1 and always=K; if drops ever
+    * removed the top code entirely, r(r) would mislabel a switcher as
+    * always --- fail loudly instead
+    quietly sum trajectory
+    if r(max) != `always' {
+        di as error "handle_grc_scaffolding: max trajectory code " r(max) ///
+            " != category count `always'"
+        exit 459
+    }
+    if `always' <= 2 {
+        di as error "handle_grc_scaffolding: only `always' trajectory categories, no switcher trajectories"
+        exit 459
+    }
+    local lastswitcher = `always'-1
+    numlist "2(1)`lastswitcher'"
+    local switchers "`r(numlist)'"
+    di as text "handle_grc_scaffolding: `always' trajectory categories, switchers `switchers'"
+
+    gen always = (trajectory == `always')
+    gen always_choice = always*choice
+
+    gen never = (trajectory == 1)
+
+    foreach s of numlist `switchers' {
+        gen switcher_`s' = (trajectory == `s')
+        gen switcher_`s'_choice = switcher_`s'*choice
+    }
+
+    char define _dta[grc_switchers] "`switchers'"
+    char define _dta[grc_always] "`always'"
+end
+
+* **********************************************************************
+* Estimable-sample restriction, applied last in the build
+* **********************************************************************
+* Drops person-waves whose per-capita outcome is missing (missing or
+* non-positive hhsize_cube; rows with a missing or non-positive raw
+* outcome are already dropped in handle_depvar). Runs after all
+* trajectory and covariate construction, so per-individual
+* classifications keep the full observed choice history and every value
+* on a surviving row is unchanged. Every estimator conditions on the
+* outcome, so e(sample) is unaffected; only summary-stat denominators
+* move.
+capture program drop handle_estimable_sample
+program define handle_estimable_sample
+    args depvar
+    quietly count if mi(logpc_`depvar')
+    di as text "handle_estimable_sample: dropping " r(N) " of " _N ///
+        " person-waves with missing logpc_`depvar'"
+    drop if mi(logpc_`depvar')
+end
 
 * **********************************************************************
 * Time trend
@@ -1506,30 +1594,26 @@ end
 
 capture program drop setup_grc_estimation
 program define setup_grc_estimation
+    * Reads back the trajectory contract that handle_grc_scaffolding
+    * stashed at build time; the dummies already live in the dataset.
+    local switchers : char _dta[grc_switchers]
+    local always    : char _dta[grc_always]
+    if "`switchers'" == "" | "`always'" == "" {
+        di as error "setup_grc_estimation: dataset carries no grc_switchers/grc_always characteristics; rebuild the processed hub with 1_processData.do"
+        exit 459
+    }
+    confirm variable trajectory always always_choice never
+
     global 		never 1
-    qui: tab 			trajectory
-    global 		always `r(r)'	// Last trajectory
+    global 		always `always'
+    global 		switchers `switchers'
     local 		lastswitcher = $always-1
-    numlist 	"2(1)`lastswitcher'"	// Grab list of switchers
-    global 		switchers `r(numlist)'
     numlist 	"1(1)`lastswitcher'"	// Grab list of all-but-always
     global 		noalways `r(numlist)'
     global 		last = $always-1
     global 		first = $never+1
 
     replace trajectory = 999 if trajectory == .	// Unbalanced
-
-    * Generating dummies for gmm
-    gen always = (trajectory == $always)
-    gen always_choice = always*choice
-
-    gen never = (trajectory == 1)
-
-    foreach s of numlist $switchers {
-      gen switcher_`s' = (trajectory == `s')
-      gen switcher_`s'_choice = switcher_`s'*choice
-    }
-    
 end
 
 * **********************************************************************

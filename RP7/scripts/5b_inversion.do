@@ -74,7 +74,6 @@ capture noisily {
         keep $keepvars
         tab period, gen(period_)
         local periodFE "period_2 - period_`r(r)'"
-        drop if mi(logpc_consumption) | mi(choice)
 
         * --- recover the base trajectory using the same routine 5_GrRC.do
         * uses, so the inversion's auxiliary OLS pivots on the same

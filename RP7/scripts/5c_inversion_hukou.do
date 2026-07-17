@@ -78,7 +78,6 @@ capture noisily {
         keep $keepvars
         tab period, gen(period_)
         local periodFE "period_2 - period_`r(r)'"
-        drop if mi(logpc_consumption) | mi(choice)
 
         * --- recover base trajectory via the routine 7_GrRC_hukou.do uses
         initial_values logpc_consumption, ///
