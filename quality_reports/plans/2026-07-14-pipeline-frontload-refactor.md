@@ -115,9 +115,14 @@ Stages 1 and 2 are complete; the next stage is Stage 3.
 
 Move the `always`/`never`/`switcher_*` construction and the `trajectory` sentinel into the front-end build so the processed `.dta` carries them, with a documented value label on the sentinel, and persist the data-driven `$switchers` list as a dataset characteristic the estimator reads back.
 Reduce the analysis scripts to `use` + estimate; remove the now-redundant `drop if mi(logpc_consumption)|mi(choice)` re-filters in 5b/5c.
-Critic finding MAJOR-4 (2026-07-14 review) lands here, with the author's decision already made: rows with missing or non-positive `hhsize_cube` KEEP a missing per-capita outcome in the saved data (no drop at source, never any imputation); `handle_depvar` gains a `count if mi(lndepvar)` diagnostic so the attrition each estimator inherits is visible per cell.
-REMIND THE AUTHOR AT STAGE 3 KICKOFF (requested 2026-07-14): keep-with-missing and drop-at-source are equivalent for every estimate (all estimators condition on the outcome, and the tables enforce a common sample), so the live choice is only whether summary-stat denominators and the wave-counting bookkeeping describe the estimable sample; the author may flip to drop-at-source here, and the gate enumerates the affected rows either way.
+Critic finding MAJOR-4 (2026-07-14 review) lands here; the kickoff reminder was delivered 2026-07-17 and the author FLIPPED the decision to drop-at-source per cell.
+Within each cell, rows no estimator can ever use---missing per-capita outcome (missing or non-positive `hhsize_cube`) or missing `choice`---are dropped at build time with counted diagnostics, so the saved dataset is the common estimable sample and summary-stat denominators describe what gets estimated; never any imputation.
+The drop conditions ONLY on outcome and choice: approach-specific restrictions (the Verdier programs' `drop if missing(vfirst)`, a missing-in-all-waves cluster index, not a lag-structure loss) stay inside their estimators and remain visible through their own counted diagnostics.
+The gate artifact enumerates the rows dropped at source per cell; since those rows were never in any `e(sample)`, Tier 1 provenance must still be exact.
+The author's cross-approach variant (one canonical per-country dataset at the smallest sample across approaches) was considered and rejected 2026-07-17: it would collapse the designed balanced/unbalanced and hukou sample distinctions and restrict headline estimates to a robustness check's sample, an estimand change outside this refactor.
 Build-time construction may reorder rows, so Tier 3 applies: Tier 1 provenance must be exact; a Tier 2 red is accepted only under the `1e-10` tolerance and recorded.
+Stage 3 runs on branch `stage3-frontload-scaffolding`, cut from `main` after `stage1-covariate-ladder` merged (2026-07-17, merge commit 29abc8f).
+Per D-5, Stages 3 and 4 bundle their gate into one panel refit (decided 2026-07-17); the bundled gate must show exactly the CRITICAL-1 enumerated diff (and the Stage 3 drop-at-source enumeration) and nothing else, so a red elsewhere bisects between the two stages via the per-cell b/V dumps.
 Commit with gate artifact.
 
 ## Stage 4: split set_covariates, tidy non_switcher and the partition (consistency, Tier 3 allowed)
@@ -189,7 +194,7 @@ Promote the fresh output to canonical and copy `RP7/{scripts,output}/` to Dropbo
 
 D-5 (resolved 2026-07-17).
 Consistency stages bundle their gate refits to cut the number of panel runs, after the author flagged the per-stage refit cost.
-Stages 1 and 2 share one panel refit (both are Tier 2 byte-identity stages touching largely the same files); the same bundling is available to Stages 3 and 4 when they arrive.
+Stages 1 and 2 share one panel refit (both are Tier 2 byte-identity stages touching largely the same files); Stages 3 and 4 likewise bundle (author decision 2026-07-17), with the CRITICAL-1 N-diff carved out as the only accepted provenance change.
 Accepted cost: a red on a bundled gate bisects between two stages' changes, which the per-cell b/V dumps localize.
 The full-population run stays a single definitive run at the end; the ct supplement (time-FE-only fits) runs in the bundled gate because Stage 2 changes the outcome path those fits consume, even though Stage 1 alone would not need it.
 
