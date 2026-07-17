@@ -103,6 +103,11 @@ Per D-2, keep the `_income.dta` builds in `1_processData.do` but remove the inco
 No row-order change, so the gate panel (consumption cells) must be byte-identical; income cells leave the panel with the estimation blocks.
 Commit with gate artifact.
 Gates jointly with Stage 1 in a single panel refit, per D-5.
+Status 2026-07-17: implemented and smoke-tested on branch `stage1-covariate-ladder`.
+`handle_depvar` builds `logpc_consumption` / `logpc_income` at source; every consumer is renamed; the income estimation and table blocks are deleted from `3_OLS_uGRC`, `4_GrRC`, `7_GrRC_hukou`, `9_GRC_extras`, `10_make_tables`, and the extras dispatch programs, while the income data builds stay.
+The rename also swept five covariate-ladder hand-redeclarations Stage 1's audit had not enumerated (`5b_inversion`, `5c_inversion_hukou`, `10_make_tables`, `17_verdier_robust`, `17b_cluster_summary`), each now a `set_covariate_globals` call.
+Because the rename edits `17_verdier_robust.do`, the Verdier leg joins the bundled gate refit (the Stage 6 contract fix is untouched).
+The hub was rebuilt with the new front end into `RP7/data_rebuild` and verified cell by cell as a pure rename against the canonical hub (34/34 PASS, artifact at quality_reports/staging/stage2/hub_rename_check.csv); promotion of the rebuilt hub to canonical awaits the author, after which the bundled gate launches.
 
 ## Stage 3: front-load the estimation scaffolding, document the trajectory contract (consistency, Tier 3 allowed)
 
