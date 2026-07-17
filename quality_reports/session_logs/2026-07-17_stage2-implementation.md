@@ -53,6 +53,17 @@ The gate-panel files under RP7/tests/stage0 are CRLF; perl patterns anchored on 
 PowerShell cannot see `stata-mp`; detached launches need the full path `C:\Program Files\StataNow19\StataMP-64.exe` with `/e`.
 A probe driver that bypasses 0_path_config.do leaves $grc_min_switchers_per_wave empty, which breaks initial_values' base-selection comparison with a confusing "invalid name" r(198); include the config and override $dirdata after.
 
+## Afternoon update: hub promoted, gate launched and running
+
+The author approved the hub promotion by running the first rename herself at 12:14; the second rename and the data_rebuild cleanup (junction removed via `cmd /c rmdir`, empty dir deleted) followed, so `RP7/data/processed` is now the 34-cell logpc hub with `processed_prelogpc_2026-07-17` and `processed_stale_2026-07-14` as backups.
+The bundled Stage 1+2 gate launched at 12:15 as two detached Stata batches (full exe path `C:\Program Files\StataNow19\StataMP-64.exe` with `/e`; `stata-mp` is not on PowerShell's PATH).
+The ct supplement batch finished at 14:24 with rc=0.
+The main batch was at 195 of 250 sters by 20:41: every main GRC family complete (cuu and cub for all three countries, IDN cnu, both CHN hukou splits), the IDN experience extras stem in progress (about 35 minutes per column), the Verdier TZA leg still to come.
+A persistent monitor watches gate_stage1_rc.txt and flags a dead Stata process without an rc file.
+Next: when the rc file lands, run [gate_stage1_compare.do](file:///C:/git/ckt/RP7/tests/stage0/gate_stage1_compare.do), expect PASS_BITWISE on all pairs, commit the gate artifact (quality_reports/staging/stage1/gate_results.csv).
+
+Unrelated interlude: recovered the NCI Gadi allocation-form decisions from the 2026-07-11 home-workspace session log (Tier 1, NCI Gadi, 20 KSU over Q3-Q4 2026) and drafted the form answers at [2026-07-17_gadi-allocation-answers.md](file:///C:/Users/maand/.claude/quality_reports/session_logs/2026-07-17_gadi-allocation-answers.md).
+
 ## Open items
 
 Hub promotion (author), then the gate launch, compare, and gate-artifact commit; see "If you resume."
