@@ -29,11 +29,9 @@ log using "$logs/_refit_chn_sweep.smcl", replace
 capture noisily {
 
 * GMM covariates (mirror 4_GrRC.do / 7_GrRC_hukou.do)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
-global keepvars lndepvar trajectory choice pid
+global keepvars logpc_consumption trajectory choice pid
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -50,14 +48,13 @@ eststo clear
 local country CHN
 
 use "$dirdata/processed/`country'_`balance'.dta", clear
-replace lndepvar = log(consumption/hhsize_cube)
 setup_grc_estimation
 keep $keepvars
 
 tab period, gen(period_)
 local periodFE "period_2 - period_`r(r)'"
 
-initial_values lndepvar,        ///
+initial_values logpc_consumption,        ///
     switchers($switchers)       ///
     balance(`balance')          ///
     estname(initial_`country')
@@ -96,14 +93,13 @@ foreach grp in rural_first urban_first {
     eststo clear
 
     use "$dirdata/processed/`country'_`balance'.dta", clear
-    replace lndepvar = log(consumption/hhsize_cube)
     setup_grc_estimation
     keep $keepvars
 
     tab period, gen(period_)
     local periodFE "period_2 - period_`r(r)'"
 
-    initial_values lndepvar,       ///
+    initial_values logpc_consumption,       ///
         switchers($switchers)      ///
         balance(`balance')         ///
         estname(initial_`country_short')
@@ -160,14 +156,13 @@ foreach cell in main rf uf {
     di as text ">>> Phase B: inversion attach for `stem'"
 
     use "$dirdata/processed/`dtafile'_`balance'.dta", clear
-    replace lndepvar = log(consumption/hhsize_cube)
     setup_grc_estimation
     keep $keepvars
     tab period, gen(period_)
     local periodFE "period_2 - period_`r(r)'"
-    drop if mi(lndepvar) | mi(choice)
+    drop if mi(logpc_consumption) | mi(choice)
 
-    initial_values lndepvar,        ///
+    initial_values logpc_consumption,        ///
         switchers($switchers)       ///
         balance(`balance')          ///
         estname(`initname')
@@ -198,7 +193,7 @@ foreach cell in main rf uf {
         attach_inversion_ci,                ///
             estbase(`estbase')              ///
             sterdir("${inversion_sterdir}") ///
-            outcome(lndepvar)               ///
+            outcome(logpc_consumption)               ///
             traj(trajectory)                ///
             choice(choice)                  ///
             hhid(pid)                       ///

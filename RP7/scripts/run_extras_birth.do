@@ -4,8 +4,8 @@
 * Family slice driver for 9_GRC_extras.do's birth (urbanbirth) block.
 * IDN-only family.
 *
-* Cells (4 stems x 4 cols = 16 fits = 80 sters):
-*   IDN x {cuu, cub, iuu} x urbanbirth   -- use spec3 default datasets
+* Cells (3 stems x 4 cols = 12 fits = 60 sters):
+*   IDN x {cuu, cub} x urbanbirth        -- use spec3 default datasets
 *   IDN x cnu       x urbanbirth          -- overrides default cnu data
 *                                            path to IDN_unb.dta (urban),
 *                                            faithful to file-15
@@ -52,7 +52,6 @@ log using "$logs/run_extras_birth$vsfx.log", replace
 capture noisily {
     run_grc_with_extra_regressor, country(IDN) spec3(cuu) regressor(urbanbirth)
     run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(urbanbirth)
-    run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(urbanbirth)
 
     * IDN cnu x birth overrides the default cnu dataset; see 9_GRC_extras.do.
     run_grc_with_extra_regressor, country(IDN) spec3(cnu) regressor(urbanbirth) ///

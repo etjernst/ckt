@@ -92,6 +92,8 @@ Define `$covs_gmm*` in one place (a `set_covariate_globals` program, country-arg
 Delete the hand-redeclarations in `4_GrRC.do`/`5_GrRC_NonAg.do`/`7_GrRC_hukou.do` and the parallel locals in `run_grc_with_extra_regressor`, replacing each with the one reference.
 No row-order change, so the gate panel must be byte-identical.
 Commit with gate artifact.
+Status 2026-07-17: implemented, critic-reviewed, and smoke-tested on branch `stage1-covariate-ladder` (commits `6a5bbf9` and `8cbf3d3`); the country-arg was dropped because the hukou drivers use the plain ladder, and the consumer-less hukou ladder globals were deleted outright with author approval.
+The Stage 1 refit did not launch alone: per D-5 it gates jointly with Stage 2 in one panel refit.
 
 ## Stage 2: de-mutate and rename the outcome, remove income (consistency, Tier 2)
 
@@ -100,6 +102,14 @@ Remove every redundant `replace ... = log(consumption/hhsize_cube)` site (enumer
 Per D-2, keep the `_income.dta` builds in `1_processData.do` but remove the income estimation blocks (in `3_OLS_uGRC`/`4_GrRC`/`7_GrRC_hukou` and the `iuu` extras), so income data stay buildable while no income results are produced.
 No row-order change, so the gate panel (consumption cells) must be byte-identical; income cells leave the panel with the estimation blocks.
 Commit with gate artifact.
+Gates jointly with Stage 1 in a single panel refit, per D-5.
+Status 2026-07-17: implemented and smoke-tested on branch `stage1-covariate-ladder`.
+`handle_depvar` builds `logpc_consumption` / `logpc_income` at source; every consumer is renamed; the income estimation and table blocks are deleted from `3_OLS_uGRC`, `4_GrRC`, `7_GrRC_hukou`, `9_GRC_extras`, `10_make_tables`, and the extras dispatch programs, while the income data builds stay.
+The rename also swept five covariate-ladder hand-redeclarations Stage 1's audit had not enumerated (`5b_inversion`, `5c_inversion_hukou`, `10_make_tables`, `17_verdier_robust`, `17b_cluster_summary`), each now a `set_covariate_globals` call.
+Because the rename edits `17_verdier_robust.do`, the Verdier leg joins the bundled gate refit (the Stage 6 contract fix is untouched).
+The hub was rebuilt with the new front end into `RP7/data_rebuild` and verified cell by cell as a pure rename against the canonical hub (34/34 PASS, artifact at quality_reports/staging/stage2/hub_rename_check.csv); the author promoted it to canonical on 2026-07-17.
+Gate closed 2026-07-17: the bundled Stage 1+2 refit (main, nonag, hukou, extras, Verdier, and the ct supplement) ran on the promoted hub and all 250 ster pairs are bitwise identical to the frozen baseline (artifact at quality_reports/staging/stage1/gate_results.csv, commit 83bd3af).
+Stages 1 and 2 are complete; the next stage is Stage 3.
 
 ## Stage 3: front-load the estimation scaffolding, document the trajectory contract (consistency, Tier 3 allowed)
 
@@ -176,6 +186,12 @@ Re-adjudicate every Tier 3 acceptance recorded during the stages against the ful
 Promote the fresh output to canonical and copy `RP7/{scripts,output}/` to Dropbox as the replication handoff.
 
 ## Decisions
+
+D-5 (resolved 2026-07-17).
+Consistency stages bundle their gate refits to cut the number of panel runs, after the author flagged the per-stage refit cost.
+Stages 1 and 2 share one panel refit (both are Tier 2 byte-identity stages touching largely the same files); the same bundling is available to Stages 3 and 4 when they arrive.
+Accepted cost: a red on a bundled gate bisects between two stages' changes, which the per-cell b/V dumps localize.
+The full-population run stays a single definitive run at the end; the ct supplement (time-FE-only fits) runs in the bundled gate because Stage 2 changes the outcome path those fits consume, even though Stage 1 alone would not need it.
 
 D-4 (OPEN, raised 2026-07-15). The manuscript promises the sectoral (nonag) analysis in prose ("we repeat our analysis for sectoral choice in Indonesia", main-updated.tex line ~574) but inputs no nonag table anywhere; an earlier "documented in the Appendix" sentence is commented out.
 Either drop nonag from the paper (trim the promise, remove nonag from the gate panel and the definitive run) or restore a nonag appendix table at the definitive run; the author leans low-priority on nonag (2026-07-15) but has not decided.

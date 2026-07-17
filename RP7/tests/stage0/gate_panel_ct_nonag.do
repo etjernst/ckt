@@ -15,7 +15,7 @@ Version: May 2026
 This code:
     - runs restricted GRC regressions for
         - Indonesia: unbalanced sample, non-ag as choice
-    - outcomes: consumption per capita (adult equivalent: cube) and income
+    - outcome: consumption per capita (adult equivalent: cube)
     - covariates (columns): (1) nothing, (2) add time FE, (3) add female, 
                             (4) add age^2, (5) add education (max) & education^2
 *******************************************************************************/
@@ -33,7 +33,7 @@ log using "$logs/gate_panel_ct_nonag.log", replace
 * Choices for the analysis
 *     Countries:          IDN / TZA / CHN
 *     Choice variable:    urban / nonag
-*     Dependent variable: consumption / income
+*     Dependent variable: consumption
 *     Panel structure:    bal / unb 
 * ********************************************************************
 
@@ -47,12 +47,10 @@ local depvar  consumption
 local balance unb
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
-global keepvars lndepvar trajectory choice pid 
+global keepvars logpc_consumption trajectory choice pid 
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -67,10 +65,6 @@ local country IDN
 * Open dataset
 use "$dirdata/processed/`country'_`balance'_`choice'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some can help speed up gmm
 
@@ -82,7 +76,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,        ///
+initial_values logpc_consumption,        ///
     switchers($switchers)       ///
     balance(`balance')          ///
     estname(initial_`country')

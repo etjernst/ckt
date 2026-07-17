@@ -29,14 +29,12 @@ log using 17b_cluster_summary.log, replace
 
 capture noisily {
 
-* GMM covariate sets (mirror 5_GrRC.do / 17_verdier_robust.do)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+* GMM covariate sets (single source; mirror 17_verdier_robust.do)
+set_covariate_globals
 
 * Keep only relevant vars; `year` is required by gen_vfirst (bysort pid (year)),
 * and the cluster index (vindex) must survive the keep.
-global keepvars_base lndepvar trajectory choice pid year
+global keepvars_base logpc_consumption trajectory choice pid year
 global keepvars_base $keepvars_base period unbalanced* switcher non_switcher
 global keepvars_base $keepvars_base female age age2
 global keepvars_base $keepvars_base education_max education_max2 trend
@@ -61,7 +59,6 @@ forval k = 1/`nrows' {
     di as txt "================================================================"
 
     use "$dirdata/processed/`dset'.dta", clear
-    replace lndepvar = log(consumption/hhsize_cube)
     setup_grc_estimation
     global keepvars $keepvars_base `vidx'
     keep $keepvars
@@ -69,7 +66,7 @@ forval k = 1/`nrows' {
     tab period, gen(period_)
     local periodFE "period_2 - period_`r(r)'"
 
-    initial_values lndepvar,        ///
+    initial_values logpc_consumption, ///
         switchers($switchers)       ///
         balance(unb)                ///
         estname(initial_`code')

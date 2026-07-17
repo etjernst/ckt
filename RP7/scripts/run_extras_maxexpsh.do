@@ -9,8 +9,8 @@
 * the same instant, both fit it and the second save wins; the resulting
 * sters are byte-identical when initial values converge.)
 *
-* Cells (9 stems x 4 cols = 36 fits = 180 sters):
-*   {IDN, CHN, TZA} x {cuu, cub, iuu} x exp_max_share
+* Cells (6 stems x 4 cols = 24 fits = 120 sters):
+*   {IDN, CHN, TZA} x {cuu, cub} x exp_max_share
 *
 * USAGE
 * -----
@@ -60,11 +60,6 @@ capture noisily {
     run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(exp_max_share)
     run_grc_with_extra_regressor, country(CHN) spec3(cub) regressor(exp_max_share)
     run_grc_with_extra_regressor, country(TZA) spec3(cub) regressor(exp_max_share)
-
-    * iuu (income, urban, unbalanced) x 3 countries
-    run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(exp_max_share)
-    run_grc_with_extra_regressor, country(CHN) spec3(iuu) regressor(exp_max_share)
-    run_grc_with_extra_regressor, country(TZA) spec3(iuu) regressor(exp_max_share)
 }
 local saved_rc = _rc
 log close

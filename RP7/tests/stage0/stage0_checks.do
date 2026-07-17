@@ -19,6 +19,11 @@
 *          $dir/tests/stage0/stage0_checks.log
 * Note:    Strictly read-only against $dirdata and existing .ster files.
 *          Writes only to quality_reports/staging/stage0/ and its own log.
+* Historical artifact: check C's lndepvar no-op proof targets the
+*          pre-rename variable name and must run against the pre-rename
+*          hub. After the Stage 2 rename (lndepvar -> logpc_consumption /
+*          logpc_income), check C silently no-ops against the live hub.
+*          Do not re-run this file for live signal.
 * *******************************************************************
 
 version 17

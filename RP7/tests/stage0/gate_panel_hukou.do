@@ -25,12 +25,10 @@ local country CHN_hukou_rural_first
 local country_short CHN_rf_cuu
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
-global keepvars lndepvar trajectory choice pid 
+global keepvars logpc_consumption trajectory choice pid 
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -44,10 +42,6 @@ eststo clear
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some vars can help speed up gmm
 
@@ -59,7 +53,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,       ///
+initial_values logpc_consumption,       ///
     switchers($switchers)      ///
     balance(`balance')         ///
     estname(initial_`country_short')
@@ -117,12 +111,10 @@ local country CHN_hukou_urban_first
 local country_short CHN_uf_cuu
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
-global keepvars lndepvar trajectory choice pid 
+global keepvars logpc_consumption trajectory choice pid 
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -136,10 +128,6 @@ eststo clear
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some vars can help speed up gmm
 
@@ -151,7 +139,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,       ///
+initial_values logpc_consumption,       ///
     switchers($switchers)      ///
     balance(`balance')         ///
     estname(initial_`country_short')
