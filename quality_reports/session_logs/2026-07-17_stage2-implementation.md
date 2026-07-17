@@ -1,15 +1,11 @@
-# Session log 2026-07-17 (second session): Stage 2 implemented, hub rebuilt and verified, gate ready
+# Session log 2026-07-17 (second session): Stage 2 implemented and gated; Stages 1+2 closed
 
 ## If you resume
 
-Stage 2 (logpc outcome rename plus income removal) is implemented, critic-reviewed, probe-verified, and committed on branch stage1-covariate-ladder (commits 577f0d2 and ffcaa27); the bundled Stage 1+2 gate has deliberately not launched.
-The single blocker is the hub promotion: the permission classifier refused the two renames that swap the rebuilt hub in as canonical, so the author must run or approve them.
-
-Next concrete action, in order.
-First, promote the hub: `mv C:/git/ckt/RP7/data/processed C:/git/ckt/RP7/data/processed_prelogpc_2026-07-17` then `mv C:/git/ckt/RP7/data_rebuild/processed C:/git/ckt/RP7/data/processed` (nothing is deleted; the pre-rename hub stays as the dated backup, and processed_stale_2026-07-14 remains the Stage 0 backup).
-Second, launch [gate_stage1.do](file:///C:/git/ckt/RP7/tests/stage0/gate_stage1.do) and [gate_stage1_ct.do](file:///C:/git/ckt/RP7/tests/stage0/gate_stage1_ct.do) as two detached Stata batches (PowerShell `Start-Process -FilePath "C:\Program Files\StataNow19\StataMP-64.exe" -ArgumentList "/e","do","<file>"` from tests/stage0; plain `stata-mp` is not on PowerShell's PATH), then poll gate_stage1_rc.txt and gate_stage1_ct_rc.txt.
-Third, run [gate_stage1_compare.do](file:///C:/git/ckt/RP7/tests/stage0/gate_stage1_compare.do); expect PASS_BITWISE on every pair; commit the gate artifact (quality_reports/staging/stage1/gate_results.csv).
-The drivers carry `skip_if_exists = 1` and stage1_root/output is empty, so a relaunch resumes rather than refits.
+Stages 1 and 2 are COMPLETE and gated: the bundled Stage 1+2 refit ran on the promoted logpc hub and all 250 ster pairs are bitwise identical to the frozen baseline (gate artifact committed as 83bd3af; verdict CSV at [gate_results.csv](file:///C:/git/ckt/quality_reports/staging/stage1/gate_results.csv)).
+Branch stage1-covariate-ladder carries the full arc: 577f0d2 (implementation), ffcaa27 (hub-rename verification), 83bd3af (gate PASS).
+The next work is Stage 3 of the plan (front-load the estimation scaffolding, document the trajectory contract; Tier 3 allowed), which is Mode 2: it needs the Stage 3 plan section re-read, the MAJOR-4 keep-with-missing reminder DELIVERED TO THE AUTHOR AT KICKOFF (plan requires this), and a decision on whether Stage 3 bundles its gate with Stage 4 per D-5.
+Consider merging or PR-ing stage1-covariate-ladder first; the author decides.
 
 ## Goals
 
@@ -60,7 +56,8 @@ The bundled Stage 1+2 gate launched at 12:15 as two detached Stata batches (full
 The ct supplement batch finished at 14:24 with rc=0.
 The main batch was at 195 of 250 sters by 20:41: every main GRC family complete (cuu and cub for all three countries, IDN cnu, both CHN hukou splits), the IDN experience extras stem in progress (about 35 minutes per column), the Verdier TZA leg still to come.
 A persistent monitor watches gate_stage1_rc.txt and flags a dead Stata process without an rc file.
-Next: when the rc file lands, run [gate_stage1_compare.do](file:///C:/git/ckt/RP7/tests/stage0/gate_stage1_compare.do), expect PASS_BITWISE on all pairs, commit the gate artifact (quality_reports/staging/stage1/gate_results.csv).
+The main batch finished at 21:16 with rc=0 and 250 sters; gate_stage1_compare.do then verified ALL 250 pairs PASS_BITWISE (provenance exact, e(b)/e(V) byte-identical, max_crit_ratio 0 throughout), and the gate artifact was committed (83bd3af).
+Total gate wall-clock: about nine hours across the two parallel batches.
 
 Unrelated interlude: recovered the NCI Gadi allocation-form decisions from the 2026-07-11 home-workspace session log (Tier 1, NCI Gadi, 20 KSU over Q3-Q4 2026) and drafted the form answers at [2026-07-17_gadi-allocation-answers.md](file:///C:/Users/maand/.claude/quality_reports/session_logs/2026-07-17_gadi-allocation-answers.md).
 
