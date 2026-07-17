@@ -46,7 +46,7 @@ grc_<country>_<spec3>_<covs2>_<sfx1>
 |-------|--------------------------------------|------------------------------|
 | `cuu` | consumption / urban / unbalanced     | `4_GrRC.do` section 1, smoke |
 | `cub` | consumption / urban / balanced       | `4_GrRC.do` section 2        |
-| `iuu` | income      / urban / unbalanced     | `4_GrRC.do` section 3        |
+| `iuu` | names legacy income sters on disk; income estimation is not run, per D-2 | (retired)                    |
 | `cnu` | consumption / nonag / unbalanced     | `5_GrRC_NonAg.do` (IDN-only) |
 
 `covs2`: 2-char covariate-set abbreviation:

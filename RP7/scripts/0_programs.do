@@ -13,8 +13,9 @@
 * spec3:   3-char positional triplet <depvar><choice><balance>
 *   cuu = consumption / urban / unbalanced  (4_GrRC.do section 1)
 *   cub = consumption / urban / balanced    (4_GrRC.do section 2)
-*   iuu = income      / urban / unbalanced  (4_GrRC.do section 3)
 *   cnu = consumption / nonag / unbalanced  (5_GrRC_NonAg.do; IDN-only)
+*   (iuu = income / urban / unbalanced names legacy income sters on
+*    disk; income estimation is not run, per D-2)
 *
 * covs2:   2-char covariate-set abbreviation
 *   c0 = no covariates                            (was covs_0)
@@ -57,7 +58,7 @@
 *   - Disk filenames and in-memory `estimates store` names use the
 *     same string. Drops the prior Option-B "long disk / short memory"
 *     bridge (`urban_` -> `u_`, `nonag_` -> `n_`).
-*   - Worst case: `_est_grc_CHN_uf_iuu_ca_n` = 24 chars + Stata's
+*   - Worst case: `_est_grc_CHN_uf_cuu_ca_n` = 24 chars + Stata's
 *     5-char `_est_` prefix = 29. Fits Stata's 32-char internal limit
 *     for stored-estimate matrix names.
 *   - Each section in 4_GrRC.do and 7_GrRC_hukou.do gets a unique
@@ -300,9 +301,10 @@ program define handle_depvar
     drop if mi(depvar) | depvar <= 0
 	display as text "Note: Dropped `r(N_drop)' observations due to missing/negative values in `depvar' "
     * per-capita (adult-equivalent cube) outcome, built once at source so every
-    * downstream estimator inherits it; hhsize_cube arrives with the raw panel
-    gen lndepvar = log(depvar/hhsize_cube)
-	label var lndepvar "Log (`depvar')"
+    * downstream estimator inherits it; hhsize_cube arrives with the raw panel.
+    * Named for the outcome it holds: logpc_consumption or logpc_income.
+    gen logpc_`depvar' = log(depvar/hhsize_cube)
+	label var logpc_`depvar' "Log (`depvar')"
 	
 	gen ln_income		= ln(income)
 	lab var				ln_income "Log Income"
@@ -1318,20 +1320,20 @@ program define reghdfe_regressions
     args country choice depvar balance
     * OLS / FE regressions using reghdfe
 	* Run col 6 first as it has the smallest sample, then use e(sample)
-    eststo reg6_`country': reghdfe lndepvar choice			 					///
+    eststo reg6_`country': reghdfe logpc_`depvar' choice			 					///
 				$covs_all				 										///
 				, vce(cluster pid) absorb(pid period)
 		gen regression_sample = e(sample)
 
-	  eststo reg1_`country': reghdfe lndepvar choice			 				///
+	  eststo reg1_`country': reghdfe logpc_`depvar' choice			 				///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg2_`country': reghdfe lndepvar choice $covs_1 						///
+    eststo reg2_`country': reghdfe logpc_`depvar' choice $covs_1 						///
 		if regression_sample, vce(cluster pid) absorb(period)
-	  eststo reg3_`country': reghdfe lndepvar choice $covs_2 					///
+	  eststo reg3_`country': reghdfe logpc_`depvar' choice $covs_2 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg4_`country': reghdfe lndepvar choice $covs_all 					///
+    eststo reg4_`country': reghdfe logpc_`depvar' choice $covs_all 					///
 		if regression_sample, vce(cluster pid) absorb(period)
-    eststo reg5_`country': reghdfe lndepvar choice $covs_all 			 		///
+    eststo reg5_`country': reghdfe logpc_`depvar' choice $covs_all 			 		///
 		if regression_sample & switcher, vce(cluster pid) absorb(period)
 end
 
@@ -1343,7 +1345,7 @@ program define reghdfe_regressions_learn_IDN
     args country depvar balance
     * OLS / FE regressions using reghdfe
 	* Run col 4 first as it has the smallest sample, then use e(sample)
-    eststo reg4_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all , vce(cluster pid) absorb(pid period)
+    eststo reg4_IDN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all , vce(cluster pid) absorb(pid period)
 	gen regression_sample = e(sample)
 	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
 	local urban_p = r(p)
@@ -1364,7 +1366,7 @@ program define reghdfe_regressions_learn_IDN
 	estadd scalar rural_3 = `rural_1_3'
 	estadd scalar rural_4 = `rural_1_4'
 
-    eststo reg1_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period	if regression_sample, noabsorb vce(cluster pid)
+    eststo reg1_IDN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period	if regression_sample, noabsorb vce(cluster pid)
 	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1384,7 +1386,7 @@ program define reghdfe_regressions_learn_IDN
 	estadd scalar rural_3 = `rural_1_3'
 	estadd scalar rural_4 = `rural_1_4'
 	
-	eststo reg2_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period if regression_sample, vce(cluster pid) absorb(period)
+	eststo reg2_IDN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period if regression_sample, vce(cluster pid) absorb(period)
 	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1404,7 +1406,7 @@ program define reghdfe_regressions_learn_IDN
 	estadd scalar rural_3 = `rural_1_3'
 	estadd scalar rural_4 = `rural_1_4'
     
-	eststo reg3_IDN: reghdfe lndepvar urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all if regression_sample, vce(cluster pid) absorb(period)
+	eststo reg3_IDN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period urban_4period rural_1period rural_2period rural_3period rural_4period $covs_all if regression_sample, vce(cluster pid) absorb(period)
 	test urban_1period=urban_2period=urban_3period=urban_4period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1431,7 +1433,7 @@ program define reghdfe_regressions_learn_CHN
     args country depvar balance
     * OLS / FE regressions using reghdfe
 	* Run col 4 first as it has the smallest sample, then use e(sample)
-    eststo reg4_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all , vce(cluster pid) absorb(pid period)
+    eststo reg4_CHN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all , vce(cluster pid) absorb(pid period)
 	gen regression_sample = e(sample)
 	test urban_1period=urban_2period=urban_3period, mtest
 	local urban_p = r(p)
@@ -1448,7 +1450,7 @@ program define reghdfe_regressions_learn_CHN
 	estadd scalar rural_2 = `rural_1_2'
 	estadd scalar rural_3 = `rural_1_3'
 
-    eststo reg1_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, noabsorb vce(cluster pid)
+    eststo reg1_CHN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, noabsorb vce(cluster pid)
 	test urban_1period=urban_2period=urban_3period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1464,7 +1466,7 @@ program define reghdfe_regressions_learn_CHN
 	estadd scalar rural_2 = `rural_1_2'
 	estadd scalar rural_3 = `rural_1_3'
 	
-	eststo reg2_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, vce(cluster pid) absorb(period)
+	eststo reg2_CHN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period if regression_sample, vce(cluster pid) absorb(period)
 	test urban_1period=urban_2period=urban_3period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1480,7 +1482,7 @@ program define reghdfe_regressions_learn_CHN
 	estadd scalar rural_2 = `rural_1_2'
 	estadd scalar rural_3 = `rural_1_3'
     
-	eststo reg3_CHN: reghdfe lndepvar urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all if regression_sample, vce(cluster pid) absorb(period)
+	eststo reg3_CHN: reghdfe logpc_`depvar' urban_1period urban_2period urban_3period rural_1period rural_2period rural_3period $covs_all if regression_sample, vce(cluster pid) absorb(period)
 	test urban_1period=urban_2period=urban_3period, mtest
 	local urban_p = r(p)
 	local urban_1_2 = r(mtest)[1,3]
@@ -1548,7 +1550,7 @@ program define heterogeneity_plots
 
 * Compute \Delta estimates for switchers centered around \Delta_never estimate
 * Without covariates
-  eststo nocovars_`country': 	reg lndepvar i.trajectory							    ///
+  eststo nocovars_`country': 	reg logpc_`depvar' i.trajectory							    ///
 															i($switchers).trajectory#i.choice    			///
 															i.unbalanced#i.choice  						///
 															, vce(cluster pid)
@@ -1568,7 +1570,7 @@ program define heterogeneity_plots
 	local p_dts_`country'_nocovars: di %-3.2f r(p)
 
 * With covariates for \Delta
-  eststo covars_`country': 	  reghdfe lndepvar i.trajectory   							///
+  eststo covars_`country': 	  reghdfe logpc_`depvar' i.trajectory   							///
 														  i($switchers).trajectory#i.choice    			///
               							  i.unbalanced#i.choice $covs_all	  ///
 														  , vce(cluster pid) absorb(period)
@@ -1799,29 +1801,29 @@ program define ugrc_regressions
     * eststo, capture e(sample), and apply 'if regression_sample' to
     * EVERY estimated column including col 7, so the uGRC table reports
     * cols 1-7 on a common sample (matching reghdfe_regressions's pattern).
-    quietly reghdfe lndepvar choice                                  ///
+    quietly reghdfe logpc_`depvar' choice                                  ///
                 $covs_all trend                                      ///
                 , vce(cluster pid) absorb(pid)
     gen regression_sample = e(sample)
 
-    eststo reg7_`country': reghdfe lndepvar i.trajectory             ///
+    eststo reg7_`country': reghdfe logpc_`depvar' i.trajectory             ///
                 i($switchers).trajectory#i.choice                    ///
                 i.unbalanced#i.choice $covs_all trend                ///
                 if regression_sample                                 ///
                 , vce(cluster pid)
 	
 	
-    eststo reg1_`country': reghdfe lndepvar choice 						///
+    eststo reg1_`country': reghdfe logpc_`depvar' choice 						///
 		if regression_sample,  noabsorb vce(cluster pid)
-	eststo reg2_`country': reghdfe lndepvar choice $covs_1 				///
+	eststo reg2_`country': reghdfe logpc_`depvar' choice $covs_1 				///
 		if regression_sample,  noabsorb vce(cluster pid)
-    eststo reg3_`country': reghdfe lndepvar choice $covs_2				///
+    eststo reg3_`country': reghdfe logpc_`depvar' choice $covs_2				///
 		if regression_sample,  noabsorb vce(cluster pid)
-	eststo reg4_`country': reghdfe lndepvar choice $covs_all	///
+	eststo reg4_`country': reghdfe logpc_`depvar' choice $covs_all	///
 		if regression_sample,  noabsorb vce(cluster pid)
-    eststo reg5_`country': reghdfe lndepvar choice $covs_all trend		///
+    eststo reg5_`country': reghdfe logpc_`depvar' choice $covs_all trend		///
 		if regression_sample,  noabsorb vce(cluster pid)
-    eststo reg6_`country': reghdfe lndepvar choice $covs_all trend 		///
+    eststo reg6_`country': reghdfe logpc_`depvar' choice $covs_all trend 		///
 		if regression_sample & switcher, noabsorb vce(cluster pid)
 end
 
@@ -2137,7 +2139,7 @@ program define run_grc
     timer on `_tslot'
 
     * Run the GMM estimation
-    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}  			///
+    eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}  			///
 									- {Delta_base}*choice  																///
 									- {phi=`phistart'}*(`switcherpars')		 										///
 									- ({kappa}+{phi}*({kappa} 										        ///
@@ -2286,7 +2288,7 @@ end
 *
 * Args:
 *   country(IDN|CHN|TZA)
-*   spec3(cuu|cub|iuu|cnu)
+*   spec3(cuu|cub|cnu)
 *   regressor(varname)        e.g. exp, exp_max, exp_share, exp_max_share, urbanbirth
 *   [iterate(integer 100)]
 *   [data_path_override(string)]   override resolved dataset path
@@ -2299,17 +2301,14 @@ end
 *   urbanbirth    -> birth
 *
 * spec3 dispatch (sets choice/depvar/balance for the table label and
-* picks the dataset+lndepvar handling that matches the original 10-15
-* per-section code):
+* picks the dataset; logpc_`depvar' arrives per-capita from handle_depvar
+* at build time):
 *   cuu -> choice=urban, depvar=consumption, balance=unb,
-*          dataset=<country>_unb.dta,  lndepvar=log(consumption/hhsize_cube)
+*          dataset=<country>_unb.dta
 *   cub -> choice=urban, depvar=consumption, balance=bal,
-*          dataset=<country>_bal.dta,  lndepvar=log(consumption/hhsize_cube)
-*   iuu -> choice=urban, depvar=income,      balance=unb,
-*          dataset=<country>_unb_income.dta, lndepvar already log(income/hhsize_cube)
-*          on disk (no replace)
+*          dataset=<country>_bal.dta
 *   cnu -> choice=nonag, depvar=consumption, balance=unb,
-*          dataset=<country>_unb_nonag.dta,  lndepvar=log(consumption/hhsize_cube)
+*          dataset=<country>_unb_nonag.dta
 *
 * data_path_override is for the one cell from file 15 sec 4 where the
 * original code opened the urban dataset (IDN_unb.dta) but labeled the
@@ -2348,11 +2347,6 @@ program define run_grc_with_extra_regressor
         local depvar  consumption
         local balance bal
     }
-    else if "`spec3'" == "iuu" {
-        local choice  urban
-        local depvar  income
-        local balance unb
-    }
     else if "`spec3'" == "cnu" {
         local choice  nonag
         local depvar  consumption
@@ -2367,9 +2361,6 @@ program define run_grc_with_extra_regressor
     if "`data_path_override'" != "" {
         local dpath "`data_path_override'"
     }
-    else if "`spec3'" == "iuu" {
-        local dpath "$dirdata/processed/`country'_`balance'_income.dta"
-    }
     else if "`spec3'" == "cnu" {
         local dpath "$dirdata/processed/`country'_`balance'_`choice'.dta"
     }
@@ -2377,12 +2368,8 @@ program define run_grc_with_extra_regressor
         local dpath "$dirdata/processed/`country'_`balance'.dta"
     }
 
-    * --- 4. Open data; build lndepvar (skip for iuu --- already on disk) ---
+    * --- 4. Open data ---
     use "`dpath'", clear
-    if "`spec3'" != "iuu" {
-        replace lndepvar = log(`depvar'/hhsize_cube)
-    }
-    sum ln*
 
     * --- 5. GMM-side variable construction (uses dataset's `choice' column) ---
     setup_grc_estimation
@@ -2391,7 +2378,7 @@ program define run_grc_with_extra_regressor
     * original keepvars from 10-15. The $lnsize global referenced in
     * 10-15 was vestigial scaffolding from David's old OLS code that
     * was never assigned in the current pipeline; removed 2026-04-29.
-    keep lndepvar trajectory choice pid `regressor'         ///
+    keep logpc_`depvar' trajectory choice pid `regressor'   ///
          period unbalanced* switcher non_switcher           ///
          female age age2 education_max education_max2 trend ///
          always always_choice never switcher_*
@@ -2401,7 +2388,7 @@ program define run_grc_with_extra_regressor
     local periodFE "period_2 - period_`r(r)'"
 
     * --- 7. Initial values ---
-    initial_values lndepvar,         ///
+    initial_values logpc_`depvar',   ///
         switchers($switchers)        ///
         balance(`balance')           ///
         estname(initial_`country')
@@ -2489,7 +2476,7 @@ program define run_grc_onestep
     timer clear `_tslot'
     timer on `_tslot'
 
-    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                    ///
+    eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                    ///
                             - {Delta_base}*choice                                    ///
                             - {phi=`phistart'}*(`switcherpars')                      ///
                             - ({kappa}+{phi}*({kappa}                                ///
@@ -2722,7 +2709,7 @@ program define run_grc_robust
     if "`vchoice_list'" == "" {
         di as text "run_grc_robust: degenerate |V|=1 branch (no beta_dev parameters)"
         di as text "run_grc_robust: switching to vce(cluster pid) for |V|=1"
-        eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                ///
+        eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                ///
                                 - {Delta_base}*choice                                ///
                                 - {phi=`phistart'}*(`switcherpars')                  ///
                                 - ({kappa}+{phi}*({kappa}                            ///
@@ -2749,7 +2736,7 @@ program define run_grc_robust
         * resolves the non-convergence + singular-SE issues observed
         * under Stata default two-step GMM. Inference via
         * vce(cluster vfirst) still uses the cluster-robust formula.
-        eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                ///
+        eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                ///
                                 - {Delta_base}*choice                                ///
                                 - {beta_dev: `vchoice_list'}                         ///
                                 - {phi=`phistart'}*(`switcherpars')                  ///
@@ -3140,7 +3127,7 @@ program define run_grc_robust_vv
     * through the moment equation's always#1.choice term combined with the
     * standard instruments (never, switcher_traj, choice).
     * ----------------------------------------------------------------
-    eststo `estname': gmm (lndepvar - {mu: never `switcher_traj'}                   ///
+    eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                   ///
                             - {Delta_base}*choice                                   ///
                             - {phi=`phistart'}*(`switcherpars')                     ///
                             - ({kappa}+{phi}*({kappa}                               ///
@@ -3729,7 +3716,7 @@ end
 *
 * Args identical to run_grc_with_extra_regressor:
 *   country(IDN|CHN|TZA)
-*   spec3(cuu|cub|iuu|cnu)
+*   spec3(cuu|cub|cnu)
 *   regressor(varname)
 
 * **********************************************************************
@@ -3784,11 +3771,6 @@ program define extras_tex_table
         local choice  urban
         local depvar  consumption
         local balance bal
-    }
-    else if "`spec3'" == "iuu" {
-        local choice  urban
-        local depvar  income
-        local balance unb
     }
     else if "`spec3'" == "cnu" {
         local choice  nonag

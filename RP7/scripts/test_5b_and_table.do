@@ -42,11 +42,9 @@ capture noisily {
     local balance unb
     local spec3   cuu
 
-    global covs_gmm     "female"
-    global covs_gmm2    "$covs_gmm age2"
-    global covs_gmm_all "$covs_gmm2 education_max education_max2"
+    set_covariate_globals
 
-    global keepvars lndepvar trajectory choice pid
+    global keepvars logpc_consumption trajectory choice pid
     global keepvars $keepvars period unbalanced* switcher non_switcher
     global keepvars $keepvars female age age2
     global keepvars $keepvars education_max education_max2 trend
@@ -60,14 +58,13 @@ capture noisily {
         di as text "{hline 72}"
 
         use "$dirdata/processed/`country'_`balance'.dta", clear
-        replace lndepvar = log(consumption/hhsize_cube)
         setup_grc_estimation
         keep $keepvars
         tab period, gen(period_)
         local periodFE "period_2 - period_`r(r)'"
-        drop if mi(lndepvar) | mi(choice)
+        drop if mi(logpc_consumption) | mi(choice)
 
-        initial_values lndepvar,        ///
+        initial_values logpc_consumption,        ///
             switchers($switchers)       ///
             balance(`balance')          ///
             estname(initial_`country')
@@ -107,7 +104,7 @@ capture noisily {
             attach_inversion_ci,                ///
                 estbase(`estbase')              ///
                 sterdir("${inversion_sterdir}") ///
-                outcome(lndepvar)               ///
+                outcome(logpc_consumption)               ///
                 traj(trajectory)                ///
                 choice(choice)                  ///
                 hhid(pid)                       ///

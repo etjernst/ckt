@@ -1,17 +1,21 @@
 * *******************************************************************
-* Title:   Stage 1 gate-panel refit (covariate-ladder single source)
+* Title:   Bundled Stage 1+2 gate-panel refit (D-5)
 * Author:  Emilia Tjernstrom
 * Date:    2026-07-16
 * Purpose: Refits every gate-panel leg whose script the Stage 1
-*          refactor touched (main, nonag, hukou, extras, and the ct
-*          supplement) into the stage1_root shadow root, on the
-*          refactored code. The Verdier leg is excluded: its source
-*          (17_verdier_robust.do) is untouched until Stage 6. Every
-*          refit ster must be bit-identical to the frozen baseline
-*          (Tier 2); gate_stage1_compare.do adjudicates. The ct
-*          supplement runs in parallel via gate_stage1_ct.do (ster
-*          names are disjoint), mirroring the Stage 0 batch split.
-* Input:   RP7/data/processed (canonical hub, via the data junction)
+*          (covariate-ladder single source) or Stage 2 (logpc outcome
+*          rename, income removal) refactor touched --- main, nonag,
+*          hukou, extras, Verdier, and the ct supplement --- into the
+*          stage1_root shadow root, on the refactored code. The
+*          Verdier leg is included because Stage 2's outcome rename
+*          edits 17_verdier_robust.do. Every refit ster must be
+*          bit-identical to the frozen baseline (Tier 2);
+*          gate_stage1_compare.do adjudicates. The ct supplement runs
+*          in parallel via gate_stage1_ct.do (ster names are
+*          disjoint), mirroring the Stage 0 batch split.
+* Input:   RP7/data/processed (canonical hub, via the data junction;
+*          must be rebuilt with the Stage 2 front end so the cells
+*          carry logpc_consumption before this refit launches)
 * Output:  RP7/tests/stage0/stage1_root/output/ (refit sters)
 * *******************************************************************
 
@@ -40,6 +44,7 @@ capture noisily {
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_nonag.do"
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_hukou.do"
     include "C:/git/ckt/RP7/tests/stage0/gate_panel_extras.do"
+    include "C:/git/ckt/RP7/tests/stage0/gate_panel_verdier.do"
 }
 local saved_rc = _rc
 capture log close

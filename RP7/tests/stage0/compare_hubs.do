@@ -12,6 +12,11 @@
 * Input:   processed cells in RP7/data and RP7/data_rebuild
 * Output:  quality_reports/staging/stage0/hub_characterization.csv
 *          quality_reports/staging/stage0/hub_var_diffs.csv
+* Historical artifact: the lndepvar-signature diagnostic below targets
+*          the pre-rename variable name and must run against the
+*          pre-rename hub. After the Stage 2 rename (lndepvar ->
+*          logpc_consumption / logpc_income), it silently no-ops
+*          against the live hub. Do not re-run this file for live signal.
 * *******************************************************************
 
 clear all

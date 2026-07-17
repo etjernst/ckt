@@ -1,13 +1,15 @@
 * *******************************************************************
-* Title:   Stage 1 gate: compare refit to frozen baseline
+* Title:   Bundled Stage 1+2 gate: compare refit to frozen baseline
 * Author:  Emilia Tjernstrom
 * Date:    2026-07-16
-* Purpose: gate_compare every ster the Stage 1 refit produced
-*          (stage1_root/output) against the frozen baseline
+* Purpose: gate_compare every ster the bundled Stage 1+2 refit
+*          produced (stage1_root/output) against the frozen baseline
 *          (baseline_root/output). Stage 1 removes value-identical
-*          covariate redeclarations without touching row order, so
-*          every pair must be PASS_BITWISE (Tier 2); anything else
-*          stops the stage.
+*          covariate redeclarations and Stage 2 renames the per-capita
+*          outcome to logpc_consumption and removes value-identical
+*          replace sites; neither touches row order, so every pair
+*          must be PASS_BITWISE (Tier 2); anything else stops the
+*          stage.
 * Input:   both shadow-root output directories, gate_harness.do
 * Output:  quality_reports/staging/stage1/gate_results.csv
 * *******************************************************************
@@ -36,8 +38,8 @@ global stage0dir "`stagedir'"
 local results "`stagedir'/gate_results.csv"
 capture erase "`results'"
 
-* every ster the refit produced is compared; the baseline is a superset
-* (it also carries the untouched Verdier leg)
+* every ster the refit produced is compared; with the Verdier leg in
+* the bundled refit, the refit set matches the baseline set
 local sters : dir "`refit'" files "*.ster"
 local n_sters : word count `sters'
 if `n_sters' == 0 {

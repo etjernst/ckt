@@ -53,15 +53,13 @@ local choice  urban
 local depvar  consumption
 local balance unb
 
-* GMM covariate sets (mirror 5_GrRC.do)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+* GMM covariate sets (single source; mirror 4_GrRC.do)
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation); add vidx per country below.
 * `year` is required because gen_vfirst (called inside run_grc_robust_vv) uses
 * `bysort pid (year)` to identify the first-wave value of the cluster index.
-global keepvars_base lndepvar trajectory choice pid year
+global keepvars_base logpc_consumption trajectory choice pid year
 global keepvars_base $keepvars_base period unbalanced* switcher non_switcher
 global keepvars_base $keepvars_base female age age2
 global keepvars_base $keepvars_base education_max education_max2 trend
@@ -83,7 +81,6 @@ foreach country in TZA {
 
     * Open and prep data
     use "$dirdata/processed/`country'_`balance'.dta", clear
-    replace lndepvar = log(consumption/hhsize_cube)
     setup_grc_estimation
     global keepvars $keepvars_base `vidx'
     keep $keepvars
@@ -92,7 +89,7 @@ foreach country in TZA {
     local periodFE "period_2 - period_`r(r)'"
 
     * Initial values (data-driven base + starting parameter vector)
-    initial_values lndepvar,        ///
+    initial_values logpc_consumption,        ///
         switchers($switchers)       ///
         balance(`balance')          ///
         estname(initial_`country')

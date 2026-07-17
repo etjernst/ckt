@@ -25,10 +25,11 @@ Tables for these stems are built in 10_make_tables.do (NOT here). Run:
     1. this file (9_GRC_extras.do)  to produce the sters
     2. 10_make_tables.do              to produce the .tex tables
 
-Cell coverage (44 stems = 36 + 4 + 4):
-    - 36 = 4 families x 3 spec3 x 3 countries  (from 10/11/12/13)
+Cell coverage (31 stems = 24 + 4 + 3):
+    - 24 = 4 families x 2 spec3 (cuu, cub) x 3 countries  (from 10/11/12/13)
     - 4  = 1 country (IDN) x 1 spec3 (cnu) x 4 families  (from 14)
-    - 4  = 1 country (IDN) x 4 spec3 x 1 family (birth)  (from 15)
+    - 3  = 1 country (IDN) x 3 spec3 x 1 family (birth)  (from 15)
+Income (iuu) stems are not estimated, per D-2.
 *******************************************************************************/
 
 capture log close
@@ -47,11 +48,6 @@ run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(exp)
 run_grc_with_extra_regressor, country(CHN) spec3(cub) regressor(exp)
 run_grc_with_extra_regressor, country(TZA) spec3(cub) regressor(exp)
 
-* iuu (income, urban, unbalanced) x 3 countries
-run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(exp)
-run_grc_with_extra_regressor, country(CHN) spec3(iuu) regressor(exp)
-run_grc_with_extra_regressor, country(TZA) spec3(iuu) regressor(exp)
-
 * **********************************************************************
 * Family: max_experience  (regressor = exp_max; from file 11)
 * **********************************************************************
@@ -62,10 +58,6 @@ run_grc_with_extra_regressor, country(TZA) spec3(cuu) regressor(exp_max)
 run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(exp_max)
 run_grc_with_extra_regressor, country(CHN) spec3(cub) regressor(exp_max)
 run_grc_with_extra_regressor, country(TZA) spec3(cub) regressor(exp_max)
-
-run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(exp_max)
-run_grc_with_extra_regressor, country(CHN) spec3(iuu) regressor(exp_max)
-run_grc_with_extra_regressor, country(TZA) spec3(iuu) regressor(exp_max)
 
 * **********************************************************************
 * Family: experience_share  (regressor = exp_share; from file 12)
@@ -78,10 +70,6 @@ run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(exp_share)
 run_grc_with_extra_regressor, country(CHN) spec3(cub) regressor(exp_share)
 run_grc_with_extra_regressor, country(TZA) spec3(cub) regressor(exp_share)
 
-run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(exp_share)
-run_grc_with_extra_regressor, country(CHN) spec3(iuu) regressor(exp_share)
-run_grc_with_extra_regressor, country(TZA) spec3(iuu) regressor(exp_share)
-
 * **********************************************************************
 * Family: max_experience_share  (regressor = exp_max_share; from file 13)
 * **********************************************************************
@@ -92,10 +80,6 @@ run_grc_with_extra_regressor, country(TZA) spec3(cuu) regressor(exp_max_share)
 run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(exp_max_share)
 run_grc_with_extra_regressor, country(CHN) spec3(cub) regressor(exp_max_share)
 run_grc_with_extra_regressor, country(TZA) spec3(cub) regressor(exp_max_share)
-
-run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(exp_max_share)
-run_grc_with_extra_regressor, country(CHN) spec3(iuu) regressor(exp_max_share)
-run_grc_with_extra_regressor, country(TZA) spec3(iuu) regressor(exp_max_share)
 
 * **********************************************************************
 * IDN cnu (nonag) x experience families  (from file 14)
@@ -109,10 +93,9 @@ run_grc_with_extra_regressor, country(IDN) spec3(cnu) regressor(exp_max_share)
 * **********************************************************************
 * Family: birth  (regressor = urbanbirth; IDN-only; from file 15)
 * **********************************************************************
-* cuu, cub, iuu use the spec3 default datasets.
+* cuu and cub use the spec3 default datasets.
 run_grc_with_extra_regressor, country(IDN) spec3(cuu) regressor(urbanbirth)
 run_grc_with_extra_regressor, country(IDN) spec3(cub) regressor(urbanbirth)
-run_grc_with_extra_regressor, country(IDN) spec3(iuu) regressor(urbanbirth)
 
 * IDN cnu x birth: file 15 sec 4 used the URBAN dataset (IDN_unb.dta) for
 * this cell, not the nonag dataset. Faithful replication of historical

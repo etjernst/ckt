@@ -1,13 +1,14 @@
 * *******************************************************************
-* Title:   Stage 1 gate-panel refit, ct supplement
+* Title:   Bundled Stage 1+2 gate-panel refit, ct supplement
 * Author:  Emilia Tjernstrom
 * Date:    2026-07-16
 * Purpose: Refits the _ct (time-FE-only) gate-panel cells on the
-*          Stage 1 refactored code into the stage1_root shadow root.
-*          Runs in parallel with the main Stage 1 batch; ster names
-*          are disjoint. gate_stage1_compare.do adjudicates both
-*          batches against the frozen baseline.
-* Input:   RP7/data/processed (canonical hub, via the data junction)
+*          bundled Stage 1+2 refactored code into the stage1_root
+*          shadow root. Runs in parallel with the main bundled batch;
+*          ster names are disjoint. gate_stage1_compare.do adjudicates
+*          both batches against the frozen baseline.
+* Input:   RP7/data/processed (canonical hub, via the data junction);
+*          must carry logpc_consumption before this refit launches
 * Output:  RP7/tests/stage0/stage1_root/output/ (ct refit sters)
 * *******************************************************************
 

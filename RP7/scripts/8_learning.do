@@ -39,10 +39,6 @@ local country IDN
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 g first_period_urban_temp = .
 replace first_period_urban_temp = urban if period == 1
 
@@ -135,10 +131,6 @@ local country CHN
 
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
-
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
 
 g first_period_urban_temp = .
 replace first_period_urban_temp = urban if period == 1

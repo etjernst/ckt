@@ -10,9 +10,9 @@ any GMM. Reads existing .ster files from $dir/output/ and emits .tex via
 grc_tex_table_trend / het_table_*.
 
 Replaces (legacy files, deleted in the GRC pipeline refactor):
-  5_GrRC_tables.do          (9 cells, cuu/cub/iuu × IDN/CHN/TZA)
+  5_GrRC_tables.do          (6 cells, cuu/cub × IDN/CHN/TZA)
   6_GrRC_NonAg_tables.do    (1 cell, IDN cnu)
-  8_GrRC_hukou_tables.do    (12 cells, 4 hukou subgroups × 3 spec3)
+  8_GrRC_hukou_tables.do    (8 cells, 4 hukou subgroups × 2 spec3)
   16_heterogeneity_tables.do (6 cells, Delta + Mu × IDN/CHN/TZA)
                              --- 28 GRC tables total.
 
@@ -163,67 +163,6 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-* **********************************************************************
-* 3. Income | Urban | Unbalanced  (spec3=iuu) --- 3 cells
-* **********************************************************************
-local choice  urban
-local depvar  income
-local balance unb
-
-* INDONESIA
-local country IDN
-grc_tex_table_trend, columns(4)                         ///
-    spec(iuu)                                           ///
-    country(`country')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
-* CHINA
-local country CHN
-grc_tex_table_trend, columns(4)                         ///
-    spec(iuu)                                           ///
-    country(`country')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
-* TANZANIA
-local country TZA
-grc_tex_table_trend, columns(4)                         ///
-    spec(iuu)                                           ///
-    country(`country')                                  ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
 /*******************************************************************************
 Section 2 --- LaTeX table for IDN cons/nonag/unb (cnu) without
 re-running GMM. Reads existing .ster files; emits via
@@ -264,7 +203,7 @@ if _rc == 0 & $copyOverleaf == 1 {
 }
 
 /*******************************************************************************
-Section 3 --- LaTeX tables for the 12 hukou-subgroup cells
+Section 3 --- LaTeX tables for the 8 hukou-subgroup cells
 (4 hukou subgroups × 3 spec3) without re-running GMM. Reads existing
 .ster files; emits via grc_tex_table_trend (M3-unified, no spec passed
 since country_short already encodes the disambiguator).
@@ -289,7 +228,7 @@ local varlab "$\phi$"
 local postfoot_str Time FE & Y & Y & Y & Y \\ Covariates & & Female & \& Age$^2$ & All \\
 
 * **********************************************************************
-* Rural Hukou First  (CHN_rf_*)  --- 3 cells
+* Rural Hukou First  (CHN_rf_*)  --- 2 cells
 * **********************************************************************
 
 * Rural First | Consumption | Urban | Unbalanced
@@ -335,29 +274,8 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-* Rural First | Income | Urban | Unbalanced
-local country       CHN_hukou_rural_first
-local country_short CHN_rf_iuu
-local choice  urban
-local depvar  income
-local balance unb
-grc_tex_table_trend, columns(4)                         ///
-    country(`country_short')                            ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
 * **********************************************************************
-* Urban Hukou First  (CHN_uf_*)  --- 3 cells
+* Urban Hukou First  (CHN_uf_*)  --- 2 cells
 * **********************************************************************
 
 * Urban First | Consumption | Urban | Unbalanced
@@ -403,29 +321,8 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-* Urban First | Income | Urban | Unbalanced
-local country       CHN_hukou_urban_first
-local country_short CHN_uf_iuu
-local choice  urban
-local depvar  income
-local balance unb
-grc_tex_table_trend, columns(4)                         ///
-    country(`country_short')                            ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
 * **********************************************************************
-* Only Rural Hukou  (CHN_ro_*)  --- 3 cells
+* Only Rural Hukou  (CHN_ro_*)  --- 2 cells
 * **********************************************************************
 
 * Only Rural | Consumption | Urban | Unbalanced
@@ -470,29 +367,8 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-* Only Rural | Income | Urban | Unbalanced
-local country       CHN_hukou_rural_only
-local country_short CHN_ro_iuu
-local choice  urban
-local depvar  income
-local balance unb
-grc_tex_table_trend, columns(4)                         ///
-    country(`country_short')                            ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
 * **********************************************************************
-* Only Urban Hukou  (CHN_uo_*)  --- 3 cells
+* Only Urban Hukou  (CHN_uo_*)  --- 2 cells
 * **********************************************************************
 
 * Only Urban | Consumption | Urban | Unbalanced
@@ -537,27 +413,6 @@ if _rc == 0 & $copyOverleaf == 1 {
     , subdir(tables)
 }
 
-* Only Urban | Income | Urban | Unbalanced
-local country       CHN_hukou_urban_only
-local country_short CHN_uo_iuu
-local choice  urban
-local depvar  income
-local balance unb
-grc_tex_table_trend, columns(4)                         ///
-    country(`country_short')                            ///
-    filename(GRC_`country'_`depvar'_`choice'_`balance') ///
-    keep(`reportvars')                                  ///
-    varlabel(`varlab')                                  ///
-    postfoot(`postfoot_str')                            ///
-    coeflabels(choice "Urban")                          ///
-    textdepvar( log(`depvar') )
-capture confirm file "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex"
-if _rc == 0 & $copyOverleaf == 1 {
-    copyOverleaf                                                   ///
-    "$output/tables/GRC_`country'_`depvar'_`choice'_`balance'.tex" ///
-    , subdir(tables)
-}
-
 * **********************************************************************
 * Heterogeneity Delta and mu tables (per-country)
 * Reads sters from $output, writes hetdelta_<country>.tex and
@@ -574,12 +429,10 @@ local depvar  consumption
 local balance unb
 
 * define GMM covariates (so they enter the first estimations)
-global covs_gmm     "female"
-global covs_gmm2    "$covs_gmm age2"
-global covs_gmm_all "$covs_gmm2 education_max education_max2"
+set_covariate_globals
 
 * Keep only relevant variables (speeds up estimation)
-global keepvars lndepvar trajectory choice pid 
+global keepvars logpc_consumption trajectory choice pid
 global keepvars $keepvars period unbalanced* switcher non_switcher
 global keepvars $keepvars female age age2
 global keepvars $keepvars education_max education_max2 trend
@@ -594,10 +447,6 @@ local country IDN
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some can help speed up gmm
 
@@ -611,7 +460,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,        ///
+initial_values logpc_consumption,        ///
     switchers($switchers)       ///
     balance(`balance')          ///
     estname(initial_`country')
@@ -670,10 +519,6 @@ local country TZA
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some vars can help speed up gmm
 
@@ -687,7 +532,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,       ///
+initial_values logpc_consumption,       ///
     switchers($switchers)      ///
     balance(`balance')         ///
     estname(initial_`country')
@@ -746,10 +591,6 @@ local country CHN
 * Open dataset
 use "$dirdata/processed/`country'_`balance'.dta", clear
 
-* ==> replace log consumption with log consumption per capita
-replace lndepvar = log(consumption/hhsize_cube)
-sum ln*
-
 setup_grc_estimation
 keep $keepvars // Dropping some vars can help speed up gmm
 
@@ -763,7 +604,7 @@ local periodFE "period_2 - period_`r(r)'"
 * & stores estimates in the string defined in estname() option
 * add option print to see the initial values
 * ************
-initial_values lndepvar,       ///
+initial_values logpc_consumption,       ///
     switchers($switchers)      ///
     balance(`balance')         ///
     estname(initial_`country')
@@ -1028,10 +869,6 @@ extras_tex_table, country(IDN) spec3(cub) regressor(exp)
 extras_tex_table, country(CHN) spec3(cub) regressor(exp)
 extras_tex_table, country(TZA) spec3(cub) regressor(exp)
 
-extras_tex_table, country(IDN) spec3(iuu) regressor(exp)
-extras_tex_table, country(CHN) spec3(iuu) regressor(exp)
-extras_tex_table, country(TZA) spec3(iuu) regressor(exp)
-
 * --- Family: max_experience  (regressor = exp_max) ---
 extras_tex_table, country(IDN) spec3(cuu) regressor(exp_max)
 extras_tex_table, country(CHN) spec3(cuu) regressor(exp_max)
@@ -1040,10 +877,6 @@ extras_tex_table, country(TZA) spec3(cuu) regressor(exp_max)
 extras_tex_table, country(IDN) spec3(cub) regressor(exp_max)
 extras_tex_table, country(CHN) spec3(cub) regressor(exp_max)
 extras_tex_table, country(TZA) spec3(cub) regressor(exp_max)
-
-extras_tex_table, country(IDN) spec3(iuu) regressor(exp_max)
-extras_tex_table, country(CHN) spec3(iuu) regressor(exp_max)
-extras_tex_table, country(TZA) spec3(iuu) regressor(exp_max)
 
 * --- Family: experience_share  (regressor = exp_share) ---
 extras_tex_table, country(IDN) spec3(cuu) regressor(exp_share)
@@ -1054,10 +887,6 @@ extras_tex_table, country(IDN) spec3(cub) regressor(exp_share)
 extras_tex_table, country(CHN) spec3(cub) regressor(exp_share)
 extras_tex_table, country(TZA) spec3(cub) regressor(exp_share)
 
-extras_tex_table, country(IDN) spec3(iuu) regressor(exp_share)
-extras_tex_table, country(CHN) spec3(iuu) regressor(exp_share)
-extras_tex_table, country(TZA) spec3(iuu) regressor(exp_share)
-
 * --- Family: max_experience_share  (regressor = exp_max_share) ---
 extras_tex_table, country(IDN) spec3(cuu) regressor(exp_max_share)
 extras_tex_table, country(CHN) spec3(cuu) regressor(exp_max_share)
@@ -1066,10 +895,6 @@ extras_tex_table, country(TZA) spec3(cuu) regressor(exp_max_share)
 extras_tex_table, country(IDN) spec3(cub) regressor(exp_max_share)
 extras_tex_table, country(CHN) spec3(cub) regressor(exp_max_share)
 extras_tex_table, country(TZA) spec3(cub) regressor(exp_max_share)
-
-extras_tex_table, country(IDN) spec3(iuu) regressor(exp_max_share)
-extras_tex_table, country(CHN) spec3(iuu) regressor(exp_max_share)
-extras_tex_table, country(TZA) spec3(iuu) regressor(exp_max_share)
 
 * --- IDN cnu (nonag) x experience families (file 14) ---
 extras_tex_table, country(IDN) spec3(cnu) regressor(exp)
@@ -1080,7 +905,6 @@ extras_tex_table, country(IDN) spec3(cnu) regressor(exp_max_share)
 * --- Family: birth  (regressor = urbanbirth; IDN-only) ---
 extras_tex_table, country(IDN) spec3(cuu) regressor(urbanbirth)
 extras_tex_table, country(IDN) spec3(cub) regressor(urbanbirth)
-extras_tex_table, country(IDN) spec3(iuu) regressor(urbanbirth)
 extras_tex_table, country(IDN) spec3(cnu) regressor(urbanbirth)
 
 log close
