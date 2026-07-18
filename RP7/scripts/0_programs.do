@@ -562,10 +562,12 @@ end
 * data-driven trajectory contract in dataset characteristics
 * (_dta[grc_switchers], _dta[grc_always]) that setup_grc_estimation
 * reads back at load time. trajectory stays missing for individuals
-* outside the balanced enumeration: writing a numeric sentinel into the
-* saved data would pull those rows into the i.trajectory regressions in
-* scripts that never call setup_grc_estimation (3_OLS_uGRC,
-* 6_OLS_uGRC_hukou), so the 999 recode happens only at load.
+* outside the balanced enumeration: missing is the honest encoding in
+* saved data, and any consumer that loads the hub without calling
+* setup_grc_estimation keeps pre-scaffolding semantics (a stored
+* numeric sentinel would surface as a real factor level in an
+* i.trajectory regression run without the reader). The 999 recode
+* happens only at load, inside setup_grc_estimation.
 capture program drop handle_grc_scaffolding
 program define handle_grc_scaffolding
     quietly tab trajectory
