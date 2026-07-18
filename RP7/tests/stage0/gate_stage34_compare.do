@@ -56,9 +56,11 @@ foreach f of local sters {
 * ---- adjudicate against the enumerated expectation
 import delimited using "`results'", clear varnames(1) stringcols(_all)
 destring n_base n_new, replace
-gen byte moved = regexm(estname, "grc_IDN_cuu") | ///
-    regexm(estname, "grc_TZA_cuu") | regexm(estname, "vv_TZA")
-gen expected_delta = cond(regexm(estname, "grc_IDN_cuu"), 1, ///
+* estnames arrive lowercased (Stata's dir macro lowercases filenames on
+* Windows), so match on the lowercased form
+gen byte moved = regexm(lower(estname), "grc_idn_cuu") | ///
+    regexm(lower(estname), "grc_tza_cuu") | regexm(lower(estname), "vv_tza")
+gen expected_delta = cond(regexm(lower(estname), "grc_idn_cuu"), 1, ///
     cond(moved, 2, 0))
 gen final_verdict = tier_verdict
 replace final_verdict = "EXPECTED_N_CHANGE" if moved & ///
@@ -69,8 +71,35 @@ export delimited using "`stagedir'/gate_results.csv", replace
 
 quietly count if gate_fail
 local n_fail = r(N)
-di as text _newline "Moved cells for author sign-off (enumerated N change; coefficient movement below):"
-list estname n_base n_new max_crit_ratio if moved, clean noobs
+
+* ---- coefficient movement for the moved pairs (the harness skips the
+* b/V comparison when provenance differs, so compute it from the ster
+* pairs directly: max over e(b) of |new-old| / (|old| + 1e-12))
+quietly levelsof estname if moved, local(mvnames) clean
+tempname M
+postfile `M' str40 estname double max_b_reldiff ///
+    using "`stagedir'/moved_movement.dta", replace
+foreach nm of local mvnames {
+    quietly estimates use "`base'/`nm'.ster"
+    matrix __b0 = e(b)
+    quietly estimates use "`refit'/`nm'.ster"
+    matrix __b1 = e(b)
+    mata: st_numscalar("__mrd", max(abs(st_matrix("__b1") - st_matrix("__b0")) :/ (abs(st_matrix("__b0")) :+ 1e-12)))
+    post `M' ("`nm'") (scalar(__mrd))
+}
+postclose `M'
+preserve
+    use "`stagedir'/moved_movement.dta", clear
+    export delimited using "`stagedir'/moved_movement.csv", replace
+    quietly sum max_b_reldiff
+    di as text _newline "Moved cells for author sign-off: coefficient movement" ///
+        " (max relative e(b) change) min=" %12.4e r(min) " mean=" %12.4e r(mean) " max=" %12.4e r(max)
+    gsort -max_b_reldiff
+    list estname max_b_reldiff in 1/10, clean noobs
+restore
+
+di as text _newline "Moved cells (enumerated N change):"
+list estname n_base n_new if moved, clean noobs
 
 if `n_fail' > 0 {
     di as error ">>> STAGE 3+4 GATE: `n_fail' of `=_N' pairs FAIL"
