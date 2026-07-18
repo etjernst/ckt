@@ -159,7 +159,9 @@ The scaffolding dummies carry variable labels and the contract carries `_dta[grc
 critic-stata scored the diff 84/100 with no CRITICAL; its MAJOR is fixed as above, and its remaining MINORs are recorded (labels would leak into a future `esttab` that omits `coeflabels()`; smoke drivers hardcode the per-user path per project convention).
 Smoke artifact: RP7/tests/stage0/smoke_stage4.do, all-PASS (IDN unb N 92,449 = 93,038 minus 1 recomputed singleton minus 588 missing-outcome waves with descriptors exactly true; TZA 2waves N 29,862 with the computed rule equal to the hand lists; IDN 2waves suffixed descriptors true after real drops; CHN raw passes `isid`).
 Resolved 2026-07-18 (author): individuals with exactly one estimable wave but a longer observed history are KEPT for now (205 in IDN_unb, 89 in IDN_unb_nonag; CHN and TZA have none), matching today's estimation samples; whether to drop them is deferred to a later deliberate decision (Stage 9 territory).
-Next: the hub rebuild, the variable-by-variable hub diff, and the bundled Stage 3+4 gate refit.
+Hub rebuilt and compared 2026-07-18: all 34 cells PASS the enumerated-delta check (compare_hub_stage34.do; artifact at quality_reports/staging/stage34/hub_stage34_check.csv)---the rebuild differs from the canonical hub by exactly the recomputed-singleton rows, the missing-outcome rows, the corrected descriptors, and the scaffolding variables, nothing else.
+The bundled Stage 3+4 gate launched the same evening as two detached batches (gate_stage34.do and gate_stage34_ct.do) on the stage34_root shadow root (scripts junction to the working tree, data junction to RP7/data_rebuild).
+Expected adjudication (gate_stage34_compare.do): every ster pair PASS_BITWISE except the cells fit on IDN_unb (grc_IDN_cuu*, e(N) down by exactly 1) and TZA_unb (grc_TZA_cuu* and vv_TZA_*, e(N) down by exactly 2), which the compare reclassifies EXPECTED_N_CHANGE and reports for author sign-off; any other verdict fails the gate.
 
 ## Stage 5: inversion CIs key off e(sample) (correctness, contract not exercised today)
 
