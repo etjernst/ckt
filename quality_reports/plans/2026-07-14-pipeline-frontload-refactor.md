@@ -132,6 +132,8 @@ Keeping missing in the file is therefore an honest-encoding choice, not a live-o
 Unbalanced individuals ARE in every live regression: the OLS/FE tables (no trajectory factor), the heterogeneity regressions (999 level plus the `i.unbalanced#i.choice` lump), and the restricted GRC (unbalanced/unbalanced_choice terms).
 Enumerated drops on the current hub (artifact at quality_reports/staging/stage3/estimable_sample_drops.csv): 588 person-waves in IDN_unb and its 2waves/3waves variants, 238 in IDN_unb_nonag, 1015/182/129/119/52/48 across the income cells, zero everywhere else; all dropped rows sit on Change-A unbalanced individuals, so no balanced-trajectory count moves.
 Knock-on requiring author sign-off at the end sweep: `gen_vfirst` computes the Verdier cluster index at estimation time, so the drop reassigns `vfirst` for 45 IDN pids (67 person-waves); TZA and CHN have zero dropped rows, the gated TZA Verdier leg is clean, but the IDN Verdier robustness columns will move at the definitive run.
+Author decision 2026-07-18: accepted; `vfirst` stays computed at estimation time on the estimable sample (the alternative of freezing today's assignments by building `vfirst` before the drop was declined, since a wave without an estimable outcome should not seed the cluster index).
+The 45-pid IDN reassignment is expected movement, to be enumerated at the end sweep.
 Smoke artifact: RP7/tests/stage0/smoke_stage3.do, all-PASS (row-by-row dummy equality against the old load-time construction on IDN_unb, exact N transitions 93038-588, 29864-0, 58047-1015, reader and fail-fast verified).
 The bundled Stage 3+4 gate runs after Stage 4 lands, on a rebuilt hub.
 
@@ -148,6 +150,18 @@ MAJOR-7: delete the dead `depvar` argument and its stale comment in `set_covaria
 Rebuild all processed files and diff variable-by-variable against the Stage 0 processed snapshot; the reordered drops make Tier 3 applicable to the sters.
 Provenance (N, partition, `e(sample)`) must be exact except for the CRITICAL-1 singleton rows predicted above; coefficients within tolerance.
 Commit with gate artifact.
+Status 2026-07-18: implemented and smoke-tested on branch `stage3-frontload-scaffolding`, with one open author decision below.
+`handle_sample_drops` (split out of `set_covariates`, which now defines covariates only and loses its dead `depvar` argument per MAJOR-7) applies counted covariate drops, refreshes the per-individual descriptors, and applies the singleton drop on the refreshed observed-wave count; the smoke emulation reproduces the enumerated CRITICAL-1 diff exactly (0/1/2 recomputed-singleton person-waves for CHN/IDN/TZA).
+`refresh_descriptors` (factored per the 2026-07-18 critic review) recomputes wave counts and first-obs flags for the base and `_2waves`/`_3waves` descriptor families and runs again at the end of `handle_estimable_sample`; this closes the critic's MAJOR finding that individuals whose chronologically-first wave is dropped would silently vanish from the 2waves/3waves figure panels and summary-stat rows that keep on `pid_first_obs_Xwaves == 1`.
+MAJOR-1 (`isid pid period` in `use_data`), MAJOR-2 (counted attrition messages in `handle_choice`/`handle_depvar`), and MAJOR-3 (all drops counted) are in; the two hand-enumerated `non_switcher_2waves`/`_3waves` string lists are replaced by a computed all-same-string rule, verified row-by-row equal to the lists.
+No new sorts were introduced: every added bysort uses the unique pid-year key on data already ordered by `handle_trajectory_groups`.
+The scaffolding dummies carry variable labels and the contract carries `_dta[grc_never]`, both author-approved 2026-07-18; `setup_grc_estimation` reads the never-code back.
+critic-stata scored the diff 84/100 with no CRITICAL; its MAJOR is fixed as above, and its remaining MINORs are recorded (labels would leak into a future `esttab` that omits `coeflabels()`; smoke drivers hardcode the per-user path per project convention).
+Smoke artifact: RP7/tests/stage0/smoke_stage4.do, all-PASS (IDN unb N 92,449 = 93,038 minus 1 recomputed singleton minus 588 missing-outcome waves with descriptors exactly true; TZA 2waves N 29,862 with the computed rule equal to the hand lists; IDN 2waves suffixed descriptors true after real drops; CHN raw passes `isid`).
+OPEN (author): whether individuals with exactly one estimable wave but a longer observed history stay in the data.
+The current implementation KEEPS them, matching today's estimation samples: 205 such individuals in IDN_unb and 89 in IDN_unb_nonag (CHN and TZA have none).
+Dropping them would shrink the gated IDN GRC and OLS samples by those rows and re-scope the bundled gate's expected diff, so it needs an explicit author call before the gate freeze.
+Next: the open call, then the hub rebuild, the variable-by-variable hub diff, and the bundled Stage 3+4 gate refit.
 
 ## Stage 5: inversion CIs key off e(sample) (correctness, contract not exercised today)
 
