@@ -158,10 +158,8 @@ No new sorts were introduced: every added bysort uses the unique pid-year key on
 The scaffolding dummies carry variable labels and the contract carries `_dta[grc_never]`, both author-approved 2026-07-18; `setup_grc_estimation` reads the never-code back.
 critic-stata scored the diff 84/100 with no CRITICAL; its MAJOR is fixed as above, and its remaining MINORs are recorded (labels would leak into a future `esttab` that omits `coeflabels()`; smoke drivers hardcode the per-user path per project convention).
 Smoke artifact: RP7/tests/stage0/smoke_stage4.do, all-PASS (IDN unb N 92,449 = 93,038 minus 1 recomputed singleton minus 588 missing-outcome waves with descriptors exactly true; TZA 2waves N 29,862 with the computed rule equal to the hand lists; IDN 2waves suffixed descriptors true after real drops; CHN raw passes `isid`).
-OPEN (author): whether individuals with exactly one estimable wave but a longer observed history stay in the data.
-The current implementation KEEPS them, matching today's estimation samples: 205 such individuals in IDN_unb and 89 in IDN_unb_nonag (CHN and TZA have none).
-Dropping them would shrink the gated IDN GRC and OLS samples by those rows and re-scope the bundled gate's expected diff, so it needs an explicit author call before the gate freeze.
-Next: the open call, then the hub rebuild, the variable-by-variable hub diff, and the bundled Stage 3+4 gate refit.
+Resolved 2026-07-18 (author): individuals with exactly one estimable wave but a longer observed history are KEPT for now (205 in IDN_unb, 89 in IDN_unb_nonag; CHN and TZA have none), matching today's estimation samples; whether to drop them is deferred to a later deliberate decision (Stage 9 territory).
+Next: the hub rebuild, the variable-by-variable hub diff, and the bundled Stage 3+4 gate refit.
 
 ## Stage 5: inversion CIs key off e(sample) (correctness, contract not exercised today)
 
