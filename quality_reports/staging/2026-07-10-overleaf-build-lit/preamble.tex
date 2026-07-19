@@ -1,0 +1,310 @@
+%==============================================================================
+% Page Layout 
+%==============================================================================
+\ifdefined\pdfminorversion\pdfminorversion=7\fi % Allow inclusion of PDF figures up to v1.7 (pdfTeX only)
+\usepackage[letterpaper]{geometry} % Letter paper size
+\geometry{
+    verbose, % Show verbose output
+    tmargin=1in, % Top margin
+    bmargin=1in, % Bottom margin 
+    lmargin=1.2in, % Left margin
+    rmargin=1.2in % Right margin
+}
+
+% Enable margin changes locally
+\usepackage{changepage} % Allows the use of adjustwidth
+
+\usepackage{microtype} % Try to fix justification
+% Increase tolerance and emergency stretch to avoid off-margin words
+\tolerance=500
+\emergencystretch=2em
+
+\setlength{\parindent}{10pt} 
+\setlength{\parskip}{0pt}
+
+\usepackage[utf8]{inputenc} % UTF-8 input encoding
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % improves appearance, esp. with [T1]{fontenc}
+\usepackage{fancyhdr} % Custom headers and footers
+\usepackage{setspace} % Custom line spacing
+
+% Tweaking lists
+\usepackage{enumitem}
+% Enable \pageref{LastPage} to write page # of ##
+\usepackage{lastpage}
+
+\usepackage{lscape}
+\usepackage{threeparttable}
+%==============================================================================
+% Tables
+%==============================================================================
+\usepackage{booktabs,tabularx} % Advanced tables
+
+% ======================================================================
+% Packages
+% ======================================================================
+
+% Import AMS math, mathtools, fonts, and symbols
+\usepackage{amsmath, mathtools, amsfonts, amssymb, bbm}
+\usepackage{amsthm}
+
+  % Theorem environments used in the appendix (Proposition~\ref{prop:pooling})
+  \theoremstyle{plain}
+  \newtheorem{proposition}{Proposition}
+  \newtheorem{lemma}{Lemma}
+  % Custom style for assumptions: optional name in italics, no parentheses.
+  % Renders as: "Assumption D.1 Observed-period orthogonality." (name italicized).
+  \newtheoremstyle{namedassumption}{}{}{}{}{\bfseries}{.}{ }{\thmname{#1}\thmnumber{
+  #2}\thmnote{ \normalfont\itshape #3}}
+  \theoremstyle{namedassumption}
+  \newtheorem{assumption}{Assumption}
+  \theoremstyle{remark}
+  \newtheorem{remark}{Remark}
+% Enable UTF-8 input encoding
+\usepackage[utf8]{inputenc}
+
+% Enable graphics support and set graphics path
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+
+% Enable URL support
+\usepackage{url}
+
+% Enable fancy headers
+\usepackage{fancyhdr}
+
+% Switch to pdflscape instead of lscape (informs pdf viewer that page is landscape)
+\usepackage{pdflscape}
+
+% Fancy looping for the appendix
+\usepackage{pgffor}
+
+% Enable advanced table features
+\usepackage{booktabs, multicol, multirow, floatrow, ragged2e, rotating, adjustbox}
+\floatsetup[table]{capposition=top}
+\floatsetup[figure]{capposition=top}
+\usepackage{float}
+\setlength{\textfloatsep}{10pt}
+\usepackage{caption}
+\newcommand\fnote[1]{\floatfoot{\small #1}}
+\usepackage{subcaption}
+\raggedbottom
+% Enable float barrier
+\usepackage{placeins}
+% Enable line spacing
+\usepackage{setspace}
+
+% Enable color support and define custom colors
+\usepackage[dvipsnames]{xcolor}
+\definecolor{DarkBlue}{HTML}{090994}
+
+% Enable hyperlinks
+\usepackage[plainpages=false,pdfpagelabels=true]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    allcolors=DarkBlue,
+    allbordercolors=white,
+    pdfpagemode=FullScreen,
+    breaklinks=true,
+    pdfhighlight=/N
+}
+
+%==============================================================================
+% Bibliography
+%==============================================================================
+\usepackage[longnamesfirst,authoryear]{natbib} % Bibliography style
+\setcitestyle{round} % Round parentheses in citations
+\bibliographystyle{ecca}
+% \bibliographystyle{ecta_YEAR}
+
+% Change some distances in bibliography:
+    \setlength{\bibsep}{3pt}
+    \setlength{\bibhang}{7pt}
+
+% ======================================================================
+% Commands and Specifications
+% ======================================================================
+
+% Set paragraph indentation
+\setlength{\parindent}{4ex}
+
+% Custom footnotes
+\newcommand{\footremember}[2]{%
+   \footnote{#2}
+    \newcounter{#1}
+    \setcounter{#1}{\value{footnote}}%
+}
+\newcommand{\footrecall}[1]{%
+    \footnotemark[\value{#1}]%
+} 
+% ======================================================================
+% Change font size of abstract 
+% ======================================================================
+\renewenvironment{abstract}
+ {\small
+  \begin{center}
+  \bfseries \abstractname \vspace{-.5em}\vspace{0pt}
+  \end{center}
+  \list{}{
+    \setlength{\leftmargin}{.3in}  % Adjust this to make the abstract wider or narrower
+    \setlength{\rightmargin}{\leftmargin}  % Keep this the same as leftmargin for symmetry
+  }%
+  \item\relax}
+ {\endlist}
+
+
+% ======================================================================
+% Blockquote
+% ======================================================================
+\definecolor{blockquote-border}{RGB}{150,150,150}
+\definecolor{blockquote-text}{RGB}{60,60,60}
+\usepackage{mdframed}
+    \newmdenv[rightline=false, 
+            bottomline=false, 
+            topline=false, 
+            linewidth=3.5pt, 
+            leftmargin=1em,
+            linecolor=blockquote-border,
+            skipabove=\parskip]{customblockquote}
+
+\renewenvironment{quote}{\begin{customblockquote}\list{}{\rightmargin=0em\leftmargin=0em}%
+\item\relax\color{blockquote-text}\ignorespaces}{\unskip\unskip\endlist\end{customblockquote}}
+
+% Fix Stata esttab output \sym command
+\newcommand{\sym}[1]{\rlap{#1}}
+
+% =====================================================================
+% GRC table macros (added 2026-04-28 for Phase 1b of pipeline refactor).
+% Captions and notes for GRC tables now live here, not in 0_programs.do.
+% Cell catalog and design notes:
+%   docs/specs/2026-04-24_grc-pipeline-refactor.md (M3, M11)
+%   quality_reports/reviews/2026-04-28_paper-table-text-extraction.md
+% =====================================================================
+
+\usepackage{etoolbox}  % provides \ifstrequal used by macros below
+
+% --- Reused phrases ----------------------------------------------------
+\newcommand{\seclusterind}{We report robust standard errors, clustered at the individual level, in parentheses.}
+\newcommand{\sigstars}{Stars denote: $^{*} p<0.10$; $^{**} p<0.05$; $^{***} p<0.01$.}
+\newcommand{\refdatasec}{Please refer to Section~\ref{sec:data} for further details on the data}
+\newcommand{\refIDNcanon}{and to the notes of Table~\ref{tab:GRC_IDN_consumption_urban_unb} for additional information on the variables}
+
+% --- Country data sources (TZA standardized on "Tanzanian National Panel Survey") ---
+\newcommand{\datasourceIDNunb}{This table uses data from the Indonesia Family Life Survey.}
+\newcommand{\datasourceIDNbal}{This table uses the balanced panel from the Indonesia Family Life Survey.}
+\newcommand{\datasourceCHNunb}{This table uses data from the China Family Panel Survey.}
+\newcommand{\datasourceCHNbal}{This table uses the balanced panel from the China Family Panel Survey.}
+\newcommand{\datasourceTZAunb}{This table uses data from the Tanzanian National Panel Survey.}
+\newcommand{\datasourceTZAbal}{This table uses the balanced panel from the Tanzanian National Panel Survey.}
+
+% --- Caption components: defined with name suffixes that match macro args
+% (lowercase arg passed to \csname directly, no case-translation needed)
+\newcommand{\countrynameIDN}{Indonesia}
+\newcommand{\countrynameCHN}{China}
+\newcommand{\countrynameTZA}{Tanzania}
+\newcommand{\treatmenturban}{Urban Location}
+\newcommand{\treatmentnonag}{Non-Agricultural Sector}
+\newcommand{\depvarconsumption}{Consumption}
+\newcommand{\depvarincome}{Income}
+\newcommand{\connectorconsumption}{in}
+\newcommand{\connectorincome}{,}
+\newcommand{\balmodifierunb}{}
+\newcommand{\balmodifierbal}{, Balanced Panel}
+
+% Variant and hukou names contain underscores, so define via
+% \expandafter+\csname (underscores aren't valid in \newcommand names).
+\expandafter\newcommand\csname variantnameexp\endcsname{Experience}
+\expandafter\newcommand\csname variantnameexp_max\endcsname{Max Experience}
+\expandafter\newcommand\csname variantnameexp_sh\endcsname{Experience Share}
+\expandafter\newcommand\csname variantnameexp_m_sh\endcsname{Max Experience Share}
+\expandafter\newcommand\csname variantnamebirth\endcsname{Urban Birth}
+\expandafter\newcommand\csname hukounamerural_first\endcsname{Rural Hukou First}
+\expandafter\newcommand\csname hukounameurban_first\endcsname{Urban Hukou First}
+\expandafter\newcommand\csname hukounamerural_only\endcsname{Only Rural Hukou}
+\expandafter\newcommand\csname hukounameurban_only\endcsname{Only Urban Hukou}
+
+% --- Notes assembly ---
+\NewDocumentCommand{\GRCnotesxref}{m m}{%
+  \csname datasource#1#2\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+}
+\newcommand{\GRCnotesIDNcanonical}{%
+  \datasourceIDNunb{} \refdatasec.
+  The dependent variable is the log of total consumption per capita.
+  Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village.
+  Individuals are assigned to trajectories based on their location history across the survey waves.
+  $\Delta_{\text{never}}$ reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data.
+  $\bar{\Delta}$ is the sample-weighted average return across switcher trajectories, $\bar{\Delta} = \sum_{\underline{d}} \pi_{\underline{d}} \Delta_{\underline{d}}$, where $\pi_{\underline{d}}$ is trajectory~$\underline{d}$'s share of the estimation sample and $\Delta_{\underline{d}}$ is its trajectory-specific return.
+  Columns~(2) to~(5) include time (survey wave) fixed effects, column~(3) adds a female indicator, column~(4) adds age squared, and column~(5) adds education (years of schooling, maximum across periods) and its square.
+  \seclusterind{} \sigstars
+}
+\newcommand{\GRCnotesIncomeShared}{%
+  The dependent variable is the log of income per capita.
+  Urban is an indicator equal to one for individuals who report living in a city or town, as opposed to a village.
+  Individuals are assigned to trajectories based on their location history across the survey waves.
+  $\Delta_{\text{never}}$ reports the extrapolated returns to migrating to an urban location for individuals who are never observed in an urban location in the data.
+  $\bar{\Delta}$ is the sample-weighted average return across switcher trajectories, $\bar{\Delta} = \sum_{\underline{d}} \pi_{\underline{d}} \Delta_{\underline{d}}$, where $\pi_{\underline{d}}$ is trajectory~$\underline{d}$'s share of the estimation sample and $\Delta_{\underline{d}}$ is its trajectory-specific return.
+  Columns~(2) to~(5) include time (survey wave) fixed effects, column~(3) adds a female indicator, column~(4) adds age squared, and column~(5) adds education (years of schooling, maximum across periods) and its square.
+  \seclusterind{} \sigstars
+}
+
+% --- Main table macros ---
+%
+% \GRCtable: 5-col main GRC tables (5_GrRC.do, 6_GrRC_NonAg.do).
+%   #1=country (IDN/CHN/TZA), #2=depvar (consumption/income),
+%   #3=choice (urban/nonag), #4=balance (unb/bal),
+%   #5 (optional) = notes-prefix override; defaults to Template B.
+%   Use [\GRCnotesIDNcanonical] for the IDN cons/urban/unb canonical
+%   table and [\GRCnotesIncomeShared] for income tables.
+\NewDocumentCommand{\GRCtable}{m m m m O{}}{%
+  \def\GRCthisnotes{#5}%
+  \ifx\GRCthisnotes\empty
+    \def\GRCthisnotes{\GRCnotesxref{#1}{#4}}%
+  \fi
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to \csname treatment#3\endcsname{} on log \csname depvar#2\endcsname{} \csname connector#2\endcsname{} \csname countryname#1\endcsname\csname balmodifier#4\endcsname}%
+  \label{tab:GRC_#1_#2_#3_#4}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_#2_#3_#4}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \GRCthisnotes
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+% \GRCexptable: 4-col experience and birth family tables (10/11/12/13/14/15).
+%   #5=variant (exp/exp_max/exp_sh/exp_m_sh/birth)
+\NewDocumentCommand{\GRCexptable}{m m m m m}{%
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to \csname treatment#3\endcsname{} on log \csname depvar#2\endcsname{} \csname connector#2\endcsname{} \csname countryname#1\endcsname\csname balmodifier#4\endcsname, \csname variantname#5\endcsname{} Controls}%
+  \label{tab:GRC_#1_#2_#3_#4_#5}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_#2_#3_#4_#5}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \csname datasource#1#4\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+% \GRChukoutable: hukou-subgroup tables (8_GrRC_hukou.do).
+%   #5=hukou subgroup (rural_first/urban_first/rural_only/urban_only)
+\NewDocumentCommand{\GRChukoutable}{m m m m m}{%
+  \begin{table}[htbp]\centering
+  \caption{Restricted GRC Estimates of the Returns to Urban Location on log \csname depvar#2\endcsname{} \csname connector#2\endcsname{} \csname countryname#1\endcsname\csname balmodifier#4\endcsname, \csname hukouname#5\endcsname}%
+  \label{tab:GRC_#1_hukou_#5_#2_#3_#4}
+  \begin{threeparttable}
+  \input{tables/GRC_#1_hukou_#5_#2_#3_#4}%
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item \csname datasource#1#4\endcsname{} \refdatasec{} \refIDNcanon. \seclusterind{} \sigstars
+  \end{tablenotes}
+  \end{threeparttable}
+  \end{table}%
+}
+
+% Heterogeneity table macros (Templates D/E) deferred until 16_heterogeneity_tables.do
+% canonical IDN heterogeneity prose has been read in detail (Phase 1b.3).
+
+% =====================================================================
+% End of GRC table macros block
+% =====================================================================

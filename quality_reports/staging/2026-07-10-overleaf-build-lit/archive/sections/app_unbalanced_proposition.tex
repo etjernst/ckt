@@ -1,0 +1,89 @@
+%==============================================================================
+%  Short-form unbalanced-pooling appendix.  Included directly from main-sections.tex.
+%
+%  Pulls auto-generated rank-condition shares (\unbUrbanRate*, \unbResidShare*,
+%  \unbShare*) from RP7/scripts/1b_unbalanced_rank_diagnostic.do.
+%==============================================================================
+
+\section{Consistency under unbalanced pooling}\label{app:pooling}
+\setcounter{assumption}{0}
+
+\input{tables/unbalanced_rank_macros}
+
+Many individuals in the country panels are observed in strictly fewer than $T_c$ waves.
+This appendix formalizes how we incorporate them into the restricted GRC of Section~\ref{subsec:restricted-grc-model}.
+The trajectories $\underline d_i \in \mathcal D$ are only defined for individuals who we observe in all $T_c$ waves, so we augment Equation~\eqref{eq:restricted-GRC} with a single dummy for this group:
+\begin{equation}
+\label{eq:restricted-grc-unbalanced}
+\begin{aligned}
+y_{it} =\; &
+\sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm 1\{\underline d_i=\underline d\}
++ \Delta_{\underline d_0}\,D_{it} \\
+& + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
+    \phi\,(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,
+    \mathbbm 1\{\underline d_i=\underline d\}
++ \kappa_T\,D_{it}\,
+    \mathbbm 1\{\underline d_i=d_T\} \\
+& + \mu_{\mathrm{unb}}\,U_i
++ \big(\Delta_{\mathrm{unb}}-\Delta_{\underline d_0}\big)\,U_i\,D_{it}
++ x_{it}'\gamma + \varepsilon_{it},
+\end{aligned}
+\end{equation}
+where $U_i = 1$ if $i$ is observed in strictly fewer than $T_c$ waves and $U_i = 0$ otherwise, $\mu_{\mathrm{unb}}$ and $\Delta_{\mathrm{unb}}$ are the average rural consumption and return to urban location for the unbalanced individuals, respectively, and $\kappa_T \equiv \mu_{d_T} + \phi(\mu_{d_T}-\mu_{\underline d_0})$ is the composite always-urban coefficient from Equation~\eqref{eq:restricted-GRC}.
+On the balanced subsample, Equation~\eqref{eq:restricted-grc-unbalanced} collapses to the restricted GRC of Section~\ref{subsec:restricted-grc-model}.
+In the unbalanced subsample, the trajectory indicators drop out and the equation collapses to $y_{it} = \mu_{\mathrm{unb}} + \Delta_{\mathrm{unb}} D_{it} + x_{it}'\gamma + \varepsilon_{it}$.
+
+The pooled specification relies on two conditions: first, we need urban location to be exogenous given covariates within the unbalanced cell:
+
+\begin{assumption}[Observed-period orthogonality]
+\label{ass:orthogonality}
+At the true parameter,
+$E[\varepsilon_{it}(\theta_0)\mid U_i=1,\,D_{it},\,x_{it}] = 0$.
+\end{assumption}
+
+Since the pooled-cell parameters $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$ absorb group-level differences in mean rural consumption and mean returns to urban between the two strata, the assumption only restricts the residual conditional mean.
+The assumption holds if comparative advantage among the unbalanced does not vary systematically with urban location, once we condition on $x_{it}$.
+% This is a stronger requirement than the trajectory-cell version of the assumption on the balanced stratum, where $\theta_i$ is absorbed by the cell.
+
+Second, Equation~\eqref{eq:restricted-grc-unbalanced} encodes a common-$\gamma$ restriction: the same coefficient vector $\gamma$ governs the partial effect of $x_{it}$ on the balanced and unbalanced strata.
+The restriction lets us estimate $\gamma$ jointly from both subsamples instead of separately on each.
+It holds when the partial effect of $x_{it}$ on log consumption does not vary with attrition status---for instance, when individuals who attrit realize the same returns to education as those who stay.
+% The condition is testable: replace $x_{it}'\gamma$ with $x_{it}'\gamma + U_i\,x_{it}'\delta$ and test $\delta = 0$.
+
+The argument follows \citet{verdierAverageTreatmentEffects2020a}, who develops GMM estimation of correlated random coefficient models on unbalanced panels in his Appendix~G.
+Verdier uses an individual-fixed-effects parameterization; we use a pooled cell so that $\{\Delta_{\underline d}\}_{\underline d \in \mathcal D_S}$ remains a direct estimation output of \eqref{eq:restricted-grc-unbalanced}.
+Beyond that change of bookkeeping, the moment system aggregates within person and across individuals as in Verdier.
+Assumption~\ref{ass:orthogonality} together with the common-$\gamma$ restriction deliver moment validity on both strata, and standard non-linear GMM arguments \citep{hansen1982gmm,neweyMcFadden1994} deliver the asymptotic distribution.
+The trajectory-block moments identify $(\Delta_{\underline d_0}, \phi, \{\mu_{\underline d}\}_{\underline d \in \mathcal D \setminus \{d_T\}}, \kappa_T)$ as in Section~\ref{subsec:restricted-grc-model}; the $(U_i, U_iD_{it})$ moments identify $(\mu_{\mathrm{unb}}, \Delta_{\mathrm{unb}})$ under the rank condition discussed below; the $x_{it}$ moments identify $\gamma$ under the common-$\gamma$ restriction.
+Inference follows the main paper's convention; $V$ is the cluster-robust two-step GMM variance reported there.
+
+\begin{proposition}[Pooling balanced and unbalanced individuals]
+\label{prop:pooling}
+Under (A1)--(A5) of Section~\ref{subsec:empirical-model}, Assumption~\ref{ass:orthogonality}, the common-$\gamma$ restriction encoded in Equation~\eqref{eq:restricted-grc-unbalanced}, the rank condition that $D_{it}$ has positive residual variance among unbalanced observations ($U_i = 1$) after partialling out $x_{it}$, and standard regularity conditions for non-linear GMM, as $n \to \infty$,
+\[
+\sqrt n\,(\hat\theta - \theta_0) \xrightarrow{d} \mathcal N(0,V),
+\]
+where $\theta_0 = (\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\}_{\underline d \in \mathcal D \setminus \{d_T\}},\kappa_T,\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}},\gamma)$ and $V$ is the efficient two-step GMM asymptotic variance.
+\end{proposition}
+
+Proposition~\ref{prop:pooling} says that the pooled GMM estimator from \eqref{eq:restricted-grc-unbalanced} is consistent and asymptotically normal for every parameter, including the pooled-cell pair $(\mu_{\mathrm{unb}}, \Delta_{\mathrm{unb}})$.
+Two consequences for the parameters of interest follow by the delta method.
+The switcher returns $\Delta_{\underline d} = \Delta_{\underline d_0} + \phi(\mu_{\underline d}-\mu_{\underline d_0})$ for $\underline d \in \mathcal D_S$ inherit consistency and asymptotic normality directly.
+For the always-urban cell, the LCA restriction $\Delta_{d_T} = \Delta_{\underline d_0} + \phi(\mu_{d_T}-\mu_{\underline d_0})$ combined with the definition of $\kappa_T$ inverts to
+\[
+\mu_{d_T} = \frac{\kappa_T + \phi\,\mu_{\underline d_0}}{1+\phi}, \qquad \Delta_{d_T} = \Delta_{\underline d_0} + \phi(\mu_{d_T}-\mu_{\underline d_0}),
+\]
+which is smooth in $(\kappa_T, \phi, \mu_{\underline d_0})$ provided $\phi \neq -1$.
+Consistency and asymptotic normality of $(\hat\mu_{d_T}, \hat\Delta_{d_T})$ follow by the delta method on the inversion.
+
+Identification of $\Delta_{\mathrm{unb}}$ requires variation in $D_{it}$ among unbalanced person-periods after partialling out $x_{it}$.
+If $D_{it}$ is collinear with $(U_i, x_{it})$ on the unbalanced stratum, the $U_iD_{it}$ moment carries no residual signal and $\Delta_{\mathrm{unb}}$ drops out.
+We report two diagnostics on this rank condition.
+
+The marginal share of unbalanced person-periods with $D=1$ is \unbUrbanRateCHN\% in China, \unbUrbanRateIDN\% in Indonesia, and \unbUrbanRateTZA\% in Tanzania, well inside $(0,1)$ in every sample.
+With $x_{it}$ matched to the main-estimation covariate vector, $D_{it}$ retains \unbResidShareCHN\% of its within-stratum variation in China, \unbResidShareIDN\% in Indonesia, and \unbResidShareTZA\% in Tanzania after partialling out $x_{it}$.
+
+A complementary diagnostic is the share of unbalanced individuals observed with both $D=0$ and $D=1$ across their own waves.
+This share is \unbShareCHN\% in China, \unbShareIDN\% in Indonesia, and \unbShareTZA\% in Tanzania.
+The smaller within-switch shares for China and Tanzania mean $\Delta_{\mathrm{unb}}$ is identified primarily off between-individual variation in those samples; in Indonesia about a quarter of unbalanced individuals contribute within-individual variation directly.

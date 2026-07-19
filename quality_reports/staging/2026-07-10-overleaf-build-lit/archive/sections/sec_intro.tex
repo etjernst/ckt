@@ -1,0 +1,124 @@
+\section{Introduction}\label{sec:intro}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 1. Motivate with a puzzle or a problem (1–2 paragraphs) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+As economies develop, labor typically migrates out of rural areas into higher-productivity sectors in cities. 
+Yet, a puzzling phenomenon persists across the developing world: striking %income and% 
+consumption gaps between rural and urban areas persist, even after decades of rapid urbanization. 
+Urban residents consistently consume two to three times more than their rural counterparts, a gap that remains even after accounting for cost-of-living differences, educational attainment, and other observable characteristics   \citep{youngInequalityUrbanRuralGap2013,gollinAgriculturalProductivityGap2014,herrendorfWagesHumanCapital2018}. 
+
+With countries undergoing structural transformation and rapid urbanization, why do we still observe such striking %income and consumption% 
+disparities? 
+This puzzle lies at the heart of debates on labor allocation, productivity, and welfare in developing economies.
+One view suggests that labor is misallocated across space due to frictions or policies, implying that reducing these barriers could increase productivity and welfare. 
+Another perspective posits that workers efficiently sort themselves based on unobserved characteristics, such as location-specific skills, which would make these wage gaps less amenable to policy intervention.
+A key input into this debate---and essential for informed policy decisions---is reliable estimates of the returns to migration. 
+In other words, good policy decisions require robust estimates of the causal effect of migration on individual consumption and earnings.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 2. Research question (1 paragraph) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In this paper, we estimate the consumption returns to rural-urban migration for both migrant and non-migrant populations. 
+Different empirical methods rely on distinct subpopulations for identification, which can lead to divergent results in the presence of heterogeneous returns. 
+By explicitly accounting for the heterogeneity in returns across different subpopulations, we provide a framework that helps reconcile the wide range of estimates of rural-urban migration returns found in the literature.
+Our results also contribute estimates of the returns to migration for non-migrants, a large and important sub-population whose returns are unidentified in standard models. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3. Empirical approach (1 paragraph) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To study the returns to migration, we leverage rich longitudinal data from Indonesia, China, and Tanzania, totaling over 75 thousand individuals across the three countries, for whom we observe location choices and labor market outcomes for three to five periods spanning several years.
+We use these rich data to estimate the observational returns to rural-urban migration, meaning the returns for those observed to migrate in the data.
+We then turn to non-parametric approaches to examine the extent to which migration returns vary across migration histories, which sheds light on the plausibility of the assumptions that underlie standard panel data estimators. 
+% potential footnote here: Standard panel estimations with individual fixed effects identify an average of the returns to switcher subpopulations and implicitly assume that returns are (I) homogenous across switchers and (ii) the same for non-switcher subpopulations.
+Further, we develop a model that acknowledges that workers have location-specific skills, which are rewarded differently in rural and urban labor markets.
+Building on the \cite{royThoughtsDistributionEarnings1951} model and its extensions, our model accounts for unobserved heterogeneity and comparative advantage in the returns to migration.
+
+Our methodological innovation is to cast this model as a group random coefficient model that imposes a specific restriction on the form of the heterogeneous returns, inspired by \cite{suriSelectionComparativeAdvantage2011} and \cite{tjernstromCommentSuri2011}.
+By restricting the returns to urban migration to be linear in comparative advantage, we are able to extrapolate returns to non-migrants---an important sub-population whose returns are typically unidentified in standard models. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 4. Detailed results (3–4 paragraphs) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Our analysis yields four main results. 
+First, pooled OLS regressions reveal large average rural-urban consumption gaps, ranging from 40 log points in Indonesia to 74 log points in Tanzania, consistent with previous findings in the literature.
+Second, these gaps decrease to 21-57 log points when we include controls and further narrow to 7-15 log points with the addition of individual fixed effects. 
+While individual fixed effects controls for time-invariant individual characteristics, this approach also effectively restricts identification to individuals who migrate between urban and rural areas.
+For comparison, we therefore re-estimate our OLS results using a sample of only switchers and obtain estimates similar to those from the fixed-effects models (3-12 log points with controls).
+These patterns suggest that selection into migration may play a larger role than time-invariant characteristics in explaining the estimated consumption gaps.
+The importance of selection motivates us to further investigate the returns to migration across different switcher sub-populations, based on migration histories.
+
+Third, we examine the observational returns to urban location across different migration histories and document striking heterogeneity. 
+This suggests that standard panel data estimators, like fixed-effects models, may fail to capture important features of the data.
+Fixed-effects models assume that the returns to urban migration are homogeneous regardless of a person's migration trajectory.
+As a result, these estimators overlook the important variation in consumption outcomes associated with different migration histories, potentially resulting in flawed estimates of the key policy-relevant parameters. 
+
+Fourth, to address this limitation, we turn to our group random coefficient model, which allows for heterogeneous returns across different migration histories. 
+Our analysis reveals a consistent negative relationship between comparative and absolute advantage.
+When we extrapolate the estimates to non-migrants, we find significantly greater potential returns for individuals who have never migrated---particularly those remaining in rural areas. 
+This pattern is remarkably consistent across the three countries that we study, indicating a pattern of labor misallocation that may signal the existence of untapped opportunities for enhancing welfare through policy interventions that reduce migration barriers.
+One way to interpret our findings is that migration acts as a ``pro-poor'' mechanism: rural individuals with the lowest baseline consumption experience the most significant gains from moving to urban centers. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 5. Value-added relative to related literature (1–3 paragraphs) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Our work contributes to two strands of the literature. 
+First, we add to the evidence on the magnitudes and sources of sectoral labor productivity gaps in developing countries.\footnote{See \cite{donovanRoleLaborMarket2023} for a recent review of the role of labor market frictions in the agricultural productivity gap and \cite{lagakosUrbanRuralGapsDeveloping2020a} for a review of the evidence for urban-rural migration.}
+A central debate in this literature is whether earnings or consumption gaps imply that productivity and welfare would increase if workers were able to reallocate to more productive sectors, or whether they simply reflect self-selection of heterogeneous workers among sectors.
+Our findings provide a way to reconcile diverging estimates of returns to rural-urban migration and occupational mobility from agriculture to non-agriculture sectors.
+
+Several recent studies using microdata to estimate the returns to rural-urban migration \citep{alvarezAgriculturalWageGap2020, hamoryReevaluatingAgriculturalProductivity2021, herrendorfWagesHumanCapital2018} find that the average rural-urban migration returns for many migrant populations are relatively small---especially when compared to earlier results that used national accounts data or cross-sectional analyses (see e.g., \citealt{gollinAgriculturalProductivityGap2014,youngInequalityUrbanRuralGap2013}). 
+%\footnote{We follow the convention in the literature that typically discusses rural-urban migration and sectoral mobility between agricultural and non-agriculture interchangeably. See for example \cite{lagakosMigrationCostsObservational2020} and \cite{gaiRuralPensionsLabor2025} for examples of papers using these interchangeably.}
+One implication of these results obtained using microdata is that efficient sorting of workers based on comparative advantage can explain rural-urban earnings gaps, which suggests limited opportunities for welfare-enhancing policy interventions. 
+While our panel data results are similar to these studies, we show that the average returns estimated using fixed effects hide substantial heterogeneity.
+
+Another set of papers explores the role of misallocation and barriers to sectoral mobility and uncover evidence consistent with the notion that rural non-migrants face external constraints or costs that keep them from relocating to urban labor markets.
+\cite{adamopoulosMisallocationSelectionProductivity2022} use data from China to examine the interaction between misallocation and selection, finding that distortionary policies disproportionately affect more productive farmers, making them less likely to work in agriculture, which in turn leads to lower agricultural productivity overall.
+\cite{gaiRuralPensionsLabor2025} focus in on migration costs as the chief barrier, also in China, finding that reduced migration barriers would increase productivity and GDP alike.
+Their OLS and control-function estimates of returns to migration are within two log points of each other (31 vs.\ 33), which they read as evidence that average selection bias is small.
+Their work and ours ask different questions and are not in tension: their average treatment effect is one number for the whole population, while our framework recovers how returns vary across migration trajectories, surfacing heterogeneity that an average estimator masks.
+\cite{pulidoBarriersMobilitySorting2021} explicitly incorporate barriers to mobility into a selection model and find that they act as significant productivity constraints on both sectors.\footnote{Relatedly, a counterfactual simulation in \cite{bryanAggregateProductivityEffects2019}, based on a structural model that incorporates sorting and agglomeration effects, suggests that removing barriers to mobility would increase productivity by 22 percent. They further argue that this is likely a lower bound on the gains from removing migration barriers, as their main analysis excludes self-employed individuals, who likely have an even greater variance in earnings. Even in a developed-country context with smaller spatial gaps, \cite{heiseLaborMisallocation2023} estimate a 5 percent gain in aggregate output per worker from removing spatial frictions in Germany, with gains of 17 percent in the lower-productivity East, similar in magnitude to the estimate in \citet{bryanAggregateProductivityEffects2019}.}
+Similarly, the estimates in \cite{bryanUnderinvestmentProfitableTechnology2014}, based on experimentally-induced seasonal migration, suggest that urban migration increases consumption by 33 percent. 
+
+A key innovation in our paper is our ability to extrapolate the returns to migration to non-migrant subpopulations. 
+When we impose additional assumptions on the form of heterogeneity, we show that returns to non-migrants are consistent with the evidence that finds evidence of important barriers to mobility.
+There are some similarities between our approach and that in \cite{alvarez-cuadradoSelectionAbsoluteAdvantage2023}, who study the alignment of absolute and comparative advantage in African agriculture.
+Leveraging households who are involved in both the agricultural and non-agricultural sectors, they find that absolute and comparative advantage are negatively correlated in African agriculture, suggesting that self-selection may not be the key driver of agricultural productivity gaps between sub-Saharan African countries and higher-income economies.
+Like \cite{alvarez-cuadradoSelectionAbsoluteAdvantage2023}, we are interested in the relationship between absolute and comparative advantage, but our methodological approach differs from theirs in several key ways: first, rather than focusing on the sign of the relationship between absolute and comparative advantage, we use this relationship to extrapolate the returns to non-switcher subpopulations.
+Second, given our focus on rural-urban migration, we rely on sectoral switches rather than infra-marginal decisions for identification. 
+Third, we track individuals' choices over time, as opposed to households.\footnote{An extensive literature has shown that household decisions are often the result of complex negotiations or bargaining within the household, implying that household decisions may reflect this bargaining process rather than comparative advantage. 
+As examples, see \cite{vermeulenCollectiveHouseholdModels2002} for a survey of household collective models and \cite{chenIdentifyingNoncooperativeBehavior2013} for an application of such models in the context of migration in a developing country. 
+Additionally, the aggregate nature of household-level data may mask individual heterogeneity if household members have a comparative advantage in different sectors.}
+
+% Our paper provides a way to reconcile divergent estimates in the literature by explicitly accounting for the role of heterogeneity in the returns to rural-urban migration. 
+% Different empirical methods rely on specific subpopulations for identification, and if some of those groups have higher returns than others, estimates are bound to differ. 
+% If average income or consumption gaps are partly due to efficient sorting—as posited by Lagakos and Waugh (2013), Young (2013), Hamory et al. (2021), and others—then existing earnings gaps would be poor predictors of the returns to migration for rural residents weighing the migration decision. 
+% Observational returns—such as those recorded by Alvarez (2020) and Hamory et al. (2021)—apply only to those who voluntarily move (or switch labor markets). 
+% Without further assumptions, it is hard to argue that these returns should necessarily extend to those who do not voluntarily move. 
+% In fact, returns to those who stayed behind may be smaller precisely because any higher returns have already been “arbitraged away” by the early movers.
+
+% Stayers (i.e., non-switchers) could also have high expected returns if external constraints or costs keep them from migrating in the status quo—an argument made by Lagakos, Mobarak and Waugh (2023). 
+% Experimental studies, such as Bryan et al. (2014), estimate the returns for individuals who are induced to move by financial incentives to migrate. 
+% Again, we have little basis for extrapolating such estimates to the broader population that did not respond to the incentives.  
+% While these separate estimates are all informative, each approach provides but a piece of the puzzle of the returns to internal migration.
+
+% Cross-sectional wage gaps, such as those in the structural transformation literature do not reflect the returns to migration because migrants differ from non-migrants in many ways, some of which are unobservable to the econometrician. 
+% Two recent studies aim to address the issue of unobserved heterogeneity by using panel data methods that account for time-invariant individual-level characteristics. 
+% Alvarez (2020) and Hamory, Kleemans, Li and Miguel (2021) estimate the earnings gaps in data from Brazil, Indonesia, and Kenya. 
+% Hamory et al. (2021) find that including individual-level fixed effects reduces the earnings gaps to between 1 and 24 percent—a much lower gap than the 200–300 percent seen in cross-sectional studies. 
+
+The second key literature that we contribute to is the vast literature on micro-economic policy evaluation, examining models with heterogeneous effects and endogenous regressors.
+We build on the generalized Roy models previously used by research in labor and development economics and adapt them to our context, the study of heterogeneity in the returns to rural-urban migration.\footnote{\cite{lemieuxEstimatingEffectsUnions1998} develops a panel data estimator that accounts for two-sided non-random selection and differential skill rewards across sectors, and applies it to the study of unions' effects on wages. \cite{suriSelectionComparativeAdvantage2011} uses a similar model to estimate the returns to hybrid seed adoption for different farmer subpopulations.}
+Our empirical strategy builds on recent work in the econometrics literature \citep{verdierAverageTreatmentEffects2020a,tjernstromCommentSuri2011} aiming to flexibly estimate the returns to switcher subpopulations and extrapolating these returns to non-switchers.
+
+Returns for groups like non-migrants in our study represent a potential parameter of interest for policymakers and a technical challenge for researchers. 
+\cite{heckmanLocalInstrumentalVariables1999} propose a way to estimate returns for inframarginal groups by leveraging marginal treatment effects (MTE).\footnote{See also \cite{heckmanStructuralEquations2005}, \cite{heckmanComparingIVwithStructural2010}, and \cite{cornelissenFromLATEtoMTE2016}.}
+Estimates for these populations may differ sharply from those obtained based on marginal individuals, like switcher populations.
+The approaches used in the MTE literature approaches require exogenous policy variation or another type of instrument, while our approach instead relies on imposing structure on the form of comparative advantage.\footnote{See \cite{gaiRuralPensionsLabor2025} for a recent application that uses policy variation in the context of rural-urban migration in China.}
+\cite{dhaultfoeuilleInferenceExtendedRoy2013} similarly identify an extended Roy model without exclusion restrictions, but rely on structure in the selection equation rather than in the form of comparative advantage.
+

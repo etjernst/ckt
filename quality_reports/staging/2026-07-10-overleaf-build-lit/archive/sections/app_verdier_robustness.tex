@@ -1,0 +1,133 @@
+%==============================================================================
+%  Appendix: worker-level robustness via Verdier's (2020) joint-GMM estimator.
+%  Included from main-sections.tex in the appendix block.
+%
+%  Companion implementation: RP7/scripts/vv_fresh.do, vv_fresh_master.do.
+%  Companion overview: docs/vv_fresh_port_overview.html.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%==============================================================================
+
+\section{Worker-level robustness with Verdier's joint GMM}\label{app:verdier-robustness}
+
+\citet{verdierAverageTreatmentEffects2020a} develops a worker-level joint-GMM estimator that recovers average treatment effects for movers and never-migrants from a single estimation step, under a linear restriction conceptually parallel to our LCA.
+We port that estimator to the CKT panel as the robustness check reported in Section~\ref{subsec:verdier-robustness}.
+
+\subsection{The Verdier model in our notation}\label{app:vv-rob-model}
+
+Verdier's estimator works in a panel of $n$ individuals over $T$ periods with binary treatment $D_{it}$, continuous outcome $y_{it}$, and covariate vector $x_{it}$.
+We write the worker-level data-generating process as
+\begin{equation}\label{eq:vv-model}
+y_{it} \;=\; \alpha_i \;+\; \Delta_i\,D_{it} \;+\; x_{it}'\gamma \;+\; f_t \;+\; \varepsilon_{it},
+\qquad E\!\left[\varepsilon_{it} \mid X_i, x_{it}\right] = 0,
+\end{equation}
+where $\alpha_i$ is the rural baseline random coefficient, $\Delta_i$ is the individual return to urban location, and $X_i = (D_{i1},\dots,D_{iT})$ is the full treatment history.
+The pair $(\alpha_i, \Delta_i)$ is left unrestricted in distribution; correlation between $\Delta_i$ and $X_i$ delivers the correlated random coefficient structure shared with Section~\ref{subsec:empirical-model}.
+
+In CKT's notation, Equation~\eqref{eq:vv-model} is the same data-generating process as Equation~\eqref{eq:generalized-consumption-eq-simple}, with $\alpha_i$ playing the role of the random part of the rural baseline, $\theta_i + \tau_i$, and $\Delta_i$ playing the role of the individual return $\beta + \phi\theta_i$ (the constant $\beta^R$ is absorbed into the period fixed effect $f_t$).
+The mapping is exact under (A1)--(A5): $\alpha_i$ collects the time-invariant random part of rural consumption, and $\Delta_i$ is the LCA-induced return.
+
+Verdier imposes the linear restriction
+\begin{equation}\label{eq:vv-lca}
+E\!\left[\alpha_i \mid X_i\right] \;=\; \alpha_0 \;+\; \alpha_1 \cdot E\!\left[\Delta_i \mid X_i\right],
+\end{equation}
+which is equivalent to $\alpha_i = \alpha_0 + \alpha_1 \Delta_i + \xi_i$ with $E\!\left[\xi_i \mid X_i\right] = 0$.
+The restriction projects the rural baseline onto the return at the individual level.
+The robust version of \eqref{eq:vv-lca} replaces the intercept $\alpha_0$ with a cluster-specific intercept $e_{v_i}$:
+\begin{equation}\label{eq:vv-lca-robust}
+E\!\left[\alpha_i \mid X_i, v_i\right] \;=\; e_{v_i} \;+\; \alpha_1 \cdot E\!\left[\Delta_i \mid X_i, v_i\right],
+\end{equation}
+which absorbs arbitrary cluster-level shifts in mean baseline.
+We work with \eqref{eq:vv-lca-robust} throughout because pre-migration location is a natural source of cluster-level baseline heterogeneity in our panel.
+
+The slope $\alpha_1$ and our LCA slope $\phi$ are related as follows.
+Under (A1)--(A5), the rural baseline random coefficient is $\alpha_i = \theta_i + \tau_i$ in our notation, and the individual return is $\Delta_i = \beta + \phi\theta_i$.
+The projection assumption that defines $\theta_i$ enforces $\tau_i \perp \theta_i$, so
+\begin{equation}\label{eq:alpha1-phi-relation}
+\alpha_1 \;=\; \frac{\mathrm{Cov}(\alpha_i, \Delta_i)}{\mathrm{Var}(\Delta_i)} \;=\; \frac{\phi \cdot \mathrm{Var}(\theta_i)}{\phi^2 \cdot \mathrm{Var}(\theta_i)} \;=\; \frac{1}{\phi}.
+\end{equation}
+$\hat\alpha_1$ and $\hat\phi$ therefore carry the same sign in population, and a comparison of $1/\hat\alpha_1$ to $\hat\phi$ reduces to a one-number agreement check.
+
+\subsection{The estimator}\label{app:vv-rob-estimator}
+
+The estimator has two stages.
+The first stage recovers individual-level $\hat\alpha_i$ and $\hat\Delta_i$ from a unit-by-treatment fixed effects regression: each individual contributes one fixed effect per observed treatment state, so movers contribute two ($\hat\alpha_i$ from their rural observations and $\hat\alpha_i + \hat\Delta_i$ from their urban observations), and stayers contribute one.
+We partial out covariates $x_{it}$ before recovering the fixed effects, using a period-interacted projection: each time-varying covariate enters as $T$ regressors (one per period), and each time-invariant covariate enters as $T-1$ regressors (dropping one period to break the collinearity with the unit fixed effect).\footnote{This asymmetric covariate expansion is documented in \citet{verdierAverageTreatmentEffects2020a}'s replication archive and is not stated in the published article.
+Naively expanding all covariates with $T$ period interactions yields silent collinearity in the first-stage absorption.}
+
+The second stage stacks four moment blocks in a joint GMM that delivers $(\hat\gamma, \hat\alpha_1, \widehat{\text{ATE}}_S, \widehat{\text{ATE}}_N)$ in one estimation.
+Let $w_p^k$ denote the partialled-out covariate-period interaction from the first stage and $y_d$ the partialled-out outcome.
+The blocks are:
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=*,itemsep=2pt]
+    \item Covariate moments: $E\!\left[w_p^k \cdot \big(y_d - \sum_j \gamma_j w_p^j\big)\right] = 0$ for each $k$, pinning down $\hat\gamma$ from the partialled-out residuals.
+    \item LCA residual: $\xi_i = \alpha_i - e_{v_i} - \alpha_1 \Delta_i$, with per-period mover-IV moments $E\!\left[\tilde D_{it} \cdot \xi_i\right] = 0$, where $\tilde D_{it}$ is the period-$t$ treatment indicator with its within-cluster-per-period mean partialled out, computed on movers.
+    These moments identify $\hat\alpha_1$ from within-cluster mover variation.
+    \item ATE moments: $E\!\left[\text{(mover)} \cdot \big(\Delta_i - \mathrm{ATE}_S\big)\right] = 0$ and $E\!\left[\text{(never)} \cdot \big((\alpha_i - e_{v_i})/\alpha_1 - \mathrm{ATE}_N\big)\right] = 0$.
+    \item Overidentification moments: $E\!\left[z_{\text{opt},p} \cdot \xi_i - \eta_p\right] = 0$ for $p = 1,\dots,T$, with $\{\eta_p\}$ jointly tested against zero via Hansen's $J$-statistic.
+\end{enumerate}
+We build the optimal IV $z_{\text{opt}}$ by compressing the raw within-cluster mover indicators through a cluster-robust weighting matrix from a preliminary iterated step, following \citet{verdierAverageTreatmentEffects2020a}.
+We then run the final GMM step in one-step mode with the compressed instruments and cluster-robust variance at the level of $v_i$.
+
+\subsection{Implementation on the CKT panel}\label{app:vv-rob-implementation}
+
+The outcome $y_{it}$ is log per-capita consumption.
+The treatment $D_{it}$ is the urban indicator.
+Time-varying covariates are age and age-squared; we also include the province-by-period interactions described below as time-invariant covariates with $T-1$ period interactions per province.
+
+The cluster variable $v_i$ is the worker's first-observed location.
+In our panel, this is a pre-migration location: a rural cluster contains rural stayers plus movers who started there, and an urban cluster contains urban stayers plus movers who started there.
+$\hat\alpha_1$ is therefore identified from within-cluster variation in $(\alpha_i, \Delta_i)$ across stayers and movers who shared the same starting location.
+
+The choice of geographic granularity for $v_i$ trades off cluster count against switcher-containing share and within-cluster sample size.
+Table~\ref{tab:vv-rob-clusters} summarizes the choice per country.
+For each country, we select the granularity that maximizes the share of the country's individuals living in switcher-containing clusters while keeping the median within-cluster sample size above one.\footnote{$e_{v_i}$ is unidentified in switcher-free clusters, so the reported stayer ATEs are averages over switcher-containing clusters only.}
+
+% TODO verify against latest vv_fresh_master.do log before submission.
+%   - CHN: 357 counties, 54% switcher-containing, 92% pop coverage.
+%   - IDN: 233 kabupaten, 88% / 100%.
+%   - TZA: 124 wards, 64% / 94%.
+%   Source: RP7/output/vv_fresh/vv_fresh_*_thick.log (cluster-summary block).
+\begin{table}[h]
+\centering
+\small
+\caption{Cluster $v_i$ choice and switcher coverage per country.}
+\label{tab:vv-rob-clusters}
+\begin{tabular}{lllrrr}
+\hline\hline
+Country & $v_i$ & Granularity & Clusters & Switcher-containing share & Pop.\ in switcher clusters \\
+\hline
+CHN & \texttt{countyid} & County & 357 & 54\% & 92\% \\
+IDN & \texttt{kabu} & Kabupaten & 233 & 88\% & 100\% \\
+TZA & \texttt{ward} & Ward & 124 & 64\% & 94\% \\
+\hline\hline
+\end{tabular}
+\end{table}
+
+We also include province-by-period interactions as time-invariant covariates, with $T-1$ period interactions per province dummy and the final period dropped as base.
+Without these interactions, the first stage requires assuming provinces share a common time path of $y$ conditional on age, which is implausible across China, Indonesia, and Tanzania, given their differences in growth rates, urban-rural gaps, and sectoral composition.
+
+\subsection{What is and is not directly comparable to CKT}\label{app:vv-rob-comparable}
+
+The average treatment effects are on a common scale with the corresponding CKT objects.
+$\widehat{\text{ATE}}_S$ (Verdier's switcher-population ATE) and the population-weighted average of $\hat\Delta_{\underline d}$ over $\underline d \in \mathcal D_S$ both target $E[\Delta_i \mid \underline d_i \in \mathcal D_S]$ and are directly comparable.
+$\widehat{\text{ATE}}_N$ (Verdier's never-migrant ATE) and $\hat\Delta_{d_N}$ both speak to the average urban return for never-migrants, but they target slightly different populations: $\widehat{\text{ATE}}_N$ identifies $E[\Delta_i \mid \underline d_i = d_N, v_i \in V_S]$, where $V_S$ is the set of switcher-containing clusters, because Verdier's plug-in $(\hat\alpha_i - \hat e_{v_i})/\hat\alpha_1$ is undefined in clusters where $e_{v_i}$ is unidentified.
+$\hat\Delta_{d_N}$ from the restricted GRC identifies $E[\Delta_i \mid \underline d_i = d_N]$ unconditionally, because $\hat\phi$ is identified from cross-trajectory variation pooled across clusters.
+The two coincide when never-migrants in switcher-free clusters have the same conditional return distribution as never-migrants in switcher-containing clusters, which we cannot test directly but is plausible given that $V_S$ covers 92\%, 100\%, and 94\% of the never-migrant sample in CHN, IDN, and TZA respectively.
+The ATE-level comparison is therefore informative even when the two estimators target marginally different populations: the GRC delivers the unconditional object; Verdier's framework identifies only the within-$V_S$ analog.
+
+The slope-level comparison is mechanically redundant under (A1)--(A5).
+Equation~\eqref{eq:alpha1-phi-relation} shows that $\alpha_1 = 1/\phi$ in population under (A1)--(A5), so reporting $\hat\alpha_1$ alongside $\hat\phi$ adds at most one number of agreement information beyond what the ATEs already deliver.
+
+Three CKT objects have no analog in the Verdier framework.
+First, the per-trajectory returns $\hat\Delta_{\underline d}$ for every switcher trajectory $\underline d \in \mathcal D_S$: Verdier pools all switchers into a single mover ATE, so the Verdier setup cannot identify whether the period-1 mover's return differs from the period-3 mover's.
+Second, the latent two-skill structure $(\theta_i^R, \theta_i^U)$: CKT decomposes worker heterogeneity into rural and urban location-specific skills with a rescaled comparative advantage $\theta_i$ that drives the LCA.
+Verdier's framework leaves $(\alpha_i, \Delta_i)$ as a generic random-coefficient pair without further structural decomposition.
+Third, the institutional regime splits, in particular our hukou-stratified estimation in China, which Verdier's framework pools across by default.
+
+What Verdier offers in exchange is cluster-level slack on the LCA.
+Equation~\eqref{eq:vv-lca-robust} only needs to hold within each $v_i$, so $e_{v_i}$ absorbs pre-migration cluster-level deviations from the linear projection.
+Hansen's $J$-test of the overidentification moments tests the cluster-conditional LCA directly; the GRC has no analog.
+
+Results live in Section~\ref{subsec:verdier-robustness}, Tables~\ref{tab:verdier_robust_joint_gmm_CHN}, \ref{tab:verdier_robust_joint_gmm_IDN}, and \ref{tab:verdier_robust_joint_gmm_TZA}.

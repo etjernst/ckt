@@ -1,0 +1,24 @@
+% Placeholder table.  Will be filled by RP7/scripts/vv_fresh_master.do once
+% the thick-covariate run lands for TZA.  Column structure and row labels are
+% final; TZA cell values are the completed-run numbers from
+% RP7/output/vv_fresh/vv_fresh_TZA_thick.log.
+\begin{table}[ht]
+\centering
+\small
+\caption{Verdier worker-level joint GMM versus restricted GRC: Tanzania}
+\label{tab:verdier_robust_joint_gmm_TZA}
+\begin{tabular}{lcc}
+\hline\hline
+ & Restricted GRC & Verdier joint GMM \\
+\hline
+Never-migrant return $E[\Delta_i \mid \underline d_i = d_N]$ & 0.270 (0.0XX) & 0.296 (0.060) \\
+Switcher-population return $E[\Delta_i \mid \underline d_i \in \mathcal D_S]$ & 0.107 (0.0XX) & 0.107 (0.017) \\
+LCA slope ($\hat\phi$ vs $1/\hat\alpha_1$) & $-$0.719 (0.XXX) & $-$0.521 (0.XXX) \\
+\hline
+Individuals & XX,XXX & 11,018 \\
+Pre-migration clusters ($v_i = \texttt{ward}$) & & 124 \\
+Hansen's $J$ ($p$-value) & X.XX ($p = $X.XX) & 2.43 ($p = $0.30) \\
+\hline\hline
+\multicolumn{3}{p{0.92\linewidth}}{\footnotesize Standard errors in parentheses. Verdier joint-GMM standard errors clustered at $v_i$. Both estimators run on the unbalanced panel with age and age-squared controls; Verdier additionally absorbs province-by-period interactions in the first stage. GRC numbers are from column 5 of Table~\ref{tab:GRC_TZA_consumption_urban_unb}.} \\
+\end{tabular}
+\end{table}

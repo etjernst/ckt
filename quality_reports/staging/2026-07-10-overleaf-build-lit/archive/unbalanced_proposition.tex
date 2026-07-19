@@ -1,0 +1,167 @@
+%==============================================================================
+%  Proposition: pooling balanced and unbalanced individuals
+%  Included from main.tex under \section{Consistency of the pooled estimator}.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{assumption}{Assumption}
+%    \newtheorem{remark}{Remark}
+%==============================================================================
+
+This appendix formalizes how we incorporate individuals observed in fewer than $T_c$ waves.
+The trajectory label $\underline d_i \in \mathcal D$ of Section~\ref{subsec:empirical-model} is defined only for individuals observed in all $T_c$ waves, so these unbalanced individuals cannot be assigned to the balanced-sample trajectory cells.
+We augment the restricted GRC of Equation~\eqref{eq:restricted-GRC} with a single pooled cell for unbalanced individuals, with its own intercept $\mu_{\mathrm{unb}}$ and urban return $\Delta_{\mathrm{unb}}$.
+Proposition~\ref{prop:pooling} shows that the resulting GMM estimator is $\sqrt n$-consistent and weakly more efficient than the balanced-only estimator, under an observed-period orthogonality condition on the unbalanced stratum and a common-covariate-effects condition across strata.
+
+Unbalanced individuals make up a substantial share of each country's estimation sample: between [X\%] and [Y\%] of individuals are observed in strictly fewer than $T_c$ waves.\footnote{Placeholder---shares of unbalanced individuals to be pulled from the country-specific summary-stats tables (Tables~\ref{tab:summary_stats_IDN_unb}, \ref{tab:summary_stats_CHN_unb}, \ref{tab:summary_stats_TZA_unb}). Do not confuse with the non-switcher shares (88.6\%--95.7\%) reported in the same tables.}
+Let $U_i=1$ if individual $i$ is observed in strictly fewer than $T_c$ waves and $U_i=0$ otherwise.
+Augmenting Equation~\eqref{eq:restricted-GRC} with the pooled cell gives
+\begin{equation}
+\label{eq:restricted-grc-unbalanced}
+\begin{aligned}
+y_{it} =\; &
+\sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm 1\{\underline d_i=\underline d\}
++ \mu_{\mathrm{unb}}\,U_i
++ \Delta_{\underline d_0}\,D_{it} \\
+& + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
+    \phi\,(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,
+    \mathbbm 1\{\underline d_i=\underline d\} \\
+& + \kappa_T\,D_{it}\,
+    \mathbbm 1\{\underline d_i=d_T\} \\
+& + \big(\Delta_{\mathrm{unb}}-\Delta_{\underline d_0}\big)\,U_i\,D_{it}
++ x_{it}'\gamma + \varepsilon_{it},
+\end{aligned}
+\end{equation}
+where
+\begin{equation}
+\label{eq:kappa-T}
+\kappa_T \equiv \mu_{d_T} + \phi(\mu_{d_T}-\mu_{\underline d_0})
+\end{equation}
+is the composite always-urban coefficient from Equation~\eqref{eq:restricted-GRC}.
+
+On the balanced subsample ($U_i=0$), Equation~\eqref{eq:restricted-grc-unbalanced} collapses to the restricted GRC of Section~\ref{subsec:restricted-grc-model}.
+On the unbalanced subsample ($U_i=1$), the trajectory indicators drop out and the equation collapses to $y_{it} = \mu_{\mathrm{unb}} + \Delta_{\mathrm{unb}} D_{it} + x_{it}'\gamma + \varepsilon_{it}$.
+% \citet{verdierAverageTreatmentEffects2020a} discusses a related unbalanced-panel extension in Appendix~G of his online appendix by redefining stacked vectors over observed periods; Verdier's formulation applies here, but we use the pooled-cell specification for continuity with the trajectory-cell notation of Section~\ref{subsec:restricted-grc-model}.
+
+For inference we stack the individual-period moment functions within person and treat them as i.i.d.\ across individuals.
+All asymptotic variances below are therefore cluster-robust at the individual level, consistent with the main paper's inference procedure.
+
+\begin{assumption}[Observed-period orthogonality]
+\label{ass:orthogonality}
+For unbalanced person-periods,
+\[
+E\big[\varepsilon_{it}(\theta_0)\mid U_i=1,\,D_{it},\,x_{it}\big]=0.
+\]
+\end{assumption}
+
+Assumption~\ref{ass:orthogonality} says that, at the true parameter, the residual on the unbalanced stratum has zero conditional mean given treatment and covariates.
+This is weaker than the familiar missing-at-random restriction on attrition, which would require the full latent joint distribution to agree across strata conditional on observed-period covariates.\footnote{Formally, if $U_i$ is independent of $(\theta_i,\tau_i,\{\nu_{it}^l\})$ conditional on observed-period covariates---the MAR condition in the tradition of \citet{rubin1976inference} and \citet[ch.~17--19]{wooldridge2010econometric}---then Assumption~\ref{ass:orthogonality} follows from (A1)--(A5). MAR is sufficient but not necessary: because $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$ are free parameters, they absorb any stratum-level difference in mean rural consumption and mean urban return between the balanced and unbalanced samples, so Assumption~\ref{ass:orthogonality} can hold even when MAR fails.}
+Attrition in CFPS, IFLS, and TZNPS reflects migration, household breakup, mortality, and tracking quality; the demographic controls in $x_{it}$ reduce but do not eliminate concerns about selective attrition.
+Section~\ref{sec:robustness} compares balanced-only and pooled estimates as a joint sensitivity check on Assumptions~\ref{ass:orthogonality} and~\ref{ass:common-gamma}.
+
+\begin{assumption}[Common covariate effects]
+\label{ass:common-gamma}
+The partial effect of $x_{it}$ on log consumption is the same in the balanced and unbalanced strata.
+\end{assumption}
+
+Equation~\eqref{eq:restricted-grc-unbalanced} encodes Assumption~\ref{ass:common-gamma} through the single coefficient vector $\gamma$.
+The assumption is directly testable: replace $x_{it}'\gamma$ with $x_{it}'\gamma + U_i\,x_{it}'\delta$ and test $\delta=0$.
+We state Assumption~\ref{ass:common-gamma} as a separate primitive rather than derive it from (A4) of Section~\ref{subsec:empirical-model}: (A4) equates covariate effects across urban and rural sectors within a given worker, whereas Assumption~\ref{ass:common-gamma} equates them across the balanced and unbalanced strata, and the latter does not follow from the former without further restrictions on how attrition interacts with $x_{it}$.
+
+The final ingredient is a rank condition: $D_{it}$ has positive residual variance on the unbalanced stratum after partialling out $x_{it}$.
+Equivalently, the residualized regressor $U_i D_{it}$ retains rank after linear projection on $(U_i, x_{it})$; the formal condition is full rank of the Schur complement of the $\gamma$ block in the unbalanced moment Jacobian.
+Without this residual variation the $U_iD_{it}$ moment carries no signal independent of $(U_i, x_{it})$ and $\Delta_{\mathrm{unb}}$ is not identified, even when the unbalanced share is large or $D_{it}$ varies across raw unbalanced person-periods.
+We report two diagnostics.
+The conditional treatment rate $\Pr(D_{it}=1\mid U_i=1)$ characterizes the marginal variation in $D_{it}$ on the unbalanced stratum: a value in $(0,1)$ is the necessary-but-not-sufficient sub-block condition.
+The share of within-stratum variation in $D_{it}$ orthogonal to $x_{it}$, computed as $1-R^2$ from a regression of $D_{it}$ on $x_{it}$ within $\{U_i=1\}$, characterizes the residualized variation: a value bounded away from zero is the operational form of the full-system condition.
+A complementary descriptive statistic, useful for credibility rather than identification, is the share of unbalanced individuals observed with both $D=0$ and $D=1$ across their own waves; within-individual variation among the unbalanced is automatically partialled against time-invariant components of $x_{it}$ and is therefore the channel most insulated from misspecification of the orthogonality condition.
+
+Let $\vartheta_T \equiv (\Delta_{\underline d_0},\phi,\{\mu_{\underline d}\}_{\underline d \in \mathcal D\setminus\{d_T\}},\kappa_T)$ collect the trajectory-block parameters, and let $\theta_0 \equiv (\vartheta_T,\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}},\gamma)$ denote the full parameter vector of~\eqref{eq:restricted-grc-unbalanced}.
+Taken together, (A1)--(A5), Assumptions~\ref{ass:orthogonality} and~\ref{ass:common-gamma}, and the rank condition above deliver $\sqrt n$-consistency and asymptotic normality of the pooled two-step GMM estimator $\hat\theta$.
+Proposition~\ref{prop:pooling} states the result; the delta-method extensions to switcher returns and to the always-urban structural parameters, and the efficiency comparison with the balanced-only estimator, follow directly.
+
+\begin{proposition}[Pooling balanced and unbalanced individuals]
+\label{prop:pooling}
+Under (A1)--(A5) of Section~\ref{subsec:empirical-model}, Assumptions~\ref{ass:orthogonality} and~\ref{ass:common-gamma}, the rank condition that $D_{it}$ has positive residual variance on the unbalanced stratum after partialling out $x_{it}$, and standard regularity conditions for non-linear GMM, as $n\to\infty$,
+\[
+\sqrt n\,(\hat\theta - \theta_0) \xrightarrow{d} \mathcal N(0,V),
+\]
+where $V$ is the efficient two-step GMM asymptotic variance.
+\end{proposition}
+
+Proposition~\ref{prop:pooling} shows that pooling balanced and unbalanced individuals in the single GMM system~\eqref{eq:restricted-grc-unbalanced} delivers consistent and asymptotically normal estimates of every parameter, including the additional pooled-cell pair $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$.
+Two consequences follow by the delta method.
+The switcher returns $\Delta_{\underline d} = \Delta_{\underline d_0} + \phi(\mu_{\underline d}-\mu_{\underline d_0})$ for $\underline d \in \mathcal D_S$ inherit consistency and asymptotic normality directly.
+The always-urban structural parameters $(\mu_{d_T},\Delta_{d_T})$ are recovered by inverting~\eqref{eq:kappa-T} whenever $\phi \neq -1$, and also inherit consistency and asymptotic normality.
+Because the balanced-only moment system is a strict subset of the pooled system, the pooled estimator is weakly more efficient for every common sub-vector; Step 3 of the proof makes the subset argument precise and states the strict-improvement condition.
+
+\begin{proof}
+Step 1 verifies the pooled moment conditions; Step 2 handles identification and the standard non-linear GMM asymptotics; Step 3 delivers the efficiency comparison via a nested-GMM subset argument.
+
+The first step verifies moment validity.
+Let the individual-period moment function be $g_{it}(\theta) \equiv z_{it}\cdot\varepsilon_{it}(\theta)$, with $z_{it}$ collecting the trajectory indicators $\mathbbm 1\{\underline d_i=\underline d\}$ for $\underline d \in \mathcal D\setminus\{d_T\}$, the always-urban interaction $D_{it}\cdot\mathbbm 1\{\underline d_i=d_T\}$, the switcher interactions $D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$ for $\underline d \in \mathcal D_S$, the pair $(U_i,\,U_i D_{it})$, and the covariates $x_{it}$.
+The bare $D_{it}$ moment is omitted: on the full sample $D_{it} = \sum_{\underline d} D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\} + U_i D_{it}$, so it is a linear combination of moments already in the system.
+The population moment condition is $E[g_i(\theta_0)] = 0$, with $g_i(\theta) \equiv \sum_{t\in\mathcal T_i} g_{it}(\theta)$.
+
+On the balanced subsample ($U_i=0$), Assumptions~(A1)--(A5) give $E[\varepsilon_{it}\mid\underline d_i, D_{it}, x_{it}, U_i=0] = 0$, which delivers every moment involving trajectory indicators, switcher interactions, the always-urban interaction, and $x_{it}$; the $(U_i,U_iD_{it})$ moments are identically zero on this stratum.
+
+On the unbalanced subsample ($U_i=1$), the trajectory-indicator and interaction moments are identically zero because $\mathbbm 1\{\underline d_i=\underline d\}\equiv 0$ when $U_i=1$.
+The remaining moments are $(U_i,\,U_i D_{it},\,x_{it})$.
+Under Assumption~\ref{ass:orthogonality}, the pooled-cell residual on the unbalanced stratum is mean-zero conditional on $(D_{it},x_{it})$; the pair $(\mu_{\mathrm{unb},0},\Delta_{\mathrm{unb},0})$ is the unique pair of scalars for which
+\[
+E\big[y_{it} - \mu_{\mathrm{unb},0} - \Delta_{\mathrm{unb},0} D_{it} - x_{it}'\gamma \,\big|\, U_i=1,\,D_{it},\,x_{it}\big] = 0,
+\]
+under the rank condition that $D_{it}$ has positive residual variance on the unbalanced stratum after partialling out $x_{it}$.
+Assumption~\ref{ass:common-gamma} ensures the same $\gamma$ governs covariate effects on both strata, which closes the argument: $E[\varepsilon_{it}\mid U_i=1,D_{it},x_{it}]=0$ at $\theta_0$ and the $(U_i,U_iD_{it},x_{it})$ moments on the unbalanced stratum are satisfied at $\theta_0$.
+Combining the two strata, $E[g_i(\theta_0)]=0$.
+
+The second step handles identification and the standard non-linear GMM asymptotics.
+On the balanced stratum, the trajectory-indicator moments identify $\{\mu_{\underline d}\}_{\underline d\in\mathcal D\setminus\{d_T\}}$ as trajectory fixed effects in the regression, and the LCA restriction imposed across switcher-interaction moments identifies $\phi$ jointly with $\Delta_{\underline d_0}$ provided at least two switcher trajectories have distinct means ($\exists\,\underline d,\underline d'\in\mathcal D_S$ with $\mu_{\underline d}\neq\mu_{\underline d'}$, which holds in all three panels).
+The always-urban interaction moment identifies $\kappa_T$.
+On the unbalanced stratum, the $(U_i,U_iD_{it})$ moments combine to identify the pair $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$ under the rank condition above; identification of $\mu_{\mathrm{unb}}$ additionally requires that $U_i$ is not a linear function of $x_{it}$ on the full sample.
+The $x_{it}$ moments identify $\gamma$ under Assumption~\ref{ass:common-gamma}.
+Counting moments against parameters gives $(\lvert\mathcal D\rvert - 1) + \lvert\mathcal D_S\rvert + 2 + \dim(x)$ moments for $\lvert\mathcal D\rvert + \dim(x) + 3$ parameters $(\{\mu_{\underline d}\},\Delta_{\underline d_0},\phi,\kappa_T,\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}},\gamma)$; when $\lvert\mathcal D_S\rvert \geq 3$ the system is overidentified in $\phi$.
+We impose the usual regularity conditions: $\theta_0$ lies in the interior of a compact parameter space, $g_{it}$ is continuously differentiable in $\theta$ on a neighborhood of $\theta_0$, $\theta_0$ is globally identified, and $(z_{it},\varepsilon_{it})$ have finite fourth moments.
+Compactness and differentiability are imposed for convenience and could be relaxed at the cost of a longer argument; global identification follows from the stratum-by-stratum discussion above; finite fourth moments are needed for the asymptotic variance to be well-defined.
+Under these conditions, standard non-linear GMM arguments \citep{hansen1982gmm,neweyMcFadden1994} deliver $\sqrt n$-consistency and asymptotic normality of $\hat\theta$.
+Consistency and asymptotic normality of $\hat\Delta_{\underline d} = \hat\Delta_{\underline d_0} + \hat\phi(\hat\mu_{\underline d}-\hat\mu_{\underline d_0})$ follow by the delta method.
+For the always-urban structural parameters, inverting~\eqref{eq:kappa-T} gives
+\[
+\mu_{d_T} = \frac{\kappa_T + \phi\,\mu_{\underline d_0}}{1+\phi}, \qquad \Delta_{d_T} = \Delta_{\underline d_0} + \phi(\mu_{d_T}-\mu_{\underline d_0}),
+\]
+which is smooth in $(\kappa_T,\phi,\mu_{\underline d_0})$ provided $\phi\neq -1$; consistency and asymptotic normality of $(\hat\mu_{d_T},\hat\Delta_{d_T})$ follow by the delta method on the inversion.
+
+The third step delivers the efficiency comparison via a nested-GMM subset argument.
+Partition the parameter vector into the trajectory block $\vartheta_T$ and the nuisance block $\eta \equiv (\gamma,\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$.
+Under efficient weighting, the asymptotic information for $\vartheta_T$ is the Schur complement $I_{\vartheta_T\vartheta_T} - I_{\vartheta_T\eta}I_{\eta\eta}^{-1}I_{\eta\vartheta_T}$.
+Trajectory-indicator and interaction scores vanish on the unbalanced stratum, so unbalanced observations do not contribute to $I_{\vartheta_T\vartheta_T}$; they contribute to $I_{\eta\eta}$ through $x_{it}$ after partialling out $(U_i,U_iD_{it})$.
+The formal efficiency statement follows from the nested-GMM subset result \citep{hansen1982gmm}: because the balanced-only moment system is a strict subset of the pooled system, efficient GMM on the superset yields weakly smaller asymptotic variance for any common sub-vector.
+The improvement is strict when the residual $x$-variation on the unbalanced stratum after partialling out $(U_i,U_iD_{it})$ is informative about $\gamma$ and the trajectory scores covary with the covariate scores.
+\end{proof}
+
+% Two inferential caveats follow from the proof.
+% Identification of $\phi$ comes from cross-trajectory variation in switcher means; when those means are close, $\phi$ is weakly identified and the inversion in~\eqref{eq:kappa-T} transmits the weakness into $(\mu_{d_T},\Delta_{d_T})$ through the $1/(1+\phi)$ term.
+% Delta-method standard errors understate this, so we report Anderson--Rubin-style weak-identification-robust intervals for $\phi$ and project them onto $(\mu_{d_T},\Delta_{d_T})$ through the inversion; an empty AR set signals rejection of the LCA restriction and an unbounded AR set signals severe weak identification.
+% When $\lvert\mathcal D_S\rvert \geq 3$ the system is overidentified and the Hansen $J$-statistic tests the joint LCA restriction at the point estimate, complementing the AR intervals.
+
+% \begin{remark}
+% Because the trajectory indicators are identically zero for unbalanced individuals, the unbalanced subsample does not contribute directly to the identification of any switcher return; it enters~\eqref{eq:restricted-grc-unbalanced} only through the estimation of $\gamma$ and the pooled pair $(\mu_{\mathrm{unb}},\Delta_{\mathrm{unb}})$.
+% If Assumption~\ref{ass:orthogonality} fails on the unbalanced stratum, the bias operates only through $\hat\gamma$; the trajectory estimates $\hat\Delta_{\underline d}$ inherit bias only to the extent that $\hat\gamma^{\mathrm{pool}}$ does and to the extent that the trajectory-indicator scores are correlated with the covariate scores.
+% We do not claim full robustness to non-ignorable attrition---the proof does not deliver that---but the block structure of the score makes the pooled trajectory estimates less sensitive to unbalanced-stratum misspecification than one that let the unbalanced individuals contribute directly to trajectory identification.
+% \end{remark}
+%
+% \begin{remark}
+% The current parameterization leaves $\Delta_{\mathrm{unb}}$ unconstrained by LCA.
+% Because A5 is an individual-level restriction that applies to every worker, the pooled unbalanced cell should itself satisfy the cell-level LCA $\Delta_{\mathrm{unb}} = \Delta_{\underline d_0} + \phi(\mu_{\mathrm{unb}}-\mu_{\underline d_0})$.
+% Imposing this relation as an additional moment condition would eliminate $\Delta_{\mathrm{unb}}$ as a free parameter and allow the unbalanced individuals to contribute to the identification of $\phi$ through the same LCA restriction that governs balanced switcher cells.
+% We leave this extension to future work; the unrestricted specification reported here is the conservative choice.
+% \end{remark}
+%
+% \begin{remark}
+% The balanced/pooled gap in estimates of $\Delta_{\underline d}$, reported in Tables~\ref{tab:GRC_IDN_consumption_urban_bal}, \ref{tab:GRC_CHN_consumption_urban_bal}, and \ref{tab:GRC_TZA_consumption_urban_bal}, is a direct empirical check on the joint null that Assumptions~\ref{ass:orthogonality} and~\ref{ass:common-gamma} both hold.
+% Systematic divergence would signal either misspecified covariate effects across strata or an orthogonality violation that contaminates $\hat\gamma^{\mathrm{pool}}$.
+% The close correspondence across CFPS, IFLS, and TZNPS is consistent with the joint null.
+% Separating the two conditions would require additional structure.
+% \end{remark}

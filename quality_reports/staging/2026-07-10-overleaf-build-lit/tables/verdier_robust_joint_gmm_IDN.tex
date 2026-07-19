@@ -1,0 +1,23 @@
+% Placeholder table.  Will be filled by RP7/scripts/vv_fresh_master.do once
+% the thick-covariate run lands for IDN.  Column structure and row labels are
+% final; cell values are stubs.
+\begin{table}[ht]
+\centering
+\small
+\caption{Verdier worker-level joint GMM versus restricted GRC: Indonesia}
+\label{tab:verdier_robust_joint_gmm_IDN}
+\begin{tabular}{lcc}
+\hline\hline
+ & Restricted GRC & Verdier joint GMM \\
+\hline
+Never-migrant return $E[\Delta_i \mid \underline d_i = d_N]$ & 0.XXX (0.XXX) & 0.XXX (0.XXX) \\
+Switcher-population return $E[\Delta_i \mid \underline d_i \in \mathcal D_S]$ & 0.XXX (0.XXX) & 0.XXX (0.XXX) \\
+LCA slope ($\hat\phi$ vs $1/\hat\alpha_1$) & $-$0.XXX (0.XXX) & $-$0.XXX (0.XXX) \\
+\hline
+Individuals & XX,XXX & XX,XXX \\
+Pre-migration clusters ($v_i = \texttt{kabu}$) & & 233 \\
+Hansen's $J$ ($p$-value) & X.XX ($p = $X.XX) & X.XX ($p = $X.XX) \\
+\hline\hline
+\multicolumn{3}{p{0.92\linewidth}}{\footnotesize Standard errors in parentheses. Verdier joint-GMM standard errors clustered at $v_i$. Both estimators run on the unbalanced panel with age and age-squared controls; Verdier additionally absorbs province-by-period interactions in the first stage. GRC numbers are from column 5 of Table~\ref{tab:GRC_IDN_consumption_urban_unb}.} \\
+\end{tabular}
+\end{table}

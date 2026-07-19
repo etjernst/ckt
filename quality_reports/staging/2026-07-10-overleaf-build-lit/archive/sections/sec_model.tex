@@ -1,0 +1,283 @@
+\section{Model and Identification}\label{sec:model_identification}
+
+% Our theoretical framework is closely related to the two-period \cite{royThoughtsDistributionEarnings1951} models in \cite{lagakosSelectionAgricultureCrossCountry2013} and \cite{lagakosMigrationCostsObservational2020}. 
+% In \cite{lagakosSelectionAgricultureCrossCountry2013}, cross-country productivity gaps in agriculture stem from the presence of a subsistence consumption requirement for the agricultural good and heterogeneous worker productivity across the agricultural and non-agricultural sector.
+% In \cite{lagakosMigrationCostsObservational2020}, workers with different migration costs and returns sort themselves across multiple regions, which generates different aggregate estimates for rural-urban consumption gaps. 
+% We build on these models to develop a multi-period migration model that allows for two-way migration between rural and urban areas, which matches the migration patterns in our data. 
+% We maintain the assumption that workers are endowed with location-specific skills, but we introduce different assumptions on the role that preferences and prices play.
+% \textcolor{red}{Should we be more explicit here about what these modifications are?}
+% The resulting migration decision rule in our setting therefore maps onto a correlated random coefficient model in the vein of \cite{lemieuxEstimatingEffectsUnions1998} and \cite{suriSelectionComparativeAdvantage2011}. 
+
+We study an economy where individuals choose between working in a rural or urban labor market, based on their skills and preferences. 
+As is common in the literature, we motivate our empirical strategy with a generalized \cite{royThoughtsDistributionEarnings1951} model.\footnote{See for example \citealt{bazziSkillTransferabilityMigration2016, alvarezAgriculturalWageGap2020, lagakosSelectionAgricultureCrossCountry2013,pulidoBarriersMobilitySorting2021}.} 
+In the classical Roy model, people sort across sectors solely based on income or consumption.
+Our generalized Roy model adopts a standard generalization that allows location choices to also depend on non-pecuniary factors. 
+In the context of migration, the non-pecuniary component of utility captures proximity to family, local amenities, or other idiosyncratic factors that affect location choices but are not reflected in consumption.
+
+\subsection{Consumption and Location Choice}\label{location-choice-model}
+
+The model has three main components.
+We first describe how consumption depends on worker productivity across rural and urban locations.
+We then decompose productivity into absolute and comparative advantage to characterize sorting and returns to migration.
+Finally, we introduce utility shocks and derive the worker’s location choice rule.
+
+
+\subsubsection{Consumption and Productivity Across Sectors}
+
+The rural and urban labor markets, indexed by $l=R,U$, demand different skills and compensate these skills differently. 
+For worker $i$ at time $t$, who works in location $l$, let $y_{it}^l$ denote the systematic component of log consumption.
+We model this object as
+\begin{align}
+    y_{it}^{U}&=\beta_t^U+x_{it}'\gamma^U+\theta_i^U \label{eq:y_it_U}\\
+    y_{it}^{R}&=\beta_t^R+x_{it}'\gamma^R+\theta_i^R \label{eq:y_it_R}
+\end{align}
+
+\noindent where $x_{i t}$ is a vector of observable characteristics, $\beta^{l}_{t}$ captures the average log consumption in sector $l$ at time $t$, and $\theta^{l}_{i}$ is a time-invariant unobservable that captures worker $i$'s productivity in sector $l$.
+The difference between these two sector-specific unobservables, $\theta_{i}^U-\theta_{i}^R$, represents person $i$'s comparative advantage in favor of urban relative to rural work.
+
+\subsubsection{Comparative Advantage and Productivity Decomposition}
+
+Following \cite{lemieuxEstimatingEffectsUnions1998} and \cite{suriSelectionComparativeAdvantage2011}, and building on the correlated random effects framework of \citet{chamberlain1984panel}, we project the time-invariant, sector-specific unobservables onto comparative advantage.
+We define $b_U$ and $b_R$ as coefficients from the linear projection of $\theta^{l}_{i}$ onto $\theta^{U}_{i} - \theta^{R}_{i}$, assuming zero means.  
+Specifically, we write
+% which allows us to simplify the model by focusing on the worker's comparative advantage, and yields the following expressions:
+\begin{align}
+    \theta_i^U&=b_U(\theta_i^U-\theta_i^R)+\tau_i\\
+    \theta_i^R&=b_R(\theta_i^U-\theta_i^R)+\tau_i
+\end{align}
+\noindent where $\tau_{i}$ captures absolute advantage that affects a worker's productivity in both locations.
+This decomposition isolates the part of productivity that drives sorting across locations from the part that raises consumption regardless of where a person works.
+By construction, $\tau_{i}$ is orthogonal to comparative advantage.
+
+We can interpret the projection coefficients $b_{U}$ and $b_{R}$ as measuring how strongly a worker's comparative advantage, $\theta_{i}^U-\theta_{i}^R$, maps onto productivity in the urban and rural sectors, respectively.
+These coefficients depend on the dispersion of productivity within each sector and on the covariance between urban and rural productivity.
+When urban and rural productivities are highly correlated, workers who perform well in one location also tend to perform well in the other, so comparative advantage plays a smaller role in shaping relative productivity.
+When the correlation is low, productivity becomes more location-specific, and comparative advantage matters more for sorting across locations.
+Similarly, when productivity varies more in one sector than in the other, that sector places greater weight on comparative advantage, making outcomes there more sensitive to differences in workers' skills.
+
+Formally, 
+\begin{align}
+b_U &= \frac{\sigma_U^2-\sigma_{UR}}{\sigma_U^2+\sigma_R^2-2\sigma_{UR}}, \\
+b_R &= \frac{\sigma_{UR}-\sigma_R^2}{\sigma_U^2+\sigma_R^2-2\sigma_{UR}},
+\end{align}
+where $\sigma_l^2=\text{Var}(\theta_i^l)$ and $\sigma_{UR}=\text{Cov}(\theta_i^U,\theta_i^R)$.
+
+To simplify notation, we define
+\[
+\theta_i \equiv b_R(\theta_i^U-\theta_i^R),
+\]
+which is a rescaled measure of comparative advantage that captures both the worker's relative productivity across locations and the extent to which the rural sector rewards that advantage.
+
+We also define
+\[
+\phi \equiv \frac{b_U-b_R}{b_R},
+\]
+which measures how much more important comparative advantage is for urban productivity than for rural productivity in the economy.\footnote{The definition requires $b_R\neq 0$, which we assume throughout.}
+The parameter $\phi$ is larger when urban productivity varies more across workers or when skills transfer poorly between rural and urban locations, so that relative skill differences matter more in the urban sector.
+Conversely, $\phi$ is smaller when productivity varies more in the rural sector or when urban and rural productivities are highly correlated, in which case comparative advantage affects outcomes more symmetrically across locations.
+As a result, $\phi$ governs how strongly returns to urban location increase with workers' comparative advantage.
+
+Using these definitions, we can rewrite the systematic components of log consumption as
+\begin{align}
+y_{it}^{U} &= \beta_t^U + x_{it}'\gamma^U + (1+\phi)\theta_i + \tau_i, \label{eq:ysys_U_phi}\\
+y_{it}^{R} &= \beta_t^R + x_{it}'\gamma^R + \theta_i + \tau_i. \label{eq:ysys_R_phi}
+\end{align}
+
+The term $\tau_i$ shifts consumption levels equally across locations, while $\theta_i$ governs how relative returns differ between urban and rural work.
+When $\phi>0$, comparative advantage enters more strongly in the urban sector, so the returns to urban location rise with $\theta_i$.
+In that case, workers with lower rural consumption gain relatively less from migrating.
+When $\phi<0$, comparative advantage matters more in rural locations, and the gains from urban migration are larger for workers with lower rural consumption.
+
+\subsubsection{Utility and Location Choice}
+
+We allow for factors other than consumption to affect migration decisions by modeling location choice as a function of utility. 
+In addition to consumption, utility depends on non-monetary factors like proximity to family and local amenities.
+We capture these with a time- and location-specific idiosyncratic shock, $\nu_{it}^{l}$. 
+A person's utility from working in location $l$ at time $t$ is therefore \(V_{it}^{l} = y_{it}^l + \nu_{it}^{l}\). 
+These shocks generate variation in location choices even when a person's observable characteristics and productivity remain unchanged.
+
+
+We assume that $\nu_{it}^l$ is independently and identically distributed across individuals, time periods, and locations. 
+This assumption ensures that utility shocks generate transitory movements across locations without introducing persistence or correlation with past choices.
+It also implies that $\nu_{it}^{l}$ is orthogonal to the unobserved components of consumption, which simplifies the mapping from the model to the empirical specification.
+Under this assumption, migration decisions respond to temporary, idiosyncratic factors that do not reflect systematic differences in productivity across sectors.
+
+An important consequence of this assumption is that the period-by-period location choice rule derived below is equivalent to the solution of a fully forward-looking dynamic optimization problem.
+Two conditions deliver this equivalence: the i.i.d.\ assumption ensures that future utility shocks are independent of the current location choice, so there is no informational option value; and the time-invariant productivity assumption (equations~\ref{eq:y_it_U}--\ref{eq:y_it_R}) ensures that payoffs do not depend on past locations, so there is no state dependence in returns.
+Together, these eliminate any channel through which today's choice affects future welfare, reducing the dynamic problem to a sequence of static comparisons.
+If non-pecuniary factors were instead persistent---or if migration experience altered productivity---the interpretation of trajectories as reflecting comparative advantage would be less precise.
+
+Workers choose their location for period $t$ by comparing expected utility across locations. 
+At the end of each period, a worker observes current consumption and utility shocks and forms expectations over future shocks. 
+She chooses the urban location in period $t$ if her expected utility in the urban sector exceeds expected utility in the rural sector. 
+Following \cite{lemieuxEstimatingEffectsUnions1998}, we assume that the average rural-urban consumption gap,
+\begin{equation}
+    \beta \equiv \beta_t^U - \beta_t^R,\label{eq:beta}
+\end{equation}
+is constant over time, while allowing the level of average consumption in each location to vary over time.
+Abstracting away from covariates, or equivalently assuming that observable characteristics affect consumption symmetrically across locations, we can rewrite the urban choice rule as\footnote{Covariates $x_{it}$ do not appear in the decision rule because under the symmetric covariate assumption ($\gamma^U = \gamma^R$), their contribution cancels in the urban-rural comparison.} 
+\begin{equation}\label{eq:decision-rule}
+    E\!\left[V_{it}^U\right] > E\!\left[V_{it}^R\right]
+    \;\Longleftrightarrow\;
+    \beta + \phi\,\theta_i + E\!\left[\nu_{it}^U - \nu_{it}^R\right] > 0.
+\end{equation}
+Because the idiosyncratic shocks are i.i.d.\ and productivity is time-invariant, the forward-looking comparison in \eqref{eq:decision-rule} reduces to a sequence of static, period-by-period choices evaluated at the realized shock.
+Worker $i$ selects the urban location in period $t$ whenever $\beta + \phi\theta_i + (\nu_{it}^U - \nu_{it}^R) > 0$.
+It is this realized variation in $\nu_{it}^U - \nu_{it}^R$, not its expectation, that generates the location switching from which the returns are identified.
+
+\subsection{Empirical Model}\label{subsec:empirical-model}
+
+Let $D_{i t}=1$ indicate that worker $i$ works in the urban location at time $t$, and $D_{i t}=0$ otherwise.
+Observed log consumption equals the systematic component described in the model plus an idiosyncratic error term
+
+\begin{equation}
+    y_{i t} = y_{i t}^l + \varepsilon_{i t},
+\end{equation}
+where $l \in \{R,U\}$ denotes location and $\varepsilon_{i t}$ captures transitory shocks to consumption.
+
+Because $D_{it}$ is binary, we can write observed consumption as a random coefficient model in which the return to urban location varies across workers.
+In particular, combining the sector-specific consumption equations yields
+\begin{align}
+    y_{it}&=\beta^R+\theta_i + \tau_i +(\beta+\phi \theta_i)D_{it}+  x_{it}'\gamma^R + D_{it}x_{it}'(\gamma^U-\gamma^R) + \varepsilon_{it},\label{eq:generalized-consumption-eq}
+\end{align}
+\noindent where $\beta^R$ suppresses the time subscript from equations \eqref{eq:y_it_U}--\eqref{eq:y_it_R} because in estimation, period effects absorb the time-varying level of average consumption.
+
+The worker-specific return to urban location is therefore $\Delta_i \equiv \beta + \phi\theta_{i}$, which depends on comparative advantage.
+Since $\theta_{i}$ also affects location choices through the decision rule derived above, the return to urban location is correlated with $D_{it}$.
+This places the model in the class of correlated random coefficient (CRC) models.
+
+% Similar to Lagakos and Waugh (2013), Lagakos \emph{et al.} (2020), and Pulido and Swiecki (2021), we assume that unobserved ability is time-invariant.
+
+% This is more general than a standard fixed-effect model since we allow for the possibility that $\theta_{i}$ has a different impact on urban and rural consumption. 
+
+We assume that observable characteristics affect consumption symmetrically across locations, so that $\gamma^U=\gamma^R$.
+Under this restriction, equation \eqref{eq:generalized-consumption-eq} simplifies to: 
+\begin{align}
+    y_{it}&=\beta^R+\theta_i + \tau_i +(\beta+\phi \theta_i)D_{it}+  x_{it}'\gamma + \varepsilon_{it}.\tag{10$'$}\label{eq:generalized-consumption-eq-simple}
+\end{align}
+
+Equation \eqref{eq:generalized-consumption-eq-simple} makes clear that heterogeneity in the returns to urban location arises from comparative advantage. 
+Workers with different values of $\theta_{i}$ face different gains from working in the urban sector, and these gains are correlated with observed migration choices. 
+This highlights a central identification challenge.
+Because returns to urban location vary across workers and are correlated with location choices, average returns cannot be recovered from comparisons of urban and rural outcomes without additional structure.
+In particular, without further restrictions, returns are only identified for workers who switch locations over time, and counterfactual returns for non-migrants remain unidentified.
+
+In the remainder of this section, we show how this challenge can be addressed by aggregating workers into migration histories and imposing economically motivated restrictions that link returns across subpopulations.
+
+
+\subsubsection{Unrestricted Group Random Coefficient Model}\label{subsec:unrestricted-grc-model}
+The correlated random coefficient (CRC) model in equation \eqref{eq:generalized-consumption-eq-simple} allows worker-specific returns to urban location that are correlated with location choices. 
+To take this model to the data, we follow \cite{tjernstromCommentSuri2011} and aggregate the CRC model over discrete migration histories, which yields a  group random coefficient (GRC) representation.
+In what follows, we suppress covariates and period effects for clarity; these re-enter the estimation as described above. 
+
+In the GRC framework, we group workers by their observed sequence of location choices over time, which we refer to as migration trajectories.
+Different trajectories reflect systematic differences in workers' ability or comparative advantage, to the extent that location choices respond to relative productivity and utility.
+As a result, observed migration histories provide a natural way to partition workers into subpopulations with different average outcomes and returns.
+Each trajectory has its own average consumption level and return to urban location.
+The unrestricted specification places no structure on how these trajectory-specific average returns vary across migration histories.
+
+Because the location indicator $D_{it}$ is binary and the panel has finite length, our data contain a finite number of migration trajectories.
+We can summarize each worker's observed sequence of location choices by $\underline d_i\equiv(D_{i1},\dots,D_{iT})$.
+These trajectories take values in the finite set $\mathcal D=\{0,1\}^T$, which we use to index subpopulations of workers with the same migration history.
+
+We distinguish between switcher trajectories,
+$\mathcal D_S = \left\{ \underline d \in \mathcal D : 0 < \sum_{t=1}^T D_{it} < T \right\},$
+and non-switcher trajectories,
+$\mathcal D_{NS} = \mathcal D \setminus \mathcal D_S.$
+The latter consist of the always-urban trajectory
+$d_T = \left\{ \underline d \in \mathcal D : \sum_{t=1}^T D_{it} = T \right\},$ and the always-rural trajectory
+$d_N = \left\{ \underline d \in \mathcal D : \sum_{t=1}^T D_{it} = 0 \right\}.$
+
+Without additional restrictions, the CRC model implies the following unrestricted GRC representation for any $t \ge 2$.\footnote{The restriction to $t \ge 2$ reflects the use of the first period to establish baseline trajectory membership. In estimation, we include all available periods and absorb initial-period effects through period indicators.}
+\begin{equation}\label{eq:unrestricted-grc-model}
+    y_{it}= \sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm{1}\{ \underline d_i=\underline d \} + \sum_{\underline d \in \mathcal D_S}
+    \Delta_{\underline d}\, D_{it}\,\mathbbm{1}\{ \underline d_i=\underline d \} + \kappa_{d_T}\, D_{it}\,\mathbbm{1}\{ \underline d_i=d_T \} + \varepsilon_{it}.
+\end{equation}
+
+Here, $\mu_{\underline d}$ denotes average rural consumption for workers following trajectory $\underline d$.
+In this unrestricted model, average returns to urban location, $\Delta_{\underline d}$, are non-parametrically identified only for switcher trajectories.
+For non-switchers, we cannot identify counterfactual outcomes. 
+For always-rural workers, the data identify only average rural consumption, $\mu_{d_N}$.
+For always-urban workers, we cannot separately identify $\mu_{d_T}$ and $\Delta_{d_T}$ and instead only recover average urban consumption, which we denote by $\kappa_{d_T} \equiv \mu_{d_T} + \Delta_{d_T}$.
+This limitation motivates the additional structure introduced in the next subsection.
+
+\subsubsection{Restricted Group Random Coefficient Model}\label{subsec:restricted-grc-model}
+
+To identify returns to urban location for non-migrants, we impose a linear comparative advantage (LCA) restriction that links heterogeneity in migration returns to differences in workers' comparative advantage.
+This restriction follows \cite{suriSelectionComparativeAdvantage2011} and builds on the linear correlated random coefficient framework in \cite{lemieuxEstimatingEffectsUnions1998}.
+
+The LCA restriction assumes that the return to urban location varies linearly with a worker's comparative advantage:
+\begin{equation}\label{eq:LCA-restriction}
+\Delta_i = \beta + \phi\,\theta_i .
+\end{equation}
+
+Since comparative advantage also determines average rural consumption in the model, the LCA restriction implies a linear relationship between average returns and average rural consumption across migration trajectories.
+As a result, variation in outcomes among switchers identifies the relationship between returns and comparative advantage, which in turn allows us to extrapolate returns for non-migrants.
+Since $\tau_i$ does not affect location choices, trajectory-specific differences in $\mu_{\underline{d}}$ identify differences in average comparative advantage.
+
+We do not restrict the sign of this relationship; instead, we allow the data to determine whether returns to migration increase or decrease with comparative advantage.
+Our estimation strategy follows \cite{tjernstromCommentSuri2011}, who show how to implement this restriction within a GRC framework using GMM.
+For a chosen baseline switcher trajectory $\underline d_0 \in \mathcal D_S$, we can write the restricted GRC model as:
+\begin{align}
+    y_{it} =& \sum_{\underline d \in \mathcal D \setminus \{d_T\}}
+    \mu_{\underline d}\,\mathbbm{1}\{\underline d_i=\underline d\} + \Delta_{\underline d_0} D_{it} \nonumber \\
+    & + \sum_{\underline d \in \mathcal D_S \setminus \{\underline d_0\}}
+    \phi(\mu_{\underline d}-\mu_{\underline d_0})\,D_{it}\,\mathbbm{1}\{\underline d_i=\underline d\} \nonumber\\
+    & + \Big(\mu_{d_T}+\phi(\mu_{d_T}-\mu_{\underline d_0})\Big)\,D_{it}\,\mathbbm{1}\{\underline d_i=d_T\} + \varepsilon_{it}.
+    \label{eq:restricted-GRC}
+\end{align} 
+\noindent for some baseline trajectory $d_{0} \in \mathcal{D}_{S}$.\footnote{The always-urban group ($\underline d_i = d_T$) receives a separate composite coefficient in the last line because these workers have $\sum_t D_{it} = T$ and are not in $\mathcal D_S$.
+Their trajectory-specific return is therefore parameterized directly rather than through the switcher summation.}
+
+The relationship in the LCA restriction forms the basis of how we identify returns to non-migrants in our model.
+Taking expectations of equation \eqref{eq:LCA-restriction} within migration trajectories implies that for any two switcher trajectories $\underline{d} \neq \underline{d}'$ with distinct average rural consumption, average returns satisfy:
+
+\begin{equation}
+    \phi = \frac{\Delta_{\underline{d}} - \Delta_{\underline{d}'}}{\mu_{\underline{d}} - \mu_{\underline{d}'}},\ \ \mu_{\underline{d}} \neq \mu_{\underline{d}'}.\label{eq:phi-proposition1}
+\end{equation}
+
+If the LCA parameter, $\phi$, is positive, then urban location has higher returns for the people with higher average consumption in the rural market.
+Conversely, a negative $\phi$ would suggest that those who have the lowest rural consumption would receive the highest incremental consumption gains from migrating to the urban market.
+We can refer to these two scenarios as migration being either ``pro-rich'' (positive $\phi$) or ``pro-poor'' (negative $\phi$).
+ 
+% Note that a positive \(\phi\) implies a positive correlation between the unobserved location-specific skills in the population, but the converse is not true.
+% \footnote{From equation \eqref{eq:phi-variance-covariance}, we have
+
+%   \[\phi = \frac{{Var}\left( \theta_{i}^{U} - \theta_{i}^{R} \right)}{{Cov}\left( \theta_{i}^{U},\theta_{i}^{R} \right) - {Var}\left( \theta_{i}^{R} \right)} > 0 \Leftrightarrow {Cov}\left( \theta_{i}^{U},\theta_{i}^{R} \right) > {Var}\left( \theta_{i}^{R} \right) \Leftrightarrow \rho\  > \frac{\sigma_{R}}{\sigma_{U}},\ \ \rho = \frac{{Cov}\left( \theta_{i}^{U},\theta_{i}^{R} \right)}{\sigma_{U}\sigma_{R}}.\]
+
+%   A positive \(\phi\) requires that (\emph{i}) \(\rho > 0\) since
+%   \(\frac{\sigma_{R}}{\sigma_{U}} > 0\), and (\emph{ii})
+%   \(\sigma_{U} \geq \sigma_{R}\) since \(|\rho| \leq 1\). That is, we
+%   must have a positive correlation between the two location-specific
+%   skill sets, and a larger dispersion of urban-specific skills than
+%   rural-specific skills. The condition \(\phi < 0\), on the other hand,
+%   can occur with \(\rho = 0,\  < 0\) or \(> 0\) and
+%   \(\frac{\sigma_{R}}{\sigma_{U}} < 1\) or \(> 1\). In other words,
+%   observing \(\phi < 0\) does not allow us to infer the direction of the
+%   correlation between location-specific skills, \(\rho\).}
+
+
+Before turning to estimation, we collect below the assumptions that underlie identification:
+\begin{enumerate}[label=\textup{(A\arabic*)},leftmargin=*,itemsep=2pt]
+    \item Location-specific productivities $\theta_i^U$ and $\theta_i^R$ are time-invariant.
+    \item Non-pecuniary utility shocks $\nu_{it}^l$ are i.i.d.\ across individuals, time, and locations, so that migration trajectories reflect comparative advantage rather than shock persistence.
+    \item The average rural-urban consumption gap $\beta$ is constant over time.
+    \item Observable characteristics affect consumption symmetrically across locations ($\gamma^U = \gamma^R$).
+    \item The linear comparative advantage restriction $\Delta_i = \beta + \phi\,\theta_i$.
+\end{enumerate}
+% We assess the empirical support for A5 using Hansen's $J$-test in Section \ref{sec:grc-returns}.
+
+We estimate the restricted model in Eq. \eqref{eq:restricted-GRC} using two-step efficient Generalized Method of Moments (GMM), as in \cite{tjernstromCommentSuri2011}. 
+Let $\varepsilon_{it}$ denote the residual from equation \eqref{eq:restricted-GRC}. The moment conditions are
+\begin{equation}\label{eq:gmm-moments}
+    E\!\left[\varepsilon_{it} \cdot z_{it}\right] = 0,
+\end{equation}
+where the instrument vector $z_{it}$ consists of trajectory indicators $\mathbbm{1}\{\underline{d}_i = \underline{d}\}$, the urban indicator $D_{it}$, interactions $D_{it} \cdot \mathbbm{1}\{\underline{d}_i = \underline{d}\}$ for each switcher trajectory, and the covariate vector $x_{it}$.
+The number of moment conditions exceeds the number of parameters, and we test the overidentifying restrictions using Hansen's $J$-statistic.
+Standard errors are clustered at the individual level.
+
+While the key identifying variation comes from the switchers in the balanced panel, we also include observations that appear in a subset of panel waves in our estimation.
+We include an ``unbalanced'' dummy variable that takes a value of one for individuals with at least one missing round of data, as well as the interaction between the ``unbalanced'' dummy and the urban indicator.\footnote{Since unbalanced individuals lack complete trajectories, all trajectory indicators equal zero for them. They therefore do not contribute to identifying the trajectory-specific parameters $\mu_{\underline{d}}$ or the slope $\phi$. They only help estimate the covariate coefficients $\gamma$ and the unbalanced level effects. This inclusion is valid under two assumptions: (i) attrition is independent of $\varepsilon_{it}$ conditional on $D_{it}$ and $x_{it}$, and (ii) covariate effects on consumption are common across balanced and unbalanced individuals.}
+Appendix \ref{app:balanced_panel} shows results using the balanced panel.
+

@@ -1,0 +1,146 @@
+\section{Data}\label{sec:data}
+
+We use longitudinal data from three developing countries---Indonesia, China, and Tanzania---to understand selection and heterogeneity in the returns to migration and test the model's predictions.
+For each country, we draw on data collected in household surveys designed to collect information on the living standards of people in settings where informal employment, home production, and rural work are prevalent. 
+Our data include detailed information on tens of thousands of individuals across multiple geographies and time periods, and provide rich information on demographic characteristics,  place of residence (rural or urban), and comprehensive measures of consumption.% and income.%
+
+
+
+\begin{table}[htbp]
+    \begin{adjustwidth}{-1cm}{-1cm}
+        \centering
+        \input{tables/data_overview}
+        \caption{Overview of Data Sources}\label{tab:data_overview}
+    \end{adjustwidth}
+\end{table}
+
+Table \ref{tab:data_overview} provides an overview of our data sources. For Indonesia, we use data from all five waves of the Indonesia Family Life Survey, which was collected between 1993 and 2015.\footnote{We organize and cleaned the Indonesia data from the raw IFLS data files, following \cite{kleemansLabourMarketResponses2018}, \cite{hamoryReevaluatingAgriculturalProductivity2021} and \cite{kleemansMigrationChoiceRisk}.} For China and Tanzania, we use data that was generously made available by \cite{lagakosMigrationCostsObservational2020}, and that comes from the China Family Panel Study (4 waves) and the Tanzania National Panel Study (3 waves).\footnote{\cite{lagakosMigrationCostsObservational2020} also use data from South Africa, Ghana, and Malawi. We exclude the South Africa sample because of data quality concerns, and we do not use data from Ghana and Malawi because these data cover only 2 waves, while we need at least 3 waves to test our overidentification assumption. We are grateful to David Lagakos, Samuel Marshall, Mushfiq Mobarak, Corey Vernot, and Michael Waugh for sharing their data.}
+For all countries, we restrict the data to individuals aged 16 and above with non-missing information on urban/rural status and total consumption.\footnote{When studying returns to working in a non-agricultural sector rather than in agriculture, we restrict the sample to those with non-missing information on sector. We can only do that for Indonesia because we do not have sectoral data for China and Tanzania.} Sections \ref{subsec:Indonesia-data}, \ref{subsec:China-data}, and \ref{subsec:Tanzania-data} provide more detail on each of these datasets. 
+%\footnote{When studying sector of employment or income, we adjust the sample restrictions accordingly, keeping only those with non-missing information on sector or income, respectively.} 
+
+The bottom of Table \ref{tab:data_overview} highlights the proportion of individuals that never migrate between rural and urban areas. In all three countries, more than 90\% of individuals always stay in their rural or urban area.
+We see similar numbers for sectoral switchers who switch between agriculture and non-agriculture in Indonesia.
+When we limit the sample to a balanced panel, the proportions of non-migrants fall to 59.6\% in Indonesia, 91.8\% in China, and 85.5\% in Tanzania (see tables \ref{tab:summary_stats_IDN_bal}, \ref{tab:summary_stats_CHN_bal}, and \ref{tab:summary_stats_TZA_bal} for details). 
+
+Figure \ref{fig:migration-patterns} examines these migration patterns in more detail.
+The figure shows the proportion of the sample, in each country, that we observe following different aggregated migration histories.
+In all three datasets, we observe that non-migrants---both always-urban and always-rural---constitute the largest subpopulations.
+For those who migrate, the most common pattern is a single move from rural to urban. 
+In Indonesia, this is followed by multiple moves, with more of these occurring for individuals who we first observe in an urban location.
+In Tanzania, one-time urban-to-rural migration is more common than in the other two countries.
+
+Despite spanning multiple years, these surveys are characterized by low attrition rates and represent a significant portion of the population in each country, as detailed in Sections \ref{subsec:Indonesia-data}, \ref{subsec:China-data}, and \ref{subsec:Tanzania-data}. 
+If individuals from a household were temporarily away or unwell, enumerators made an effort to get a proxy from that household to answer questions on behalf of the missing individual. Although attrition is low, the number of observations differs across periods due to the long time span of the data and our restriction to individuals aged 16 and older. As such, individuals age into the sample over time and eventually exit the panel when they die. In Section \ref{sec:robustness}, we show that our results are robust to using a balanced panel of individuals.
+% Nonetheless, despite these efforts, the number of observations in each sample varies across the periods included in our study, meaning that limiting the sample to a balanced panel results in substantially fewer individuals than the unbalanced panel.\footnote{Despite relatively low attrition rates, Indonesia has the largest drop in observations when we go from the unbalanced to the balanced panel. This is largely driven by the 23-year coverage of the data and our restriction to include individuals aged 16 and older, meaning respondents age into the sample over time and eventually exit the sample when they die.}  
+% We acknowledge that entering or dropping out of a sample can be correlated with aging, employment, and migration trajectories and that the motivation of our model assumes individuals are observed in all periods. 
+% For that reason, while our main results use the full sample, we include robustness checks with the balanced panel in Section \ref{sec:robustness}. 
+% Appendix. % \textcolor{red}{YY}). 
+
+
+\begin{figure}[htbp]\label{fig:trajectories}
+    % \begin{adjustwidth}{-1cm}{-1cm}
+    \caption{Migration Patterns}\label{fig:migration-patterns}
+    \centering
+    \includegraphics[width=1.2\linewidth]{figures/trajectories.pdf}
+    \fnote{Migration patterns in Indonesia, China, and Tanzania, grouped by their migration histories as follows: those who we never observe moving in the data (``always urban'' and ``always rural''), those who move once (``urban to rural'' and ``rural to urban''), and those who move multiple times (``multiple moves, start urban'' and ``multiple moves, start rural'').}
+    % \end{adjustwidth}
+\end{figure}
+
+% \subsection{Key Variable Definitions}\label{sec:variable-definitions}
+
+We use consumption as our main outcome variable. For all surveys, this variable is constructed using detailed expenditure modules, in which respondents are presented with lists of items they consumed and asked to report their total expenditure for each good. In addition to asking for total expenditure purchased, these surveys ask for the approximate value of items that were consumed by the household and that were self-produced.  
+
+We prefer consumption over income and wages for several reasons. 
+First, in developing countries, consumption typically measures welfare better than earnings or wages, precisely because it also captures the value of home production and in-kind transfers.
+Second, computing earnings from wages requires information on hours worked, which tends to introduce measurement error that is correlated with sector and formality.
+Third, data on income and hours worked is missing for a substantial portion of observations in our data. This is the case for those who are not engaged in income-generating activities, and even among those who are, the value of income and hours worked are often missing in the data. Data is disproportionally missing for rural and agricultural workers, which introduces bias in our estimates, so we believe that results on consumption are more representative.\footnote{The likelihood that income data is missing varies a lot by country: In Indonesia, income is missing for 34 percent of observations while in China and Tanzania, income is missing for 55 and 60 percent of observations, respectively. We believe that this variation is in part due to differences in data collection, which reaffirms our preference to use consumption as our main outcome variable.}  
+%In addition to our main analysis on consumption, we report results for income in the Appendix. For all countries, income is the sum of earnings from formal and informal employment and self-employment.
+
+% We define an individual as being in an urban location if she lives in a city or a town, rather than a village.
+% In our data, an individual's current location correlates quite strongly with their current location the first time that we observe them.
+% For example, in Indonesia, we find that individuals born in urban locations are 40-70 percent more likely to be observed in an urban labor market in the first survey wave.
+%\textcolor{red}{Why is the range so high? Can we report the same for the other countries or do we not know birth location? Answer: No, for CHN we only know province of birth and for TZA we know district of birth, but nothing about whether the birth location was urban or rural for either of those countries}
+% This helps lend credence to the notion that individuals may be ``stuck'' in a sub-optimal labor market, meaning that their skills are not efficiently located and they may have high potential returns to migration. 
+% For this reason, we believe our model assumptions are more likely to hold when studying returns to rural-urban migration than returns to sectoral shifts out of agriculture into non-agricultural sectors. 
+% Nevertheless,  we repeat our analysis for sectoral choice in Indonesia, the only country that consistently provides these data.  
+% Sectoral choice is defined by whether or not an individual reports that their primary employment is in non-agriculture. 
+% Results for sectoral choice are reported in the Appendix.
+In the sections that follow, we provide more details on the data source and variable definitions by country.
+
+\subsection{Indonesia}\label{subsec:Indonesia-data}
+Indonesia is the world's fourth largest country with a population size of 275 million. Our analysis draws on data from all five waves of the Indonesia Family Life Survey (henceforth, IFLS), collected between 1993 and 2015. During this study period, Indonesia was characterized as a lower middle-income country \citep{worldbank2024wdi}.
+
+The IFLS is representative of 83 percent of the Indonesian population \citep{strauss2004third}. The IFLS is particularly suitable for studies involving migration because of intensive tracking efforts. As a result, attrition is low with re-response rates of over 90 percent between any two consecutive survey waves and 87 percent of households from the first wave were interviewed in all five waves \citep{straussFifthWaveIndonesia2016}.%\footnote{In addition to having information on the current location, the IFLS also has information on an individual's birth location (if rural or urban) allowing us to perform additional exercises that support our identification assumptions. Please refer to \cite{kleemansLabourMarketResponses2018} and \cite{kleemansMigrationChoiceRisk} for more details on the IFLS data.}
+\footnote{Please refer to \cite{kleemansLabourMarketResponses2018}, \cite{hamoryReevaluatingAgriculturalProductivity2021}, and \cite{kleemansMigrationChoiceRisk} for more details on the IFLS data. Unlike \cite{hamoryReevaluatingAgriculturalProductivity2021}, we do not use recall data between survey waves, because consumption is only collected at the time of the survey.}
+
+In a detailed consumption module, respondents are presented with lists of items and asked to report the value they consumed during a reference period. For all 37 food items the reference period is the past week. For 9 non-food items, such as toiletries, utilities and transportation, respondents are asked about consumption in the past month. For 11 less frequently consumed items, such as clothing, furniture, education and health services,  respondents are asked about the past year. For all items, respondents are asked for the value of both purchased and self-produced items. 
+
+We construct province-level spatial price deflators using poverty lines published by Statistics Indonesia (Badan Pusat Statistik, BPS). 
+BPS calculates separate poverty lines for urban and rural areas within each of Indonesia's 34 provinces, representing the monthly per-capita expenditure required to obtain 2,100 calories per day plus basic non-food necessities. 
+These poverty lines reflect local prices and consumption patterns, effectively functioning as spatial price indices.
+
+We define the spatial price index for province $p$ and area type $a \in \{\text{urban}, \text{rural}\}$ as:
+\begin{equation}
+    S_{pa} = \frac{Z_{pa}}{Z_{\text{ref}}}
+\end{equation}
+where $Z_{pa}$ denotes the BPS poverty line for area $a$ in province $p$, and $Z_{\text{ref}}$ is the poverty line for urban Jakarta, our reference region.
+Since province-level poverty lines are available only from 2013 onward, we use the September 2014 poverty lines to construct $S_{pa}$, matching the IFLS5 survey period. To adjust for inflation across survey waves, we then apply the national Consumer Price Index (CPI) published by BPS.\footnote{The 1997--98 Asian financial crisis produced differential inflation across regions and between urban and rural areas. However, IFLS2 was fielded in late 1997 before the most severe price dislocations, and IFLS3 in 2000 after relative price stabilization. The spatial component of our deflator, which captures persistent cross-regional price differences, is more consequential for welfare comparisons than short-run crisis-induced deviations from the national CPI trend.}
+
+Real consumption for individual $i$ in province $p$, area $a$, and survey year $t$ is then:
+\begin{equation}
+    C^{\text{real}}_{ipat} = \frac{C^{\text{nom}}_{ipat} \times \text{CPI}_{2014}}{S_{pa} \times \text{CPI}_t}
+\end{equation}
+where $C^{\text{nom}}_{i,p,a,t}$ denotes nominal consumption expenditure and $\text{CPI}_t$ is the national consumer price index in year $t$.
+
+Our measure of urban residence is survey-based: respondents indicating they live in a `village' are classified as rural, and those who report living in a `town' or `city' are considered urban. As discussed in Section \ref{sec:model_identification}, we believe our model assumptions are more likely to hold when studying returns to rural-urban migration than returns to sectoral shifts out of agriculture into non-agricultural sectors. Nevertheless, we repeat our analysis for sectoral choice in Indonesia, the only country that consistently provides these data. 
+We define sectoral choice in the IFLS based on whether an individual reports that their primary employment in agriculture or in a non-agricultural sector.
+Results for sectoral choice are reported in the Appendix.
+
+\begin{landscape}
+\input{tables/summary_stats_combined_unb}
+\end{landscape}
+% \input{tables/summary_stats_IDN_unb.tex}
+
+Table \ref{tab:summary_stats_IDN_unb} shows summary statistics from Indonesia. The units of observation in this table are individual-year pairs of which there are 93,038 in the data. These come from 29,716 unique individuals, 92.9 percent of whom never switch between rural and urban locations. 
+Columns 2 and 3 show that consumption and income are higher for observations in urban areas than in rural areas (3.3\% and 3.5\%, respectively). There are also significant differences in the demographic characteristics shown, which we will use as our main control variables in our analysis. Individuals in urban areas are, on average, almost one year younger and have received an additional 2.7 years of education.
+
+% For Indonesia, we also have information on sector of employment---agriculture vs non-agriculture---which we use to estimate returns to sectoral switching, as documented in the Appendix.
+
+
+
+
+\subsection{China}\label{subsec:China-data}
+We use Chinese data from four waves of the China Family Panel Study (henceforth, CFPS) that  were collected biannually from 2010 to 2016 \citep{ISSS2015}. During this time period, China was the most populous country in the world with over 1.3 billion inhabitants and characterized as an upper middle-income country \citep{worldbank2024wdi}.
+The survey is representative of 95 percent of the Chinese population. The initial survey included 16,000 households living in 25 provinces and re-contact rates were 85.3 percent in 2012 and and 89.7 percent in 2014.
+ \citep{lagakosMigrationCostsObservational2020}.
+
+The consumption variable in the CFPS is based on 31 non-food categories of items consumed. Food consumption is divided into two aggregate categories only: purchased items and self-produced food. Purchased and self-produced food consumption includes the value of foods, snacks, beverages, cigarettes, and alcohol that were consumed by members of the household, regardless of whether the consumption occurred inside or outside of the household. 
+The CFPS identifies areas as either urban neighborhoods or villages, which we use to assign urban and rural status, respectively. 
+We use cleaned data files that were generously made available by \cite{lagakosMigrationCostsObservational2020}.
+
+To account for spatial and temporal price differences, we adjust nominal consumption using the provincial spatial price deflators constructed by \citet{brandt2006spatial}. 
+These deflators price a fixed national basket of goods and services across provinces, separately for urban and rural areas, providing consistent purchasing power comparisons across regions. 
+The deflators are benchmarked to a 1990 base year and extended forward and backward using provincial consumer price indices. 
+We use the updated series available from \href{https://carstenholz.people.ust.hk/SpatialDeflators.html}{Holz's website}, which maintains the original methodology while incorporating recent price data.
+
+Table \ref{tab:summary_stats_CHN_unb} shows summary statistics based on 109,535 individual-year pairs, originating from 34,746 individuals. The share of individuals that we observe migrating between rural and urban areas is considerably lower in China than in Indonesia and Tanzania with only 4.3 percent of individuals engaging in such moves. This may partly be explained by China's Hukou system that aimed to reduce rural-urban migration during our study period, for example see \cite{khanna2021productivity}.
+%\footnote{China is one of the few countries that restricts internal migration during our study period through their Hukou system, for example see Khanna et al. (2019).} 
+Similar to Indonesia, consumption and income are higher in urban areas. The education gap is similar to Indonesia, with individuals in urban areas having received an additional 2.7 years of education. Unlike Indonesia, household size is smaller in urban areas, and the difference in age is modest.
+
+
+\subsection{Tanzania}\label{subsec:Tanzania-data}
+Tanzania was a low-income country during our study period from 2008 to 2013 and currently has a population size of 65 million. Following \cite{lagakosMigrationCostsObservational2020}, we use three waves of the Tanzania National Panel Survey (henceforth, NPS), which were collected in 2008/2009, 2010/2011, and 2012/2013. 
+
+The initial sample of the NPS was nationally representative and attrition is the lowest of all three countries.  Between waves 2 and 3 attrition was 3.5 percent and between waves 1 and 3, was 4.8 percent. The NPS consumption modules include 72 food items and 46 non-food items.
+The food consumption variable for Tanzania includes the value of all purchased or self-produced foods and non-alcoholic beverages that were consumed by the family inside or outside of the household. 
+NPS already uses a spatial price deflator in their data to account for different price levels between rural and urban areas. 
+We follow the rural-urban definition provided by the NPS who define villages as rural areas and urban census enumeration areas as urban.
+As we did for the Chinese data, we directly use the NPS replication data provided by \cite{lagakosMigrationCostsObservational2020}.
+
+We present summary statistics from Tanzania in Table \ref{tab:summary_stats_TZA_unb}. The NPS is smaller than our other surveys and includes 29,864 individual-year pairs from 11,012 individuals. There is more migration between rural-urban areas in Tanzania than in our samples of Indonesia and China. 11.4 percent of individuals are observed in both a rural and an urban area at some point during the panel.  Similar to Indonesia and China, consumption and income is considerably higher in urban areas. Similar to Indonesia, individuals in urban areas are younger in Tanzania (by almost three years). Households are larger in Tanzania than in Indonesia and China. Differences in education between rural and areas are remarkably similar between the three countries with urban residents having an additional 2.66, 2.67, and 2.81 years of education in Indonesia, China and Tanzania, respectively.
+
+
+
+
+
+% \clearpage

@@ -1,0 +1,79 @@
+\section{Robustness}\label{sec:robustness}
+
+\subsection{Restricting to the Balanced Subsample}\label{subsec:balanced}
+
+Our baseline results pool balanced and unbalanced individuals by absorbing the latter into a single pooled cell and interacting this group dummy with urban status.
+Appendix~\ref{app:pooling} shows that this pooling is consistent under our identifying assumptions plus two additional conditions: \textit{(i)} comparative advantage in the ``unbalanced'' group does not vary systematically across sector, once we've conditioned on $x_{i t}$, and \textit{(ii)} the partial effect of covariates on log consumption is the same for the balanced and unbalanced groups.
+Below, we nonetheless verify empirically that the baseline estimates do not depend on the unbalanced subsample by re-estimating the restricted GRC on the balanced subsample.
+% \footnote{The close correspondence between pooled and balanced-only trajectory estimates provides an empirical check on the joint null that the orthogonality and common-covariate-effects conditions of Appendix~\ref{app:pooling} both hold.}
+
+\GRCtable{IDN}{consumption}{urban}{bal}
+\GRCtable{CHN}{consumption}{urban}{bal}
+\GRCtable{TZA}{consumption}{urban}{bal}
+
+Tables \ref{tab:GRC_IDN_consumption_urban_bal}, \ref{tab:GRC_CHN_consumption_urban_bal}, and \ref{tab:GRC_TZA_consumption_urban_bal}  show the results for Indonesia, China, and Tanzania, respectively.
+The results for China and Tanzania, shown in Tables \ref{tab:GRC_CHN_consumption_urban_bal} and \ref{tab:GRC_TZA_consumption_urban_bal}, are nearly identical to those obtained in the full sample.
+The results for Indonesia, shown in Table \ref{tab:GRC_IDN_consumption_urban_bal}, are also similar to those estimated with the unbalanced panel, albeit slightly attenuated. 
+In particular, the estimated returns to urban migration for non-migrants fall to 7 log points once we include all controls and a time trend. 
+This estimate is very similar to the one that we obtain using fixed effects in the unbalanced panel (column 7 in Table \ref{tab:OLS_cons_urb_unb}). 
+However, a more appropriate comparison would be the fixed-effects model estimated on a balanced panel (see column 7 in Table \ref{tab:OLS_cons_urb_bal}), which are much smaller at 3 log points. 
+
+The length of the time period over which the Indonesian data were collected leads to a drastic reduction in the available sample size, which is why our preferred estimates are those with the full sample. 
+Comparing the summary statistics across the full and balanced samples, with the latter reported in Table \ref{tab:summary_stats_IDN_bal}, we can see that the age profile of respondents differs quite substantially across the two samples.
+In the full sample, rural respondents are on average around one year younger than their urban counterparts. 
+In contrast, this difference is reversed in the full sample, with urban respondents being nearly two years older. 
+This may reflect different mortality patterns, which would also skew attrition patterns, reinforcing our preference for the full sample. 
+
+
+%==============================================================================
+%  Robustness subsection: cluster-pooling robustness check.
+%  Included from main.tex under \section{Robustness}.
+%==============================================================================
+
+\subsection{Robustness to cluster pooling}\label{subsec:verdier-robustness}
+
+The restricted GRC of Section~\ref{subsec:restricted-grc-model} identifies $\phi$ from variation across switcher trajectories, with workers in the same trajectory pooled regardless of their cluster of origin.
+\citet{verdierAverageTreatmentEffects2020a} observes that this pooling step can pick up bias if cluster assignment is correlated with trajectory: workers in different switcher trajectories who live in different clusters bring different cluster-level consumption levels into the trajectory means, and the differences distort the LCA slope.
+Verdier's solution is a worker-level estimator that recovers $\phi$ without aggregating across clusters within trajectory.
+We use his cluster-residualization idea to examine whether this is a concern in our data.
+
+We re-estimate $\phi$ from the moment system of Equation~\eqref{eq:restricted-GRC} after replacing the switcher-treatment instruments $D_{it}\cdot\mathbbm 1\{\underline d_i = \underline d\}$ with their cluster residuals.
+For each switcher trajectory $\underline d \in \mathcal D_S$ the residualized instrument is
+\begin{equation}\label{eq:residualized-instrument}
+\tilde D_{it}^{\,\underline d} \;\equiv\; D_{it}\,\mathbbm 1\{\underline d_i=\underline d\} \;-\; \overline{D_{\cdot\cdot}\,\mathbbm 1\{\underline d_{\cdot}=\underline d\}}_{v_i,\,\underline d},
+\end{equation}
+where the second term is the within-cluster mean of $D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$ taken among trajectory-$\underline d$ workers in cluster $v_i$.
+Identification of $\phi$ comes from how much the within-cluster mean of $D$ varies across switcher trajectories, with between-cluster variation absorbed.
+Standard errors are clustered at the level of $v_i$, which is the location where we observe person $i$ in the first wave of the data.
+In Indonesia and China, we measure location by province, and in Tanzania we use region.
+We denote this estimator $\hat\phi^{\mathrm{cluster}}$ and reserve $\hat\phi$ for the baseline of Section~\ref{sec:grc-returns}.
+
+Table~\ref{tab:verdier-robust} reports $\hat\phi^{\mathrm{cluster}}$ alongside the baseline $\hat\phi$ for our preferred consumption specification, which includes all our main control variables and time fixed effects.
+Tables X Y Z report the results for all specifications. 
+
+
+\input{tables/cluster_comparison_consumption_unb}
+
+The cluster-residualized slope stays negative and close to the baseline in all three countries.
+In Tanzania the two are nearly identical, $-0.719$ against $-0.690$, both significant at the 1\% level.
+In China both are small and statistically insignificant, $-0.205$ against $-0.155$, so residualizing the instruments changes little.
+In Indonesia the slope attenuates from $-0.525$ to $-0.334$ but stays negative and significant at the 5\% level, a gap of about one standard error.
+We read this as evidence that pooling switcher trajectories across clusters does not drive the negative $\phi$: the sign survives in every country, and the significance survives in two of three, once between-cluster variation is removed from the identifying instruments.
+
+We read this comparison as a probe of the pooling step, not as a second identification argument.
+If workers sort into clusters independently of their switcher trajectory, then residualizing the instruments within cluster leaves $\phi$ unchanged, and $\hat\phi^{\mathrm{rob}}$ tracks the baseline $\hat\phi$.
+A material gap between the two would instead signal that cluster composition varies systematically across switcher trajectories and pulls on the pooled slope.
+The check holds the identifying restrictions (A1)--(A5) of Section~\ref{subsec:empirical-model} fixed and varies only how the switcher-treatment instruments enter, so it isolates the cluster-pooling margin rather than re-testing (A1)--(A5).
+We do not implement the joint-GMM extension of \citet{verdierAverageTreatmentEffects2020a} that simultaneously estimates trajectory-specific average treatment effects for stayers, since our object of interest is $\phi$.
+
+
+% \subsection{Additional covariates}\label{subsec:xs}
+
+%  \subsection{Homogeneity of Returns Over Time}\label{subsec:shorter_panels}
+
+%  \subsection{Weak identification test}\label{subsec:mu_graph}
+
+% \clearpage
+
+% \subsection{Experience}\label{subsec:experience}
+\FloatBarrier

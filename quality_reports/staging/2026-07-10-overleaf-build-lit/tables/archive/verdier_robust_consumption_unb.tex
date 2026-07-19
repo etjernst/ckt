@@ -1,0 +1,24 @@
+% PLACEHOLDER table - values are not real estimates.
+% Replace with output from explorations/verdier/x_main_comparison_results.dta
+% once table-generation do-file is written.
+\begin{table}[htb!] \centering \begin{threeparttable}
+\caption{[Placeholder] Baseline vs.\ Cluster-Residualized GRC, Consumption (Unbalanced Panel)}
+\label{tab:verdier-robust}
+\begin{tabular}{l ccc} \toprule
+                       & \multicolumn{1}{c}{$\hat\phi$ (baseline)}
+                       & \multicolumn{1}{c}{$\hat\phi^{\mathrm{rob}}$}
+                       & \multicolumn{1}{c}{Mean TV} \\
+\midrule
+Indonesia              & -0.526*** & -0.501*** & 0.18 \\
+                       & (0.102)   & (0.118)   &      \\
+\addlinespace
+China                  & -0.214**  & -0.197**  & 0.24 \\
+                       & (0.092)   & (0.105)   &      \\
+\addlinespace
+Tanzania               & -0.847*** & -0.812*** & 0.31 \\
+                       & (0.156)   & (0.171)   &      \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft] \footnotesize
+\item{\textbf{Placeholder table; values are not real estimates.} The baseline column reproduces the LCA slope $\phi$ from column~(5) of the per-country GRC tables (Tables~\ref{tab:GRC_IDN_consumption_urban_unb}, \ref{tab:GRC_CHN_consumption_urban_unb}, \ref{tab:GRC_TZA_consumption_urban_unb}) on the unbalanced consumption sample with full controls and period fixed effects. The robust column reports the cluster-residualized estimator $\hat\phi^{\mathrm{rob}}$ from the same specification. Mean TV is the average total-variation distance between switcher trajectory cluster profiles; values near zero indicate Assumption~\ref{ass:cluster-pooling} is approximately satisfied. Cluster-robust standard errors at the village level in parentheses. Stars: $^{*}p<0.10$; $^{**}p<0.05$; $^{***}p<0.01$. To be replaced with output from \texttt{explorations/verdier/x\_main\_comparison\_results.dta}.}
+\end{tablenotes} \end{threeparttable} \end{table}

@@ -1,0 +1,28 @@
+\begin{tabular}{l ccccc} \toprule  \textbf{Dep. var:}  log(consumption) 
+                    &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+
+\addlinespace
+$\Delta_{\text{never}}$&       0.652***&       0.301***&       0.304***&       0.301***&       0.270***\\
+                    &     (0.044)   &     (0.039)   &     (0.039)   &     (0.039)   &     (0.033)   \\
+95\% inv. CI        &       empty   &[0.260, 0.380]   &[0.260, 0.380]   &[0.260, 0.370]   &[0.200, 0.390]   \\
+
+\addlinespace
+$\bar{\Delta}$      &       0.006***&       0.012***&       0.012***&       0.012***&       0.012***\\
+                    &     (0.002)   &     (0.002)   &     (0.002)   &     (0.002)   &     (0.002)   \\
+95\% inv. CI        &       empty   &[0.090, 0.120]   &[0.080, 0.120]   &[0.090, 0.120]   &[0.080, 0.130]   \\
+
+\addlinespace
+$\Delta_{\text{always}}$&       1.431***&      -0.262** &      -0.273** &      -0.289** &      -0.662   \\
+                    &     (0.301)   &     (0.133)   &     (0.138)   &     (0.146)   &     (0.469)   \\
+95\% inv. CI        &       empty   &[-0.680, -0.140]   &[-0.740, -0.140]   &[-0.780, -0.160]   &[$-\infty$, -0.140] $\cup$ [1.720, $+\infty$]   \\
+
+\addlinespace
+$\phi$              &      -1.299***&      -0.515***&      -0.523***&      -0.534***&      -0.719***\\
+                    &     (0.080)   &     (0.091)   &     (0.092)   &     (0.093)   &     (0.124)   \\
+95\% inv. CI        &       empty   &[-0.700, -0.410]   &[-0.710, -0.410]   &[-0.720, -0.430]   &[-1.220, -0.450]   \\
+Individuals         &      11,012   &      11,012   &      11,012   &      11,012   &      11,012   \\
+Observations        &      29,864   &      29,864   &      29,864   &      29,864   &      29,864   \\
+J-stat              &         9.7   &         6.7   &         6.5   &         6.7   &         3.8   \\
+J-stat (p-value)    &       0.021   &       0.084   &       0.089   &       0.084   &       0.280   \\
+Converged           &           Y   &           Y   &           Y   &           Y   &           Y   \\
+\cmidrule{2-6} Time FE & & Y & Y & Y & Y \\ Covariates & & & Female & \& Age$^2$ & All \\ \multicolumn{6}{p{\linewidth}}{\footnotesize \emph{Note:} Multi-island confidence intervals (one endpoint at $\pm\infty$) reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.} \\ \bottomrule \end{tabular}

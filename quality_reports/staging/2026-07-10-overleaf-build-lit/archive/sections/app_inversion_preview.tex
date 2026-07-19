@@ -1,0 +1,42 @@
+\section{Preview: LCA inversion confidence intervals}\label{app:inversion-preview}
+
+This appendix is a temporary preview of the new GRC tables produced by the LCA inversion pipeline.
+Each table now reports two extra rows underneath every $\Delta$ block and the $\phi$ block: a 90\% and a 95\% confidence interval obtained by inverting the LCA overidentification test on a $\phi_0$ grid.
+A row entry of \texttt{empty} means no point in the grid satisfies the test at that level (typical for the no-covariate column~(1) where the LCA fits poorly without time fixed effects).
+Multi-island intervals of the form $[-\infty, x] \cup [y, +\infty]$ reflect the singularity at $\phi = -1$ in the LCA mapping for $\Delta_{\text{always}}$ and are flagged in the postfoot note.
+
+Tables \ref{tab:GRC_IDN_consumption_urban_unb_PREVIEW} and \ref{tab:GRC_TZA_consumption_urban_unb_PREVIEW} render the IDN and TZA cells from the unbalanced consumption-on-urban specification.
+Estimates are unchanged from the canonical tables in Section~\ref{sec:grc-returns}; only the inversion CI rows and the new $\Delta_{\text{always}}$ block are added.
+Once the rendering looks acceptable, this appendix will be deleted and the canonical \texttt{tables/GRC\_*\_consumption\_urban\_unb.tex} files refreshed in place.
+
+
+
+\begin{landscape}
+\begin{table}[htbp]\centering
+\caption{Preview---restricted GRC estimates of the returns to urban location on log consumption per capita, Indonesia (unbalanced)}
+\label{tab:GRC_IDN_consumption_urban_unb_PREVIEW}
+\begin{threeparttable}
+\input{temp-tables/GRC_IDN_consumption_urban_unb}
+\begin{tablenotes}[flushleft]\footnotesize
+\item Inversion CI rows: 95\% LCA overidentification-test inversion intervals on a $\phi_0$ grid with spacing 0.01.
+Multi-island intervals reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.
+All other notes follow Table~\ref{tab:GRC_IDN_consumption_urban_unb}.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+\end{landscape}
+
+\begin{landscape}
+\begin{table}[htbp]\centering
+\caption{Preview---restricted GRC estimates of the returns to urban location on log consumption per capita, Tanzania (unbalanced)}
+\label{tab:GRC_TZA_consumption_urban_unb_PREVIEW}
+\begin{threeparttable}
+\input{temp-tables/GRC_TZA_consumption_urban_unb}
+\begin{tablenotes}[flushleft]\footnotesize
+\item Inversion CI rows: 95\% LCA overidentification-test inversion intervals on a $\phi_0$ grid with spacing 0.01.
+Multi-island intervals reflect the singularity at $\phi=-1$ in the LCA mapping for $\Delta_{\text{always}}$.
+All other notes follow Table~\ref{tab:GRC_TZA_consumption_urban_unb}.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+\end{landscape}

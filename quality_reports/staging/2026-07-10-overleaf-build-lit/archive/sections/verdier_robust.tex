@@ -1,0 +1,97 @@
+%==============================================================================
+%  Robustness subsection: worker-level (Verdier 2020) robust estimator.
+%  Included from main.tex under \section{Robustness}.
+%
+%  Requires (in preamble.tex):
+%    \usepackage{amsthm}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{assumption}{Assumption}
+%==============================================================================
+
+\subsection{Worker-level robustness}\label{subsec:verdier-robustness}
+
+The restricted GRC of Section~\ref{subsec:restricted-grc-model} identifies $\phi$ from variation across switcher trajectories: trajectories with higher average rural consumption $\mu_{\underline d}$ also have higher average return $\Delta_{\underline d}$, and the slope of that relationship is $\phi$.
+\citet{verdierAverageTreatmentEffects2020a} develops an alternative estimator that recovers the LCA slope at the worker level, before any aggregation across trajectories.
+The two estimators target the same parameter under the same identifying restrictions but differ in how they aggregate within-cluster variation.
+A robustness check that compares them probes a margin our baseline estimates rest on: that within-trajectory pooling across clusters is innocuous.
+
+For each worker $i$ we define $a_i \equiv E[y_{it}\mid D_{it}=0,\,i]$, the worker's rural mean log consumption, and the worker-specific return $\Delta_i^w \equiv E[y_{it}\mid D_{it}=1,\,i] - a_i$.
+Equations~\eqref{eq:y_it_U}--\eqref{eq:y_it_R} together with (A1)--(A4) imply $a_i = \beta_t^R + \theta_i + \tau_i + x_{it}'\gamma$ in expectation and $\Delta_i^w = \Delta_i = \beta + \phi\theta_i$ under (A5).
+Projecting $\theta_i$ onto $a_i$ within cluster $v_i$ and collecting residuals into $\xi_i$ delivers the worker-level LCA equation
+\begin{equation}\label{eq:worker-lca}
+\Delta_i^w = \beta + \phi\, a_i + \xi_i, \qquad E[\xi_i \mid v_i] = 0.
+\end{equation}
+\citet{chamberlain1984panel}'s within-individual projection delivers consistent estimates $\hat a_i$ and $\hat\Delta_i^w$ from a regression of $y_{it}$ on period and individual-by-treatment fixed effects.
+\citet{verdierAverageTreatmentEffects2020a} writes the worker-level relationship in the reverse direction, $a_i = \alpha_0 + \alpha_1 \Delta_i^w + e_i$ with $\alpha_1 = 1/\phi$; we report $1/\hat\alpha_1$ throughout for direct comparison with our $\hat\phi$.
+
+Our trajectory-pooled implementation estimates $\phi$ from the moment system of Equation~\eqref{eq:restricted-grc-unbalanced}, but replaces the switcher-treatment instruments $D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$ with their cluster residuals.
+For each switcher trajectory $\underline d \in \mathcal D_S$ the residualized instrument is
+\[
+\tilde D_{it}^{\,\underline d} \;\equiv\; D_{it}\,\mathbbm 1\{\underline d_i=\underline d\} \;-\; \overline{D_{\cdot\cdot}\,\mathbbm 1\{\underline d_{\cdot}=\underline d\}}_{v_i,\,\underline d},
+\]
+where the second term is the within-cluster mean of $D_{it}\cdot\mathbbm 1\{\underline d_i=\underline d\}$ taken among trajectory-$\underline d$ workers in cluster $v_i$.
+We cluster standard errors at the village ($v_i$) level rather than the individual level.
+We denote this estimator $\hat\phi^{\mathrm{rob}}$ and reserve $\hat\phi$ for the baseline estimate of Section~\ref{sec:grc-returns}.
+The cluster-residualization removes any variation in $D$ that loads on between-cluster differences within a trajectory; identification of $\phi$ comes from how much the within-cluster mean of $D$ varies across switcher trajectories.
+
+Whether $\hat\phi^{\mathrm{rob}}$ targets the same population parameter as Verdier's worker-level estimator depends on one further restriction.
+Let $v_i \in \{1,\ldots,V\}$ index the cluster of worker $i$.
+
+\begin{assumption}[Trajectory pooling across clusters]
+\label{ass:cluster-pooling}
+$\Pr(v_i = v\mid \underline d_i = \underline d)$ does not depend on $\underline d$ for any switcher trajectory $\underline d \in \mathcal D_S$.
+\end{assumption}
+
+Assumption~\ref{ass:cluster-pooling} requires switcher trajectory and cluster of first observation to be marginally independent.
+It would fail if rural-to-urban single movers concentrated in poorer clusters while back-and-forth switchers were drawn evenly across the cluster grid.
+The assumption is separate from the within-cluster exogeneity already implied by (A1)--(A5).
+
+\begin{proposition}[Equivalence under cluster pooling]
+\label{prop:robust-equivalence}
+Under (A1)--(A5) of Section~\ref{subsec:empirical-model} and Assumption~\ref{ass:cluster-pooling}, the trajectory-pooled estimator $\hat\phi^{\mathrm{rob}}$ and Verdier's worker-level GMM estimator $1/\hat\alpha_1$ have the same probability limit, equal to the population $\phi$ of \eqref{eq:LCA-restriction}.
+\end{proposition}
+
+Whatever variation our estimator uses to recover $\phi$ at the trajectory level is the same variation Verdier's worker-level moment exploits at the worker level; the two estimators therefore share a probability limit, although they differ in finite-sample efficiency and cluster-robust variance.
+Just as Proposition~\ref{prop:pooling} validates pooling across the balanced and unbalanced strata under Assumptions~\ref{ass:mar} and \ref{ass:common-gamma}, Proposition~\ref{prop:robust-equivalence} validates pooling across clusters within trajectory under Assumption~\ref{ass:cluster-pooling}.
+
+\begin{proof}[Proof sketch]
+The argument has three steps.
+First, under (A1)--(A5) the worker-level relationship \eqref{eq:worker-lca} holds with $E[\xi_i \mid v_i] = 0$, and Verdier's cluster-demeaned period-treatment instruments $z_i$ satisfy $E[z_i \xi_i] = 0$ by iterated expectation.
+Second, our cluster-residualized switcher-treatment instruments and Verdier's cluster-demeaned period-treatment instruments both span the orthogonal complement of the cluster-fixed-effect subspace within the treatment column space; under Assumption~\ref{ass:cluster-pooling} the residual difference between the two bases (trajectory dummies versus period dummies) is asymptotically orthogonal to the cluster variation, so the two GMM systems have the same probability limit when cast as a Cov-over-Cov ratio.
+Third, that ratio reduces to $\phi$ under our convention and to $1/\phi$ under Verdier's, by the LCA \eqref{eq:LCA-restriction}.
+A formal derivation appears in Appendix~\ref{app:robust-equivalence}.
+\end{proof}
+
+When Assumption~\ref{ass:cluster-pooling} holds, our trajectory-pooled robust estimator and the worker-level estimator are alternative paths to the same target.
+When the assumption fails, $\hat\phi^{\mathrm{rob}}$ picks up a population-level cluster-pooling bias of the form
+\begin{equation}\label{eq:cluster-pooling-bias}
+\mathrm{plim}\,\hat\phi^{\mathrm{rob}} - \phi \;=\; \frac{\mathrm{Cov}_{\underline d}\!\big(\bar c(\underline d),\ \mu_{\underline d}\big)}{\mathrm{Var}_{\underline d}\!\big(\mu_{\underline d}\big)},
+\end{equation}
+where $c(v_i)$ is the cluster-level component of average log consumption (the $v_i$-conditional level effect not absorbed by trajectory or treatment) and $\bar c(\underline d) = E[c(v_i)\mid \underline d_i=\underline d]$ is its trajectory-conditional mean.
+Verdier's worker-level estimator is unaffected by this bias because it never aggregates across clusters within trajectory.
+A material gap between $\hat\phi^{\mathrm{rob}}$ and $1/\hat\alpha_1$ therefore signals that differential cluster assignment is quantitatively relevant; near-equality indicates that our baseline pooled estimates do not depend on the trajectory-pooling step.
+The comparison plays the same diagnostic role for cluster pooling that Hansen's $J$-test plays for the LCA restriction.
+
+We apply the worker-level estimator to the three baseline consumption specifications of Section~\ref{sec:grc-returns}: log per-capita consumption with the urban indicator as treatment, on the unbalanced panel, with full controls and period fixed effects, separately for Indonesia, China, and Tanzania.
+Implementation follows \citet[][\S 3.4]{verdierAverageTreatmentEffects2020a}: a Chamberlain within-individual projection delivers $\hat a_i$ and $\hat\Delta_i^w$, then we estimate $\alpha_1$ by one-step GMM with cluster-demeaned period-treatment instruments and standard errors clustered at the village level.
+Cluster identifiers and treatment-period instruments mirror those in our baseline specification, so the only methodological difference is the trajectory-pooling step.
+We complement the comparison with an empirical diagnostic for Assumption~\ref{ass:cluster-pooling}: for each pair of switcher trajectories $(\underline d, \underline d')$ we compute the total-variation distance
+\[
+\mathrm{TV}(\underline d, \underline d') = \tfrac{1}{2}\sum_{v} \big| \hat\Pr(v\mid \underline d) - \hat\Pr(v\mid \underline d') \big|
+\]
+between empirical cluster profiles, and report the average across switcher pairs.
+A mean TV near zero indicates the assumption is approximately satisfied; larger values indicate exposure to the cluster-pooling bias of \eqref{eq:cluster-pooling-bias}.
+
+Table~\ref{tab:verdier-robust} reports both estimators side by side along with the realized mean TV per country.
+
+% \input{tables/verdier_robust_consumption_unb}
+
+% Brief interpretation paragraph here, once results are in. Expected
+% structure: similar estimates across the two estimators in countries
+% where the cluster-pooling diagnostic (mean TV between switcher cluster
+% profiles) is small; larger gap where the diagnostic is large.
+
+This robustness check uses the identifying restrictions (A1)--(A5); the comparison probes pooling, not (A1)--(A5) themselves.
+Worker-level estimation imposes one additional implicit restriction.
+The within-individual averaging in \eqref{eq:worker-lca} requires each worker to be observed in both rural and urban states for $\hat\Delta_i^w$ to be identifiable, so the worker-level estimator effectively uses only the switcher subsample.
+Comparing $\hat\phi$ on the same subsample, rather than the full pooled sample of Equation~\eqref{eq:restricted-grc-unbalanced}, isolates the trajectory-pooling step from the unbalanced-pooling step formalized in Proposition~\ref{prop:pooling}; we report both. We do not implement the joint-GMM extension of \citet{verdierAverageTreatmentEffects2020a} that simultaneously estimates trajectory-specific average treatment effects for stayers, since our object of interest is $\phi$.
