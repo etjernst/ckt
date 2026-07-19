@@ -2,15 +2,13 @@
 
 ## If you resume
 
-Stage 5 (inversion CIs key off e(sample)) is implemented and committed on branch `stage5-inversion-esample` (spec+plan `69af0de`, implementation `2ab4b21`); smoke and contract tests are ALL PASS; the gate is partially adjudicated with the attach batch still running.
-The critic fix set is RESOLVED (2026-07-20 morning): the CRITICAL is superseded---the author DROPPED the real-values track, so `$values`/`$vsfx`/`data_real` removal is planned into Stage 8 and no vsfx threading was applied (memory updated: project_real_values_dropped.md); the MAJOR is fixed by relocating the `estimates esample:` declaration after the suffix loop (survives the source-flag drop, verified by probe; smoke now asserts `count if e(sample)` == fit N after attach); the injection-rule MINOR became a dense `egen group(pid)` numbering with a named local after the author rejected `mod(pid, 43)` on raw ids; the pid-period documentation MINOR is in both headers; the country-check MINOR was declined.
-Both tests rerun ALL PASS after the fixes (contract: 220 injected waves, e(N)=29,642 exactly).
-Commits: `fcb80b3`, `1a30d08`.
-Remaining: the focused fix-delta re-review (in flight at handoff), then author sign-off and merge.
-Gate state: COMPLETE and PASS on all three checks (2026-07-20, 01:55).
-Refit identity 210/210 PASS_BITWISE against `stage34_root/output`; marker inventory 42/42 parents with exactly e(N) rows; attach legs 80/80 cell-suffix pairs identical between leg A (fallback, the old computation, 20 loud warnings as expected) and leg B (marker path, zero warnings)---all inv_* scalars, CI strings, and bitwise e(b).
-Artifacts: [gate_results.csv](file:///C:/git/ckt/quality_reports/staging/stage5/gate_results.csv), [marker_inventory.csv](file:///C:/git/ckt/quality_reports/staging/stage5/marker_inventory.csv), [attach_compare.csv](file:///C:/git/ckt/quality_reports/staging/stage5/attach_compare.csv).
-Cleanup queue for stage close: smoke/contract artifacts `smk5_*` and `smk5c_*` in `RP7/output`, and the `smk5c` marker was deliberately erased by the contract test.
+Stage 5 is CLOSED: signed off 2026-07-20, merged to main (merge commit `d8ec610`), and pushed to origin (main at `89d28fc`; branch `stage5-inversion-esample` also pushed).
+Next work is Stage 6 of [quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md), run as Mode 2: spec, then plan, then implement.
+It has two parts.
+First, make `run_grc_robust_vv` start each Verdier spec from the same baseline sample---the internal drop if missing(vfirst) currently persists across specs.
+Second, and mandatory, fix the tail of `17_verdier_robust.do`, which loads sters under the pre-rename suffixes (`_never`/`_avg`) while the fits now save `_n`/`_a`; no run since the suffix rename can regenerate the paper's Verdier robustness tables, so the production `verdier_robust_*.tex` files are frozen 2026-05-06 artifacts.
+Branch from main at `89d28fc`.
+Cached state a resumer should know: gate evidence is retained until the definitive run (`stage5_root`, `stage5_legA_output`, `stage5_legB_output` in `RP7/tests/stage0`, alongside `stage34_root`, `baseline_root`, `baseline_root2`, `stage1_root`); e(sample) markers are now written by every fitter and gitignored in `RP7/output`; the real-values track is DROPPED (memory file `project_real_values_dropped.md`; `$values`/`$vsfx`/`data_real` removal is folded into Stage 8, including the save_esample_marker filename residual the fix-delta re-review flagged); D-4 (the nonag manuscript promise) is still open; rc receipt files (`gate_stage5_*_rc.txt`) stay untracked by convention; `papers/extracted/` holds three files awaiting optional promotion to the central paper store; the NCI request advice has been delivered (Macquarie University Gadi scheme; a compute-sizing benchmark is deferred until the Python simulation code is ready).
 
 ## Goals
 
@@ -51,3 +49,17 @@ Critic fixes await author approval; then re-smoke and re-run critic per the revi
 Attach batch finishing, then the full compare rerun, gate artifact assembly, author sign-off, merge.
 The real-values (`values=real`) inversion coverage gap is recorded in the review file as out of Stage 5 scope; it belongs to the M4 track.
 D-4 (nonag manuscript promise) and the Stage 6 Verdier suffix fix remain open from the parent plan.
+
+## 2026-07-20 close-out: sign-off, merge, push, and repository backfill
+
+The author signed off on Stage 5 mid-morning and the branch merged to main with merge commit `d8ec610` (`--no-ff`, matching the Stage 3+4 close pattern), after `f743929` closed the stage in the parent plan and added a gitignore rule for `RP7/output/*_esample.dta`---the smoke run had exposed that markers were untracked, contrary to spec S5-2's marker-follows-ster lifecycle.
+The smoke artifacts (`smk5_*` and `smk5c_*` sters and markers in `RP7/output`) were deleted with author approval.
+Backfill commit `3db81bb` captured every previously-untracked file under [quality_reports/](file:///C:/git/ckt/quality_reports/) and [docs/session_logs/](file:///C:/git/ckt/docs/session_logs/) (1,105 files) after the author asked that reviews and session logs never sit uncommitted; this swept in the early-July reviews and plans and the Stage 3+4 gate evidence dumps.
+Commit `9c80710` tracks [docs/TGMBLM-2026.tex](file:///C:/git/ckt/docs/TGMBLM-2026.tex) (the Econometrica paper that is the foundation for the GRC estimator, kept for future reference per the author).
+Commit `89d28fc` tracks [citation_audits/](file:///C:/git/ckt/citation_audits/) (the 2026-07-10 Herrendorf-Schoellman citation-faithfulness audit evidence: claims, chain-of-verification runs, verdicts, final report, plus a staged variant).
+`papers/summaries/` turned out to contain only two throwaway pipeline-test JSONs, deleted with author approval; real summaries already live in the central store at `~/Dropbox (Personal)/papers/`.
+Main was pushed to origin (`78360cf..89d28fc`) with the Stage 5 branch, per author instruction.
+Memory updates: [MEMORY.md](file:///C:/Users/maand/.claude/projects/C--git-ckt/memory/MEMORY.md) now records Stages 1-5 closed with Stage 6 next and the retained gate evidence, and a new memory file records the author's 2026-07-20 decision to drop the real-values track (removal planned into Stage 8; the Stage 5 review CRITICAL on vsfx-blind attach paths is superseded by that removal).
+Non-repo work: advice for the NCI Australia server request---scheme choice Macquarie University (Gadi compute) over Macquarie Cloud because the workload is batch Monte Carlo, not persistent services; recommended ANZSRC 2020 FOR codes 380204 Panel data analysis 40%, 380202 Econometric and statistical methods 30%, 380111 Labour economics 30% (noting ANZSRC 2020 has no development-economics field; 380104 is economics of education, a trap); SEO codes 280108 Expanding knowledge in economics 50%, 150203 Economic growth 30%, 150507 Micro labour market issues 20%.
+The allocation is for the Econometrica-targeted simulation study, which is all Python, so Stata licensing on Gadi is not a concern; a service-unit sizing benchmark is deferred until the simulation code can run one timed replication.
+Decisions with the why, appended: the backfill covered all untracked quality_reports and session-log content rather than only Stage 5 files because the author's instruction targeted the category and the early-July files were the ones actually at risk; the marker gitignore rule landed in the Stage 5 close because spec S5-2 promised markers follow the ster lifecycle and production runs would otherwise generate a hundred untracked files.
