@@ -38,6 +38,11 @@ Accept: hoist to a named local with a one-line comment.
 
 The merge row-order restoration, the preserve/restore placement of the marker write at all four call sites, and the injected-then-healed missingness contract test were each independently verified sound.
 
+## Fix-delta re-review (2026-07-20)
+
+A focused fresh-context re-review of the fix commits (`fcb80b3`, `1a30d08`) returned APPROVED: the CRITICAL's supersession is recorded where required with no vsfx threading attempted, the `estimates esample:` relocation is marker-path-only, post-loop, on the CI-carrying reload with the flag dropped after (and the smoke's new `count if e(sample)` assert would catch a regression), and both MINOR fixes are in as described; both test logs end ALL PASS.
+One informational residual for the Stage 8 removal list: `save_esample_marker` still writes `${vsfx}` into the marker filename while `attach_inversion_ci` reads without it---a nominal-track no-op that disappears with the vsfx machinery.
+
 ## Recommended fix set for approval
 
 Fix CRITICAL (vsfx threading in `attach_inversion_ci` + both callers' guards), MAJOR (move the declaration post-loop and correct the comment), MINOR 1 (header comments), MINOR 3 (named local).

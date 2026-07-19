@@ -3,9 +3,10 @@
 ## If you resume
 
 Stage 5 (inversion CIs key off e(sample)) is implemented and committed on branch `stage5-inversion-esample` (spec+plan `69af0de`, implementation `2ab4b21`); smoke and contract tests are ALL PASS; the gate is partially adjudicated with the attach batch still running.
-Two things are pending and both need Emilia.
-First, critic-fix approval: the adjudicated critic-stata review at [2026-07-19_stage5-critic-stata.md](file:///C:/git/ckt/quality_reports/reviews/2026-07-19_stage5-critic-stata.md) proposes fixing the CRITICAL (`$vsfx`-blind attach paths in `attach_inversion_ci` plus the `5b`/`5c` parent guards, a pre-existing defect the new marker lookup inherited), the MAJOR (move the dead `estimates esample:` declaration to after the suffix loop so the program returns with the parent estimates active and their true sample declared), and two trivial MINORs, declining one MINOR; all proposed edits are nominal-track no-ops so gate results stay valid.
-Second, gate sign-off and merge after the attach legs finish.
+The critic fix set is RESOLVED (2026-07-20 morning): the CRITICAL is superseded---the author DROPPED the real-values track, so `$values`/`$vsfx`/`data_real` removal is planned into Stage 8 and no vsfx threading was applied (memory updated: project_real_values_dropped.md); the MAJOR is fixed by relocating the `estimates esample:` declaration after the suffix loop (survives the source-flag drop, verified by probe; smoke now asserts `count if e(sample)` == fit N after attach); the injection-rule MINOR became a dense `egen group(pid)` numbering with a named local after the author rejected `mod(pid, 43)` on raw ids; the pid-period documentation MINOR is in both headers; the country-check MINOR was declined.
+Both tests rerun ALL PASS after the fixes (contract: 220 injected waves, e(N)=29,642 exactly).
+Commits: `fcb80b3`, `1a30d08`.
+Remaining: the focused fix-delta re-review (in flight at handoff), then author sign-off and merge.
 Gate state: COMPLETE and PASS on all three checks (2026-07-20, 01:55).
 Refit identity 210/210 PASS_BITWISE against `stage34_root/output`; marker inventory 42/42 parents with exactly e(N) rows; attach legs 80/80 cell-suffix pairs identical between leg A (fallback, the old computation, 20 loud warnings as expected) and leg B (marker path, zero warnings)---all inv_* scalars, CI strings, and bitwise e(b).
 Artifacts: [gate_results.csv](file:///C:/git/ckt/quality_reports/staging/stage5/gate_results.csv), [marker_inventory.csv](file:///C:/git/ckt/quality_reports/staging/stage5/marker_inventory.csv), [attach_compare.csv](file:///C:/git/ckt/quality_reports/staging/stage5/attach_compare.csv).
