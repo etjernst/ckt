@@ -1,0 +1,394 @@
+\documentclass[12pt]{article}
+
+%%% PAGE DIMENSIONS
+\usepackage{geometry}
+\geometry{verbose,margin=1.25in}
+\usepackage{fullpage}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{caption}
+\usepackage{subcaption}
+
+%%% ADDITIONAL PACKAGES
+\usepackage{amsthm, booktabs, setspace, natbib, amsfonts,amsmath,amssymb,epstopdf,textcomp,listings,verbatim, xcolor, tikz}
+\usepackage{threeparttable}
+\theoremstyle{plain}
+\newtheorem{prop}{Proposition}
+\newtheorem{thm}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{cor}{Corollary}
+\theoremstyle{definition}
+\newtheorem{ex}{Example}
+\usepackage{adjustbox}
+\usepackage{bigstrut}
+\usepackage{epigraph}
+\usepackage{authblk}
+% packages from Dalia and Oscar's write-up, minus duplicates and things that crashed
+
+\usepackage{enumerate}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{lscape}
+\usepackage{mdframed}
+\usepackage{mathtools}
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\makeatletter
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\usepackage[linktocpage=true, colorlinks=true, linkcolor=blue, citecolor=black]{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Custom blockquote for data appendix
+%
+    \definecolor{blockquote-border}{RGB}{221,221,221}
+    \definecolor{blockquote-text}{RGB}{130,130,130}
+    \usepackage{mdframed}
+    \newmdenv[leftmargin=20,rightline=false,bottomline=false,topline=false,linewidth=3pt,linecolor=blockquote-border,skipabove=.2cm]{customblockquote}
+    \renewenvironment{quote}{\begin{customblockquote}\list{}{\rightmargin=0em\leftmargin=.5em}%
+    \item\relax\color{blockquote-text}\ignorespaces}{\unskip\unskip\endlist\end{customblockquote}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Fix Stata esttab output \sym command
+\newcommand{\sym}[1]{\rlap{#1}}
+
+\begin{document}
+
+\begin{titlepage}
+\title{Comment on ``Selection and Comparative Advantage in Technology Adoption'' by Suri (2011)\thanks{We thank the Data Management Team at Tegemeo Institute of Agricultural Policy and Development for providing us with access to the data and Tavneet Suri for data cleaning instructions, code, and helpful comments. This research was supported by the Cornell Center for Social Sciences Data Discovery \& Replication.}}
+ %A Group Random Coefficient Alternative with Weak-Identification Robust Inference: \newline 
+   % \newline $^\dagger$The authorship order between the first and second co-authors was randomized.}
+   
+
+	\author[1,2]{Emilia Tjernstr\"{o}m}
+	\author[3]{Dalia Ghanem}
+  	\author[4]{Aleksandr Michuda}
+	\author[5]{Oscar Barriga-Cabanillas}
+	\author[3]{Travis J. Lybbert}
+
+     \author[6]{Jeffrey D. Michler}
+
+
+	\affil[1]{\small\emph{Macquarie University}}
+	\affil[2]{\small\emph{Monash University}}
+	\affil[3]{\small \emph{University of California, Davis}}
+	\affil[4]{\small\emph{Swarthmore College}}
+        \affil[5]{\small\emph{World Bank}}
+	\affil[6]{\small\emph{University of Arizona}}
+
+	\date{March 2026}
+
+	\clearpage\maketitle
+	\thispagestyle{empty}
+
+\begin{center}
+    \begin{abstract}
+		\noindent
+			This paper illustrates and addresses weak identification in the correlated random coefficient (CRC) model that \citet{S2011} uses to study agricultural technology adoption.
+            Using the publicly available  dataset, which differs slightly from the version used in \citet{S2011}, we obtain different point estimates for the paper's main CRC model.
+            To understand why these differences are as large as they are, we recast the CRC model as a more general random coefficient model in which the returns to hybrid adoption are restricted to be linear in comparative advantage.
+			This reveals that the key structural parameter in the CRC model ($\phi$), which governs the relationship between baseline productivity and the returns to adoption, is prone to a weak identification problem.
+			We then propose a procedure to conduct weak-identification robust inference on $\phi$ using test inversion.
+            Our weak-identification robust confidence intervals contain the original \citet{S2011} point estimates, which suggests that the difference in results may be attributable to a combination of minor data differences and weak identification.
+	\end{abstract}
+\end{center}
+
+	{\small \noindent\emph{JEL Classification}: C12, C14, O33,Q16
+		\\
+	\emph{Keywords}: heterogeneity, correlated random coefficients, weak identification, generalized method of moments}
+\end{titlepage}
+
+\onehalfspacing
+\section{Introduction}
+    
+In an influential paper, \citet{S2011} addresses why many Sub-Saharan African farmers still use traditional farming methods despite higher returns from modern agricultural technologies.
+The existing literature identifies market frictions, like credit constraints, uninsured risk, and incomplete information, as likely causes.\footnote{Surveys include \citet{federetal1985, foster2010, jack2013market, magruder2018assessment}.}
+\citet{S2011} instead attributes this to heterogeneous returns to adoption stemming from time-invariant unobservables.
+
+\citet{S2011} uses a correlated random coefficient (CRC) model with a specific restriction that the returns to hybrid maize adoption are linear in comparative advantage (LCA).\footnote{\citet{V2020} shows that the \citet{S2011} approach relies on a linear extrapolation that is valid if the factors that determine selection other than the treatment effect are uncorrelated with outcomes, and proposes a more robust extrapolation approach that allows for selection into treatment to be correlated with treatment effects as well as (a subset of) covariates.}  
+The key structural parameter, $\phi$, indicates the slope of this linear relationship and reveals whether low-productivity or high-productivity farmers gain more from adoption.
+Using a Kenyan panel dataset in which farmers are observed growing either hybrid or non-hybrid maize, \citet{S2011} finds negative and significant $\phi$ estimates, implying that hybrid adoption gains are greater for farmers with lower non-hybrid productivity.
+She then uses the LCA restriction to extrapolate these estimated returns to non-adopters.
+
+Our reanalysis, using the publicly available version of \citet{S2011}'s panel dataset, yields different point estimates for $\phi$ compared to \citet{S2011}'s original results.
+We investigate these discrepancies and the potential for weak identification of $\phi$.\footnote{It is worth noting that \citet{S2011} discusses ways of estimating $\phi$ as a combination of production function reduced-form parameters and recognizes that identification of $\phi$ relies on a specific restriction on these parameters. See the discussion in Section 4.5.1 in \citet{S2011}, where the author also informally assesses whether the denominator in these reduced-form expressions is bounded away from zero.}
+To assess estimate stability, we re-estimate the CRC model across 10,000 simulations, each time randomly dropping 10 households (less than 1\% of the sample).
+Point estimates of $\phi$ vary dramatically, even within a single specification, revealing substantial sensitivity to sample variation.
+We then show that the CRC model in \citet{S2011} is a restricted version of a group random coefficient (GrRC) model that imposes the LCA restriction. 
+The unrestricted GrRC model helps detect and diagnose the weak-identification problem.
+We propose a weak-identification robust procedure for inference on $\phi$ using test inversion and demonstrate its finite-sample performance with a simulation study.
+Because $\phi$ can inform the design and targeting of interventions aimed at encouraging technology adoption, valid inference about this parameter has direct policy relevance.
+
+Finally, we reanalyze \citet{S2011} using our GrRC approach. 
+Our results suggest the presence of weak identification. 
+Our weak-identification robust confidence intervals for $\phi$ are negative and overlap with \citet{S2011}'s original point estimates. 
+This suggests that the different point estimates we obtain may reflect both data discrepancies and potential weak identification concerns.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Reanalysis of Suri (2011)}\label{sec:suri}
+
+\subsection{Data}
+
+We use the same panel dataset of rural Kenyan households as \citet{S2011}, collected by \citet{tegemeo2009}.\footnote{Tegemeo Institute makes the data available to researchers subject to a brief application form.} 
+Our dataset closely resembles the original dataset, with minor differences:
+we have 1,197 households instead of 1,202.\footnote{We obtained our data from Tegemeo Institute and followed the author's data cleaning documentation. Small differences in summary statistics suggest slight variations in sample composition or variable construction.}
+Appendix \ref{app:data} documents our data construction process and compares summary statistics with the original paper. 
+
+We construct variables following \citet{S2011}. 
+Maize yield is the ratio of (self-reported) maize harvest to plot size.\footnote{This is not a measure of economic returns, as it does not account for input costs. We assume, as in \citet{S2011}, that input costs other than hybrid seeds are constant across sectors.} 
+Technology adoption trajectories and fertilizer use are defined based on household reports of  hybrid seed or fertilizer use in a given year, and we control for the same demographic and production variables as \citet{S2011}.
+
+\subsection{Reanalysis Results}
+
+Table \ref{tab:OLSFE} reports the OLS and fixed effects (FE) specifications for estimating average yield advantages of hybrid maize under the assumption of homogeneous returns. Panel A shows the original paper's point estimates, while Panel B shows our reanalysis.\footnote{The results in Panel A correspond to Table IIIA in \citet{S2011}.} Our results are statistically indistinguishable from \citet{S2011}.
+
+We focus on the CRC model and the LCA parameter, $\phi$. 
+We briefly present this model before discussing our results (for more details, see \citealp{S2011}). 
+The CRC model is given by:
+\begin{align}
+    y_{it}&=\tau_{i}+\theta_{i}+(\beta+\phi\theta_{i})h_{it}+x_{it}'\gamma+h_{it}x_{it}'\delta+\varepsilon_{it},\label{eq:CRC_model}
+\end{align}
+
+\noindent where $y_{it}$ is log of maize yield for farmer $i$ at time $t$; $\tau_{i}$ is farmer $i$'s absolute advantage, assumed to be (mean) independent of technology adoption and covariates (i.e.,  $E[\tau_{i}|h_{i},x_i]=E[\tau_{i}]$), $\varepsilon_{it}$ is an idiosyncratic error term with $E[\varepsilon_{it}|h_i,x_i,\tau_i,\theta_i]=0$, and $\theta_i$ can be correlated with the farmer's adoption history. 
+The adoption history for farmer $i$ is denoted by $h_{i}=(h_{i1},\dots,h_{iT})$, and $x_i=(x_{i1},\dots,x_{iT})$ denotes the time series of covariates. 
+To estimate different means across adoption histories in the CRC model following \citet{C1984}, we use a linear projection of $\theta_i$ onto a fully saturated model of adoption histories:
+\begin{align}
+\theta_i&=\lambda_0+\lambda_1h_{i1}+\lambda_2h_{i2}+\lambda_3h_{i1}h_{i2}+\eta_i.\label{eq:thetai_projection}
+\end{align}
+
+
+We report the CRC model results in Table \ref{tab:grc_crct2}, estimated using the \texttt{Stata} package from \cite{BMMT2018}. 
+Despite using nearly identical data, we only reproduce the estimates for $\lambda_1$. 
+Our $\phi$ estimates are mostly insignificant, contrasting with \citet{S2011}'s findings and providing little evidence of a negative linear relationship between baseline productivity and adoption returns. 
+
+Our inability to reproduce this key finding in \citet{S2011} is unexpected given the minor differences in the data. 
+To assess the sensitivity of the CRC estimates to sample composition, we re-estimate the model across 10,000 simulations, each time randomly dropping 10 households (less than 1\% of the sample). 
+Table~\ref{tab:coeffstable} presents the resulting distribution of $\phi$ estimates, highlighting significant sensitivity. 
+This instability motivates a more general model that includes the \citet{S2011} CRC model as a special case and demonstrates the potential for weak identification of the key LCA parameter.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{A Group Random Coefficient (GrRC) Alternative}\label{sec:GrRC_model}
+
+We start with an unrestricted random coefficient model that nests the LCA restricted model as a special case. 
+We then show how the LCA parameter, $\phi$, can be identified from a restriction on a GrRC model. This model highlights the potential for weak identification of $\phi$ and allows us to propose a weak-identification robust inference procedure for it.
+
+\subsection{Unrestricted Random Coefficient Model}
+Suppose that (log) yield is a function of hybrid adoption, $h_{it}$, farmer ability, $a_{i}$, and idiosyncratic shocks, $\varepsilon_{it}$, given by $y_{it} =f(h_{it},a_{i})+\varepsilon_{it}$ for $i=1,\dots,n$ and $t=1,\dots, T$. 
+For simplicity, we consider a model without covariates, but our results extend to the inclusion of exogenous, additively separable covariates as in \eqref{eq:CRC_model}.\footnote{In supplementary analysis available upon request, we augment our approach to allow for endogenous covariates following \citet{S2011}.}
+As in \citet{S2011}, we maintain the strict exogeneity assumption, $E[\varepsilon_{it}|h_{i},a_{i}]=0$, where $h_{i}=(h_{i1},\dots,h_{iT})$.   Since $h_{it}$ is a binary variable, we can write this as a random coefficient model
+\begin{align}
+y_{it}&=\mu_{i}+\Delta_{i}h_{it}+\varepsilon_{it},\label{eq:unrestricted_CRC}
+\end{align}
+where $\mu_i\equiv f(0,a_{i})$ denotes farmer $i$'s expected (log) yield without adoption and $\Delta_i\equiv f(1,a_{i})-f(0,a_{i})$ denotes farmer $i$'s expected returns to hybrid maize adoption. 
+This model nests the \citet{S2011} CRC model as a special case if we impose two restrictions: (1) $\mu_{i}=\tau_{i}+\theta_{i}$ and (2) $\Delta_{i}=\beta+\phi\theta_{i}$. In addition, we normalize $E[\theta_i]=0$ such that $E[\mu_i]=E[\tau_i]$. 
+
+\subsection{GrRC Model}\label{sec:two_period_id}
+
+The GrRC approach relies on the fact that with binary adoption and finite time periods, there are finitely many adoption histories, $\underline{h}\equiv (\underline{h}_1,\dots,\underline{h}_T)\in\mathcal{H}=\{0,1\}^T$. 
+For \citet{S2011}'s two-period case, we can define $\mathcal{H}=\{0,1\}^2$. 
+This includes the set of switcher trajectories, $\mathcal{H}_{S}=\{(0,1),(1,0)\}$, respectively called joiners and leavers, and the set of stayer trajectories, $\mathcal{H}_{S}^c=\{(0,0),(1,1)\}$, respectively called never-adopters and always-adopters. 
+
+
+Integrating the unrestricted random coefficient model \eqref{eq:unrestricted_CRC} with respect to $a_{i}|h_{i}$ yields the following conditional mean model under strict exogeneity, $E[\varepsilon_{it}|h_i,a_i]=0$,
+\begin{align}
+E[y_{it}|h_{i}=\underline{h}]&= \mu_{\underline{h}}+\Delta_{\underline{h}}\underline{h}_{t},
+\end{align}
+
+\noindent where $\mu_{\underline{h}}\equiv E[\mu_{i}|h_{i}=\underline{h}]=E[f(0,a_i)|h_i=\underline{h}]$, $\Delta_{\underline{h}} \equiv E[\Delta_{i}|h_{i}=\underline{h}]=E[f(1,a_i)-f(0,a_i)|h_i=\underline{h}]$, and $\underline{h}_t$ is the $t^{th}$ element of $\underline{h}$ for $t=1,2$. 
+By the time homogeneity of $\mu_{\underline{h}}$ and $\Delta_{\underline{h}}$, we can identify the average returns to adoption for subpopulations that we observe both adopting and not adopting hybrids in our data, i.e., the joiners and leavers.
+For the never-adopters, we can only identify $\mu_{(0,0)}$ and for the always-adopters we identify $\kappa_{(1,1)}=\mu_{(1,1)}+\Delta_{(1,1)}$.
+
+Using the following GrRC model, we can consistently estimate all the above objects using
+\begin{align}
+y_{it}&=\sum_{\underline{h}\in\mathcal{H}\backslash (1,1)}\mu_{\underline{h}}1\{h_{i}=\underline{h}\}+\sum_{\underline{h}\in\mathcal{H}_{S}}\Delta_{\underline{h}}h_{it}1\{h_{i}=\underline{h}\}+\kappa_{(1,1)}h_{it}1\{\underline{h}=(1,1)\}+\varepsilon_{it}.\label{eq:GrRC}
+\end{align}
+
+\noindent An advantage of the GrRC model relative to the reduced form of the CRC model in \citet{S2011} is that all of the GrRC coefficients have economic meaning: $\mu_{\underline{h}}$ is the average yield without hybrid adoption for subpopulation $\underline{h}$, $\Delta_{\underline{h}}$ is the average return to adoption for switcher subpopulation $\underline{h}$, and $\kappa_{(1,1)}$ is the average yield with hybrid for the always-adopters.
+
+
+\subsection{Unrestricted GrRC Model and LCA Parameter}\label{sec:suri_id}
+
+Next, we impose the LCA restriction on the GrRC model, specifically $\Delta_i=\beta+\phi \theta_i$, and illustrate how the unrestricted model can indicate potential identification concerns for $\phi$, the LCA parameter. 
+We first establish the relationship between parameters in the unrestricted GrRC model and those in the \citet{S2011} model.
+
+\begin{prop}\label{prop:SuriGrRC}  Let $y_{it}=\mu_{i}+\Delta_{i}h_{it}+\varepsilon_{it}$. Assume $\mu_i=\tau_{i}+\theta_{i}$, $\Delta_{i}=\beta+\phi\theta_{i}$, $E[\theta_{i}]=0$, $E[\tau_{i}|h_{i}]=E[\tau_{i}]$, $E[\varepsilon_{it}|h_{i},\tau_{i},\theta_{i}]=0$, the following equalities hold for $\underline{h},\underline{h}'\in\mathcal{H}=\{0,1\}^{T}$,
+(i) $\Delta_{\underline{h}}=\beta+\phi \theta_{\underline{h}}$, (ii) $\mu_{\underline{h}}-\mu_{\underline{h}'}=\theta_{\underline{h}}-\theta_{\underline{h}'}$, (iii) $\Delta_{\underline{h}}-\Delta_{\underline{h}'}=\phi\left(\mu_{\underline{h}}-\mu_{\underline{h}'}\right)$, for $\underline{h}\neq \underline{h}'$,  where $\theta_{\underline{h}}=E[\theta_{i}|h_{i}=\underline{h}]$.
+\end{prop}
+
+\citet{S2011} imposes the conditions required for the above proposition. 
+The proof of (i) follows from the definition of $\Delta_{\underline{h}}$ as the conditional expectation of $\Delta_i$:
+\begin{align}
+     \Delta_{\underline{h}}&=E[\Delta_i|h_i=\underline{h}]=\beta+\phi E[\theta_i|h_i=\underline{h}]=\beta+\phi \theta_{\underline{h}}.
+\end{align}
+The proof of (ii) follows from the mean independence restriction, $E[\tau_i|h_i]=E[\tau_i]$. Proposition \ref{prop:SuriGrRC} (iii) follows  from (i) and (ii). 
+
+If $\mu_{\underline{h}}\neq \mu_{\underline{h}'}$, we can re-write $\phi$ as the ratio of difference in returns to adoption for different subpopulations to the difference in their comparative advantage.  
+Since we can identify both $\mu_{\underline{h}}$ and $\Delta_{\underline{h}}$ for switcher subpopulations, $\phi$ is identified as follows in the two-period case when $\mu_{(1,0)}\neq \mu_{(0,1)}$,
+\begin{align}
+\phi=\frac{\Delta_{(1,0)}-\Delta_{(0,1)}}{\mu_{(1,0)}-\mu_{(0,1)}}.\label{eq:phi_2}
+\end{align}
+
+\noindent This ratio points to the source of potential weak-identification for $\phi$.
+As we illustrate numerically in Section \ref{sec:simulations}, this issue emerges when the difference in average yield without adoption for joiners and leavers is relatively small.\footnote{If $\phi$ is identified, we can also identify $\mu_{(1,1)}$, which allows us to identify $\beta$ and $\theta_{\underline{h}}$ for all $\underline{h}\in\mathcal{H}$. 
+Let $\pi_{\underline{h}}=P(h_{i}=\underline{h})$ for $\underline{h}\in\mathcal{H}$. Note that $E[\mu_{i}]=\sum_{\underline{h}\in\mathcal{H}}\pi_{\underline{h}}\mu_{\underline{h}}$. Since $E[\theta_{i}]=0$, $E[\mu_{i}]=E[\tau_{i}]$ and $
+\theta_{\underline{h}} =\mu_{\underline{h}}-\sum_{\underline{h}\in\mathcal{H}}\pi_{\underline{h}}\mu_{\underline{h}}$.
+Since $\Delta_{\underline{h}}=\beta+\phi\theta_{\underline{h}}$, we can therefore also identify $\beta=\Delta_{(0,1)}-\phi\theta_{(0,1)}=\Delta_{(1,0)}-\phi\theta_{(1,0)}$.}  
+The unrestricted GrRC model lets us estimate both the numerator and the denominator without imposing the LCA restriction, similar to how the first stage of an instrumental variables (IV) regression helps detect potential identification concerns (see Section \ref{sec:weak_id_results} for an illustration). 
+Unlike the first stage of an IV, however, the unrestricted GrRC has an economic interpretation and indicates the degree of response heterogeneity to technology adoption, albeit only for the switcher subpopulations.
+
+\subsection{Weak-identification Robust Inference on \texorpdfstring{$\phi$}{phi}}
+In practice, $\phi$ may be weakly identified, as in our empirical application (see Section \ref{sec:weak_id_results}). 
+We use the restrictions on the LCA parameter from Proposition \ref{prop:SuriGrRC} to conduct weak-identification robust inference on this key structural parameter.
+We propose a weak-identification robust confidence interval for $\phi$ based on inverting ${W}_n(\phi_0)$, the Wald statistic, of
+\begin{align}H_0: \Delta_{\underline{h}}-\Delta_{\underline{h}'}=\phi_0\left(\mu_{\underline{h}}-\mu_{\underline{h}'}\right) \text{for $\underline{h}\in\mathcal{H}^S, \underline{h}'\in\mathcal{H}^S, \underline{h}\neq \underline{h}'$},\end{align}
+
+\noindent where $\mathcal{H}^S=\{\underline{h}\in\mathcal{H}: 0<\sum_{t=1}^T\underline{h}_t<T\}$. Assuming sufficient regularity conditions such that $W_n(\phi_0)\underset{H_0:\phi=\phi_0}{\overset{d}{\longrightarrow}}\chi^2_{|\mathcal{H}^S|-1}$, the $(1-\alpha)\%$ confidence interval is defined as
+\begin{align}C_{\alpha}=\{\phi_0\in\Phi:W_n(\phi_0)<c_{\alpha,|\mathcal{H}^S|-1}\},\end{align}
+
+\noindent where $\Phi$ is a parameter space, $c_{\alpha,|\mathcal{H}^{S}|-1}$ is the ($1-\alpha$)-quantile of the $\chi^2_{|\mathcal{H}^{S}|-1}$ distribution. Since $\phi$ is a scalar parameter, we can compute the confidence interval with a fine grid search.\footnote{With more than two switcher subpopulations ($T>2$), the confidence interval may be empty if the over-identifying restrictions are violated. This resembles the behavior of the Anderson-Rubin confidence sets in the weak-instrument setting with over-identifying restrictions \citep{ASS2019}. In our context, the over-identifying restrictions arise from assuming that $\phi$ is time-invariant. One empirically compelling approach to address this issue is to allow this parameter to vary across time.}
+
+
+\subsection{Simulations}\label{sec:simulations}
+
+A small-scale simulation study illustrates the weak-identification concern and our proposed weak-identification-robust inference procedure.
+We consider a simple two-period model that satisfies the LCA restriction in a design calibrated to our empirical setting, which we describe in detail in Table \ref{tab:sim_crc_grc_cov_bias}.  
+In addition to the CRC estimator and the weak-identification robust inference procedure, we also include the GrRC model with the LCA restriction (restricted GrRC):\footnote{The restriction on the coefficient on $h_{it}1\{h_{i}=(1,1)\}$ in \eqref{eq:GrRC_Suri} follows from noting that $\kappa_{(1,1)}-\Delta_{(0,1)}=\mu_{(1,1)}+\Delta_{(1,1)}-\Delta_{(0,1)}$ and using Proposition \ref{prop:SuriGrRC} \emph{(iii)}.}
+\begin{align}
+y_{it}&=\sum_{\underline{h}\in\mathcal{H}\backslash (1,1)}\mu_{\underline{h}}+\Delta_{(0,1)}h_{it}+\phi(\mu_{(1,0)}-\mu_{(0,1)})h_{it}1\{h_{i}=(1,0)\}\nonumber\\
+&~~~+\left(\mu_{(1,1)}+\phi\left(\mu_{(1,1)}-\mu_{(0,1)}\right)\right)h_{it}1\{h_{i}=(1,1)\}+\varepsilon_{it}.\label{eq:GrRC_Suri}
+\end{align}
+
+\noindent We include this estimator for completeness, but acknowledge that it will suffer from the same weak-identification problem as the CRC estimator.
+
+Table \ref{tab:sim_crc_grc_cov_bias} presents simulation summary statistics that illustrate how too small a difference between $\mu_{(0,1)}$ and $\mu_{(1,0)}$ can lead to a weak-identification problem for $\phi$.  
+Both the CRC and restricted GrRC estimators suffer from positive bias, which worsens as this difference shrinks.  
+For both estimators, weak identification leads the standard error to overestimate the simulation standard deviation, though this issue is more severe for the restricted GrRC estimator.
+
+We then compare the coverage probabilities for the weak-identification robust 95\% CI with those obtained from the CRC and restricted GrRC estimators in Table \ref{tab:sim_crc_grc_cov_bias}. 
+The simulation results show that the weak-identification robust inference CI has coverage close to 95\%, regardless of the magnitude of $\mu_{(0,1)}-\mu_{(1,0)}$.
+By contrast, the CRC tends to under-cover when the magnitude of $\mu_{(0,1)}-\mu_{(1,0)}$ is small, whereas the restricted GrRC tends to over-cover. The latter is likely driven by the severe over-estimation of the sampling variance for the restricted GrRC estimator.
+
+\subsection{Weak-identification Robust Inference: Revisiting  Suri (2011)}\label{sec:weak_id_results}
+
+Building on our formal analysis, we revisit our reanalysis of \citet{S2011} using the GrRC approach.
+The unrestricted GrRC estimates help explain the inconsistent CRC results in Table \ref{tab:grc_crct2}. 
+For $T=2$, the returns to hybrid adoption are similar in magnitude but have opposite signs for joiners ($\Delta_{(0,1)}$) and leavers ($\Delta_{(1,0)}$). 
+Pooling these two switcher subpopulations together renders the estimated hybrid coefficient for the FE regression insignificant.  
+However, the average yield without adoption for these subpopulations ($\mu_{(0,1)}$ and $\mu_{(1,0)}$) is statistically indistinguishable, especially with control variables as in column (2).
+
+As noted in \eqref{eq:phi_2} and Proposition \ref{prop:SuriGrRC} \textit{(iii)}, $\phi$ will suffer from weak-identification issues when this yield difference without adoption is small. 
+This sensitivity to the yield difference might explain why minor discrepancies in our working data result in disproportionately big differences in our estimates of $\phi$, on which much of the narrative in \citet{S2011} rests.
+
+Next, we construct the 95\% confidence interval for $\phi$ for the different specifications we consider using our weak-identification robust inference procedure reported in Table \ref{tab:grc_crct2}. 
+For the  majority of the specifications, the upper and lower bounds of the confidence intervals are negative and include values for $\phi$ similar in magnitude to the point estimates reported in \citet{S2011}. 
+Our weak-identification robust inference approach thus allows us to reconcile the inference results on the key LCA parameter in \citet{S2011}.
+
+\section{Concluding Remarks}\label{sec:discussion}
+
+Despite being widely-cited in development economics, most references to \citet{S2011} do not discuss her methodological contribution or the selection patterns implied by a negative $\phi$. 
+Instead of prompting a nuanced discussion of different forms of heterogeneity, the article is often cited as generic evidence of the mere presence of heterogeneity in the returns to technology adoption. 
+This superficial reading misses an opportunity to inform policies aimed at stimulating technology adoption since optimal program design often hinges more on the specific form of heterogeneous returns than on the mere existence of heterogeneity. 
+We hope that by highlighting how to detect potential weak-identification concerns and conduct weak-identification robust inference on the key structural parameter of the model, our approach will be useful for applied researchers who wish to study models like the one in Suri (2011).
+
+Our GrRC approach provides additional appealing features, especially when $T>2$. 
+First, the \citet{S2011} approach is cumbersome for multiple periods and may suffer from multicollinearities in the reduced form.\footnote{To obtain the reduced form of \citet{S2011}'s CRC model, $\theta_{i}$ is projected onto a fully saturated model of $h_{it}$ for all $t=1,\dots,T$. Any unobserved adoption history will lead to at least two of the independent variables in this projection becoming collinear.}  
+Our GrRC approach circumvents this issue by only requiring dummy variables for observed adoption trajectories. 
+Second, the unrestricted GrRC model, unlike the CRC model's reduced form, has an economic interpretation and provides insights into potential identification concerns for $\phi$. 
+Finally, relating the \citet{S2011} model with the panel identification literature provides alternative identification strategies, such as exchangeability and other nonparametric correlated random effects restrictions \citep{AM2005,BH2009,G2017}.
+
+
+
+\bibliographystyle{ecca}
+\bibliography{GrRCref}
+
+
+\newpage
+
+
+
+\newgeometry{top=1.5cm,bottom=2cm,left=1in}
+{\centering
+\input{tables/submission/ols_fe_t2}}
+\newgeometry{top=1.5cm,bottom=2cm}
+
+\newpage
+
+\input{tables/crc_grc}
+
+\newpage
+\begin{landscape}
+    {\centering
+    \include{tables/sim_coverage_bias}
+    }
+\end{landscape}
+
+% {\centering
+% \include{tables/t2_table}}
+
+\newpage
+\restoregeometry
+\appendix
+\onehalfspacing
+
+%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand\thefigure{\thesection.\arabic{figure}}
+\setcounter{figure}{0}
+
+\renewcommand\thetable{\thesection.\arabic{table}}
+\setcounter{table}{0}
+\begin{center}\textbf{\huge{Appendix}}\end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Data appendix
+
+% \newpage
+\section{Data appendix}\label{app:data}
+
+\renewcommand{\thesubfigure}{\Alph{section}.\arabic{subfigure}}
+\captionsetup[subfigure]{labelformat=simple, labelsep=colon}
+% \renewcommand{\subfigurename}{Figure}
+\setcounter{subfigure}{0}
+
+Our data processing follows the \href{https://www.dropbox.com/s/nnylv1yqwonffog/Data%20Documentation%20for%20Suri%202011.pdf?e=1&dl=0}{original author's instructions}, applying them to the publicly available data from Tegemeo Institute.
+The summary statistics in Table \ref{tab:summarystats} compare key variables across our dataset and \citet{S2011}, as well as across years.
+Overall, we find similar means and distributions, with some minor differences.
+Due to missing values for control variables, our balanced panel has 1,197 households compared to 1,202 in \citet{S2011}.\footnote{We lose two households due to missing labor variables and three to missing household head education.}
+
+The biggest differences appear in the 2004 data for fertilizer application rates, land preparation costs, and labor variables (family labor and hired labor).
+This suggests that Tegemeo Institute may have further cleaned the 2004 data after sharing it with the original author, while the 1997 data set was already finalized at the time of sharing.
+The 2004 fertilizer expenditures variable deserves some additional discussion.
+The data documentation suggests replacing missing values with the median price for that fertilizer type, but it's unclear how to handle missing values.
+For districts with missing prices for some fertilizer types, we use the sample median price.
+\input{tables/submission/means_comparisonV2.tex}
+
+In the 2004 data, a few other complications arise.
+The documentation mentions several data files that have different names in the open access data.\footnote{The dataset \texttt{pricefert} does not exist in the open access data. Instead, the dataset \texttt{tfert04} contains household- and fertilizer-type-level fertilizer price data.
+We assume this is the relevant dataset and compute district- and fertilizer-type-level prices based on the variable \texttt{inputpr}.}
+Fertilizer prices also appear in the household-level dataset \texttt{hh04}, where they are elicited as in 1997.
+% ``What is the price of a \texttt{[ fertilizer unit ]} bag of \texttt{[ fertilizer type ]} in this area?''
+Merging fertilizer prices on district, fertilizer type, and fertilizer unit, as suggested in the data documentation, is challenging due to differences in coding between \texttt{fert04} (field-level) and \texttt{tfert04} (household-level).
+% Table \ref{tab:fertunits2004} shows the mismatches between the two datasets.
+Some discrepancies are minor, while others involve significant numbers of observations, such as 80 fields reporting fertilizer use in \textit{gorogoros} (roughly 2 kg) but reporting prices in another unit.\footnote{Another 151 households report fertilizer prices in 5, 10, or 25 kg bags, a unit that is absent in \texttt{fert04}.}
+% \footnote{There are similar discrepancies in the fertilizer type categories, but they do not end up being relevant in the sample of fertilizer-using maize fields/households.}
+We address this by computing median prices at the district-fertilizer type-fertilizer unit level, converting these to per-kilogram prices, and merging them onto field-level data by household id.\footnote{For households with multiple purchases of a given input type, we use the mean of the per-kilo prices.}
+This discrepancy may explain some differences between our dataset and \citet{S2011}.
+
+\landscape
+\input{tables/coeff_stability}
+
+
+
+
+
+\end{document}
