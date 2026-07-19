@@ -2224,6 +2224,41 @@ program define define_switcherpars, rclass
 end
 
 * **********************************************************************
+* save_esample_marker: persist the current fit's e(sample) as a keyed
+* marker file next to the ster.
+*
+* Stata does not save e(sample) inside a .ster: after `estimates use`,
+* the marker is unknown (count if e(sample) returns 0). Any later
+* consumer of the fit's estimation sample (attach_inversion_ci) would
+* otherwise have to reconstruct it from a missingness rule, which can
+* silently diverge from the true sample after a data refresh. The
+* marker file is the durable record: the pid-period keys of the rows
+* the fit used, written immediately after the parent ster.
+*
+* Only the parent fit gets a marker; the _n/_a/_d/_g suffix sters rest
+* on the same fit. Runs under preserve/restore, so the data and the
+* in-memory estimates are untouched.
+*
+* The marker key is the project-wide pid-period contract (isid-enforced
+* at build); it is deliberately not parameterized.
+* **********************************************************************
+capture program drop save_esample_marker
+program define save_esample_marker
+    syntax , estname(string) [sterdir(string)]
+    if "`sterdir'" == "" local sterdir "$dir/output"
+    confirm variable pid period
+    preserve
+        qui keep if e(sample)
+        keep pid period
+        sort pid period
+        label data "e(sample) marker for `estname'${vsfx}.ster, fit `c(current_date)'"
+        label variable pid "individual id (fit sample)"
+        label variable period "wave (fit sample)"
+        qui save "`sterdir'/`estname'${vsfx}_esample.dta", replace
+    restore
+end
+
+* **********************************************************************
 * GMM regression
 * **********************************************************************
 capture program drop run_grc
@@ -2345,7 +2380,8 @@ program define run_grc
 
 	  * Save results
       estimates save "$dir/output/`estname'${vsfx}", replace
-      
+      save_esample_marker, estname(`estname')
+
       * Compute Delta_never
 	  estimates restore `estname'   // make sure the results are in memory
 	  nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
@@ -2668,6 +2704,7 @@ program define run_grc_onestep
     estadd local converged_str "`converged_str'", replace : `estname'
 
     estimates save "$dir/output/`estname'${vsfx}", replace
+    save_esample_marker, estname(`estname')
 
     estimates restore `estname'
     nlcom (Delta_never: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
@@ -2944,6 +2981,7 @@ program define run_grc_robust
 
     * Save main .ster
     estimates save "$dir/output/`estname'${vsfx}", replace
+    save_esample_marker, estname(`estname')
 
     * ----------------------------------------------------------------
     * Delta_never: cluster-share-weighted aggregate over V_supp
@@ -3344,6 +3382,7 @@ program define run_grc_robust_vv
     estadd scalar n_indiv = r(N), replace : `estname'
 
     estimates save "$dir/output/`estname'${vsfx}", replace
+    save_esample_marker, estname(`estname')
 
     * ----------------------------------------------------------------
     * Standard nlcoms (Delta_never, Delta_always, per-switcher Delta,
@@ -4092,6 +4131,20 @@ end
 * inversion pass, so the latter can be re-run on its own when the
 * inference machinery changes (F adjustment, bootstrap calibration,
 * etc.) without redoing the GMM.
+*
+* Sample contract: the inversion computes on the parent fit's
+* e(sample), recovered from the <estbase>_esample.dta marker that
+* save_esample_marker writes at fit time (a saved .ster does not
+* persist e(sample); after `estimates use`, the in-memory marker is
+* empty). Without a marker (a ster predating the contract) the sample
+* is reconstructed from missingness in the inversion columns, with a
+* loud warning. Both paths hard-error (exit 460) unless the row count
+* the inversion computed on equals the parent's e(N), so the CI N
+* always matches the GMM fit's N, including after a data refresh.
+*
+* The marker merge keys on the project-wide pid-period contract and is
+* deliberately not parameterized; hhid() is a pass-through to the
+* Python helper only.
 * **********************************************************************
 
 * file-level python: set sys.path so subsequent imports find lca_inversion.
@@ -4141,10 +4194,72 @@ program define attach_inversion_ci, eclass
         local ctrl_list = r(varlist)
     }
 
-    * 2. ONE python call computes all four inversions for this cell.
-    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"))
+    * 2. e(sample) contract: recover the parent fit's estimation sample
+    * from the marker file save_esample_marker wrote at fit time.
+    * Marker present: flag the marked person-waves and hand the flag to
+    * Python. Marker absent (legacy ster): loud warning; Python falls
+    * back to reconstructing the sample from missingness. Either way,
+    * step 4 asserts the realized count equals the parent's e(N).
+    local parent "`sterdir'/`estbase'.ster"
+    capture confirm file "`parent'"
+    if _rc != 0 {
+        di as text "  attach_inversion_ci: SKIP `estbase' (no parent ster)"
+        exit
+    }
+    estimates use "`parent'"
+    local n_fit = e(N)
+    local marker "`sterdir'/`estbase'_esample.dta"
+    local esample_flag ""
+    capture confirm file "`marker'"
+    if _rc == 0 {
+        * merge flags the fit rows; the row-index dance restores the
+        * original sort order afterwards, because merge leaves the data
+        * sorted by key and row order feeds the Python-side float
+        * summation (bitwise reproducibility).
+        capture drop __esample_fit
+        tempvar row mrg
+        qui gen long `row' = _n
+        qui merge 1:1 pid period using "`marker'", gen(`mrg')
+        qui count if `mrg' == 2
+        if r(N) > 0 {
+            di as error "attach_inversion_ci: `=r(N)' marker person-waves have no matching row in the loaded data"
+            di as error "  the data in memory do not contain the sample `estbase'.ster was fit on"
+            exit 459
+        }
+        qui gen byte __esample_fit = (`mrg' == 3)
+        sort `row'
+        drop `row' `mrg'
+        qui count if __esample_fit == 1
+        if r(N) != `n_fit' {
+            di as error "attach_inversion_ci: marker rows (`=r(N)') != parent e(N) (`n_fit') for `estbase'"
+            di as error "  stale marker: the ster was refit without rewriting its _esample marker"
+            exit 460
+        }
+        local esample_flag __esample_fit
+    }
+    else {
+        di as error "{hline 72}"
+        di as error "attach_inversion_ci: NO e(sample) MARKER for `estbase'"
+        di as error "  expected: `marker'"
+        di as error "  Falling back to reconstructing the estimation sample from"
+        di as error "  missingness in the inversion columns. This ster predates the"
+        di as error "  e(sample) contract; refit it to write the marker."
+        di as error "{hline 72}"
+    }
 
-    * 3. iterate over the four suffixes, ereturn-ing the macros and
+    * 3. ONE python call computes all four inversions for this cell.
+    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"), esample="`esample_flag'")
+
+    * 4. contract guard: the inversion must have computed on exactly the
+    * parent fit's sample; a diverging reconstruction fails here instead
+    * of attaching wrong-sample CIs.
+    if `inv_n_used' != `n_fit' {
+        di as error "attach_inversion_ci: inversion computed on `inv_n_used' rows but parent e(N) = `n_fit' (`estbase')"
+        di as error "  the reconstructed sample diverges from the fit sample; refit the ster to write its _esample marker"
+        exit 460
+    }
+
+    * 5. iterate over the four suffixes, ereturn-ing the macros and
     * re-saving each ster. Skips suffixes whose .ster does not exist.
     * Suffix tokens follow the post-refactor naming in STER_NAMING.md:
     *   ""  parent (main GMM result)
@@ -4180,7 +4295,20 @@ program define attach_inversion_ci, eclass
         local ++n_attached
     }
 
-    * 4. pretty print summary (once per cell, not once per suffix)
+    * 6. leave the parent estimates active with their true sample
+    * declared (marker path only), so interactive consumers can
+    * condition on e(sample) directly after this program returns. The
+    * declaration is session-only; a .ster cannot carry it, which is
+    * why the marker file is the durable record. Placed after the
+    * suffix loop because each `estimates use` in the loop discards
+    * any earlier in-memory declaration.
+    if "`esample_flag'" != "" {
+        estimates use "`sterdir'/`estbase'.ster"
+        estimates esample: if __esample_fit == 1
+    }
+    capture drop __esample_fit
+
+    * 7. pretty print summary (once per cell, not once per suffix)
     di as text "{hline 72}"
     di as text "Inversion CIs attached to " as result "`estbase'"   ///
         as text "  (`n_attached' of 4 sters updated)"

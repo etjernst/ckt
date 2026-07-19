@@ -724,6 +724,7 @@ def compute_all_inversion_cis(
     delta_grid_al: np.ndarray | None = None,
     unbalanced_col: str = "unbalanced",
     unbalanced_choice_col: str = "unbalanced_choice",
+    esample: str | None = None,
 ) -> dict:
     """Compute phi and three delta inversion CIs at 90% and 95% in one call.
 
@@ -740,8 +741,19 @@ def compute_all_inversion_cis(
     Delta_never / Delta_avg in ``[-1.5, 1.5]`` step 0.01; Delta_always
     in ``[-5, 5]`` step 0.02 (wider for the Mobius case).
 
+    ``esample`` names a 0/1 column flagging the parent GMM fit's
+    ``e(sample)`` rows (recovered Stata-side from the ``_esample.dta``
+    marker). When set, the estimation subset is exactly the flagged
+    rows, and missing values in any needed column within that subset
+    raise instead of silently dropping rows; the fit sample guarantees
+    the GMM columns are complete. When ``None`` (legacy sters, the
+    standalone runners), the subset is reconstructed by dropping rows
+    with missing values in the needed columns, as before.
+
     Returns a nested dict keyed by ``phi``, ``delta_never``, ``delta_avg``,
-    ``delta_always``. Each leaf carries:
+    ``delta_always``, plus a top-level ``n_obs``: the number of rows the
+    inversion computed on, for the caller's e(N) contract check. Each
+    parameter leaf carries:
 
     - ``point``: phi or delta at the Wald minimum.
     - ``ci90``, ``ci95``: convex-hull CI as ``(lo, hi)`` tuple
@@ -765,7 +777,18 @@ def compute_all_inversion_cis(
                    unbalanced_col, unbalanced_choice_col]
     if controls:
         cols_needed = cols_needed + list(controls)
-    sub = df.dropna(subset=[c for c in cols_needed if c != trajectory]).copy()
+    nonmiss_cols = [c for c in cols_needed if c != trajectory]
+    if esample is not None:
+        sub = df[df[esample] == 1].copy()
+        n_bad = int(sub[nonmiss_cols].isna().any(axis=1).sum())
+        if n_bad > 0:
+            raise ValueError(
+                f"{n_bad} rows flagged by {esample} carry missing values in "
+                f"the inversion columns; the flag does not describe a valid "
+                f"fit sample for these data"
+            )
+    else:
+        sub = df.dropna(subset=nonmiss_cols).copy()
 
     kept, _counts = drop_sparse_switchers(
         sub, trajectory, choice, hhid, threshold=threshold
@@ -838,6 +861,7 @@ def compute_all_inversion_cis(
         "delta_never":  _summarize(n_curve,   "delta", nv_bounds),
         "delta_avg":    _summarize(a_curve,   "delta", nv_bounds),
         "delta_always": _summarize(t_curve,   "delta", al_bounds),
+        "n_obs":        int(len(sub)),
     }
 
 
@@ -851,6 +875,7 @@ def attach_inversion_for_stata(
     threshold: int = 5,
     unbalanced_col: str = "unbalanced",
     unbalanced_choice_col: str = "unbalanced_choice",
+    esample: str = "",
 ) -> None:
     """Bridge between Stata's in-program ``python:`` call and
     ``compute_all_inversion_cis``.
@@ -874,6 +899,8 @@ def attach_inversion_for_stata(
     cols = [outcome, trajectory, choice, hhid,
             unbalanced_col, unbalanced_choice_col]
     cols = cols + [c for c in controls if c not in cols]
+    if esample:
+        cols = cols + [esample]
     seen: set[str] = set()
     cols = [c for c in cols if not (c in seen or seen.add(c))]
 
@@ -894,12 +921,17 @@ def attach_inversion_for_stata(
         threshold=threshold,
         unbalanced_col=unbalanced_col,
         unbalanced_choice_col=unbalanced_choice_col,
+        esample=esample if esample else None,
     )
 
     SFIToolkit.displayln(
         f"  attach_inversion_for_stata: J_R={out['phi']['J_R']}, "
-        f"n_kept={out['phi']['n_kept']}"
+        f"n_kept={out['phi']['n_kept']}, n_obs={out['n_obs']}"
+        + (f" (e(sample) flag: {esample})" if esample else " (reconstructed sample)")
     )
+
+    # realized estimation-row count, for the caller's e(N) contract check
+    Macro.setLocal("inv_n_used", str(int(out["n_obs"])))
 
     import math
 

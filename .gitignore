@@ -16,6 +16,8 @@ RP7/data_real/
 RP7/scripts/logs/
 RP7/output/*.ster
 RP7/output/**/*.ster
+RP7/output/*_esample.dta
+RP7/output/**/*_esample.dta
 RP7/output/*.smcl
 RP7/output/**/*.smcl
 RP7/output/*.log
