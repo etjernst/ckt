@@ -77,9 +77,13 @@
 	* handle_choice						sets 'treatment' variable
 	* handle_depvar						sets choice dimension 
 	* handle_balance					sets balanced/unbalanced panel
-	* handle_trajectory_groups			creates trajectories and switcher variable 
-	* gen_time_trend					creates time trend variable	
-	* set_covariates					sets covariates
+	* handle_trajectory_groups			creates trajectories and switcher variable
+	* handle_grc_scaffolding			builds GRC dummies + trajectory contract at source
+	* refresh_descriptors				recomputes per-individual bookkeeping after drops
+	* handle_estimable_sample			drops person-waves with missing per-capita outcome
+	* gen_time_trend					creates time trend variable
+	* set_covariates					sets covariates (definitions only)
+	* handle_sample_drops				counted covariate drops + descriptor recompute
 	* fix_varlabels						fixes variable labels
 	* sumstats_table 					creates summary stats LaTeX table
 	* country_summary_stats				prep for summary stats table
@@ -88,7 +92,7 @@
 	* create_panel_tex_table			creates three-part LaTeX table
 	* reghdfe_regressions				OLS regressions (using reghdfe)
 	* heterogeneity_plots				makes heterogeneity plots
-	* setup_grc_estimation				get data ready for GRC regs
+	* setup_grc_estimation				reads back the GRC trajectory contract
 	* ugrc_regressions					uGRC regressions
 	* initial_values					creates initial values for GRC
 	* define_switcherpars				defines switcher parameters
@@ -203,10 +207,17 @@ program define data_setup
 * *******
 * Covariate management
 * *******  
-* Drop observations with missing values 
-  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+* Covariate definitions, then counted sample drops
+  set_covariates `country'
+  handle_sample_drops
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 capture program drop data_setup_2waves
@@ -233,10 +244,17 @@ program define data_setup_2waves
 * *******
 * Covariate management
 * *******  
-* Drop observations with missing values 
-  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+* Covariate definitions, then counted sample drops
+  set_covariates `country'
+  handle_sample_drops
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 capture program drop data_setup_3waves
@@ -263,10 +281,17 @@ program define data_setup_3waves
 * *******
 * Covariate management
 * *******  
-* Drop observations with missing values 
-  set_covariates `depvar' `country'	// if depvar == consumption --> include hh size
+* Covariate definitions, then counted sample drops
+  set_covariates `country'
+  handle_sample_drops
   gen_time_trend
   fix_varlabels
+
+* GRC estimation scaffolding (dummies + trajectory contract)
+  handle_grc_scaffolding
+
+* Keep only person-waves with an estimable per-capita outcome
+  handle_estimable_sample `depvar'
 end
 
 * **********************************************************************
@@ -276,6 +301,7 @@ capture program drop use_data
 program define use_data
     args country
     use "$dirdata/countries/`country'", clear
+    isid pid period
 end
 
 * **********************************************************************
@@ -285,8 +311,9 @@ capture program drop handle_choice
 program define handle_choice
     args choice
     clonevar choice = `choice'
+    quietly count if mi(choice)
+    di as text "handle_choice: dropping " r(N) " person-waves with missing `choice'"
     drop if mi(choice)
-    display as text "Note: Dropped `r(N_drop)' observations due to missing values in `choice'"
     if "`choice'" == "nonag" label var choice "Non-Agricultural"
     if "`choice'" == "urban" label var choice "Urban"
 end
@@ -298,8 +325,9 @@ capture program drop handle_depvar
 program define handle_depvar
     args depvar
     clonevar depvar = `depvar'
+    quietly count if mi(depvar) | depvar <= 0
+    di as text "handle_depvar: dropping " r(N) " person-waves with missing or non-positive `depvar'"
     drop if mi(depvar) | depvar <= 0
-	display as text "Note: Dropped `r(N_drop)' observations due to missing/negative values in `depvar' "
     * per-capita (adult-equivalent cube) outcome, built once at source so every
     * downstream estimator inherits it; hhsize_cube arrives with the raw panel.
     * Named for the outcome it holds: logpc_consumption or logpc_income.
@@ -461,10 +489,10 @@ program define handle_trajectory_groups_2waves
 	rename traj_2waves trajectory_2waves
 	tab trajectory_2waves
 	
-	* Grab biggest number (always-adopters)
-	gen non_switcher_2waves = .
-	replace non_switcher_2waves = 1 if trajectory_2waves == "00" | trajectory_2waves == "000" | trajectory_2waves == "0000" | trajectory_2waves == "00000" | trajectory_2waves == "11" | trajectory_2waves == "111" | trajectory_2waves == "1111" | trajectory_2waves == "11111"
-	replace non_switcher_2waves = 0 if trajectory_2waves == "00001" | trajectory_2waves == "0001" | trajectory_2waves == "00011" | trajectory_2waves == "001" | trajectory_2waves == "0011" | trajectory_2waves == "00111" | trajectory_2waves == "01" | trajectory_2waves == "011" | trajectory_2waves == "0111" | trajectory_2waves == "01111" | trajectory_2waves == "00010" | trajectory_2waves == "0010" | trajectory_2waves == "00100" | trajectory_2waves == "00101" | trajectory_2waves == "00110" | trajectory_2waves == "010" | trajectory_2waves == "0100" | trajectory_2waves == "01000" | trajectory_2waves == "01001" | trajectory_2waves == "0101" | trajectory_2waves == "01010" | trajectory_2waves == "01011" | trajectory_2waves == "0110" | trajectory_2waves == "01100" | trajectory_2waves == "01101" | trajectory_2waves == "01110" | trajectory_2waves == "10001" | trajectory_2waves == "1001" | trajectory_2waves == "10010" | trajectory_2waves == "10011" | trajectory_2waves == "101" | trajectory_2waves == "1010" | trajectory_2waves == "10100" | trajectory_2waves == "10101" | trajectory_2waves == "1011" | trajectory_2waves == "10110" | trajectory_2waves == "10111" | trajectory_2waves == "11001" | trajectory_2waves == "1101" | trajectory_2waves == "11010" | trajectory_2waves == "11011" | trajectory_2waves == "11101" | trajectory_2waves == "10" | trajectory_2waves == "100" | trajectory_2waves == "1000" | trajectory_2waves == "10000" | trajectory_2waves == "110" | trajectory_2waves == "1100" | trajectory_2waves == "11000" | trajectory_2waves == "1110" | trajectory_2waves == "11100" | trajectory_2waves == "11110"
+	* Non-switcher = trajectory string never mixes locations (all 0s or
+	* all 1s across the individual's observed waves); missing for
+	* individuals below the wave floor (empty string from the merge)
+	gen non_switcher_2waves = !(strpos(trajectory_2waves, "0") & strpos(trajectory_2waves, "1")) if trajectory_2waves != ""
 	label variable non_switcher_2waves "Non-switcher"
 	gen switcher_2waves = non_switcher_2waves == 0
 	label variable switcher_2waves "Switcher"
@@ -520,9 +548,10 @@ program define handle_trajectory_groups_3waves
 	rename traj_3waves trajectory_3waves
 	tab trajectory_3waves
 	
-	gen non_switcher_3waves = .
-	replace non_switcher_3waves = 1 if trajectory_3waves == "000" | trajectory_3waves == "0000" | trajectory_3waves == "00000" | trajectory_3waves == "111" | trajectory_3waves == "1111" | trajectory_3waves == "11111"
-	replace non_switcher_3waves = 0 if trajectory_3waves == "00001" | trajectory_3waves == "0001" | trajectory_3waves == "00011" | trajectory_3waves == "001" | trajectory_3waves == "0011" | trajectory_3waves == "00111" | trajectory_3waves == "011" | trajectory_3waves == "0111" | trajectory_3waves == "01111" | trajectory_3waves == "00010" | trajectory_3waves == "0010" | trajectory_3waves == "00100" | trajectory_3waves == "00101" | trajectory_3waves == "00110" | trajectory_3waves == "010" | trajectory_3waves == "0100" | trajectory_3waves == "01000" | trajectory_3waves == "01001" | trajectory_3waves == "0101" | trajectory_3waves == "01010" | trajectory_3waves == "01011" | trajectory_3waves == "0110" | trajectory_3waves == "01100" | trajectory_3waves == "01101" | trajectory_3waves == "01110" | trajectory_3waves == "10001" | trajectory_3waves == "1001" | trajectory_3waves == "10010" | trajectory_3waves == "10011" | trajectory_3waves == "101" | trajectory_3waves == "1010" | trajectory_3waves == "10100" | trajectory_3waves == "10101" | trajectory_3waves == "1011" | trajectory_3waves == "10110" | trajectory_3waves == "10111" | trajectory_3waves == "11001" | trajectory_3waves == "1101" | trajectory_3waves == "11010" | trajectory_3waves == "11011" | trajectory_3waves == "11101" | trajectory_3waves == "100" | trajectory_3waves == "1000" | trajectory_3waves == "10000" | trajectory_3waves == "110" | trajectory_3waves == "1100" | trajectory_3waves == "11000" | trajectory_3waves == "1110" | trajectory_3waves == "11100" | trajectory_3waves == "11110"
+	* Non-switcher = trajectory string never mixes locations (all 0s or
+	* all 1s across the individual's observed waves); missing for
+	* individuals below the wave floor (empty string from the merge)
+	gen non_switcher_3waves = !(strpos(trajectory_3waves, "0") & strpos(trajectory_3waves, "1")) if trajectory_3waves != ""
 	label variable non_switcher_3waves "Non-switcher"
 	gen switcher_3waves = non_switcher_3waves == 0
 	label variable switcher_3waves "Switcher"
@@ -533,6 +562,112 @@ program define handle_trajectory_groups_3waves
 	bysort pid (year): g pid_first_obs_3waves = _n == 1
 	label variable pid_first_obs_3waves "Indicator for pid's first obs"
 end	
+
+* **********************************************************************
+* GRC estimation scaffolding, built at source
+* **********************************************************************
+* Generates the always/never/switcher_* dummies and their choice
+* interactions from the balanced-panel trajectory codes, and stashes the
+* data-driven trajectory contract in dataset characteristics
+* (_dta[grc_switchers], _dta[grc_always]) that setup_grc_estimation
+* reads back at load time. trajectory stays missing for individuals
+* outside the balanced enumeration: missing is the honest encoding in
+* saved data, and any consumer that loads the hub without calling
+* setup_grc_estimation keeps pre-scaffolding semantics (a stored
+* numeric sentinel would surface as a real factor level in an
+* i.trajectory regression run without the reader). The 999 recode
+* happens only at load, inside setup_grc_estimation.
+capture program drop handle_grc_scaffolding
+program define handle_grc_scaffolding
+    quietly tab trajectory
+    local always = r(r)
+    * encode assigns codes 1..K with never=1 and always=K; if drops ever
+    * removed the top code entirely, r(r) would mislabel a switcher as
+    * always --- fail loudly instead
+    quietly sum trajectory
+    if r(max) != `always' {
+        di as error "handle_grc_scaffolding: max trajectory code " r(max) ///
+            " != category count `always'"
+        exit 459
+    }
+    if `always' <= 2 {
+        di as error "handle_grc_scaffolding: only `always' trajectory categories, no switcher trajectories"
+        exit 459
+    }
+    local lastswitcher = `always'-1
+    numlist "2(1)`lastswitcher'"
+    local switchers "`r(numlist)'"
+    di as text "handle_grc_scaffolding: `always' trajectory categories, switchers `switchers'"
+
+    gen always = (trajectory == `always')
+    lab var always "Always-treated trajectory"
+    gen always_choice = always*choice
+    lab var always_choice "Always-treated trajectory x choice"
+
+    gen never = (trajectory == 1)
+    lab var never "Never-treated trajectory"
+
+    foreach s of numlist `switchers' {
+        gen switcher_`s' = (trajectory == `s')
+        lab var switcher_`s' "Switcher trajectory `s'"
+        gen switcher_`s'_choice = switcher_`s'*choice
+        lab var switcher_`s'_choice "Switcher trajectory `s' x choice"
+    }
+
+    char define _dta[grc_switchers] "`switchers'"
+    char define _dta[grc_always] "`always'"
+    char define _dta[grc_never] "1"
+end
+
+* **********************************************************************
+* Per-individual descriptor refresh
+* **********************************************************************
+* Recomputes the bookkeeping descriptors (wave counts and first-obs
+* flags) on the current row set, so they stay true after any row drop.
+* Classification-basis variables (trajectory strings, pid_obs wave
+* floor, non_switcher) are deliberately NOT touched: they keep the full
+* observed choice history. The bysort keys (pid year) are unique, so
+* the sorts are deterministic no-ops on data already ordered by
+* handle_trajectory_groups.
+capture program drop refresh_descriptors
+program define refresh_descriptors
+    bysort pid (year): replace nr_periods_obs = _N
+    by pid: replace obs_per_individual = _N
+    by pid: replace pid_first_obs = (_n == 1)
+    foreach sfx in _2waves _3waves {
+        capture confirm variable obs_per_individual`sfx' pid_first_obs`sfx'
+        if !_rc {
+            by pid: replace obs_per_individual`sfx' = _N
+            by pid: replace pid_first_obs`sfx' = (_n == 1)
+        }
+    }
+end
+
+* **********************************************************************
+* Estimable-sample restriction, applied last in the build
+* **********************************************************************
+* Drops person-waves whose per-capita outcome is missing (missing or
+* non-positive hhsize_cube; rows with a missing or non-positive raw
+* outcome are already dropped in handle_depvar). Runs after all
+* trajectory and covariate construction, so per-individual
+* classifications keep the full observed choice history and every value
+* on a surviving row is unchanged. Every estimator conditions on the
+* outcome, so e(sample) is unaffected; only summary-stat denominators
+* move.
+capture program drop handle_estimable_sample
+program define handle_estimable_sample
+    args depvar
+    quietly count if mi(logpc_`depvar')
+    di as text "handle_estimable_sample: dropping " r(N) " of " _N ///
+        " person-waves with missing logpc_`depvar'"
+    drop if mi(logpc_`depvar')
+
+    * refresh the bookkeeping so it describes the saved (estimable)
+    * sample; the singleton drop in handle_sample_drops deliberately ran
+    * earlier, on the observed-wave count, so individuals with one
+    * estimable wave but a longer observed history stay in the data
+    refresh_descriptors
+end
 
 * **********************************************************************
 * Time trend
@@ -583,8 +718,8 @@ end
 
 capture program drop set_covariates
 program define set_covariates
-  args 			depvar country
-	gen 			loghhsize = log(hhsize)	
+  args 			country
+	gen 			loghhsize = log(hhsize)
 	label var 	loghhsize "Log Household Size"
 
 	gen 			rural = 1-urban
@@ -616,11 +751,29 @@ program define set_covariates
 	* stash the resolved ladder in the built dataset so consumers can
 	* read back exactly which covariates the build assumed
 	char define _dta[covs_gmm_all] "$covs_gmm_all"
+end
 
-  drop if mi(education_max)
+* **********************************************************************
+* Sample drops, with counted attrition
+* **********************************************************************
+* Drops person-waves with missing covariates, then refreshes the
+* per-individual descriptors so the singleton drop tests the surviving
+* wave count, not the pre-drop count.
+capture program drop handle_sample_drops
+program define handle_sample_drops
+	quietly count if mi(education_max)
+	di as text "handle_sample_drops: dropping " r(N) " person-waves with missing education_max"
+	drop if mi(education_max)
+
+	quietly count if mi(age)
+	di as text "handle_sample_drops: dropping " r(N) " person-waves with missing age"
 	drop if mi(age)
-	drop if obs_per_individual == 1
 
+	refresh_descriptors
+
+	quietly count if obs_per_individual == 1
+	di as text "handle_sample_drops: dropping " r(N) " singleton person-waves (one wave surviving the covariate drops)"
+	drop if obs_per_individual == 1
 end
 * **********************************************************************
 * Variable labels
@@ -1506,30 +1659,27 @@ end
 
 capture program drop setup_grc_estimation
 program define setup_grc_estimation
-    global 		never 1
-    qui: tab 			trajectory
-    global 		always `r(r)'	// Last trajectory
+    * Reads back the trajectory contract that handle_grc_scaffolding
+    * stashed at build time; the dummies already live in the dataset.
+    local switchers : char _dta[grc_switchers]
+    local always    : char _dta[grc_always]
+    local never     : char _dta[grc_never]
+    if "`switchers'" == "" | "`always'" == "" | "`never'" == "" {
+        di as error "setup_grc_estimation: dataset carries no grc_switchers/grc_always/grc_never characteristics; rebuild the processed hub with 1_processData.do"
+        exit 459
+    }
+    confirm variable trajectory always always_choice never
+
+    global 		never `never'
+    global 		always `always'
+    global 		switchers `switchers'
     local 		lastswitcher = $always-1
-    numlist 	"2(1)`lastswitcher'"	// Grab list of switchers
-    global 		switchers `r(numlist)'
     numlist 	"1(1)`lastswitcher'"	// Grab list of all-but-always
     global 		noalways `r(numlist)'
     global 		last = $always-1
     global 		first = $never+1
 
     replace trajectory = 999 if trajectory == .	// Unbalanced
-
-    * Generating dummies for gmm
-    gen always = (trajectory == $always)
-    gen always_choice = always*choice
-
-    gen never = (trajectory == 1)
-
-    foreach s of numlist $switchers {
-      gen switcher_`s' = (trajectory == `s')
-      gen switcher_`s'_choice = switcher_`s'*choice
-    }
-    
 end
 
 * **********************************************************************
