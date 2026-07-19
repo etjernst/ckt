@@ -197,6 +197,10 @@ Author sign-off (a numeric change is expected), then commit.
 
 ## Stage 8: config hygiene (no estimate change)
 
+Added 2026-07-20 (author): the real-values track is DROPPED; the paper proceeds nominal-only.
+Remove the `$values`/`$vsfx` machinery from `0_path_config.do`, the `data_real` junction references, and every `${vsfx}` filename thread across scripts, so the replication package ships without dead track-switching code.
+This supersedes the Stage 5 review's CRITICAL finding (vsfx-blind attach paths): the resolution is removal, not threading.
+
 Move the derived `CHN_hukou_*.dta` out of `data/countries/` (raw) into `data/processed/` and repoint the readers (critic MAJOR-6, confirmed; the intermediates were verified cf-identical to a fresh regeneration on 2026-07-14, so the move is pure relocation).
 Warning recorded from the critic adjudication: any driver that regenerates the hukou files must not do so through a `countries` junction into the raw folder.
 The named master log (critic MAJOR-5) is now required, not optional, per the author's 2026-07-14 decision: a timestamped, named, text-format log covering the data-construction path, following the AEA pattern in the project conventions.

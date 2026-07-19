@@ -51,11 +51,21 @@ tab period, gen(period_)
 local periodFE "period_2 - period_`r(r)'"
 
 gen byte female_orig = female
-replace female = . if mod(pid, 43) == 0 & period == 2
+
+* Injection rule: number individuals densely (group() is assigned in pid
+* sort order, so the rule is deterministic and independent of how raw
+* pid values are coded) and blank the covariate for every
+* `inject_every'-th individual at their period-2 wave. Any rule giving
+* a nonzero strict subset of person-waves works; 50 puts about 2% of
+* individuals in the injected set.
+local inject_every 50
+egen long pidgrp = group(pid)
+replace female = . if mod(pidgrp, `inject_every') == 0 & period == 2
 quietly count if mi(female)
 local n_injected = r(N)
 assert `n_injected' > 0
 local n_total = _N
+assert `n_injected' < `n_total'
 di as text "injected missingness: `n_injected' of `n_total' person-waves"
 
 * ----------------------------------------------------------------

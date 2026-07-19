@@ -2238,6 +2238,9 @@ end
 * Only the parent fit gets a marker; the _n/_a/_d/_g suffix sters rest
 * on the same fit. Runs under preserve/restore, so the data and the
 * in-memory estimates are untouched.
+*
+* The marker key is the project-wide pid-period contract (isid-enforced
+* at build); it is deliberately not parameterized.
 * **********************************************************************
 capture program drop save_esample_marker
 program define save_esample_marker
@@ -4138,6 +4141,10 @@ end
 * loud warning. Both paths hard-error (exit 460) unless the row count
 * the inversion computed on equals the parent's e(N), so the CI N
 * always matches the GMM fit's N, including after a data refresh.
+*
+* The marker merge keys on the project-wide pid-period contract and is
+* deliberately not parameterized; hhid() is a pass-through to the
+* Python helper only.
 * **********************************************************************
 
 * file-level python: set sys.path so subsequent imports find lca_inversion.

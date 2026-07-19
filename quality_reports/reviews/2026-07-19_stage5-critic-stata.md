@@ -14,6 +14,7 @@ Proposed fix, small and inside the Stage 5 surface: append `${vsfx}` per the est
 Under nominal (`vsfx` empty) every string is unchanged, so the running gate stays valid and no refit is needed.
 The critic's suggested real-values gate leg is NOT proposed for Stage 5: the real track is the M4 workstream and has never run the inversion pass; recording the coverage gap here and testing it when that track next runs is the cheaper honest path.
 Author call.
+RESOLVED 2026-07-20 (author): the real-values track is dropped entirely; the `$values`/`$vsfx` machinery and `data_real` references are scheduled for removal in the Stage 8 config-hygiene sweep, so this finding is superseded by removal and no vsfx threading is applied.
 
 ## MAJOR: the `estimates esample:` re-declaration is dead where it stands
 
