@@ -178,6 +178,12 @@ Document the invariant.
 Verify: refit the inversion panel cells; Tier 1 exact, Tier 2 expected; if any CI moves the reconstruction was already diverging, so stop and surface.
 Byte-identity alone cannot distinguish the new code from the old here, so the stage also commits a synthetic contract test: a scratch dataset with injected missingness, where the reconstruction and `e(sample)` disagree by construction, asserting the CI computes on `e(sample)`.
 Author sign-off, then commit.
+Status 2026-07-20: CLOSED.
+Implemented on branch `stage5-inversion-esample` per the stage spec and plan (both dated 2026-07-19): since a saved ster does not persist `e(sample)`, every fitter now writes a pid-period marker file beside the parent ster (`save_esample_marker`), and `attach_inversion_ci` computes on the marker with an e(N) hard-stop guarding both the marker path and the legacy-ster fallback.
+Gate PASS on all three checks: 210/210 refit sters bitwise-identical to the Stage 3+4 baseline, 42/42 markers with exactly e(N) rows, 80/80 attached cell-suffix pairs identical between the fallback (old computation) and marker legs (artifacts under quality_reports/staging/stage5/).
+Smoke and injected-missingness contract tests ALL PASS; critic review closed with a fix-delta re-review APPROVED.
+Author signed off 2026-07-20 and the branch merged to main.
+The gate baseline note: stage34/baseline sters carry no attached inversion scalars (5b never ran in earlier gate panels), so the two-leg design generated the old computation fresh as the fallback leg rather than comparing to a frozen attach baseline.
 
 ## Stage 6: clean up run_grc_robust_vv (correctness, contract not exercised today)
 
