@@ -89,6 +89,11 @@ attach_inversion_ci,            ///
     base(`base')                ///
     controls(`periodFE')
 
+* the marker path returns with the parent estimates active and their
+* true sample declared (session-only), so e(sample) is usable here
+quietly count if e(sample)
+assert r(N) == `n_fit'
+
 estimates use "$dir/output/smk5_TZA_ct.ster"
 assert e(inv_phi_ci95_lo) < .
 scalar ci_lo_marker    = e(inv_phi_ci95_lo)

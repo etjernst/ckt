@@ -4235,9 +4235,6 @@ program define attach_inversion_ci, eclass
             di as error "  stale marker: the ster was refit without rewriting its _esample marker"
             exit 460
         }
-        * declare the true sample on the loaded parent estimates, so any
-        * Stata-side consumer can condition on e(sample) directly
-        estimates esample: if __esample_fit == 1
         local esample_flag __esample_fit
     }
     else {
@@ -4298,9 +4295,20 @@ program define attach_inversion_ci, eclass
         local ++n_attached
     }
 
+    * 6. leave the parent estimates active with their true sample
+    * declared (marker path only), so interactive consumers can
+    * condition on e(sample) directly after this program returns. The
+    * declaration is session-only; a .ster cannot carry it, which is
+    * why the marker file is the durable record. Placed after the
+    * suffix loop because each `estimates use` in the loop discards
+    * any earlier in-memory declaration.
+    if "`esample_flag'" != "" {
+        estimates use "`sterdir'/`estbase'.ster"
+        estimates esample: if __esample_fit == 1
+    }
     capture drop __esample_fit
 
-    * 6. pretty print summary (once per cell, not once per suffix)
+    * 7. pretty print summary (once per cell, not once per suffix)
     di as text "{hline 72}"
     di as text "Inversion CIs attached to " as result "`estbase'"   ///
         as text "  (`n_attached' of 4 sters updated)"
