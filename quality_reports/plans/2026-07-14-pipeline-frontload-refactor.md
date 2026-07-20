@@ -235,7 +235,7 @@ The `$values`/`$vsfx`/`data_real` machinery is gone (0_path_config values block 
 The optional S2/MAY1 cleanups were not taken.
 Verification: parse+path smoke passed all asserts without touching the canonical hub (0_programs parses after the strip, hukou loads from processed/, raw from countries/); the full data rebuild and filename-neutrality refit fold into the definitive end-of-stages run.
 `critic-stata` 96/100, no CRITICAL/MAJOR; both MINOR nitpicks declined with reasons ([review](file:///C:/git/ckt/quality_reports/reviews/2026-07-20_stage8-config-hygiene-review.md)).
-Remaining before close: the author runs `rm -rf RP7/data_real` (guard-blocked for the agent; verified safe --- fully local, no junctions, no references), then the branch merges to main.
+Stage 8 CLOSED 2026-07-21: `RP7/data_real` removed by the author (guard-blocked for the agent; was verified safe), and the branch merged to main (`--no-ff`, merge `0b8d026`) and pushed to origin with the branch. The next stage is Stage 9.
 
 ## Stage 9: Change B, switcher-inclusion consistency (estimand change, human-approved)
 

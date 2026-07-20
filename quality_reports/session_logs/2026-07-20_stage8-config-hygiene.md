@@ -2,9 +2,8 @@
 
 ## If you resume
 
-Stage 8 (config hygiene) is BUILT: five commits on branch `stage8-config-hygiene` (cut from `main` after the Stage 7 merge), parse+path verification passed.
-Two things are still open before the stage closes: the `critic-stata` pass on the two logic-bearing changes is running (was launched at end of session; adjudicate its findings when it lands), and the author needs to run `rm -rf "C:/git/ckt/RP7/data_real"` themselves because the destructive-command guard blocks the agent from doing it (verified safe: no junction anywhere under it, fully local, 407 MB dead real-values data, zero code references remain).
-After those two: update the parent plan's Stage 8 section to CLOSED, then Stage 9 (Change B) and the definitive end-of-stages run, which is where the paper tables actually regenerate. Nothing ships to coauthors before that run.
+Stage 8 (config hygiene) is CLOSED and merged: six commits on `stage8-config-hygiene` merged to `main` (`--no-ff`, merge `0b8d026`) and pushed to origin with the branch on 2026-07-21. `critic-stata` returned 96/100 (no CRITICAL/MAJOR, both MINOR nitpicks declined with reasons in the review), parse+path verification passed, and the author removed `RP7/data_real` (407 MB dead real-values data; the agent's `rm -rf` was guard-blocked).
+Next work is Stage 9 (Change B, the switcher-inclusion estimand change; spec/plan at [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/specs/2026-07-13-switcher-inclusion-consistency.md)) and then the definitive end-of-stages run, which is where the paper `.ster` population and tables actually regenerate. Nothing ships to coauthors before that run. D-4 (nonag manuscript promise) is still open at the parent plan.
 
 ## Goals
 
