@@ -31,7 +31,7 @@ F6 (MINOR, low confidence): the named leak check probes only the base trajectory
 
 F7 (informational): hardcoded absolute paths in the gate and test drivers, the accepted project convention for this driver family.
 
-## Adjudication (author sign-off pending)
+## Adjudication (author, 2026-07-20)
 
-F4 and F5 are accepted as cheap defensive fixes to apply within the stage if the author approves; neither blocks the gate.
+F4 and F5 declined by the author as not important enough to act on; recorded here as watch-items should the table family ever gain longer country tags (F4) or the contract test ever be do-chained inside a session that sets `$skip_if_exists` (F5).
 F6 is declined beyond a clarifying comment (the surrounding checks already cover it); F7 is the accepted convention; F1-F3 require no action.

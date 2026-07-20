@@ -31,6 +31,11 @@ Significance-star changes appear on one line per table for IDN (both steps), TZA
 
 One substantive change for author attention: the TZA `covs_0` column (no covariates) now reports Converged = Y in both GMM steps where the frozen tables report N, and its Average $\Delta$ row loses its stars in the twostep table.
 The refreshed data (per-capita outcome plus Change A) evidently moved the TZA no-covariate cell into convergence; this is a data-refresh effect, not a code effect, since leg A and leg B agree bitwise on every TZA ster.
+Author adjudication 2026-07-20: noted and not paper-affecting, since the no-covariate columns are no longer included in the paper's reported results.
+
+## Sign-off
+
+The author signed off on the gate and the table diff on 2026-07-20; the two MINOR critic findings were declined (recorded in the review file) and the branch merged to main.
 
 ## Standing items
 
