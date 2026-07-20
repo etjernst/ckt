@@ -2,7 +2,7 @@
 
 ## If you resume
 
-Stage 7 is CLOSED: signed off 2026-07-20, merged to main with merge commit `096765c` (--no-ff, matching the Stage 3-6 close pattern); NOT pushed to origin (the author did not request a push this session).
+Stage 7 is CLOSED: signed off 2026-07-20, merged to main with merge commit `096765c` (--no-ff, matching the Stage 3-6 close pattern), and pushed to origin at the author's request (main and branch `stage7-11b-figure-scale` both pushed, end of session).
 Next work is Stage 8 of [quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md): config hygiene (remove the `$values`/`$vsfx`/`data_real` machinery, relocate `CHN_hukou_*.dta` to processed, the named master log, the script-folder taxonomy discussion the author wants settled first); then Stage 9 (Change B) and the definitive run.
 Cached state a resumer should know: `stage7_root` in `RP7/tests/stage0` (data junction to `RP7/data`, script copies including the raw-scale comparison variant `11b_extrapolation_support_figure_raw.do`) is retained gate evidence, untracked like the other stage roots; rc receipts stay untracked; D-4 (nonag manuscript promise) remains open; the critic MAJOR on the unguarded no-testable-edge case is a watch-item, declined at sign-off.
 
@@ -44,4 +44,3 @@ The support-of-the-distribution vs range-of-trajectory-means distinction matters
 Stage 8 (config hygiene sweep, includes the real-values removal and the script-taxonomy discussion), Stage 9 (Change B), then the definitive run.
 D-4 (nonag manuscript promise) remains open at the parent plan.
 Watch-item: the unguarded no-testable-edge case in the 11b support test (critic MAJOR, declined).
-Main is ahead of origin by the Stage 7 commits; push only at the author's request.
