@@ -71,6 +71,14 @@ if "`c(username)'"=="maand" {
 * 2. Set up sub-folders
 	include "$dir/scripts/0_path_config.do"
 
+* 2b. Open the named master log (AEA pattern): one timestamped, text-format
+* log covering the whole run, including the data-construction path. Named
+* so it never collides with the per-script logs. $logs is set just above.
+	local stamp : di %tdCCYY-NN-DD date("`c(current_date)'", "DMY")
+	local stamp "`stamp'_`=subinstr("`c(current_time)'", ":", "-", .)'"
+	capture log close master
+	log using "$logs/0_master_`stamp'_`c(username)'.log", name(master) replace text
+
 * 3. Install dependencies
 	include "$scripts/0_setup.do"
 
@@ -140,3 +148,6 @@ if "`c(username)'"=="maand" {
 	if "${run_counterfactuals}" == "1" {
 		include		"$dir/scripts/12_counterfactuals.do"
 	}
+
+* Close the named master log.
+	capture log close master

@@ -28,7 +28,7 @@ g rural_hukou = min_hukou == 1
 
 keep if rural_hukou == 1
 
-save "$dirdata/countries/CHN_hukou_rural_only.dta", replace
+save "$dirdata/processed/CHN_hukou_rural_only.dta", replace
 
 * **********************************************************************
 * 2. Only urban hukou
@@ -42,7 +42,7 @@ g urban_hukou = max_hukou == 0
 
 keep if urban_hukou == 1
 
-save "$dirdata/countries/CHN_hukou_urban_only.dta", replace
+save "$dirdata/processed/CHN_hukou_urban_only.dta", replace
 
 * **********************************************************************
 * 3. Rural hukou first
@@ -58,7 +58,7 @@ drop first_hukou_temp
 
 keep if first_hukou == 1
 
-save "$dirdata/countries/CHN_hukou_rural_first.dta", replace
+save "$dirdata/processed/CHN_hukou_rural_first.dta", replace
 				  
 * **********************************************************************
 * 4. Urban hukou first
@@ -74,7 +74,7 @@ drop first_hukou_temp
 
 keep if first_hukou == 0
 
-save "$dirdata/countries/CHN_hukou_urban_first.dta", replace
+save "$dirdata/processed/CHN_hukou_urban_first.dta", replace
 
 * **********************************************************************
 log close

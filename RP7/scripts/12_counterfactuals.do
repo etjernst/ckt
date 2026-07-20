@@ -40,8 +40,8 @@ quietly include "$dir/scripts/0_path_config.do"
 * standard sub-do-files (no clear all; each opens and closes its own log),
 * so include them in this driver's scope. They run before this driver
 * opens its own log below, so there is no log-nesting conflict.
-include "$dir/scripts/_export_e1_inputs.do"
-include "$dir/scripts/_export_e1_inputs_hukou.do"
+include "$dir/scripts/utilities/_export_e1_inputs.do"
+include "$dir/scripts/utilities/_export_e1_inputs_hukou.do"
 
 * --- Python sys.path setup (file-level, mirrors 0_programs.do). Idempotent.
 python:

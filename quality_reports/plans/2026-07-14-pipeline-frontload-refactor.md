@@ -229,6 +229,13 @@ Proposed convention: a `scripts/helpers/` subdirectory for include-only helpers 
 Optionally add the hukou eststo-naming fix, the learning edge-case flag, and the 1b cross-check assertion.
 Verify: full clean run of the cleaning path; confirm every processed file regenerates and the hukou readers resolve.
 Commit.
+Status 2026-07-20: IMPLEMENTED and verified, five commits on `stage8-config-hygiene` (spec and plan both dated 2026-07-20).
+The taxonomy landed as one `scripts/utilities/` folder (the two `_export_e1_inputs*` includes plus the four `run_*` drivers) and a non-shipped `RP7/dev/` for the scratch (kept tracked per the author); `tmp/refresh_tables_to_overleaf.do` was deleted as a self-declared stale one-off.
+The `$values`/`$vsfx`/`data_real` machinery is gone (0_path_config values block replaced by an unconditional `global dirdata "$dir/data"`; 60-site `${vsfx}` strip, filename-neutral since it was empty in nominal mode); the master log is master-level (AEA pattern), overriding the spec's narrower wording per the author; `CHN_hukou_*` moved to `processed/` with `use_data` branching hukou names there and raw CHN/IDN/TZA staying in `countries/`.
+The optional S2/MAY1 cleanups were not taken.
+Verification: parse+path smoke passed all asserts without touching the canonical hub (0_programs parses after the strip, hukou loads from processed/, raw from countries/); the full data rebuild and filename-neutrality refit fold into the definitive end-of-stages run.
+`critic-stata` 96/100, no CRITICAL/MAJOR; both MINOR nitpicks declined with reasons ([review](file:///C:/git/ckt/quality_reports/reviews/2026-07-20_stage8-config-hygiene-review.md)).
+Remaining before close: the author runs `rm -rf RP7/data_real` (guard-blocked for the agent; verified safe --- fully local, no junctions, no references), then the branch merges to main.
 
 ## Stage 9: Change B, switcher-inclusion consistency (estimand change, human-approved)
 
