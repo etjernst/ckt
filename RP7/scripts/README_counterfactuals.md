@@ -33,7 +33,7 @@ counterfactuals.run_counterfactuals_for_stata reads the per-cell input CSVs in o
 This is where all the counterfactual math lives.
 
 Tier 2, Stata, the upstream estimation.
-The input CSVs are written by _export_e1_inputs.do (IDN, TZA) and _export_e1_inputs_hukou.do (the China regimes), which pull the trajectory shares, trajectory means, switcher returns, and the (phi, beta) point estimates off the GRC and inversion sters.
+The input CSVs are written by utilities/_export_e1_inputs.do (IDN, TZA) and utilities/_export_e1_inputs_hukou.do (the China regimes), which pull the trajectory shares, trajectory means, switcher returns, and the (phi, beta) point estimates off the GRC and inversion sters.
 12_counterfactuals.do regenerates these CSVs before the Python step, so the numbers always trace back to the current sters.
 
 12_counterfactuals.do orchestrates both tiers and calls Python over the same SFI bridge that 5b_inversion.do uses for the inversion.
