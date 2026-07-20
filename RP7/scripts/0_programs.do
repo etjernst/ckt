@@ -300,7 +300,9 @@ end
 capture program drop use_data
 program define use_data
     args country
-    use "$dirdata/countries/`country'", clear
+    * hukou subsets are derived files saved to processed/, not raw countries/
+    local sub = cond(regexm("`country'", "^CHN_hukou_"), "processed", "countries")
+    use "$dirdata/`sub'/`country'", clear
     isid pid period
 end
 
