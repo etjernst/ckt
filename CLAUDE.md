@@ -52,18 +52,18 @@ scripts/ -> Dropbox/.../ReplicationPackage6/scripts/   # READ-ONLY view into coa
 data/    -> Dropbox/.../ReplicationPackage6/data/       # countries/ (raw .dta) + processed/ (gitignored)
 output/  -> Dropbox/.../ReplicationPackage6/output/     # coauthor's .ster, tables/, figures/ (gitignored)
 
-RP7/                # local working copy (tracked in git); edit here, not in the junctions
+RP7/                # local working copy (tracked in git); edit here, not in the top-level junctions
   scripts/          # real copy of RP6 scripts as of 2026-04-24. Our edits live here.
-  data/      -> Dropbox/.../ReplicationPackage6/data/                # junctioned; nominal-values data
-  data_real/ -> Dropbox/.../ReplicationPackage6 - real values/data/  # junctioned; deflated-values data (M4)
-  output/           # fresh empty dir; our reruns land here. tables/ and figures/ tracked; .ster ignored.
+  data/             # LOCAL real dir, NOT a junction (verified 2026-07-20). countries/ (raw .dta) + processed/ (built by 1_processData.do); both gitignored
+  data_real/        # LOCAL real dir; real-values track DROPPED 2026-07-20, slated for removal in Stage 8
+  output/           # fresh dir; our reruns land here. .ster gitignored; tables/ and figures/ currently untracked
 
 docs/               # specs, plans, session_logs, reviews
 quality_reports/    # quality scores
 explorations/       # experimental analysis
 ```
 
-Top-level `scripts/`, `output/` junctions are frozen as a read-only window onto the coauthor's live RP6 --- do not edit through them, do not commit them. Work happens in `RP7/`. When this branch's edits are ready for the team, copy `RP7/{scripts,output}/` into Dropbox as `ReplicationPackage7/`.
+Top-level `data/`, `scripts/`, `output/` junctions are frozen as a read-only window onto the coauthor's live RP6---do not edit through them, do not commit them. Work happens in `RP7/`. When this branch's edits are ready for the team, copy `RP7/{scripts,output}/` into Dropbox as `ReplicationPackage7/`.
 
 Junctions are Windows directory junctions created with `cmd /c mklink /J`.
 
