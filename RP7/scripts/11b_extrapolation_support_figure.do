@@ -2,12 +2,21 @@
 * In-support figure for the LCA never-migrant extrapolation
 * (paper figure: fig:extrapolation_support, robustness section)
 * For each country, plot the density of individual rural-period
-* mean log consumption for never-migrants and (lumped) switchers,
-* a vertical line at mu_dN, and a rug of per-trajectory switcher
-* means showing where mu_dN sits inside the switcher range.
+* mean log per-capita consumption for never-migrants and (lumped)
+* switchers, a vertical line at mu_dN, and a rug of per-trajectory
+* switcher means showing where mu_dN sits relative to the switcher
+* range. Outcome: logpc_consumption as carried by the processed
+* data, matching the GRC estimation scale. The per-capita scale is
+* deliberate and is what the paper reports (author decision
+* 2026-07-20); do not swap in raw household ln(consumption).
+* Also runs the support test: per country, a pid-level robust
+* comparison of the rural-mean outcome between never-migrants and
+* the lowest-mean switcher trajectory, so the paper can state
+* whether mu_dN sits within sampling uncertainty of the switcher
+* support.
 * Runs standalone (sets $dir if empty) or after 0_master.do.
 * Outputs: extrapolation_support_{IDN,CHN,TZA,combined}.{pdf,png}
-* in $dir/output/figures.
+* and extrapolation_support_test.csv in $dir/output/figures.
 * ============================================================
 
 version 17
@@ -37,16 +46,13 @@ program define plot_one_country
     di as text _newline(2) "==== `country' ===="
 
     use "$xsup_proc/`country'_bal.dta", clear
-    quietly drop if missing(consumption) | missing(trajectory) | missing(choice)
+    quietly drop if missing(logpc_consumption) | missing(trajectory) | missing(choice)
 
     quietly sum trajectory
     local max_traj = r(max)
     di as text "  trajectory levels: 1 to `max_traj'"
 
-    * consumption in the processed .dta files is in levels (local currency).
-    * The paper's mu_d is mean log consumption, so transform.
-    gen log_consumption = ln(consumption) if consumption > 0 & !missing(consumption)
-    gen log_cons_rural  = log_consumption if choice == 0
+    gen log_cons_rural = logpc_consumption if choice == 0
     bysort pid: egen ind_rural_mean = mean(log_cons_rural)
 
     bysort pid: gen pid_first = (_n == 1)
@@ -67,6 +73,40 @@ program define plot_one_country
 
     di as text "  mu_dN            = " %9.4f `mu_dN'
     di as text "  switcher mu_d in [" %9.4f `sw_min' ", " %9.4f `sw_max' "]"
+
+    * Support test: is mu_dN within sampling uncertainty of the lower
+    * edge of the switcher support? Pid-level robust comparison of
+    * ind_rural_mean between never-migrants and the lowest-mean
+    * switcher trajectory with at least two individuals (a singleton
+    * cell has no estimable variance, so it stays a rug tick but
+    * cannot anchor the test). gap = mu_edge - mu_dN, so gap > 0
+    * means the edge sits above mu_dN.
+    bysort trajectory: egen n_traj = count(pid)
+    quietly sum mu_d_traj if is_switcher & n_traj >= 2
+    local mu_edge = r(min)
+    quietly levelsof trajectory if is_switcher & n_traj >= 2 & float(mu_d_traj) == float(`mu_edge'), local(edge_list)
+    local edge_traj : word 1 of `edge_list'
+    quietly count if is_dN
+    local n_dN = r(N)
+    quietly count if trajectory == `edge_traj'
+    local n_edge = r(N)
+    * Singleton switcher cells below the testable edge, shown in the
+    * rug but excluded from the test
+    egen byte edge_skip_tag = tag(trajectory) if is_switcher & n_traj < 2 & mu_d_traj < `mu_edge'
+    quietly count if edge_skip_tag == 1
+    local n_skipped = r(N)
+    drop edge_skip_tag n_traj
+    gen byte edge_grp = (trajectory == `edge_traj') if is_dN | trajectory == `edge_traj'
+    quietly regress ind_rural_mean edge_grp if !missing(edge_grp), vce(robust)
+    local gap    = _b[edge_grp]
+    local se_gap = _se[edge_grp]
+    local t_gap  = `gap' / `se_gap'
+    local p_two  = 2 * ttail(e(df_r), abs(`t_gap'))
+    drop edge_grp
+    di as text "  support test: edge trajectory `edge_traj' (N = `n_edge', mu = " %9.4f `mu_edge' ") vs d_N (N = `n_dN')"
+    di as text "    gap = " %7.4f `gap' "  se = " %7.4f `se_gap' "  t = " %6.3f `t_gap' "  p = " %6.4f `p_two'
+    di as text "    singleton switcher cells below the testable edge: `n_skipped'"
+    post supptest ("`country'") (`mu_dN') (`sw_min') (`sw_max') (`edge_traj') (`mu_edge') (`n_dN') (`n_edge') (`n_skipped') (`gap') (`se_gap') (`t_gap') (`p_two')
 
     * Rug of per-trajectory switcher means: one tick per trajectory at y = 0
     egen byte traj_tag = tag(trajectory)
@@ -127,7 +167,7 @@ program define plot_one_country
         , xline(`mu_dN', lcolor(cranberry%70) lwidth(medthick)) ///
           `labels' legend(off) ///
           title("`textcountry'", size(medium) color(black)) ///
-          xtitle("Rural mean log consumption", size(medsmall)) ///
+          xtitle("Rural mean log consumption per capita", size(medsmall)) ///
           ytitle("`ytit'", size(medsmall)) ///
           xlabel(`xlo'(1)`xhi', labsize(small)) ///
           ylabel(0(.2)`=0.2*ceil(`pk_all'/0.2)', labsize(small) nogrid) ///
@@ -142,10 +182,22 @@ program define plot_one_country
 end
 
 capture noisily {
+    * Support-test results accumulate across countries via postfile
+    tempfile suppres
+    postfile supptest str3 country double(mu_dN sw_min sw_max) edge_traj double(mu_edge) n_dN n_edge n_singleton_below double(gap se_gap t p_two) using "`suppres'", replace
+
     * Paper order: Indonesia, China, Tanzania; y-title on the leftmost panel
     plot_one_country IDN "Indonesia" 1 left
     plot_one_country CHN "China"     0 right 0.05
     plot_one_country TZA "Tanzania"  0 right 0.02
+
+    postclose supptest
+    preserve
+        use "`suppres'", clear
+        list, noobs sep(0)
+        export delimited using "$xsup_fig/extrapolation_support_test.csv", replace
+        di as text "  saved: $xsup_fig/extrapolation_support_test.csv"
+    restore
 
     * Combined 1x3 paper figure
     graph combine support_IDN.gph support_CHN.gph support_TZA.gph, ///
