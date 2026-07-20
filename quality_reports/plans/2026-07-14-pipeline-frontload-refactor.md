@@ -207,6 +207,13 @@ Author signed off 2026-07-20 and the branch merged to main.
 Rebuild `11b_extrapolation_support_figure.do`'s mu quantities on the per-capita outcome, or read them from the ster (matching `_export_e1_inputs.do`).
 The materiality was already probed at Stage 0; this stage ships the fix and the corrected figure.
 Author sign-off (a numeric change is expected), then commit.
+Status 2026-07-20: CLOSED.
+Implemented on branch `stage7-11b-figure-scale` per the stage spec and plan (both dated 2026-07-20): every mu quantity now computes from `logpc_consumption` as carried by the processed data (the data-based option won over the ster read, since the figure overlays raw-data densities and the ster population is stale until the definitive run), and the author extended the stage mid-day with the support test (M8), the decision that the per-capita figure is the paper figure (M9), and the manuscript update (M10).
+The support test compares mu_dN to the lowest switcher trajectory mean estimated from at least two individuals, pid-level with robust SEs; singleton cells stay rug ticks but cannot anchor the test (TZA's raw support edge is one individual, which invalidated the naive lowest-mean test).
+Results (extrapolation_support_test.csv): IDN and CHN edges sit significantly below mu_dN (p = 0.007 and p < 0.001); TZA's testable edge exceeds mu_dN by 0.097 (robust se 0.179, p = 0.59), so mu_dN is within sampling uncertainty of the switcher support even though the point gap to the raw edge is 0.055.
+Manuscript subsec:extrapolation-support updated to the per-capita numbers and the test result; the per-capita combined PDF copied to the Overleaf figures folder (author-directed exception to the no-ship rule for this figure alone).
+critic-stata 83/100, no CRITICAL; the one MAJOR (no guard for a country with no n>=2 switcher cell) was left unfixed at sign-off as a watch-item (review at quality_reports/reviews/2026-07-20_stage7-support-figure-review.md).
+Author signed off 2026-07-20 and the branch merged to main.
 
 ## Stage 8: config hygiene (no estimate change)
 
