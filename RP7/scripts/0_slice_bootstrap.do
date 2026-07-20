@@ -8,12 +8,11 @@
 * What this does:
 *   1. Set sub-directory globals ($scripts, $logs, $output, $dirdata) and
 *      project-wide constants ($grc_max_iter, $grc_min_switchers_per_wave)
-*      via 0_path_config.do. Reads $values (default: nominal) to pick the
-*      data path and the $vsfx suffix.
+*      via 0_path_config.do.
 *   2. Load all shared programs (run_grc, run_grc_with_extra_regressor,
 *      initial_values, etc.) via 0_programs.do. Quietly because the
 *      155 KB file would otherwise saturate batch output.
-*   3. Enable the resume guard: run_grc skips any cell whose _g$vsfx.ster
+*   3. Enable the resume guard: run_grc skips any cell whose _g.ster
 *      is already on disk. Safe to run concurrently with other slice
 *      drivers and with 0_master.do --- the filesystem coordinates.
 *   4. Disable copyOverleaf: slice drivers don't run the table builders,

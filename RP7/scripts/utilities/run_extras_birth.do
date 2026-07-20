@@ -15,8 +15,6 @@
 * -----
 *   stata-mp -e do run_extras_birth.do
 *
-* For real-values mode (deflated CPI, $dir/data_real), edit the
-* `global values` line below to "real" and re-launch.
 * **********************************************************************
 
 clear all
@@ -47,7 +45,7 @@ if "`c(username)'"=="maand" {
 include "$dir/scripts/0_slice_bootstrap.do"
 
 capture log close
-log using "$logs/run_extras_birth$vsfx.log", replace
+log using "$logs/run_extras_birth.log", replace
 
 capture noisily {
     run_grc_with_extra_regressor, country(IDN) spec3(cuu) regressor(urbanbirth)

@@ -3,7 +3,7 @@
 *
 * Family slice driver for 9_GRC_extras.do's max_experience_share block.
 * Runs the 9 stems below; $skip_if_exists short-circuits any cell whose
-* _g$vsfx.ster is already on disk, so it is safe to launch alongside
+* _g.ster is already on disk, so it is safe to launch alongside
 * 0_master.do / run_master_resume.do. (The remaining concern is a
 * timing-based race: if both processes start the same un-fit cell at
 * the same instant, both fit it and the second save wins; the resulting
@@ -16,8 +16,6 @@
 * -----
 *   stata-mp -e do run_extras_maxexpsh.do
 *
-* For real-values mode (deflated CPI, $dir/data_real), edit the
-* `global values` line below to "real" and re-launch.
 * **********************************************************************
 
 clear all
@@ -48,7 +46,7 @@ if "`c(username)'"=="maand" {
 include "$dir/scripts/0_slice_bootstrap.do"
 
 capture log close
-log using "$logs/run_extras_maxexpsh$vsfx.log", replace
+log using "$logs/run_extras_maxexpsh.log", replace
 
 capture noisily {
     * cuu (consumption, urban, unbalanced) x 3 countries
