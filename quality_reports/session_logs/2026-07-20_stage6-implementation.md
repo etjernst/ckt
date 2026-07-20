@@ -2,8 +2,7 @@
 
 ## If you resume
 
-Stage 6 is CLOSED: signed off 2026-07-20, merged to main with merge commit `a42219e` (--no-ff, matching the Stage 3-5 close pattern).
-Main is NOT yet pushed to origin; the author has not asked for a push this session.
+Stage 6 is CLOSED: signed off 2026-07-20, merged to main with merge commit `a42219e` (--no-ff, matching the Stage 3-5 close pattern), and pushed to origin (main at `96747dd`; branch `stage6-verdier-cleanup` also pushed).
 Next work is Stage 7 of [quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md): rebuild `11b_extrapolation_support_figure.do`'s mu quantities on the per-capita outcome (or read them from the ster, matching `_export_e1_inputs.do`); the materiality was probed at Stage 0 (D-3: claim-affecting for TZA, cosmetic for IDN and CHN); author sign-off required since a numeric change is expected.
 Cached state a resumer should know: gate evidence retained until the definitive run now includes `stage6_rootA`, `stage6_rootB`, `stage6_ctroot` in `RP7/tests/stage0` (shadow roots with data junctions to `RP7/data`; the rootA/rootB scripts folders are real copies, pre-fix and post-fix respectively); rc receipt files (`gate_stage6_*_rc.txt`, `contract_stage6_rc.txt`) stay untracked by convention; D-4 (the nonag manuscript promise) remains open; the real-values removal stays folded into Stage 8.
 
@@ -44,6 +43,10 @@ Two parallel StataMP batches on 4 cores drift apart in pace without either being
 
 ## Open items
 
-Push main to origin when the author asks (merge is local-only so far).
 Stage 7 (11b figure scale) is next; then Stage 8 (config hygiene sweep including the real-values removal), Stage 9 (Change B), and the definitive run.
 D-4 (nonag manuscript promise) remains open at the parent plan.
+
+## 2026-07-20 close-out addendum
+
+Main (`89d28fc..96747dd`) and the branch `stage6-verdier-cleanup` were pushed to origin at the author's request at the end of the session.
+The author's three adjudications, all mid-afternoon 2026-07-20: sign off and merge; leave critic MINORs F4/F5 unfixed; the TZA covs_0 convergence flip is not paper-affecting because the no-covariate columns are no longer in the reported results.
