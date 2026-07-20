@@ -3134,18 +3134,18 @@ program define run_grc_robust_vv
     *   - vce(cluster vfirst), winitial(unadjusted, independent).
     *   - Default: onestep GMM (matching VV's setting).
     *
-    * SIDE EFFECT: drops observations with missing vfirst from the
-    * loaded data. The drop persists across calls within the same
-    * `use'. Driver `17_verdier_robust.do' reloads per country, so
-    * cross-country contamination is avoided. Reload before unrelated
-    * estimation if reusing the program elsewhere (audit C2).
+    * The loaded data are preserved on entry and restored when the
+    * program exits (success or error), so the vfirst build, the
+    * missing-vfirst drop, and the swd_* instrument columns are scoped
+    * to the call and every call starts from the caller's baseline
+    * sample.
     *
     * Output (.ster files in $dir/output):
     *   <estname>          -- main GMM fit
-    *   <estname>_never    -- nlcom Delta_never
-    *   <estname>_always   -- nlcom Delta_always
-    *   <estname>_delta    -- nlcom per-switcher Delta + joint test
-    *   <estname>_avg      -- nlcom Delta_avg
+    *   <estname>_n        -- nlcom Delta_never
+    *   <estname>_a        -- nlcom Delta_always
+    *   <estname>_d        -- nlcom per-switcher Delta + joint test
+    *   <estname>_g        -- nlcom Delta_avg
     *
     * Full audit at:
     *   quality_reports/reviews/2026-04-29_run-grc-robust-vv-audit.md
@@ -3187,6 +3187,14 @@ program define run_grc_robust_vv
         local stepopt "onestep"
     }
     di as text "run_grc_robust_vv: GMM step option = `stepopt'"
+
+    * ----------------------------------------------------------------
+    * Scope all data mutations (vfirst build, missing-vfirst drop,
+    * swd_* instrument columns) to this call: Stata auto-restores the
+    * caller's data when the program exits, on success and on error
+    * alike, so each call starts from the caller's baseline sample.
+    * ----------------------------------------------------------------
+    preserve
 
     * ----------------------------------------------------------------
     * Build vfirst + drop missing-vfirst obs
@@ -3267,14 +3275,17 @@ program define run_grc_robust_vv
     qui bysort pid (year): gen byte `first_obs' = (_n == 1)
     qui bysort vfirst: egen `n_sw_v' = sum(switcher * `first_obs')
 
-    preserve
-        qui duplicates drop vfirst, force
-        qui sum `n_sw_v', detail
-        di as txt "run_grc_robust_vv: switchers/cluster mean=" ///
-            %6.2f r(mean) " p50=" %6.0f r(p50) " max=" %6.0f r(max)
-        qui count if `n_sw_v' >= 10
-        local nclust_ge10 = r(N)
-    restore
+    * tempfile save/use, not preserve/restore: the program-level preserve
+    * above owns this program's one preserve slot (r(621) otherwise).
+    tempfile __fullsample
+    qui save `__fullsample'
+    qui duplicates drop vfirst, force
+    qui sum `n_sw_v', detail
+    di as txt "run_grc_robust_vv: switchers/cluster mean=" ///
+        %6.2f r(mean) " p50=" %6.0f r(p50) " max=" %6.0f r(max)
+    qui count if `n_sw_v' >= 10
+    local nclust_ge10 = r(N)
+    qui use `__fullsample', clear
     di as txt "run_grc_robust_vv: clusters >=10 sw = `nclust_ge10' / `V'"
 
     * ----------------------------------------------------------------

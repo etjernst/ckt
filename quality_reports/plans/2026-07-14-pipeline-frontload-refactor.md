@@ -194,6 +194,13 @@ Same contract-test obligation as Stage 5: a synthetic spec sequence on scratch d
 REQUIRED FIX, found 2026-07-16 during the baseline sweep: the tail of `17_verdier_robust.do` loads sters under the pre-rename suffixes (`_never`, `_avg`) while fits save `_n`/`_a`, so the load fails silently and `grc_tex_table_trend_robust` skip-and-warns, meaning NO run since the suffix rename can regenerate the paper's Verdier robustness tables (the production `verdier_robust_*.tex` are frozen 2026-05-06 artifacts, two months older than their sters).
 Fix the two suffixes, regenerate the tables, and diff against the May versions; without this fix the definitive run silently ships stale VV tables.
 Author sign-off, then commit.
+Status 2026-07-20: CLOSED.
+Implemented on branch `stage6-verdier-cleanup` per the stage spec and plan (both dated 2026-07-20): `run_grc_robust_vv` gains a program-level `preserve` so the vfirst build, the missing-vfirst drop, and the swd_* instrument columns are scoped to the call (the cluster diagnostics switch to a tempfile round-trip since the program-level preserve owns the one preserve slot), and the tail of `17_verdier_robust.do` (plus the gate panel slice) loads the `_n`/`_g` sters the fitter actually saves---a correction to this plan's text, which said `_a`; `_a` is Delta_always, which no table consumes, while `_g` is Delta_avg.
+Contract test ALL PASS (injected all-wave index missingness: call 2 recovers the full 29,862-row TZA baseline after call 1 fit on 29,260, caller data byte-identical after each call).
+Gate ALL PASS on the full three-country grid, two fresh legs (no frozen IDN/CHN Verdier baseline existed): 150/150 ster pairs bitwise-identical between pre-fix and fixed code, 60/60 markers exactly e(N), 30/30 cross-leg marker contents identical, 50/50 TZA continuity pairs bitwise against the retained stage5_root refits; leg A reproduced the stale-tail r(601) with zero tables while leg B regenerated all nine (artifacts at quality_reports/staging/stage6/).
+The regenerated tables are structurally identical to the frozen 2026-05-06 versions with numeric-only movement (per-capita plus Change A); the TZA no-covariate column now converges in both GMM steps, adjudicated not paper-affecting by the author since the no-covariate columns are no longer in the reported results.
+critic-stata 93/100, no CRITICAL, no MAJOR; the two MINOR watch-items were declined by the author (review at quality_reports/reviews/2026-07-20_stage6-verdier-cleanup-review.md).
+Author signed off 2026-07-20 and the branch merged to main.
 
 ## Stage 7: fix the 11b figure scale (correctness, figure changes)
 

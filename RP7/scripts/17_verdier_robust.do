@@ -19,7 +19,7 @@ if "$dir" == "" {
     exit 198
 }
 
-* Resume-on-interrupt: skip cells whose final .ster (_avg) already exists.
+* Resume-on-interrupt: skip cells whose final .ster (_g) already exists.
 * Set to 0 to force every cell to re-estimate.
 global skip_if_exists 1
 
@@ -151,9 +151,12 @@ foreach country in IDN TZA CHN {
             local stem vv_`country'_`stepshort'_`estname'
             estimates use "$dir/output/`stem'"
             estimates store `stem'
-            estimates use "$dir/output/`stem'_never"
+            * Disk suffixes are _n (Delta_never) and _g (Delta_avg);
+            * the stored names keep the _never/_avg forms that
+            * grc_tex_table_trend_robust builds internally.
+            estimates use "$dir/output/`stem'_n"
             estimates store `stem'_never
-            estimates use "$dir/output/`stem'_avg"
+            estimates use "$dir/output/`stem'_g"
             estimates store `stem'_avg
         }
     }
