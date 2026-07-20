@@ -1,0 +1,10 @@
+table,skeleton_identical,numeric_cells,numeric_cells_changed,lines_with_star_changes,converged_flip
+verdier_robust_onestep_IDN_consumption_urban_unb.tex,True,76,39,1,
+verdier_robust_onestep_TZA_consumption_urban_unb.tex,True,76,25,1,frozen[Converged           &           N   &           Y   &           Y   &           Y   &           Y   \\] -> new[Converged           &           Y   &           Y   &           Y   &           Y   &           Y   \\]
+verdier_robust_onestep_CHN_consumption_urban_unb.tex,True,76,14,0,
+verdier_robust_twostep_IDN_consumption_urban_unb.tex,True,77,39,1,
+verdier_robust_twostep_TZA_consumption_urban_unb.tex,True,86,28,1,frozen[Converged           &           N   &           Y   &           Y   &           Y   &           Y   \\] -> new[Converged           &           Y   &           Y   &           Y   &           Y   &           Y   \\]
+verdier_robust_twostep_CHN_consumption_urban_unb.tex,True,86,19,1,
+GRC_IDN_consumption_urban_unb_cluster.tex,True,76,39,1,
+GRC_TZA_consumption_urban_unb_cluster.tex,True,76,25,1,frozen[Converged           &           N   &           Y   &           Y   &           Y   &           Y   \\] -> new[Converged           &           Y   &           Y   &           Y   &           Y   &           Y   \\]
+GRC_CHN_consumption_urban_unb_cluster.tex,True,76,14,0,
