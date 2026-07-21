@@ -697,7 +697,9 @@ end
 * switcher-inclusion decision is auditable from $output/keeplists/.
 capture program drop write_keeplist_csv
 program define write_keeplist_csv
-    syntax , FILEname(string) COUNTS(string) KEPT(string) ///
+    * kept() may be empty: a cell where every switcher trajectory is thin
+    * has no kept switchers, and the CSV then records kept=0 throughout.
+    syntax , FILEname(string) COUNTS(string) [KEPT(string)] ///
         THREShold(numlist integer min=1 max=1) UNITvar(string)
     tempname fh
     file open `fh' using "`filename'", write replace text
@@ -1804,9 +1806,15 @@ program define setup_grc_estimation
         di as error "setup_grc_estimation: dataset carries no grc_switchers/grc_always/grc_never characteristics; rebuild the processed hub with 1_processData.do"
         exit 459
     }
+    * Presence of the keep-list is detected via grc_keep_threshold, which is
+    * always non-empty when the stash ran: an empty grc_kept_switchers is a
+    * legitimate all-thin cell (every switcher lumped), and char define
+    * deletes a characteristic set to "", so the kept list itself cannot
+    * distinguish "not stashed" from "empty".
     local kept : char _dta[grc_kept_switchers]
-    if "`kept'" == "" & "`nolump'" == "" {
-        di as error "setup_grc_estimation: dataset carries no grc_kept_switchers characteristic (switcher-inclusion keep-list); rebuild the processed hub with 1_processData.do"
+    local kthr : char _dta[grc_keep_threshold]
+    if "`kthr'" == "" & "`nolump'" == "" {
+        di as error "setup_grc_estimation: dataset carries no grc_keep_threshold characteristic (switcher-inclusion keep-list); rebuild the processed hub with 1_processData.do"
         exit 459
     }
     confirm variable trajectory always always_choice never

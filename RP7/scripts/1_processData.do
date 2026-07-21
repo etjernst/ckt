@@ -38,21 +38,6 @@ This code:
 	save 				"$dirdata/processed/`country'_`balance'_`choice'.dta", replace
   
 *******************************************************************************
-* INDONESIA - unbalanced, income
-*******************************************************************************
-* Choices
-	local country				IDN
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace  
-  
-*******************************************************************************
 * INDONESIA - balanced
 *******************************************************************************
 * Choices
@@ -141,21 +126,6 @@ This code:
 
 * Save dataset for later use
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
-  
-*******************************************************************************
-* CHINA - unbalanced, income
-*******************************************************************************
-* Choices
-	local country				CHN
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
   
 *******************************************************************************
 * CHINA - balanced
@@ -248,21 +218,6 @@ This code:
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
  
 *******************************************************************************
-* TANZANIA - unbalanced, income
-*******************************************************************************
-* Choices
-	local country				TZA
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
-  
-*******************************************************************************
 * TANZANIA - balanced
 *******************************************************************************
 * Choices
@@ -353,21 +308,6 @@ This code:
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
   
 *******************************************************************************
-* CHINA - unbalanced, income, rural hukou only
-*******************************************************************************
-* Choices
-	local country				CHN_hukou_rural_only
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
-  
-*******************************************************************************
 * CHINA - balanced, rural hukou only
 *******************************************************************************
 * Choices
@@ -396,21 +336,6 @@ This code:
 
 * Save dataset for later use
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
-  
-*******************************************************************************
-* CHINA - unbalanced, income, only urban hukou
-*******************************************************************************
-* Choices
-	local country				CHN_hukou_urban_only
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
   
 *******************************************************************************
 * CHINA - balanced, only urban hukou
@@ -443,21 +368,6 @@ This code:
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
   
 *******************************************************************************
-* CHINA - unbalanced, income, rural hukou first
-*******************************************************************************
-* Choices
-	local country				CHN_hukou_rural_first
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
-  
-*******************************************************************************
 * CHINA - balanced, rural hukou first
 *******************************************************************************
 * Choices
@@ -486,21 +396,6 @@ This code:
 
 * Save dataset for later use
 	save 				"$dirdata/processed/`country'_`balance'.dta", replace
-  
-*******************************************************************************
-* CHINA - unbalanced, income, urban hukou first
-*******************************************************************************
-* Choices
-	local country				CHN_hukou_urban_first
-	local choice 				urban
-	local depvar				income
-	local balance				unb
-
-* Prepare for summary stats
-	data_setup `country' `choice' `depvar' `balance'					
-
-* Save dataset for later use
-	save 				"$dirdata/processed/`country'_`balance'_income.dta", replace 
   
 *******************************************************************************
 * CHINA - balanced, urban hukou first

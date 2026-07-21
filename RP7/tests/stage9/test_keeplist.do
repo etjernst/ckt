@@ -7,8 +7,9 @@
 *          a trajectory with five both-state individuals is kept, one
 *          with four is lumped, a one-sided cell (urban-only) is
 *          lumped, lumping relabels rather than deletes, the balanced
-*          sample drops loudly, nolump leaves everything alone, and
-*          the cluster-counted unit works at the Verdier threshold.
+*          sample drops loudly, nolump leaves everything alone, the
+*          cluster-counted unit works at the Verdier threshold, and an
+*          all-thin cell stashes an empty keep-list without error.
 * Input:   none (synthetic data built in memory)
 * Output:  tests/stage9/out/ scratch keep-list CSVs; PASS/FAIL log
 * *******************************************************************
@@ -372,9 +373,10 @@ initial_values logpc_consumption, ///
     switchers(`vv_kept')        ///
     balance(unb)                ///
     estname(initial_t9)
-local base `r(base)'
+* t9base, not base: `base' is this do-file's tempfile handle
+local t9base `r(base)'
 local initial "`r(initial)'"
-assert strpos(" `vv_kept' ", " `base' ") > 0
+assert strpos(" `vv_kept' ", " `t9base' ") > 0
 
 * Redirect $dir so the fit's sters land in the test tree, not RP7/output
 global dir "C:/git/ckt/RP7/tests/stage9"
@@ -384,7 +386,7 @@ local n_before = _N
 run_grc_robust_vv,                                ///
     estname(vv_t9_os)                             ///
     switchers($switchers) keeplist(`vv_kept')     ///
-    base(`base') balance(unb) vindex(prov)        ///
+    base(`t9base') balance(unb) vindex(prov)      ///
     initial(`initial')                            ///
     iterate(100) onestep
 
@@ -419,6 +421,27 @@ assert strpos("`dnames'", "Delta_2") > 0
 assert strpos("`dnames'", "Delta_3") > 0
 assert strpos("`dnames'", "Delta_4") == 0
 di as result "PASS 7: synthetic Verdier fit lumps the one-cluster trajectory and post-estimation loops the kept list"
+
+* *******************************************************************
+* Test 8: all-thin cell (every switcher trajectory below threshold)
+*   drop one trajectory-2 pid so its both-state count falls to 4:
+*   no trajectory survives, the stash must not error, and the reader
+*   must lump everything rather than mistake the cell for pre-keep-list
+* *******************************************************************
+use `base', clear
+drop if trajectory == 2 & pid == 7
+stash_switcher_keeplist allthin
+local kchar : char _dta[grc_kept_switchers]
+assert "`kchar'" == ""
+local tchar : char _dta[grc_keep_threshold]
+assert "`tchar'" == "5"
+confirm file "$output/keeplists/allthin_keeplist.csv"
+local n_before = _N
+setup_grc_estimation
+assert "$switchers" == ""
+assert _N == `n_before'
+assert trajectory == 999 & unbalanced == 1 if inlist(trajectory_full, 2, 3, 4)
+di as result "PASS 8: all-thin cell stashes an empty keep-list and lumps every switcher"
 
 di as result "ALL STAGE 9 KEEP-LIST TESTS PASSED"
 }
