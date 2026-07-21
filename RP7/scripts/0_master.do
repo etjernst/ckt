@@ -86,7 +86,7 @@ if "`c(username)'"=="maand" {
 	include "$scripts/0_programs.do"
 
 * 5. Copy to Overleaf or not? 1 = will copy to Overleaf
-	global copyOverleaf 1
+	global copyOverleaf 0
 
 * 6. Refresh dashboard cache + Verdier comparison memo? 1 = will run Python.
 *    Default 0, this requires Python to run
@@ -124,6 +124,8 @@ if "`c(username)'"=="maand" {
 	include			"$dir/scripts/6_OLS_uGRC_hukou.do"
 * Run GRC regressions (hukou)
 	include			"$dir/scripts/7_GrRC_hukou.do"
+* Attach LCA inversion CIs to the hukou sters (parallel to 5b_inversion.do)
+	include			"$dir/scripts/5c_inversion_hukou.do"
 * Run learning regressions
 	include			"$dir/scripts/8_learning.do"
 * Run GRC regressions (extras: experience-family + IDN birth; 44 stems)
@@ -148,6 +150,10 @@ if "`c(username)'"=="maand" {
 	if "${run_counterfactuals}" == "1" {
 		include		"$dir/scripts/12_counterfactuals.do"
 	}
+* Make the extrapolation-support figure and support test.
+* Runs LAST: its standalone init does `clear all`, which drops the shared
+* programs, so nothing that needs 0_programs.do may run after it.
+	include			"$dir/scripts/11b_extrapolation_support_figure.do"
 
 * Close the named master log.
 	capture log close master
