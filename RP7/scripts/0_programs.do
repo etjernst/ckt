@@ -2372,11 +2372,12 @@ program define initial_values_robust, rclass
     }
 
     * ----------------------------------------------------------------
-    * Base trajectory selection (identical to initial_values)
+    * Base trajectory selection (identical to initial_values, including
+    * the fallback to the first passed switcher)
     * ----------------------------------------------------------------
     quietly xtdescribe
     scalar T = r(max)
-    local base = 2
+    local base : word 1 of `switchers'
     local max_t = -1
     foreach s of numlist `switchers' {
         scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
@@ -2401,6 +2402,14 @@ program define define_switcherpars, rclass
 
     * Syntax for accepting the list of switchers and the base trajectory
     syntax , switchers(numlist) base(numlist)
+
+    * The base must be one of the switchers, or the restricted moment
+    * equation below silently references an unfitted mu parameter
+    local ok : list base in switchers
+    if !`ok' {
+        di as error "define_switcherpars: base `base' is not in switchers(`switchers')"
+        exit 498
+    }
 
     * Initialize the local macro for the switcher parameters
     local switcherpars "0"
@@ -4449,8 +4458,15 @@ program define attach_inversion_ci, eclass
              HHID(string) BASE(integer)                          ///
              [CONTrols(varlist fv)]                              ///
              [STERdir(string asis)]                              ///
-             [THReshold(integer 5)]                              ///
+             [THReshold(numlist integer min=1 max=1)]            ///
              [SWitchers_kept(numlist)]
+
+    * Default the threshold from the project-wide constant, so a
+    * robustness sweep changes $grc_switcher_keep_min alone and the
+    * Python-side redundant recomputation stays in step with the
+    * build-time keep-list (a second hardcoded literal here would make
+    * the agreement check fire as a spurious mismatch under a sweep)
+    if "`threshold'" == "" local threshold $grc_switcher_keep_min
 
     * `string asis' preserves outer double quotes from callers like
     * `sterdir("${inversion_sterdir}")', which would otherwise produce a

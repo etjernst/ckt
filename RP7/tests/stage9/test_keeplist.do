@@ -12,6 +12,7 @@
 * Input:   none (synthetic data built in memory)
 * Output:  tests/stage9/out/ scratch keep-list CSVs; PASS/FAIL log
 * *******************************************************************
+version 17
 clear all
 set more off
 set varabbrev off
