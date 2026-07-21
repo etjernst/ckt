@@ -163,3 +163,54 @@ Five review reports dated 2026-07-21 under [quality_reports/reviews/](file:///C:
 The definitive end-of-stages run is now the whole remaining job: hub rebuild, full refits, the old-versus-new table with Hansen's $J$, the B-8 thin-cells exhibit, the hukou rebuild, the sim rebuild, P2 parity, and a fixture smoke of the Python CSV check.
 The `main-updated.tex` "lack complete trajectories" footnote is now slightly imprecise; flagged to the author, not yet acted on.
 D-4 (the nonag manuscript promise) remains open at the parent plan.
+
+## 2026-07-21 night continuation: definitive run launched, income dropped, all-thin keep-list fix
+
+### Scope decisions (author)
+
+The definitive run is one serial `0_master.do` batch from raw data through final tables; no parallel launcher, no fleet of drivers.
+The old-versus-new Hansen-$J$ comparison table and the B-8 thin-cells exhibit are dropped from the checklist (a threshold-robustness appendix stays a possible later idea); the sim rebuild and P2 parity are out of scope as a dependent follow-on.
+`copyOverleaf 0`: the Overleaf copy happens only after the author reviews the movement.
+Income is dropped from the project ENTIRELY, superseding D-2: no income data builds, no income runs ("useless to be honest as we've decided not to use them").
+Run plan: [2026-07-21-definitive-run.md](file:///C:/git/ckt/quality_reports/plans/2026-07-21-definitive-run.md).
+
+### Pre-flight, first launch, crash
+
+`0_master.do` gained the two orphaned includes (`5c_inversion_hukou.do` after 7; `11b_extrapolation_support_figure.do` at the tail because its standalone init does `clear all`) and `copyOverleaf 0` (commit `677e2a5`).
+Backups: `RP7/output_prestage9_2026-07-21` and `RP7/data/processed_prestage9_2026-07-21`.
+Launcher: [run_definitive.cmd](file:///C:/git/ckt/RP7/tests/run_definitive.cmd) via PowerShell `Start-Process` (detached, `-e`, rc sentinel at `RP7/tests/definitive_run_rc.txt`); bare `stata-mp` is not resolvable from cmd.exe, so the wrapper calls `StataMP-64.exe` in `C:/Program Files/StataNow19` directly.
+First launch (22:11) crashed two minutes in at `CHN_hukou_urban_only_unb_income`: every switcher trajectory in that cell is thin, the keep-list came out empty, and `write_keeplist_csv` declared `kept()` required, r(198).
+The cell is build-only (income estimation left at Stage 2; hukou urban-only is not estimated), and the 26 cells stashed before the crash all keep multiple trajectories, so no estimated cell is near the all-thin state.
+
+### Fixes (commit b08d369)
+
+Income surgery: the seven income build blocks left `1_processData.do` and the FOUR hukou income OLS blocks left `6_OLS_uGRC_hukou.do`; Stage 2 had missed those four (rural-first, urban-first, rural-only, urban-only), so income OLS hukou tables were still being produced until tonight.
+Deletion by content-boundary Python script with dry run; the last block deletion swallowed the file's closing `log close`, restored by hand.
+`ln_income` as a descriptive variable in summary stats is not an income run and stays.
+Keep-list hardening: `kept()` is now optional in `write_keeplist_csv`, and `setup_grc_estimation` detects keep-list presence via `_dta[grc_keep_threshold]` (always non-empty when stashed) because `char define` deletes a characteristic set to empty, so an all-thin cell would otherwise masquerade as a pre-keep-list dataset.
+The lump machinery already handles an empty kept list (everything lumps; `$switchers` ends empty; estimation of such a cell would fail loudly at `define_switcherpars`).
+Test scenario 8 (all-thin cell) added to [test_keeplist.do](file:///C:/git/ckt/RP7/tests/stage9/test_keeplist.do); it exposed a latent collision in scenario 7, whose `local base` (Verdier base trajectory) clobbered the do-file's `base` tempfile handle; renamed `t9base`.
+All 8 scenarios pass.
+
+### Relaunch
+
+Stale income `.dta`, stale keep-list CSVs, and the rc sentinel were removed (all backed up), and the run relaunched at 22:33 (PID 28684).
+By 22:37 the build had passed the old crash point (27 keep-lists stashed, no errors) and estimation iterations were running.
+Monitoring: poll `RP7/scripts/0_master.log` and the rc sentinel; expected wall-clock about two days, the extras block the long pole.
+
+### Project-notes corrections (author)
+
+CHN/TZA data source is Lagakos, Marshall, Mobarak, Vernot, and Waugh (LMMVW, 2020, JME), not "Lagakos et al. (2023)"; local package at `Dropbox (Personal)/Returns to migration/Data/Replication LMMVW`.
+CLAUDE.md corrected (outcomes line and data-sources line); memory files `project_income_dropped.md` and `reference_lmmvw_2020_data.md` added.
+
+### README work
+
+No replication README existed anywhere (RP6 root has none either), so a fresh AEA-style [RP7/README.md](file:///C:/git/ckt/RP7/README.md) was drafted by a subagent, coauthor-facing, with author FILL INs (data rights, storage/hardware, table-to-manuscript mapping, Python module location).
+Per the author, one subagent per master-listed .do file now writes a detailed per-script description to scratch (`readme_desc/`), to be merged into the README's program section by an integrator; in flight at the time of this entry.
+The README's provenance citations came from the outdated local `paper/main.tex`; the LMMVW 2020 identification was author-confirmed afterward.
+
+### Open items
+
+Definitive run in flight; on completion: log sanity, Python keep-list agreement smoke, `12_counterfactuals` with drift adjudication, movement summary, then the author-gated Overleaf/Dropbox shipping steps.
+README program-section merge pending the description agents; README review by the author pending.
+The uncommitted new files (README.md, run plan edits if any) commit once the README merge lands.

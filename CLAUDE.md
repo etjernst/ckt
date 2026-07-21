@@ -21,9 +21,9 @@
 - **Key estimand:** Trajectory-specific returns to urban location ($\Delta_{\underline{d}}$) for switcher subpopulations, plus extrapolated returns for never-migrants. The slope parameter $\phi$ measures whether migration is "pro-poor" ($\phi < 0$: those with lowest rural consumption gain most) or "pro-rich" ($\phi > 0$).
 - **Key finding:** $\phi < 0$ consistently across all three countries, indicating migration is pro-poor. Non-migrants have substantially higher potential returns than observed switcher returns suggest, pointing to labor misallocation and barriers to mobility.
 - **Treatment:** Urban location ($D_{it} = 1$); also non-agricultural sector for IDN.
-- **Outcomes:** Log per-capita consumption (primary), log income (secondary).
+- **Outcomes:** Log per-capita consumption. Income was dropped entirely (2026-07-21, author): no income datasets are built and no income results are run.
 - **Unit of observation:** Individual-year panel. Countries: CHN (4 waves, 2010--2016), IDN (5 waves, 1993--2015), TZA (3 waves, 2008--2013). Over 75,000 individuals total; >90% are non-switchers.
-- **Data sources:** China Family Panel Studies (CFPS), Indonesia Family Life Survey (IFLS), Tanzania National Panel Survey (TZNPS). CHN and TZA data from Lagakos et al. (2023); IDN cleaned from raw IFLS following Kleemans (2018) and Hamory et al. (2021).
+- **Data sources:** China Family Panel Studies (CFPS), Indonesia Family Life Survey (IFLS), Tanzania National Panel Survey (TZNPS). CHN and TZA data from Lagakos, Marshall, Mobarak, Vernot, and Waugh (LMMVW, 2020, JME); the LMMVW replication package lives at `C:/Users/maand/Dropbox (Personal)/Returns to migration/Data/Replication LMMVW`. IDN cleaned from raw IFLS following Kleemans (2018) and Hamory et al. (2021).
 
 ## Platform, stack, and commands
 
