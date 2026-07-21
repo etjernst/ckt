@@ -2,8 +2,10 @@
 
 ## If you resume
 
-Stage 9 (Change B, one switcher-inclusion rule across the GMM, auxiliary OLS, and inversion) is implemented and unit-tested on branch `stage9-switcher-inclusion` (commits `d2cd6da` plan, `fc8169f` Stata, `06b0212` Python), with the plan approved by the author the same day.
-Two critic reviews (critic-stata, critic-python) were launched at the end of the session; adjudicate them when they land, apply approved fixes, then the branch is ready for author sign-off and merge.
+Stage 9 (Change B, one switcher-inclusion rule across the GMM, auxiliary OLS, and inversion) is implemented, reviewed, and fix-applied on branch `stage9-switcher-inclusion` (commits `d2cd6da` plan, `fc8169f` Stata, `06b0212` Python, `048a9b6` review fixes; the author approved the plan and then "fix everything" on the review findings the same day).
+The first review round found and fixed a real CRITICAL (post-estimation blocks looping the `$switchers` global instead of the fitted switcher list; details in the plan's review-round section and the two review reports).
+A fresh-context re-review pair (critic-stata, critic-python) was launched after the fixes; adjudicate when they land, then the branch is ready for author sign-off and merge.
+The disclosure prose and the Verdier footnote are IN `main-updated.tex` (author-approved, compiled clean, aux swept); the existing footnote there saying unbalanced individuals "lack complete trajectories" is now slightly imprecise and was flagged to the author, who has not yet acted on it.
 The keep-list characteristics do not exist in the current processed hub, so `setup_grc_estimation` now hard-stops on every current dataset BY DESIGN until the hub is rebuilt; the rebuild, all `.ster` and E1 regeneration, the old-versus-new table, the B-8 thin-cells exhibit, the sim rebuild, and P2 parity all fold into the definitive end-of-stages run per [the plan](file:///C:/git/ckt/quality_reports/plans/2026-07-21-stage9-switcher-inclusion.md).
 Drafted disclosure prose and the Verdier footnote sit at the bottom of the plan for the author to place in the manuscript.
 
