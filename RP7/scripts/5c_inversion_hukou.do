@@ -135,7 +135,8 @@ capture noisily {
                 choice(choice)                  ///
                 hhid(pid)                       ///
                 base(`base')                    ///
-                controls(`controls')
+                controls(`controls')            ///
+                switchers_kept($switchers)
         }
     }
 

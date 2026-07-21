@@ -4422,7 +4422,8 @@ program define attach_inversion_ci, eclass
              HHID(string) BASE(integer)                          ///
              [CONTrols(varlist fv)]                              ///
              [STERdir(string asis)]                              ///
-             [THReshold(integer 5)]
+             [THReshold(integer 5)]                              ///
+             [SWitchers_kept(numlist)]
 
     * `string asis' preserves outer double quotes from callers like
     * `sterdir("${inversion_sterdir}")', which would otherwise produce a
@@ -4501,7 +4502,7 @@ program define attach_inversion_ci, eclass
     }
 
     * 3. ONE python call computes all four inversions for this cell.
-    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"), esample="`esample_flag'")
+    python: import lca_inversion as _li; _li.attach_inversion_for_stata(outcome="`outcome'", trajectory="`traj'", choice="`choice'", hhid="`hhid'", base=int("`base'"), controls="`ctrl_list'".split(), threshold=int("`threshold'"), esample="`esample_flag'", switchers_kept="`switchers_kept'")
 
     * 4. contract guard: the inversion must have computed on exactly the
     * parent fit's sample; a diverging reconstruction fails here instead

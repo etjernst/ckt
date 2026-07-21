@@ -31,6 +31,7 @@ program define lca_inversion_ci, eclass
              [MIN_phi(real -3)] [MAX_phi(real 1)]                ///
              [INCrement(real 0.01)]                              ///
              [THReshold(integer 5)]                              ///
+             [SWitchers_kept(numlist)]                           ///
              [STERdir(string)]
 
     * ---- restore estimate so the re-save includes our scalars
@@ -62,6 +63,7 @@ program define lca_inversion_ci, eclass
     local max_phi   `max_phi'
     local increment `increment'
     local threshold `threshold'
+    local switchers_kept `switchers_kept'
 
     * inline python: blocks confuse Stata's program-define parser, so we
     * execute the helper as an external script.
