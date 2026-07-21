@@ -3,8 +3,9 @@
 Three components:
 
 * ``drop_sparse_switchers``: pre-filter switcher trajectories with too few
-  treated clusters. Mirrors the rank-deficient-moment pre-drop planned
-  for the GMM estimator's pseudo-inverse step.
+  units observed in both states (an urban and a rural observation within
+  the trajectory). Mirrors ``compute_switcher_keeplist`` in
+  RP7/scripts/0_programs.do.
 * ``fit_auxiliary_ols``: saturated OLS in trajectory dummies and (kept
   switcher) x choice interactions with cluster-robust SE. Returns
   coefficients, VCV, and a name -> index map for the inversion.
@@ -43,24 +44,53 @@ class AuxiliaryFit:
         return self.name_to_idx[name]
 
 
+# Switcher-inclusion rule, main path: a switcher trajectory enters
+# estimation only if at least this many units are observed in both an
+# urban and a rural period within it. Mirrors $grc_switcher_keep_min in
+# RP7/scripts/0_path_config.do; the two must move together.
+SWITCHER_KEEP_MIN = 5
+
+
+def _int_codes(values) -> list[int]:
+    """Coerce trajectory codes to a sorted int list, rejecting any value
+    that is not integral to float tolerance (Stata floats can round-trip
+    as e.g. 2.9999999999; silent ``int()`` truncation would misclassify).
+    """
+    codes = []
+    for t in values:
+        f = float(t)
+        r = round(f)
+        if abs(f - r) > 1e-6:
+            raise ValueError(f"trajectory code {f!r} is not integral")
+        codes.append(int(r))
+    return sorted(codes)
+
+
 def drop_sparse_switchers(
     df: pd.DataFrame,
     trajectory: str,
     choice: str,
     hhid: str,
-    threshold: int = 5,
+    threshold: int = SWITCHER_KEEP_MIN,
 ) -> tuple[list[int], dict[int, int]]:
     """Identify switcher trajectories with at least ``threshold`` unique
-    individuals contributing a treated observation (trajectory == s and
-    choice == 1).
+    units observed in both states (a ``choice == 1`` and a ``choice == 0``
+    observation within trajectory ``s``).
 
     Returns ``(kept, counts)`` where ``kept`` is the sorted list of switcher
     codes retained and ``counts`` maps every candidate switcher to its
-    treated-pid count (including those dropped). The smallest and largest
-    trajectory codes are treated as ``never`` and ``always`` and excluded
-    from candidacy.
+    both-state unit count (including those dropped). The smallest and
+    largest trajectory codes are treated as ``never`` and ``always`` and
+    excluded from candidacy. Mirrors ``compute_switcher_keeplist`` in
+    RP7/scripts/0_programs.do.
     """
-    trajectories = sorted(int(t) for t in df[trajectory].dropna().unique())
+    if df[hhid].isna().any():
+        raise ValueError(
+            f"{hhid} contains missing values; both-state unit counting "
+            f"requires complete unit ids (NaN ids would identity-match "
+            f"across the urban and rural sets)"
+        )
+    trajectories = _int_codes(df[trajectory].dropna().unique())
     if len(trajectories) < 3:
         raise ValueError(
             f"Need at least 3 trajectories (never, switcher(s), always); "
@@ -72,10 +102,15 @@ def drop_sparse_switchers(
     kept: list[int] = []
     counts: dict[int, int] = {}
     for s in candidates:
-        mask = (df[trajectory] == s) & (df[choice] == 1)
-        n_pids = int(df.loc[mask, hhid].nunique())
-        counts[s] = n_pids
-        if n_pids >= threshold:
+        units_urban = set(
+            df.loc[(df[trajectory] == s) & (df[choice] == 1), hhid].unique()
+        )
+        units_rural = set(
+            df.loc[(df[trajectory] == s) & (df[choice] == 0), hhid].unique()
+        )
+        n_both = len(units_urban & units_rural)
+        counts[s] = n_both
+        if n_both >= threshold:
             kept.append(s)
     return kept, counts
 
@@ -100,7 +135,7 @@ def fit_auxiliary_ols(
     via ``unbalanced`` and ``unbalanced_choice`` indicators (matching CKT's
     GMM specification). Additional ``controls`` are included as level shifters.
     """
-    trajectories = sorted(int(t) for t in df[trajectory].dropna().unique())
+    trajectories = _int_codes(df[trajectory].dropna().unique())
 
     cols: dict[str, np.ndarray] = {}
     for d in trajectories:
@@ -718,7 +753,8 @@ def compute_all_inversion_cis(
     hhid: str = "pid",
     base: int | None = None,
     controls: Sequence[str] | None = None,
-    threshold: int = 5,
+    threshold: int = SWITCHER_KEEP_MIN,
+    switchers_kept: Sequence[int] | None = None,
     phi_grid: np.ndarray | None = None,
     delta_grid_nv: np.ndarray | None = None,
     delta_grid_al: np.ndarray | None = None,
@@ -740,6 +776,12 @@ def compute_all_inversion_cis(
     Default grids match that runner: phi in ``[-3, 1]`` step 0.01;
     Delta_never / Delta_avg in ``[-1.5, 1.5]`` step 0.01; Delta_always
     in ``[-5, 5]`` step 0.02 (wider for the Mobius case).
+
+    ``switchers_kept``, when supplied, is the Stata-authored keep-list
+    (from the ``grc_kept_switchers`` dataset characteristic). The local
+    ``drop_sparse_switchers`` recomputation still runs as a redundant
+    safety check and any disagreement raises; the supplied list is then
+    used as-is.
 
     ``esample`` names a 0/1 column flagging the parent GMM fit's
     ``e(sample)`` rows (recovered Stata-side from the ``_esample.dta``
@@ -793,6 +835,18 @@ def compute_all_inversion_cis(
     kept, _counts = drop_sparse_switchers(
         sub, trajectory, choice, hhid, threshold=threshold
     )
+    if switchers_kept is not None:
+        # The Stata-authored keep-list is the source of truth; the local
+        # recomputation is a redundant safety check, and disagreement is
+        # a hard error, never a silent re-derivation.
+        supplied = sorted(int(s) for s in switchers_kept)
+        if supplied != sorted(kept):
+            raise ValueError(
+                f"supplied switchers_kept {supplied} disagrees with the "
+                f"recomputed keep-list {sorted(kept)} (counts {_counts}); "
+                f"the data and the Stata keep-list are out of sync"
+            )
+        kept = supplied
     if base is None:
         base = 2 if 2 in kept else (kept[0] if kept else None)
     if base is None or base not in kept:
@@ -800,7 +854,7 @@ def compute_all_inversion_cis(
             f"base {base} not in switchers_kept {kept} after threshold {threshold}"
         )
 
-    trajectories = sorted(int(t) for t in sub[trajectory].dropna().unique())
+    trajectories = _int_codes(sub[trajectory].dropna().unique())
     never_traj, always_traj = trajectories[0], trajectories[-1]
 
     fit = fit_auxiliary_ols(
@@ -872,10 +926,11 @@ def attach_inversion_for_stata(
     hhid: str,
     base: int,
     controls: Sequence[str],
-    threshold: int = 5,
+    threshold: int = SWITCHER_KEEP_MIN,
     unbalanced_col: str = "unbalanced",
     unbalanced_choice_col: str = "unbalanced_choice",
     esample: str = "",
+    switchers_kept: str = "",
 ) -> None:
     """Bridge between Stata's in-program ``python:`` call and
     ``compute_all_inversion_cis``.
@@ -913,12 +968,19 @@ def attach_inversion_for_stata(
     # real trajectories and matches the Python data_loader path.
     df.loc[df[trajectory] == 999, trajectory] = float("nan")
 
+    # switchers_kept arrives as a space-separated string from the Stata
+    # local (the $switchers global setup_grc_estimation built from the
+    # grc_kept_switchers characteristic); empty means "recompute only"
+    kept_str = switchers_kept.strip()
+    kept_list = [int(s) for s in kept_str.split()] if kept_str else None
+
     out = compute_all_inversion_cis(
         df=df,
         outcome=outcome, trajectory=trajectory,
         choice=choice, hhid=hhid,
         base=base, controls=list(controls),
         threshold=threshold,
+        switchers_kept=kept_list,
         unbalanced_col=unbalanced_col,
         unbalanced_choice_col=unbalanced_choice_col,
         esample=esample if esample else None,

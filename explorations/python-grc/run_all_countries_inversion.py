@@ -25,6 +25,7 @@ import scipy.stats as st
 
 from data_loader import load_consumption_unb, period_fe_columns
 from lca_inversion import (
+    SWITCHER_KEEP_MIN,
     drop_sparse_switchers,
     find_islands,
     fit_auxiliary_ols,
@@ -176,8 +177,26 @@ def _run_one_country(country: str) -> tuple[list[dict], list[dict]]:
           f"period FEs available: {period_cols}")
 
     kept, counts = drop_sparse_switchers(
-        df, "trajectory", "choice", "pid", threshold=5
+        df, "trajectory", "choice", "pid", threshold=SWITCHER_KEEP_MIN
     )
+    # Production authors the keep-list in Stata at build time
+    # (stash_switcher_keeplist) and persists it under output/keeplists/.
+    # When that file exists, it is the source of truth: disagreement with
+    # the local recomputation is a hard error, never a silent override.
+    keeplist_csv = (HERE.parent.parent / "RP7" / "output" / "keeplists"
+                    / f"{country}_unb_keeplist.csv")
+    if keeplist_csv.exists():
+        kl = pd.read_csv(keeplist_csv)
+        stata_kept = sorted(int(s) for s in kl.loc[kl["kept"] == 1, "trajectory"])
+        if stata_kept != sorted(kept):
+            raise ValueError(
+                f"Stata keep-list {stata_kept} ({keeplist_csv}) disagrees "
+                f"with the recomputed keep-list {sorted(kept)}; counts={counts}"
+            )
+        kept = stata_kept
+        print(f"  keep-list verified against {keeplist_csv.name}")
+    else:
+        print(f"  no persisted keep-list at {keeplist_csv}; using recomputation")
     if 2 not in kept:
         # Pick first available switcher as base if 2 was dropped
         base = kept[0]

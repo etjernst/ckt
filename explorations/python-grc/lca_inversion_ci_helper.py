@@ -7,7 +7,9 @@ locals for the .ado to ereturn-scalar.
 
 Expected Stata locals before invocation:
     outcome, traj, choice, hhid, base, ctrl_list, min_phi, max_phi,
-    increment, threshold
+    increment, threshold, and optionally switchers_kept (the
+    Stata-authored keep-list; disagreement with the local recomputation
+    is a hard error)
 
 Writes back:
     inv_phi_at_waldmin, inv_wald_min, inv_J_R, inv_n_kept,
@@ -85,6 +87,18 @@ def main():
                       f"values: min={mn:g}, max={mx:g}")
 
     kept, counts = drop_sparse_switchers(df, traj, choice, hhid, threshold=thr)
+    supplied_raw = Macro.getLocal("switchers_kept").strip()
+    if supplied_raw:
+        # The Stata-authored keep-list is the source of truth; the local
+        # recomputation is a redundant safety check, and disagreement is
+        # a hard error, never a silent re-derivation.
+        supplied = sorted(int(s) for s in supplied_raw.split())
+        if supplied != sorted(kept):
+            raise ValueError(
+                f"supplied switchers_kept {supplied} disagrees with the "
+                f"recomputed keep-list {sorted(kept)}; counts={counts}"
+            )
+        kept = supplied
     print(f"[lca_inversion_ci] switchers kept: {kept}")
     if base not in kept:
         raise ValueError(

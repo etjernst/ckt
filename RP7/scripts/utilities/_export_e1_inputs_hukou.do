@@ -177,6 +177,33 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
         exit 498
     }
 
+    * Switcher-inclusion rule: lump non-kept switcher trajectories into the
+    * -1 cell so the exported per-trajectory rows match the lumped GMM
+    local e1_switchers : char _dta[grc_switchers]
+    local e1_kept      : char _dta[grc_kept_switchers]
+    if "`e1_kept'" == "" {
+        di as error "  no grc_kept_switchers characteristic on the loaded data -- rebuild the processed hub with 1_processData.do"
+        exit 459
+    }
+    * Redundant safety check: recompute the keep rule on this exhibit's
+    * filtered sample and hard-error on disagreement with the build-time
+    * characteristic (the positivity filters above could in principle
+    * thin a trajectory below the rule)
+    local e1_thresh : char _dta[grc_keep_threshold]
+    compute_switcher_keeplist, candidates(`e1_switchers') ///
+        threshold(`e1_thresh') unitvar(pid)
+    if "`r(kept)'" != "`e1_kept'" {
+        di as error "  keep-list mismatch: build-time kept [`e1_kept'] vs this filtered sample [`r(kept)'] (counts `r(counts)')"
+        exit 459
+    }
+    local e1_dropped : list e1_switchers - e1_kept
+    foreach s of local e1_dropped {
+        quietly replace traj_for_agg = -1 if traj_for_agg == `s'
+    }
+    if "`e1_dropped'" != "" {
+        di as text "  switcher trajectories `e1_dropped' lumped into the -1 cell (keep-list)"
+    }
+
     preserve
         quietly keep if pid_first == 1
         bysort traj_for_agg: egen n_pids = count(pid)

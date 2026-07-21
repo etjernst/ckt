@@ -71,16 +71,34 @@ foreach country in IDN TZA CHN {
 
     * Open and prep data
     use "$dirdata/processed/`country'_`balance'.dta", clear
-    setup_grc_estimation
+    * nolump: the Verdier path applies its own cluster-counted switcher
+    * keep rule inside run_grc_robust_vv, so it needs the full enumeration
+    setup_grc_estimation, nolump
     global keepvars $keepvars_base `vidx'
     keep $keepvars
 
     tab period, gen(period_)
     local periodFE "period_2 - period_`r(r)'"
 
-    * Initial values (data-driven base + starting parameter vector)
+    * Verdier switcher keep-list, once per country: which switcher
+    * trajectories have at least $grc_switcher_keep_min_vv clusters
+    * (first-wave `vidx') in both states. Computed here so the base and
+    * the initial values below are picked inside the kept set; the fits
+    * receive it via keeplist() and skip their own recomputation.
+    gen_vfirst, vname(`vidx') genname(vfirst)
+    compute_switcher_keeplist if !missing(vfirst), candidates($switchers) ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    local vv_kept `r(kept)'
+    local vv_counts `r(counts)'
+    write_keeplist_csv, filename("$output/keeplists/vv_`country'_keeplist.csv") ///
+        counts(`vv_counts') kept(`vv_kept') ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+
+    * Initial values (data-driven base + starting parameter vector),
+    * restricted to the kept switchers so the from() vector matches the
+    * fitted parameter set
     initial_values logpc_consumption, ///
-        switchers($switchers)       ///
+        switchers(`vv_kept')        ///
         balance(`balance')          ///
         estname(initial_`country')
     local base `r(base)'
@@ -102,14 +120,16 @@ foreach country in IDN TZA CHN {
         * No covariates
         capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_0)               ///
-            switchers($switchers) base(`base') initial(`initial')       ///
+            switchers($switchers) keeplist(`vv_kept')                   ///
+            base(`base') initial(`initial')                             ///
             balance(`balance') vindex(`vidx')                           ///
             iterate(`iterations') `step'
 
         * Add time FE
         capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_trend)           ///
-            switchers($switchers) base(`base') initial(`initial')       ///
+            switchers($switchers) keeplist(`vv_kept')                   ///
+            base(`base') initial(`initial')                             ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE')                                          ///
             iterate(`iterations') `step'
@@ -117,7 +137,8 @@ foreach country in IDN TZA CHN {
         * Add female
         capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_1)               ///
-            switchers($switchers) base(`base') initial(`initial')       ///
+            switchers($switchers) keeplist(`vv_kept')                   ///
+            base(`base') initial(`initial')                             ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm)                                ///
             iterate(`iterations') `step'
@@ -125,7 +146,8 @@ foreach country in IDN TZA CHN {
         * Add age^2
         capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_2)               ///
-            switchers($switchers) base(`base') initial(`initial')       ///
+            switchers($switchers) keeplist(`vv_kept')                   ///
+            base(`base') initial(`initial')                             ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm2)                               ///
             iterate(`iterations') `step'
@@ -133,7 +155,8 @@ foreach country in IDN TZA CHN {
         * Add education + education^2
         capture noisily run_grc_robust_vv,                              ///
             estname(vv_`country'_`stepshort'_covs_all)             ///
-            switchers($switchers) base(`base') initial(`initial')       ///
+            switchers($switchers) keeplist(`vv_kept')                   ///
+            base(`base') initial(`initial')                             ///
             balance(`balance') vindex(`vidx')                           ///
             covars(`periodFE' $covs_gmm_all)                            ///
             iterate(`iterations') `step'
