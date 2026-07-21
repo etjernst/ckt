@@ -66,10 +66,10 @@ RAND distributes the raw IFLS microdata, subject to a data use agreement.
 
 ### Software requirements
 
-- Stata. Every do-file declares `version 17`; the code was last run under StataNow/MP 19.5.
+- Stata. `0_master.do` declares `version 17`, which governs every script it includes; the code was last run under StataNow/MP 19.5.
   - `estout`, `reghdfe`, `ftools`, `coefplot`, `unique`, `ietoolkit`, `sdecode`, `boottest`, `summclust`, all installed from SSC
   - `schemepack` (graph scheme), installed from SSC
-  - `scripts/0_setup.do` checks for these packages and offers to install any that are missing; it also updates ado files when `$adoUpdate` is set to 1. It runs automatically as the first step of `0_master.do`.
+  - `scripts/0_setup.do` checks for these packages and offers to install any that are missing; it also updates ado files when `$adoUpdate` is set to 1. It runs automatically as the first setup step of `0_master.do`, right after the directory globals are derived.
 - Python, required only for the LCA inversion confidence intervals (`5b_inversion.do`, `5c_inversion_hukou.do`) and, optionally, for the counterfactual misallocation accounting (`12_counterfactuals.do`).
   Stata calls Python in-process through its native Python integration (SFI), so the replicator does not invoke Python directly; Python and the packages below must simply be discoverable by the Stata installation in use.
   - `numpy`, `pandas`, `scipy`, `statsmodels`
@@ -163,13 +163,14 @@ For each country it computes the urban-location rate among unbalanced person-per
 - `unbalanced_rank_macros.tex`, written to `output/tables/`: one set of LaTeX macros per country, read directly into the paper's appendix text so the reported figures always match the current data.
 - A run log recording the underlying counts, shares, and regression R-squared values per country.
 
-This script relies only on built-in Stata commands, no shared programs from `0_programs.do`, and it will stop with an error if the always-rural/always-urban/switcher split does not account for every unbalanced individual, which would indicate a data problem upstream.
+The diagnostic computation relies only on built-in Stata commands, with one shared program at the tail (the optional `copyOverleaf` copy step), and the script stops with an error if the always-rural/always-urban/switcher split does not account for every unbalanced individual, which would indicate a data problem upstream.
 
 #### `3_OLS_uGRC.do`
 
 This script runs the paper's baseline OLS and fixed-effects regressions of log per-capita consumption on location choice, ahead of the GRC estimation in later scripts.
 It produces three tables: the main unbalanced-panel result for urban location, a balanced-panel robustness version of the same specification, and an Indonesia-only version that uses non-agricultural employment as the location choice instead of urban residence.
-Each table stacks all three countries in a three-panel layout and runs six columns per country that add covariates and fixed effects one at a time, so a replicator can see how the urban coefficient moves as the specification tightens; standard errors are clustered at the individual level throughout.
+The two urban tables stack all three countries in a three-panel layout, while the non-agricultural table is a single Indonesia panel; every panel runs six columns that add covariates and fixed effects one at a time, so a replicator can see how the coefficient of interest moves as the specification tightens.
+Standard errors are clustered at the individual level throughout.
 
 - `output/tables/OLS_consumption_urban_unb.tex`: the main table.
 - `output/tables/OLS_consumption_urban_bal.tex`: the balanced-sample robustness table.
@@ -205,7 +206,7 @@ Downstream, `5b_inversion.do` attaches confidence intervals to these `.ster` fil
 This script attaches weak-identification-robust confidence intervals for the linear-comparative-advantage (LCA) inversion to the main GRC estimation files.
 For each country and covariate specification it computes 90 percent and 95 percent confidence intervals for the slope parameter phi and for the three trajectory-specific returns (never-migrant, average-switcher, always-migrant), then writes those intervals back onto the saved GRC results.
 It is split out from `4_GrRC.do` because the inversion is a comparatively fast calculation, so a replicator who only needs to refresh the confidence intervals does not have to re-run the slow GMM fits that produce the point estimates.
-No new files are created; each of the four estimation files per country and covariate set (the main file plus the never-migrant, average-switcher, and always-migrant companions) is reloaded, given additional results (point estimate at the minimum Wald statistic, the statistic itself, degrees of freedom, retained observation count, 90 and 95 percent interval bounds, a count of any disconnected interval segments, and formatted text versions of both intervals), and re-saved under its original name.
+No new files are created; each of the four estimation files per country and covariate set (the main file plus the never-migrant, average-switcher, and always-migrant companions) is reloaded, given additional results (point estimate at the minimum Wald statistic, the statistic itself, degrees of freedom, the count of switcher trajectories retained after the sparsity threshold, 90 and 95 percent interval bounds, a count of any disconnected interval segments, and formatted text versions of both intervals), and re-saved under its original name.
 
 The Stata program that does the attaching, `attach_inversion_ci`, calls a Python module, `lca_inversion.py`, in `explorations/python-grc`, through Stata's built-in Python integration; the entry point is `attach_inversion_for_stata`, and the Python environment Stata calls into needs `numpy`, `pandas`, `statsmodels`, and `scipy`.
 When present, the script uses the `_esample.dta` marker that `4_GrRC.do` writes alongside each estimation file to compute on the identical estimation sample; when absent, it reconstructs the sample from missing values and prints a warning.
@@ -247,7 +248,7 @@ It calls the same shared programs described under `4_GrRC.do` above, and does no
 #### `5c_inversion_hukou.do`
 
 This script attaches the same weak-identification-robust confidence intervals as `5b_inversion.do`, but to the GRC estimates for the rural-hukou-first and urban-hukou-first subsamples only; the rural-hukou-only and urban-hukou-only subsamples are not covered by this pass.
-It reads the `.ster` files that `7_GrRC_hukou.do` produces for the urban-choice, consumption-outcome, unbalanced-sample specification, across all five covariate columns, and updates each of the four companion files per subsample and column (the parent phi estimate plus the `_n`, `_g`, and `_a` files) in place, using the same Python module and dependency described under `5b_inversion.do` above.
+It reads the `.ster` files that `7_GrRC_hukou.do` produces for the urban-choice, consumption-outcome, unbalanced-sample specification, across the four estimated covariate columns (its loop also names the no-covariate column, whose parent files never exist, so that iteration skips), and updates each of the four companion files per subsample and column (the parent phi estimate plus the `_n`, `_g`, and `_a` files) in place, using the same Python module and dependency described under `5b_inversion.do` above.
 Run this script after `7_GrRC_hukou.do`; if a required parent `.ster` file is missing for a given subsample and covariate column, the script logs a skip message and continues rather than stopping.
 
 #### `8_learning.do`
@@ -288,7 +289,7 @@ It reads the main, non-agricultural, hukou-subgroup, heterogeneity, and extras-f
 - Non-agricultural table: `GRC_IDN_consumption_nonag_unb.tex`.
 - Hukou tables: `GRC_CHN_hukou_{subgroup}_consumption_urban_{unb,bal}.tex` for each of the four subgroups (eight files).
 - Heterogeneity tables: `hetDelta_table_{country}.tex` and `hetmu_table_{country}.tex` for IDN, CHN, TZA (six files).
-- Extras-family tables: one file per country-specification-regressor combination, covering the four experience regressors across the unbalanced and balanced urban-choice specifications and the non-agricultural specification for Indonesia, plus the urban-birth regressor for Indonesia (forty-four files in total).
+- Extras-family tables: one file per country-specification-regressor combination, covering the four experience regressors across the unbalanced and balanced urban-choice specifications and the non-agricultural specification for Indonesia, plus the urban-birth regressor for Indonesia (thirty-one files in total).
 
 `grc_tex_table_trend` formats the main, non-agricultural, and hukou-subgroup estimates into the standard four-column GRC table layout; `het_table_delta` and `het_table_mu` format the per-trajectory heterogeneity estimates; `extras_tex_table` formats each experience- or birth-regressor cell, reading the disambiguated `.ster` naming convention directly; `copyOverleaf`, described under `2_summaryStats.do` above, copies each generated table to the manuscript folder when enabled.
 
@@ -361,7 +362,7 @@ The outcome is per-capita log consumption throughout, matching the scale used in
 
 The script initializes standalone, setting its own working-directory global if none is already set, so it can run on its own or as part of the full pipeline; because that initialization clears all previously defined programs, it must run last among any scripts that share program definitions with it, which is why it runs after the otherwise-optional `12_counterfactuals.do` in `0_master.do`.
 
-Auxiliary programs, called from within the numbered scripts above rather than run directly:
+Auxiliary do-files, included once by `0_master.do` before the numbered sequence rather than run directly; the numbered scripts assume that their globals and programs are already in scope:
 
 - `0_path_config.do`. Sets the subdirectory globals (`$scripts`, `$dirdata`, `$logs`, `$output`) and the project-wide GRC constants: the GMM iteration cap, the minimum switchers per wave, and the switcher-inclusion thresholds.
 - `0_setup.do`. Installs the Stata package dependencies listed under Computational requirements.
@@ -380,11 +381,12 @@ They help when resuming an interrupted run or parallelizing the slower estimatio
 
 ## Instructions to replicators
 
-- Open `0_master.do` and, in the per-user directory block, set the `$dir` global to the root of this replication package.
+- Open `0_master.do` and, in the per-user directory block, add a branch for your own Stata username (`c(username)`) that sets the `$dir` global to the root of this replication package; the existing branches are keyed to the authors' machines.
 - Run `0_master.do`. It sets the working directories, opens the master log, installs the Stata package dependencies via `0_setup.do`, loads the shared programs via `0_programs.do`, and then runs every numbered script in sequence.
-- Two globals in `0_master.do` gate optional steps.
+- Three globals in `0_master.do` gate optional steps.
   Setting `$copyOverleaf` to 1 additionally copies the generated tables and figures to a local manuscript directory; this only matters for the authors' own writing setup, so a standard replication should leave it at 0.
   Setting `$run_counterfactuals` to 1 additionally runs `12_counterfactuals.do`, which requires Python (see Computational requirements) and requires that the inversion and hukou GRC `.ster` files already exist on disk, which the preceding steps in `0_master.do` produce.
+  Setting `$runDashboard` to 1 triggers a development-only results-dashboard refresh whose Python script lives outside this package, so a replication leaves it at 0.
 - To resume an interrupted run without re-fitting cells whose output already exists on disk, run `utilities/run_master_resume.do` instead of `0_master.do`.
 - Output lands under `output/`: `.ster` estimate files directly in `output/`, LaTeX tables in `output/tables/`, figures in `output/figures/`, switcher-inclusion audit CSVs in `output/keeplists/`, and per-script logs in `scripts/logs/` plus one timestamped master log covering the full run.
 

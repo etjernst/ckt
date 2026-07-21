@@ -214,3 +214,29 @@ The README's provenance citations came from the outdated local `paper/main.tex`;
 Definitive run in flight; on completion: log sanity, Python keep-list agreement smoke, `12_counterfactuals` with drift adjudication, movement summary, then the author-gated Overleaf/Dropbox shipping steps.
 README program-section merge pending the description agents; README review by the author pending.
 The uncommitted new files (README.md, run plan edits if any) commit once the README merge lands.
+
+## 2026-07-21 late-night continuation: README merged, committed, and under verification
+
+### README merge and commit
+
+All 19 per-script description agents returned; the integrator replaced the README's program list with detailed per-script subsections in master order, shared programs described once at first use.
+Committed as `fbc8e2b` together with the CLAUDE.md corrections (LMMVW 2020, income dropped) and the session-log update.
+The extras stem count in the runtime section was corrected 44 to 31 before commit (44 included the 13 dropped income stems).
+Also noted: `attach_inversion_ci` calls `lca_inversion.py` directly; `lca_inversion_ci.ado` has no pipeline references and is a handoff-time cleanup candidate.
+
+### README verification (author-requested, verify-snippet adapted)
+
+The author asked for a verify-snippet pass as a final check; adapted per the skill's own size gate into 12 fresh-context verifier-claim groups (one per README subsection pair, plus cross-cutting packages/randomness/instructions/citations) and one critic-alignment structure check.
+Decomposition at [2026-07-21_2310_readme_decomposition.md](file:///C:/git/ckt/quality_reports/verify-snippet/2026-07-21_2310_readme_decomposition.md).
+Results so far (9 of 13 in): V1, V4, V6, V7, V11 fully VERIFIED; five wording findings, none structural:
+F1 line ~166, `1b` "no shared programs" overclaim (conditionally calls `copyOverleaf`);
+F2 line ~172, "each table stacks all three countries" false for the IDN-only nonag OLS table;
+F3 line ~208, `_n_kept` is retained switcher-trajectory count, not "retained observation count";
+F4 line ~250, 5c "across all five covariate columns" but c0 parents never exist, four columns get CIs;
+F5 line ~291, "forty-four" extras table files should be 31 (same stale income-era count as the runtime section).
+One caveat: hukou==1-rural is verified only by script self-consistency; no CFPS codebook in the repo.
+Pending: V8 (extras/utilities), V10 (figures/11b), V12 (cross-cutting), V13 (alignment critic); then the aggregate GO/WARN/FIX report to quality_reports/verify-snippet/ and author-approved fixes.
+
+### Definitive run status
+
+Launched 22:33 (PID 28684); build completed clean past the old crash point (27 keep-lists, no income cells), estimation under way by 22:37.

@@ -48,11 +48,11 @@ if "`c(username)'"=="etje0002" {
 }
 if "`c(username)'"=="maand" {
 	* Path varies by worktree. Pick ONE --- uncomment the active line.
-	global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
+	global dir = "C:/git/ckt/RP7"
+	* global dir = "C:/git/ckt/.claude/worktrees/grc-pipeline-refactor/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/unbalanced-panel-proof-review/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/lca-inversion/RP7"
 	* global dir = "C:/git/ckt/.claude/worktrees/verdier-wrap-up/RP7"
-	* global dir = "C:/git/ckt/RP7"
 	* Overleaf-Dropbox lives in Monash Enterprise Dropbox (not Personal).
 	global overleaf = "C:/Users/maand/Monash Uni Enterprise Dropbox/Emilia Tjernstrom/Apps/Overleaf/ReturnsToMigration-clean"
 }
