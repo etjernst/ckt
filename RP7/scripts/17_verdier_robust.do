@@ -71,7 +71,9 @@ foreach country in IDN TZA CHN {
 
     * Open and prep data
     use "$dirdata/processed/`country'_`balance'.dta", clear
-    setup_grc_estimation
+    * nolump: the Verdier path applies its own cluster-counted switcher
+    * keep rule inside run_grc_robust_vv, so it needs the full enumeration
+    setup_grc_estimation, nolump
     global keepvars $keepvars_base `vidx'
     keep $keepvars
 

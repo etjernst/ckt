@@ -25,9 +25,20 @@
 *   grc_min_switchers_per_wave --- minimum N/T threshold in initial_values
 *                                  for a switcher trajectory to be eligible
 *                                  as the base; was a magic 5
+*   grc_switcher_keep_min      --- switcher-inclusion rule, main path:
+*                                  a switcher trajectory enters estimation
+*                                  only if at least this many individuals
+*                                  are observed in both an urban and a
+*                                  rural period within it (robustness
+*                                  sweeps vary this one number)
+*   grc_switcher_keep_min_vv   --- same rule on the Verdier-robust path,
+*                                  counting clusters (vfirst) instead of
+*                                  individuals, at a looser threshold
 * **********************************************************************
   global      grc_max_iter               100
   global      grc_min_switchers_per_wave 5
+  global      grc_switcher_keep_min      5
+  global      grc_switcher_keep_min_vv   2
 
 * Create logs directory if it doesn't exist already
 * (the others should already exist)
@@ -35,6 +46,7 @@
 	qui: capture mkdir          "$output"
 	qui: capture mkdir          "$output/tables"
 	qui: capture mkdir          "$output/figures"
+	qui: capture mkdir          "$output/keeplists"
 	qui: capture mkdir          "$dirdata/processed"
 	
 * $overleaf is set per-user in 0_master.do user-specific blocks. If not set,

@@ -174,6 +174,22 @@ foreach country in IDN TZA {
         exit 498
     }
 
+    * Switcher-inclusion rule: lump non-kept switcher trajectories into the
+    * -1 cell so the exported per-trajectory rows match the lumped GMM
+    local e1_switchers : char _dta[grc_switchers]
+    local e1_kept      : char _dta[grc_kept_switchers]
+    if "`e1_kept'" == "" {
+        di as error "  no grc_kept_switchers characteristic on the loaded data -- rebuild the processed hub with 1_processData.do"
+        exit 459
+    }
+    local e1_dropped : list e1_switchers - e1_kept
+    foreach s of local e1_dropped {
+        quietly replace traj_for_agg = -1 if traj_for_agg == `s'
+    }
+    if "`e1_dropped'" != "" {
+        di as text "  switcher trajectories `e1_dropped' lumped into the -1 cell (keep-list)"
+    }
+
     preserve
         quietly keep if pid_first == 1
         bysort traj_for_agg: egen n_pids = count(pid)

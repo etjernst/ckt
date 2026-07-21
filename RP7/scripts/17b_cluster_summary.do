@@ -59,7 +59,9 @@ forval k = 1/`nrows' {
     di as txt "================================================================"
 
     use "$dirdata/processed/`dset'.dta", clear
-    setup_grc_estimation
+    * nolump: cluster diagnostics describe the Verdier path, which
+    * applies its own cluster-counted switcher keep rule
+    setup_grc_estimation, nolump
     global keepvars $keepvars_base `vidx'
     keep $keepvars
 

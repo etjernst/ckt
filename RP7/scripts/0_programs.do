@@ -79,6 +79,9 @@
 	* handle_balance					sets balanced/unbalanced panel
 	* handle_trajectory_groups			creates trajectories and switcher variable
 	* handle_grc_scaffolding			builds GRC dummies + trajectory contract at source
+	* compute_switcher_keeplist			counts both-state units per switcher trajectory, returns keep/lump lists
+	* write_keeplist_csv				writes a keep-list audit CSV to $output/keeplists/
+	* stash_switcher_keeplist			stores the keep-list in the dataset characteristics at build time
 	* refresh_descriptors				recomputes per-individual bookkeeping after drops
 	* handle_estimable_sample			drops person-waves with missing per-capita outcome
 	* gen_time_trend					creates time trend variable
@@ -218,6 +221,12 @@ program define data_setup
 
 * Keep only person-waves with an estimable per-capita outcome
   handle_estimable_sample `depvar'
+
+* Switcher-inclusion keep-list, computed on the saved (estimable) sample
+  local cellname "`country'_`balance'"
+  if "`choice'" == "nonag"  local cellname "`cellname'_nonag"
+  if "`depvar'" == "income" local cellname "`cellname'_income"
+  stash_switcher_keeplist `cellname'
 end
 
 capture program drop data_setup_2waves
@@ -255,6 +264,12 @@ program define data_setup_2waves
 
 * Keep only person-waves with an estimable per-capita outcome
   handle_estimable_sample `depvar'
+
+* Switcher-inclusion keep-list, computed on the saved (estimable) sample
+  local cellname "`country'_`balance'_2waves"
+  if "`choice'" == "nonag"  local cellname "`cellname'_nonag"
+  if "`depvar'" == "income" local cellname "`cellname'_income"
+  stash_switcher_keeplist `cellname'
 end
 
 capture program drop data_setup_3waves
@@ -292,6 +307,12 @@ program define data_setup_3waves
 
 * Keep only person-waves with an estimable per-capita outcome
   handle_estimable_sample `depvar'
+
+* Switcher-inclusion keep-list, computed on the saved (estimable) sample
+  local cellname "`country'_`balance'_3waves"
+  if "`choice'" == "nonag"  local cellname "`cellname'_nonag"
+  if "`depvar'" == "income" local cellname "`cellname'_income"
+  stash_switcher_keeplist `cellname'
 end
 
 * **********************************************************************
@@ -619,6 +640,110 @@ program define handle_grc_scaffolding
     char define _dta[grc_switchers] "`switchers'"
     char define _dta[grc_always] "`always'"
     char define _dta[grc_never] "1"
+end
+
+* **********************************************************************
+* Switcher-inclusion rule: both-state counts per switcher trajectory
+* **********************************************************************
+* For each candidate switcher trajectory, counts the distinct units
+* (individuals on the main path, clusters on the Verdier path) observed
+* with choice==1 and with choice==0 within that trajectory, and splits
+* the candidates into kept (count >= threshold) and dropped.
+* Returns r(kept), r(dropped), and r(counts) as "code=count" pairs.
+* Row order is restored on exit, so callers' sort state is untouched.
+capture program drop compute_switcher_keeplist
+program define compute_switcher_keeplist, rclass
+    syntax , CANDidates(numlist) THREShold(numlist integer min=1 max=1) ///
+        [UNITvar(varname)]
+    if "`unitvar'" == "" local unitvar pid
+
+    tempvar obsorder has_u has_r tagunit
+    qui gen double `obsorder' = _n
+    qui bysort trajectory `unitvar': egen byte `has_u' = max(choice == 1)
+    qui by trajectory `unitvar': egen byte `has_r' = max(choice == 0)
+    qui egen byte `tagunit' = tag(trajectory `unitvar')
+
+    local kept ""
+    local dropped ""
+    local counts ""
+    foreach s of numlist `candidates' {
+        qui count if `tagunit' & trajectory == `s' & `has_u' & `has_r'
+        local n_both = r(N)
+        local counts "`counts' `s'=`n_both'"
+        if `n_both' >= `threshold' {
+            local kept "`kept' `s'"
+            local verdict "keep"
+        }
+        else {
+            local dropped "`dropped' `s'"
+            local verdict "lump"
+        }
+        di as text "compute_switcher_keeplist: trajectory `s': " ///
+            "`n_both' `unitvar'(s) in both states -> `verdict'"
+    }
+    qui sort `obsorder'
+
+    return local kept    = strtrim("`kept'")
+    return local dropped = strtrim("`dropped'")
+    return local counts  = strtrim("`counts'")
+end
+
+* **********************************************************************
+* Keep-list audit CSV
+* **********************************************************************
+* Writes one row per candidate switcher trajectory (code, both-state
+* count, kept flag) plus the rule parameters, so every estimation cell's
+* switcher-inclusion decision is auditable from $output/keeplists/.
+capture program drop write_keeplist_csv
+program define write_keeplist_csv
+    syntax , FILEname(string) COUNTS(string) KEPT(string) ///
+        THREShold(numlist integer min=1 max=1) UNITvar(string)
+    tempname fh
+    file open `fh' using "`filename'", write replace text
+    file write `fh' "trajectory,n_both_states,kept,threshold,count_unit" _n
+    foreach pair of local counts {
+        local eqpos = strpos("`pair'", "=")
+        local s = substr("`pair'", 1, `eqpos'-1)
+        local n = substr("`pair'", `eqpos'+1, .)
+        local iskept : list s in kept
+        file write `fh' "`s',`n',`iskept',`threshold',`unitvar'" _n
+    }
+    file close `fh'
+    di as text "write_keeplist_csv: wrote `filename'"
+end
+
+* **********************************************************************
+* Build-time keep-list stash
+* **********************************************************************
+* Runs at the end of data_setup, on the saved (estimable) sample.
+* Applies the main-path switcher-inclusion rule (at least
+* $grc_switcher_keep_min individuals observed in both states) to the
+* trajectory enumeration and stores the result in the dataset
+* characteristics, next to the trajectory contract:
+*   _dta[grc_kept_switchers]  kept switcher codes
+*   _dta[grc_keep_threshold]  the threshold the list was computed at
+*   _dta[grc_keep_counts]     "code=count" both-state counts, all candidates
+* The trajectory labels themselves are NOT changed here: lumping is a
+* load-time step in setup_grc_estimation, so the saved file keeps the
+* full enumeration for the Verdier path and for audit.
+capture program drop stash_switcher_keeplist
+program define stash_switcher_keeplist
+    args cellname
+    local candidates : char _dta[grc_switchers]
+    if "`candidates'" == "" {
+        di as error "stash_switcher_keeplist: no grc_switchers characteristic; run handle_grc_scaffolding first"
+        exit 459
+    }
+    compute_switcher_keeplist, candidates(`candidates') ///
+        threshold($grc_switcher_keep_min) unitvar(pid)
+    local kept `r(kept)'
+    local counts `r(counts)'
+    char define _dta[grc_kept_switchers] "`kept'"
+    char define _dta[grc_keep_threshold] "$grc_switcher_keep_min"
+    char define _dta[grc_keep_counts] "`counts'"
+    di as text "stash_switcher_keeplist: `cellname' kept switchers: `kept'"
+    write_keeplist_csv, filename("$output/keeplists/`cellname'_keeplist.csv") ///
+        counts(`counts') kept(`kept') threshold($grc_switcher_keep_min) unitvar(pid)
 end
 
 * **********************************************************************
@@ -1661,6 +1786,15 @@ capture program drop setup_grc_estimation
 program define setup_grc_estimation
     * Reads back the trajectory contract that handle_grc_scaffolding
     * stashed at build time; the dummies already live in the dataset.
+    * By default also applies the switcher-inclusion rule: switcher
+    * trajectories not on the build-time keep-list are lumped into the
+    * unbalanced cell (999) in memory, and $switchers holds the kept
+    * codes only, so every estimator that reads $switchers shares one
+    * switcher set. The saved file is never changed. The nolump option
+    * skips the lump and sets $switchers to the full enumeration; the
+    * Verdier-robust path uses it because it applies its own looser
+    * cluster-counted rule inside run_grc_robust_vv.
+    syntax [, NOLump]
     local switchers : char _dta[grc_switchers]
     local always    : char _dta[grc_always]
     local never     : char _dta[grc_never]
@@ -1668,16 +1802,72 @@ program define setup_grc_estimation
         di as error "setup_grc_estimation: dataset carries no grc_switchers/grc_always/grc_never characteristics; rebuild the processed hub with 1_processData.do"
         exit 459
     }
+    local kept : char _dta[grc_kept_switchers]
+    if "`kept'" == "" & "`nolump'" == "" {
+        di as error "setup_grc_estimation: dataset carries no grc_kept_switchers characteristic (switcher-inclusion keep-list); rebuild the processed hub with 1_processData.do"
+        exit 459
+    }
     confirm variable trajectory always always_choice never
+
+    * Original labels survive the lump for any downstream consumer
+    capture drop trajectory_full
+    gen trajectory_full = trajectory
+    lab var trajectory_full "Trajectory code before thin-switcher lumping"
 
     global 		never `never'
     global 		always `always'
-    global 		switchers `switchers'
-    local 		lastswitcher = $always-1
+    local 		lastswitcher = `always'-1
     numlist 	"1(1)`lastswitcher'"	// Grab list of all-but-always
     global 		noalways `r(numlist)'
-    global 		last = $always-1
-    global 		first = $never+1
+    global 		last = `always'-1
+    global 		first = `never'+1
+
+    if "`nolump'" == "" {
+        local dropped : list switchers - kept
+        if "`dropped'" != "" {
+            tempvar lump
+            qui gen byte `lump' = 0
+            foreach s of local dropped {
+                qui replace `lump' = 1 if trajectory == `s'
+            }
+            qui count if `lump'
+            local n_lump_waves = r(N)
+            capture confirm variable pid_first_obs
+            if !_rc {
+                qui count if `lump' & pid_first_obs
+                local n_lump_pids = r(N)
+            }
+            else local n_lump_pids .
+            qui count if unbalanced == 1
+            if r(N) > 0 {
+                * Unbalanced cell exists: relabel, never delete
+                qui replace unbalanced = 1 if `lump'
+                qui replace unbalanced_choice = unbalanced*choice
+                qui replace trajectory = 999 if `lump'
+                capture confirm variable switcher
+                if !_rc qui replace switcher = 0 if `lump'
+                foreach s of local dropped {
+                    qui replace switcher_`s' = 0
+                    qui replace switcher_`s'_choice = 0
+                }
+                di as text "setup_grc_estimation: switcher trajectories `dropped' fall below " ///
+                    char(36) "grc_switcher_keep_min = $grc_switcher_keep_min both-state individuals;" ///
+                    " `n_lump_pids' individuals (`n_lump_waves' person-waves) lumped into the unbalanced cell"
+            }
+            else {
+                * Balanced sample: no unbalanced cell to lump into
+                di as error "setup_grc_estimation: switcher trajectories `dropped' fall below the keep rule"
+                di as error "setup_grc_estimation: balanced sample has no unbalanced cell to lump into;" ///
+                    " DROPPING `n_lump_pids' individuals (`n_lump_waves' person-waves)"
+                qui drop if `lump'
+            }
+        }
+        global switchers `kept'
+    }
+    else {
+        global switchers `switchers'
+        di as text "setup_grc_estimation: nolump -- $switchers holds the full enumeration; caller applies its own keep rule"
+    }
 
     replace trajectory = 999 if trajectory == .	// Unbalanced
 end
@@ -3214,6 +3404,58 @@ program define run_grc_robust_vv
     qui levelsof vfirst, local(vvals)
     local V : word count `vvals'
     di as text "run_grc_robust_vv: |V| = `V' clusters"
+
+    * ----------------------------------------------------------------
+    * Verdier-path switcher-inclusion rule: keep a switcher trajectory
+    * only if at least $grc_switcher_keep_min_vv clusters (vfirst)
+    * contribute both an urban and a rural observation to it; looser
+    * than the main path's individual count because cluster counts are
+    * small. Non-kept switchers are lumped into the unbalanced cell
+    * (dropped in a balanced sample, which has none). All scoped to
+    * this call by the program-level preserve. Callers pass the full
+    * trajectory enumeration (setup_grc_estimation, nolump).
+    * ----------------------------------------------------------------
+    compute_switcher_keeplist, candidates(`switchers') ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    local vv_kept `r(kept)'
+    local vv_dropped `r(dropped)'
+    local vv_counts `r(counts)'
+    write_keeplist_csv, filename("$output/keeplists/`estname'_vv_keeplist.csv") ///
+        counts(`vv_counts') kept(`vv_kept') ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    if "`vv_dropped'" != "" {
+        tempvar vvlump
+        qui gen byte `vvlump' = 0
+        foreach s of local vv_dropped {
+            qui replace `vvlump' = 1 if trajectory == `s'
+        }
+        qui count if `vvlump'
+        local n_lump = r(N)
+        if "`balance'" == "unb" {
+            qui replace unbalanced = 1 if `vvlump'
+            qui replace unbalanced_choice = unbalanced*choice
+            qui replace trajectory = 999 if `vvlump'
+            capture confirm variable switcher
+            if !_rc qui replace switcher = 0 if `vvlump'
+            foreach s of local vv_dropped {
+                qui replace switcher_`s' = 0
+                qui replace switcher_`s'_choice = 0
+            }
+            di as text "run_grc_robust_vv: switcher trajectories `vv_dropped' fall below " ///
+                "the cluster keep rule; `n_lump' person-waves lumped into the unbalanced cell"
+        }
+        else {
+            di as error "run_grc_robust_vv: switcher trajectories `vv_dropped' fall below the cluster keep rule"
+            di as error "run_grc_robust_vv: balanced sample has no unbalanced cell to lump into; DROPPING `n_lump' person-waves"
+            qui drop if `vvlump'
+        }
+    }
+    local basekept : list base in vv_kept
+    if !`basekept' {
+        di as error "run_grc_robust_vv: base trajectory `base' is not on the Verdier keep-list (`vv_kept')"
+        exit 498
+    }
+    local switchers `vv_kept'
 
     * ----------------------------------------------------------------
     * VV's first-stage optimal instrument construction:
