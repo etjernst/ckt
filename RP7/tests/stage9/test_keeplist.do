@@ -228,6 +228,197 @@ assert "`r(dropped)'" == "3 4"
 assert "`r(counts)'" == "2=2 3=1 4=0"
 di as result "PASS 6: cluster-counted rule at threshold 2"
 
+* *******************************************************************
+* Test 7: full synthetic Verdier fit with a cluster-dropped trajectory
+*   Exercises run_grc_robust_vv end to end via the driver pattern
+*   (gen_vfirst + per-country keep-list + keeplist() option): the
+*   dropped trajectory must be absent from the fitted parameters AND
+*   from every post-estimation product (the joint tests and nlcoms
+*   must loop the kept list, not the $switchers global).
+* *******************************************************************
+clear
+set seed 12345
+set obs 0
+gen long pid = .
+gen int year = .
+gen byte choice = .
+gen byte trajectory = .
+gen byte unbalanced = .
+gen int prov = .
+
+local next 0
+* never (code 1): 30 pids, all rural, clusters 1-3
+forvalues i = 1/30 {
+    local ++next
+    forvalues t = 1/3 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = 0 in `=_N'
+        replace trajectory = 1 in `=_N'
+        replace unbalanced = 0 in `=_N'
+        replace prov = 1 + mod(`i', 3) in `=_N'
+    }
+}
+* switcher 2: 0-0-1, 30 pids, clusters 1-3
+forvalues i = 1/30 {
+    local ++next
+    forvalues t = 1/3 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = cond(`t' == 3, 1, 0) in `=_N'
+        replace trajectory = 2 in `=_N'
+        replace unbalanced = 0 in `=_N'
+        replace prov = 1 + mod(`i', 3) in `=_N'
+    }
+}
+* switcher 3: 0-1-1, 30 pids, clusters 4-6
+forvalues i = 1/30 {
+    local ++next
+    forvalues t = 1/3 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = cond(`t' >= 2, 1, 0) in `=_N'
+        replace trajectory = 3 in `=_N'
+        replace unbalanced = 0 in `=_N'
+        replace prov = 4 + mod(`i', 3) in `=_N'
+    }
+}
+* switcher 4: 0-1-1, 9 pids, ALL in cluster 7 -> one both-state cluster,
+* below the two-cluster Verdier rule, so it must be lumped
+forvalues i = 1/9 {
+    local ++next
+    forvalues t = 1/3 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = cond(`t' >= 2, 1, 0) in `=_N'
+        replace trajectory = 4 in `=_N'
+        replace unbalanced = 0 in `=_N'
+        replace prov = 7 in `=_N'
+    }
+}
+* always (code 5): 30 pids, all urban, clusters 4-6
+forvalues i = 1/30 {
+    local ++next
+    forvalues t = 1/3 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = 1 in `=_N'
+        replace trajectory = 5 in `=_N'
+        replace unbalanced = 0 in `=_N'
+        replace prov = 4 + mod(`i', 3) in `=_N'
+    }
+}
+* unbalanced pids: 10 pids, 2 waves, cluster 8
+forvalues i = 1/10 {
+    local ++next
+    forvalues t = 1/2 {
+        set obs `=_N+1'
+        replace pid = `next' in `=_N'
+        replace year = 2000 + `t' in `=_N'
+        replace choice = cond(`t' == 2, 1, 0) in `=_N'
+        replace trajectory = . in `=_N'
+        replace unbalanced = 1 in `=_N'
+        replace prov = 8 in `=_N'
+    }
+}
+
+gen byte period = year - 2000
+gen unbalanced_choice = unbalanced*choice
+gen byte always = (trajectory == 5)
+gen always_choice = always*choice
+gen byte never = (trajectory == 1)
+gen byte switcher = inlist(trajectory, 2, 3, 4)
+forvalues s = 2/4 {
+    gen byte switcher_`s' = (trajectory == `s')
+    gen switcher_`s'_choice = switcher_`s'*choice
+}
+bysort pid (year): gen byte pid_first_obs = (_n == 1)
+sort pid year
+
+* Outcome: trajectory mean + common urban return + noise
+gen double mu_true = 1.0
+replace mu_true = 1.2 if trajectory == 2
+replace mu_true = 1.4 if trajectory == 3
+replace mu_true = 1.6 if trajectory == 4
+replace mu_true = 2.0 if trajectory == 5
+replace mu_true = 1.1 if missing(trajectory)
+gen double logpc_consumption = mu_true + 0.3*choice + rnormal(0, 0.05)
+
+char define _dta[grc_switchers] "2 3 4"
+char define _dta[grc_always] "5"
+char define _dta[grc_never] "1"
+
+setup_grc_estimation, nolump
+assert "$switchers" == "2 3 4"
+
+* Driver pattern: vfirst + per-country keep-list, then the fit consumes it
+gen_vfirst, vname(prov) genname(vfirst)
+compute_switcher_keeplist if !missing(vfirst), candidates($switchers) ///
+    threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+local vv_kept `r(kept)'
+assert "`vv_kept'" == "2 3"
+assert "`r(dropped)'" == "4"
+
+* Starting values from the kept set, exactly as the drivers do (a zero
+* start leaves the phi derivative on a flat region and the gmm r(430)s)
+xtset pid period
+initial_values logpc_consumption, ///
+    switchers(`vv_kept')        ///
+    balance(unb)                ///
+    estname(initial_t9)
+local base `r(base)'
+local initial "`r(initial)'"
+assert strpos(" `vv_kept' ", " `base' ") > 0
+
+* Redirect $dir so the fit's sters land in the test tree, not RP7/output
+global dir "C:/git/ckt/RP7/tests/stage9"
+capture mkdir "$dir/output"
+
+local n_before = _N
+run_grc_robust_vv,                                ///
+    estname(vv_t9_os)                             ///
+    switchers($switchers) keeplist(`vv_kept')     ///
+    base(`base') balance(unb) vindex(prov)        ///
+    initial(`initial')                            ///
+    iterate(100) onestep
+
+* caller's data untouched (program-level preserve)
+assert _N == `n_before'
+
+* fitted parameters: kept switchers present, dropped switcher absent
+estimates use "$dir/output/vv_t9_os.ster"
+local eqs   : coleq e(b)
+local names : colnames e(b)
+local has2 0
+local has3 0
+local has4 0
+forvalues j = 1/`=colsof(e(b))' {
+    local eq : word `j' of `eqs'
+    local nm : word `j' of `names'
+    if "`eq'" == "mu" & "`nm'" == "switcher_2" local has2 1
+    if "`eq'" == "mu" & "`nm'" == "switcher_3" local has3 1
+    if "`eq'" == "mu" & "`nm'" == "switcher_4" local has4 1
+}
+assert `has2' == 1 & `has3' == 1 & `has4' == 0
+* the joint mu test ran on the kept list (would have errored on the
+* full $switchers enumeration, which includes the dropped code 4)
+assert e(joint_chi2) < .
+
+* post-estimation products exist and carry only kept-switcher Deltas
+confirm file "$dir/output/vv_t9_os_d.ster"
+confirm file "$dir/output/vv_t9_os_g.ster"
+estimates use "$dir/output/vv_t9_os_d.ster"
+local dnames : colnames e(b)
+assert strpos("`dnames'", "Delta_2") > 0
+assert strpos("`dnames'", "Delta_3") > 0
+assert strpos("`dnames'", "Delta_4") == 0
+di as result "PASS 7: synthetic Verdier fit lumps the one-cluster trajectory and post-estimation loops the kept list"
+
 di as result "ALL STAGE 9 KEEP-LIST TESTS PASSED"
 }
 local saved_rc = _rc

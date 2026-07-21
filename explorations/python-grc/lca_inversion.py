@@ -3,8 +3,9 @@
 Three components:
 
 * ``drop_sparse_switchers``: pre-filter switcher trajectories with too few
-  treated clusters. Mirrors the rank-deficient-moment pre-drop planned
-  for the GMM estimator's pseudo-inverse step.
+  units observed in both states (an urban and a rural observation within
+  the trajectory). Mirrors ``compute_switcher_keeplist`` in
+  RP7/scripts/0_programs.do.
 * ``fit_auxiliary_ols``: saturated OLS in trajectory dummies and (kept
   switcher) x choice interactions with cluster-robust SE. Returns
   coefficients, VCV, and a name -> index map for the inversion.
@@ -50,6 +51,21 @@ class AuxiliaryFit:
 SWITCHER_KEEP_MIN = 5
 
 
+def _int_codes(values) -> list[int]:
+    """Coerce trajectory codes to a sorted int list, rejecting any value
+    that is not integral to float tolerance (Stata floats can round-trip
+    as e.g. 2.9999999999; silent ``int()`` truncation would misclassify).
+    """
+    codes = []
+    for t in values:
+        f = float(t)
+        r = round(f)
+        if abs(f - r) > 1e-6:
+            raise ValueError(f"trajectory code {f!r} is not integral")
+        codes.append(int(r))
+    return sorted(codes)
+
+
 def drop_sparse_switchers(
     df: pd.DataFrame,
     trajectory: str,
@@ -68,7 +84,13 @@ def drop_sparse_switchers(
     excluded from candidacy. Mirrors ``compute_switcher_keeplist`` in
     RP7/scripts/0_programs.do.
     """
-    trajectories = sorted(int(t) for t in df[trajectory].dropna().unique())
+    if df[hhid].isna().any():
+        raise ValueError(
+            f"{hhid} contains missing values; both-state unit counting "
+            f"requires complete unit ids (NaN ids would identity-match "
+            f"across the urban and rural sets)"
+        )
+    trajectories = _int_codes(df[trajectory].dropna().unique())
     if len(trajectories) < 3:
         raise ValueError(
             f"Need at least 3 trajectories (never, switcher(s), always); "
@@ -113,7 +135,7 @@ def fit_auxiliary_ols(
     via ``unbalanced`` and ``unbalanced_choice`` indicators (matching CKT's
     GMM specification). Additional ``controls`` are included as level shifters.
     """
-    trajectories = sorted(int(t) for t in df[trajectory].dropna().unique())
+    trajectories = _int_codes(df[trajectory].dropna().unique())
 
     cols: dict[str, np.ndarray] = {}
     for d in trajectories:
@@ -832,7 +854,7 @@ def compute_all_inversion_cis(
             f"base {base} not in switchers_kept {kept} after threshold {threshold}"
         )
 
-    trajectories = sorted(int(t) for t in sub[trajectory].dropna().unique())
+    trajectories = _int_codes(sub[trajectory].dropna().unique())
     never_traj, always_traj = trajectories[0], trajectories[-1]
 
     fit = fit_auxiliary_ols(
@@ -949,7 +971,8 @@ def attach_inversion_for_stata(
     # switchers_kept arrives as a space-separated string from the Stata
     # local (the $switchers global setup_grc_estimation built from the
     # grc_kept_switchers characteristic); empty means "recompute only"
-    kept_list = [int(s) for s in switchers_kept.split()] if switchers_kept else None
+    kept_str = switchers_kept.strip()
+    kept_list = [int(s) for s in kept_str.split()] if kept_str else None
 
     out = compute_all_inversion_cis(
         df=df,

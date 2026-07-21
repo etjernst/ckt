@@ -653,21 +653,22 @@ end
 * Row order is restored on exit, so callers' sort state is untouched.
 capture program drop compute_switcher_keeplist
 program define compute_switcher_keeplist, rclass
-    syntax , CANDidates(numlist) THREShold(numlist integer min=1 max=1) ///
+    syntax [if], CANDidates(numlist) THREShold(numlist integer min=1 max=1) ///
         [UNITvar(varname)]
     if "`unitvar'" == "" local unitvar pid
+    marksample touse, novarlist
 
     tempvar obsorder has_u has_r tagunit
     qui gen double `obsorder' = _n
-    qui bysort trajectory `unitvar': egen byte `has_u' = max(choice == 1)
-    qui by trajectory `unitvar': egen byte `has_r' = max(choice == 0)
-    qui egen byte `tagunit' = tag(trajectory `unitvar')
+    qui bysort trajectory `unitvar': egen byte `has_u' = max((choice == 1) & `touse')
+    qui by trajectory `unitvar': egen byte `has_r' = max((choice == 0) & `touse')
+    qui egen byte `tagunit' = tag(trajectory `unitvar') if `touse'
 
     local kept ""
     local dropped ""
     local counts ""
     foreach s of numlist `candidates' {
-        qui count if `tagunit' & trajectory == `s' & `has_u' & `has_r'
+        qui count if `tagunit' == 1 & trajectory == `s' & `has_u' & `has_r'
         local n_both = r(N)
         local counts "`counts' `s'=`n_both'"
         if `n_both' >= `threshold' {
@@ -2203,10 +2204,11 @@ program define initial_values, rclass
         return scalar Delta_`s' = Delta_`s'
     }
 		
-    * Accumulate mu-coeffs for initial values
-		foreach s of numlist $switchers {
+    * Accumulate mu-coeffs for initial values (the switchers() argument,
+    * not $switchers: the caller may pass a trimmed keep-list)
+		foreach s of numlist `switchers' {
 			local initial "`initial' mu:switcher_`s' mu_`s'"
-		}	
+		}
     
     * Accumulate Delta-coeffs for initial values
 // 		foreach s of numlist $switchers {
@@ -2238,8 +2240,10 @@ program define initial_values, rclass
     quietly xtdescribe
     scalar T = r(max)
 		
-		* Initialize macros with default
-    local base = 2
+		* Initialize macros with default: the first passed switcher (code 2
+		* on the full enumeration), so the fallback is always a trajectory
+		* the caller's list actually contains
+    local base : word 1 of `switchers'
     local max_t = -1
 		
 		* Loop through the switchers and compute t-values
@@ -2334,7 +2338,7 @@ program define initial_values_robust, rclass
     * Build `initial' local: mu, kappa (mirrors initial_values exactly)
     * ----------------------------------------------------------------
     local initial ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         local initial "`initial' mu:switcher_`s' mu_`s'"
     }
     local initial "`initial' kappa: kappa"
@@ -2537,9 +2541,9 @@ program define run_grc
       * merge: hukou cells previously skipped this block entirely).
 	  capture noisily {
 	      local mu_test ""
-	      local s0 : word 1 of $switchers
+	      local s0 : word 1 of `switchers'
 	      local mu_test "[mu]switcher_`s0'"
-	      foreach s of numlist $switchers {
+	      foreach s of numlist `switchers' {
 		      if `s' != `s0'{
 			      local mu_test "`mu_test' = [mu]switcher_`s'"
 		      }
@@ -2596,15 +2600,15 @@ program define run_grc
 	  capture noisily {
 	      estimates restore `estname'
 	      local nlcom_expr ""
-	      foreach s of numlist $switchers {
+	      foreach s of numlist `switchers' {
 	  	      local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
           }
 	      nlcom `nlcom_expr', post
 	      * Joint test for Deltas
 	      local d_test ""
-	      local s0 : word 1 of $switchers
+	      local s0 : word 1 of `switchers'
 	      local d_test "Delta_`s0'"
-	      foreach s of numlist $switchers {
+	      foreach s of numlist `switchers' {
 		      if `s' != `s0'{
 			      local d_test "`d_test' = Delta_`s'"
 		      }
@@ -2623,7 +2627,7 @@ program define run_grc
 	  * Compute Delta_avg (average Delta for all switchers)
 	  local first_loop = 1
 	  local Delta_avg_nlcom ""
-	  foreach s of numlist $switchers {
+	  foreach s of numlist `switchers' {
 	  	estimates restore `estname'   // make sure the results are in memory
         * Within-switcher trajectory share: condition on switcher == 1 so
         * num_s sums to 1 across $switchers. The previous form
@@ -2869,10 +2873,12 @@ program define run_grc_onestep
                              from(`initial')                                         ///
                              iterate(`iterate')
 
+    * loop the switchers() list the moment system was built from, never
+    * the $switchers global, which can hold a wider enumeration
     local mu_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local mu_test "[mu]switcher_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local mu_test "`mu_test' = [mu]switcher_`s'"
         }
@@ -2908,14 +2914,14 @@ program define run_grc_onestep
 
     estimates restore `estname'
     local nlcom_expr ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
     }
     nlcom `nlcom_expr', post
     local d_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local d_test "Delta_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local d_test "`d_test' = Delta_`s'"
         }
@@ -2927,7 +2933,7 @@ program define run_grc_onestep
 
     local first_loop = 1
     local Delta_avg_nlcom ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         estimates restore `estname'
         * Within-switcher trajectory share: condition on switcher == 1 so
         * num_s sums to 1 across $switchers. The previous form
@@ -3135,10 +3141,12 @@ program define run_grc_robust
     * ----------------------------------------------------------------
     * Joint mu test + Hansen J (same as run_grc)
     * ----------------------------------------------------------------
+    * loop the switchers() list the moment system was built from, never
+    * the $switchers global, which can hold a wider enumeration
     local mu_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local mu_test "[mu]switcher_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local mu_test "`mu_test' = [mu]switcher_`s'"
         }
@@ -3225,15 +3233,15 @@ program define run_grc_robust
     * ----------------------------------------------------------------
     estimates restore `estname'
     local nlcom_expr ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
     }
     nlcom `nlcom_expr', post
 
     local d_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local d_test "Delta_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local d_test "`d_test' = Delta_`s'"
         }
@@ -3249,7 +3257,7 @@ program define run_grc_robust
     * ----------------------------------------------------------------
     local first_loop = 1
     local Delta_avg_nlcom ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         estimates restore `estname'
         * Within-switcher trajectory share: condition on switcher == 1 so
         * num_s sums to 1 across $switchers. The previous form
@@ -3344,7 +3352,7 @@ program define run_grc_robust_vv
     syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
         vindex(varname) ///
         [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1) ///
-         ONEstep TWOstep]
+         ONEstep TWOstep KEEPlist(numlist)]
 
     * ----------------------------------------------------------------
     * Resume-on-interrupt. If ${skip_if_exists} == "1" and the
@@ -3413,16 +3421,30 @@ program define run_grc_robust_vv
     * small. Non-kept switchers are lumped into the unbalanced cell
     * (dropped in a balanced sample, which has none). All scoped to
     * this call by the program-level preserve. Callers pass the full
-    * trajectory enumeration (setup_grc_estimation, nolump).
+    * trajectory enumeration (setup_grc_estimation, nolump) in
+    * switchers(); a driver that already computed the cluster keep-list
+    * (once per country, so the base is picked inside it) passes it via
+    * keeplist(), which skips the recomputation and the per-cell CSV.
     * ----------------------------------------------------------------
-    compute_switcher_keeplist, candidates(`switchers') ///
-        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
-    local vv_kept `r(kept)'
-    local vv_dropped `r(dropped)'
-    local vv_counts `r(counts)'
-    write_keeplist_csv, filename("$output/keeplists/`estname'_vv_keeplist.csv") ///
-        counts(`vv_counts') kept(`vv_kept') ///
-        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    if "`keeplist'" == "" {
+        compute_switcher_keeplist, candidates(`switchers') ///
+            threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+        local vv_kept `r(kept)'
+        local vv_dropped `r(dropped)'
+        local vv_counts `r(counts)'
+        write_keeplist_csv, filename("$output/keeplists/`estname'_vv_keeplist.csv") ///
+            counts(`vv_counts') kept(`vv_kept') ///
+            threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    }
+    else {
+        local notin : list keeplist - switchers
+        if "`notin'" != "" {
+            di as error "run_grc_robust_vv: keeplist codes `notin' are not in switchers(`switchers')"
+            exit 198
+        }
+        local vv_kept `keeplist'
+        local vv_dropped : list switchers - keeplist
+    }
     if "`vv_dropped'" != "" {
         tempvar vvlump
         qui gen byte `vvlump' = 0
@@ -3431,7 +3453,10 @@ program define run_grc_robust_vv
         }
         qui count if `vvlump'
         local n_lump = r(N)
-        if "`balance'" == "unb" {
+        * same data-driven test as setup_grc_estimation: a balanced file
+        * carries unbalanced == 0 everywhere, so there is no cell to lump into
+        qui count if unbalanced == 1
+        if r(N) > 0 {
             qui replace unbalanced = 1 if `vvlump'
             qui replace unbalanced_choice = unbalanced*choice
             qui replace trajectory = 999 if `vvlump'
@@ -3589,10 +3614,12 @@ program define run_grc_robust_vv
     * ----------------------------------------------------------------
     * Post-estimation (joint mu test, Hansen J, convergence flag)
     * ----------------------------------------------------------------
+    * loop the switchers() list the moment system was built from, never
+    * the $switchers global, which can hold a wider enumeration
     local mu_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local mu_test "[mu]switcher_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local mu_test "`mu_test' = [mu]switcher_`s'"
         }
@@ -3654,15 +3681,15 @@ program define run_grc_robust_vv
 
     estimates restore `estname'
     local nlcom_expr ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
     }
     nlcom `nlcom_expr', post
 
     local d_test ""
-    local s0 : word 1 of $switchers
+    local s0 : word 1 of `switchers'
     local d_test "Delta_`s0'"
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         if `s' != `s0' {
             local d_test "`d_test' = Delta_`s'"
         }
@@ -3674,7 +3701,7 @@ program define run_grc_robust_vv
 
     local first_loop = 1
     local Delta_avg_nlcom ""
-    foreach s of numlist $switchers {
+    foreach s of numlist `switchers' {
         estimates restore `estname'
         * Within-switcher trajectory share: condition on switcher == 1 so
         * num_s sums to 1 across $switchers. The previous form

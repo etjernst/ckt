@@ -87,7 +87,7 @@ def main():
                       f"values: min={mn:g}, max={mx:g}")
 
     kept, counts = drop_sparse_switchers(df, traj, choice, hhid, threshold=thr)
-    supplied_raw = Macro.getLocal("switchers_kept")
+    supplied_raw = Macro.getLocal("switchers_kept").strip()
     if supplied_raw:
         # The Stata-authored keep-list is the source of truth; the local
         # recomputation is a redundant safety check, and disagreement is

@@ -68,8 +68,20 @@ forval k = 1/`nrows' {
     tab period, gen(period_)
     local periodFE "period_2 - period_`r(r)'"
 
+    * Verdier switcher keep-list, once per row (mirrors 17_verdier_robust):
+    * base and initial values are picked inside the kept set, and the fit
+    * receives the list via keeplist()
+    gen_vfirst, vname(`vidx') genname(vfirst)
+    compute_switcher_keeplist if !missing(vfirst), candidates($switchers) ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+    local vv_kept `r(kept)'
+    local vv_counts `r(counts)'
+    write_keeplist_csv, filename("$output/keeplists/vv_`code'_keeplist.csv") ///
+        counts(`vv_counts') kept(`vv_kept') ///
+        threshold($grc_switcher_keep_min_vv) unitvar(vfirst)
+
     initial_values logpc_consumption, ///
-        switchers($switchers)       ///
+        switchers(`vv_kept')        ///
         balance(unb)                ///
         estname(initial_`code')
     local base `r(base)'
@@ -78,7 +90,8 @@ forval k = 1/`nrows' {
     * Onestep, full controls (period FE + female + age^2 + education + education^2)
     run_grc_robust_vv,                                    ///
         estname(vv_`code'_os_covs_all)                    ///
-        switchers($switchers) base(`base') initial(`initial') ///
+        switchers($switchers) keeplist(`vv_kept')             ///
+        base(`base') initial(`initial')                       ///
         balance(unb) vindex(`vidx')                       ///
         covars(`periodFE' $covs_gmm_all)                  ///
         iterate(`iterations') onestep

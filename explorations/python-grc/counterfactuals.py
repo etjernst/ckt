@@ -24,6 +24,7 @@ from scipy.stats import chi2
 # Re-export the auxiliary-OLS infrastructure from lca_inversion so the
 # joint CI consumer can ``from counterfactuals import fit_auxiliary_ols``.
 from lca_inversion import (  # noqa: F401
+    SWITCHER_KEEP_MIN,
     AuxiliaryFit,
     drop_sparse_switchers,
     fit_auxiliary_ols,
@@ -358,7 +359,7 @@ def lca_delta_dT(
 # misallocation aggregate is computed here.
 # ===========================================================================
 
-THRESHOLD = 5
+THRESHOLD = SWITCHER_KEEP_MIN
 TYPE_ONE = 0.05
 # Cells exempt from the hard 0.01 OLS-vs-ster Delta_dN agreement bound (weak
 # identification near phi = -1 separates the two estimators; see run_cell).

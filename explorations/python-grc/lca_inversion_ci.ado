@@ -94,7 +94,7 @@ program define lca_inversion_ci, eclass
     di as text "{hline 72}"
     di as text "LCA inversion CI for phi (estimate: `estname')"
     di as text "{hline 72}"
-    di as text "  switchers kept (>= `threshold' treated pids):  " as result "`inv_n_kept'"
+    di as text "  switchers kept (>= `threshold' pids in both states):  " as result "`inv_n_kept'"
     di as text "  J_R (restrictions):                            " as result "`inv_J_R'"
     di as text "  Wald minimum:                                  " as result %9.4f `inv_wald_min'
     di as text "  phi at Wald minimum:                           " as result %9.4f `inv_phi_at_waldmin'
