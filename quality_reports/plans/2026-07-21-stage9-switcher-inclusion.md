@@ -5,7 +5,17 @@ Spec: [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_
 Predecessor plan: [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-switcher-inclusion-consistency.md), reviewed by critic-econometrics with resolutions folded in.
 Parent: Stage 9 of [2026-07-14-pipeline-frontload-refactor.md](file:///C:/git/ckt/quality_reports/plans/2026-07-14-pipeline-frontload-refactor.md).
 Mode: Implementation.
-Status: draft for approval; no code is touched until this plan is approved.
+Status: APPROVED 2026-07-21 (author), with the amendments recorded under "Approval decisions" below.
+
+## Approval decisions (author, 2026-07-21)
+
+The threshold must be easy to vary for robustness: one named constant per path (five individuals on the main path, two clusters on the Verdier path), defined once and referenced everywhere, so a sweep changes one number and no call sites.
+This promotes the spec's MAY 14 to a requirement.
+R-1 resolved as option (a): the rule is computed during data construction and stored in the saved dataset; the author accepts the rebuild cost ("data construction is not a big cost in this project").
+The keep-list text file is written for Python and for audit, as planned.
+R-2 resolved: in the balanced-sample runs, dropped-trajectory individuals are removed outright, announced loudly in the log.
+R-3 resolved: keep the original labels in a `trajectory_full` copy; additionally, the paper's Verdier robustness section must carry a footnote stating that the Verdier path's rule is two villages rather than five individuals.
+R-4 confirmed: the hukou dataset rebuild goes on the definitive-run checklist.
 
 ## Why a new plan
 
@@ -76,3 +86,24 @@ Confirm, or specify an alternative.
 R-3. `trajectory_full` adds a column to load-time state visible to every downstream consumer; confirm the name, or prefer stashing the original codes some other way.
 
 R-4. The hukou cells must carry the new characteristic too, which means `0_CHN_hukou_restrictions.do` reruns after the keep-list lands; it now writes to `processed/` (Stage 8), so this is a plain rerun, but it needs to be on the definitive-run checklist.
+
+## Implementation status (2026-07-21)
+
+Both legs are implemented and unit-tested on branch `stage9-switcher-inclusion` (commits `fc8169f` Stata, `06b0212` Python).
+The thresholds live in [0_path_config.do](file:///C:/git/ckt/RP7/scripts/0_path_config.do) as `$grc_switcher_keep_min` (5, individuals, main path) and `$grc_switcher_keep_min_vv` (2, clusters, Verdier path); the Python mirror is `SWITCHER_KEEP_MIN` in [lca_inversion.py](file:///C:/git/ckt/explorations/python-grc/lca_inversion.py).
+`compute_switcher_keeplist` counts both-state units; `stash_switcher_keeplist` runs at the end of every `data_setup` variant and stores the keep-list in the dataset characteristics plus an audit CSV under `$output/keeplists/`; `setup_grc_estimation` lumps at load (relabel to 999/unbalanced, loud drop in balanced samples) and gains `nolump` for the Verdier drivers; `run_grc_robust_vv` applies the cluster rule inside its preserve and errors if the base trajectory is not kept; the E1 exporters lump non-kept trajectories into the -1 cell; the inversion receives `$switchers` through the attach handoff with a hard-error agreement check against the Python recomputation.
+The unit test ([test_keeplist.do](file:///C:/git/ckt/RP7/tests/stage9/test_keeplist.do)) passes all six scenarios: five both-state individuals kept, four lumped, one-sided lumped, lumping relabels without deleting, balanced sample drops loudly, nolump inert, cluster-counted rule at threshold two.
+Still owed at the definitive run: hub rebuild (the keep-list characteristics do not exist until then, and `setup_grc_estimation` hard-stops without them), the hukou rebuild (R-4), all `.ster` and E1 regeneration, the old-versus-new table with Hansen $J$, the B-8 thin-cells-retained inversion exhibit (run via the threshold knobs), the sim rebuild, and P2 parity.
+The disclosure prose below goes into the manuscript with author approval.
+
+## Drafted disclosure prose (for the author to place)
+
+For the section that first defines the switcher cells (spec MUST 8):
+
+> We retain a switcher trajectory only if at least five individuals in it are observed in both an urban and a rural period; individuals in thinner trajectories join the unbalanced cell, whose coefficient serves as a nuisance control absorbing both survey attrition and these lumped thin trajectories.
+> This rule applies identically to the GMM, the auxiliary OLS behind the inversion, and the inversion itself, so all three estimators average over the same switcher set.
+> The number of reported switcher trajectories falls accordingly; in Tanzania, a single-person trajectory is absorbed this way. % TODO verify at the definitive run that TZA trajectory 3 is the only lumped cell
+
+Footnote for the Verdier robustness section (author decision 2026-07-21):
+
+> \footnote{On the Verdier-robust path the inclusion rule counts clusters rather than individuals: a switcher trajectory is retained if at least two clusters contribute both an urban and a rural observation to it. The looser threshold reflects the small number of clusters, and the Verdier switcher set can therefore differ from the main path's, so differences between the two estimators are not a pure estimator effect.}
