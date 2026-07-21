@@ -243,6 +243,12 @@ Author the switcher keep-list once at the front end, persist it, and have every 
 This intentionally changes the estimand, per the switcher-inclusion spec [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/specs/2026-07-13-switcher-inclusion-consistency.md) and its plan [2026-07-13-switcher-inclusion-consistency.md](file:///C:/git/ckt/quality_reports/plans/2026-07-13-switcher-inclusion-consistency.md).
 Verify against that spec's acceptance criteria, not the equivalence gate.
 Author approval, then commit.
+Status 2026-07-21: CLOSED and merged to main (merge `2201692`, `--no-ff`).
+Implemented on branch `stage9-switcher-inclusion` per [the stage plan](file:///C:/git/ckt/quality_reports/plans/2026-07-21-stage9-switcher-inclusion.md) (approved the same day with amendments): `compute_switcher_keeplist` counts both-state units, `stash_switcher_keeplist` writes the keep-list into the dataset characteristics plus an audit CSV at the end of every `data_setup` variant, `setup_grc_estimation` lumps non-kept switchers into the unbalanced cell at load (loud drop in balanced samples, `nolump` for the Verdier path), the Verdier drivers compute a cluster-counted keep-list once per country and pass it via `run_grc_robust_vv`'s `keeplist()` option, the E1 exporters lump into the -1 cell with a recompute-and-assert guard, and the inversion consumes `$switchers` with a hard-error agreement check; both thresholds are single named globals in `0_path_config.do`.
+Two critic-stata/critic-python review rounds found and fixed one CRITICAL (post-estimation blocks looping the stale `$switchers` global) and three MAJORs (Verdier base selection, a second hardcoded threshold, a dead-code fallback); the dead programs `run_grc_robust` and `initial_values_robust` were deleted.
+The unit test ([test_keeplist.do](file:///C:/git/ckt/RP7/tests/stage9/test_keeplist.do)) passes all seven scenarios including a full synthetic Verdier fit.
+The disclosure prose and the two-clusters footnote are in `main-updated.tex` (author-approved).
+Deferred to the definitive run: hub rebuild (the keep-list characteristics do not exist until then and `setup_grc_estimation` hard-stops without them), the hukou rebuild, all `.ster`/E1/table regeneration, the old-versus-new table with Hansen $J$, the B-8 thin-cells exhibit, the sim rebuild, and P2 parity.
 
 ## After all stages
 
