@@ -49,3 +49,14 @@ Deliberately did NOT rebuild `RP7/data/processed` (the canonical Stage 3+4 hub) 
 `rm -rf "C:/git/ckt/RP7/data_real"`: author to run manually (guard-blocked); verified safe.
 Then mark Stage 8 CLOSED in the parent plan and this branch merges to main.
 D-4 (nonag manuscript promise) still open at the parent plan; unchanged this session.
+
+---
+
+## 2026-07-21 continuation: critic adjudicated, data_real removed, merged and pushed
+
+The three open items above are all resolved; Stage 8 is CLOSED.
+`critic-stata` returned 96/100 with no CRITICAL and no MAJOR, confirming the four changes correct (regex routes exactly the four hukou names and no base country; all four saves repointed with raw reads untouched; the named master log cannot collide with the per-script unnamed logs; zero live `$values`/`$vsfx`/`data_real` dependents remain).
+Both MINOR nitpicks were declined with reasons recorded in [the review](file:///C:/git/ckt/quality_reports/reviews/2026-07-20_stage8-config-hygiene-review.md): the `use_data` prefix anchor is the intended semantic and fails loud-safe, matching the project's stance against defensive guards; the master-log `replace`-on-timestamp is the documented AEA pattern followed verbatim.
+The author removed `RP7/data_real` (the agent's `rm -rf` stayed guard-blocked; the first `!` attempt failed on an unterminated quote, the second succeeded); `countries/` now holds only the three raw datasets and no `data_real` reference remains anywhere in scripts.
+The branch merged to `main` with `--no-ff` (merge `0b8d026`, git recorded every move as a rename), and `main` plus the branch were pushed to origin; a close-out records commit (`e6106a5`, parent-plan Stage 8 marked CLOSED and this hand-off updated) was pushed on top.
+The next stage is Stage 9 (Change B, switcher-inclusion estimand change), which needs its own spec, plan, and approval before any edit; then the definitive end-of-stages run regenerates the paper `.ster` population and tables.
