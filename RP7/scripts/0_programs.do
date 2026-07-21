@@ -810,9 +810,10 @@ end
 * **********************************************************************
 * gen_vfirst: earliest non-missing value of `vname' per pid
 * **********************************************************************
-* Used by initial_values_robust / run_grc_robust to build the
-* time-invariant cluster index v_i (first-wave province/region) that
-* VV (2020) Section F requires for the robust extrapolation.
+* Used by run_grc_robust_vv and the Verdier drivers (17_verdier_robust,
+* 17b_cluster_summary) to build the time-invariant cluster index v_i
+* (first-wave province/region) that VV (2020) Section F requires for the
+* robust extrapolation.
 * Unit-tested at explorations/verdier/3_test_gen_vfirst.do.
 * The buggy bysort pid: egen min(cond(!missing(v), v, .)) returns the
 * smallest numeric value of v per pid, NOT the first-wave value; the
@@ -2269,129 +2270,12 @@ program define initial_values, rclass
 end
 
 * **********************************************************************
-* initial_values_robust: OLS initial values for run_grc_robust
+* initial_values_robust (DELETED 2026-07-21)
 * **********************************************************************
-* Extends initial_values to the Verdier (2020) Section F robust spec.
-* Generates vfirst (first-wave cluster index) and vchoice_v dummies
-* (vchoice_v = 1{vfirst==v} * choice for v != v_base), then runs the
-* same OLS as initial_values but augmented with the v-choice
-* interactions so the OLS coefficients on vchoice_v serve as starting
-* values for {beta_dev:vchoice_v} in run_grc_robust's GMM.
-* NOTE: drops observations with missing vfirst. Re-entering run_grc
-* after this program will see a trimmed sample.
-capture program drop initial_values_robust
-program define initial_values_robust, rclass
-
-    syntax varlist(min=1) [if], switchers(numlist) estname(string) ///
-        balance(string) vindex(varname) [print]
-
-    * ----------------------------------------------------------------
-    * Build first-wave cluster variable + drop missing
-    * ----------------------------------------------------------------
-    gen_vfirst, vname(`vindex') genname(vfirst)
-
-    qui count if missing(vfirst)
-    if r(N) > 0 {
-        di as text "initial_values_robust: dropping " r(N) ///
-            " obs with missing vfirst"
-    }
-    qui drop if missing(vfirst)
-
-    * Enumerate distinct clusters (sorted ascending by levelsof)
-    qui levelsof vfirst, local(vvals)
-    local V : word count `vvals'
-    local v_base : word 1 of `vvals'
-    di as text "initial_values_robust: |V| = `V' clusters, baseline v = `v_base'"
-
-    * ----------------------------------------------------------------
-    * Generate vchoice_v = I(vfirst==v) * choice for v != v_base
-    * ----------------------------------------------------------------
-    local vchoice_list ""
-    foreach v of local vvals {
-        if `v' != `v_base' {
-            capture drop vchoice_`v'
-            qui gen vchoice_`v' = (vfirst == `v') * choice
-            local vchoice_list "`vchoice_list' vchoice_`v'"
-        }
-    }
-
-    * ----------------------------------------------------------------
-    * OLS (same as initial_values, augmented with vchoice_*)
-    * ----------------------------------------------------------------
-    eststo `estname': reg `varlist' always* switcher_* `vchoice_list' ///
-        , vce(cluster pid) nocons
-
-    * Extract mu, Delta, kappa exactly as in initial_values
-    scalar mu_1 = 0
-    foreach s of numlist `switchers' {
-        scalar mu_`s'    = _b[switcher_`s']
-        scalar Delta_`s' = _b[switcher_`s'_choice]
-        scalar kappa     = _b[always]
-    }
-    return scalar mu_1 = mu_1
-    foreach s of numlist `switchers' {
-        return scalar mu_`s' = mu_`s'
-        return scalar Delta_`s' = Delta_`s'
-    }
-
-    * ----------------------------------------------------------------
-    * Build `initial' local: mu, kappa (mirrors initial_values exactly)
-    * ----------------------------------------------------------------
-    local initial ""
-    foreach s of numlist `switchers' {
-        local initial "`initial' mu:switcher_`s' mu_`s'"
-    }
-    local initial "`initial' kappa: kappa"
-
-    * Append beta_dev initial values, one per non-baseline cluster.
-    * Guard against unidentified coefficients (e.g., collinear vchoice_v
-    * with zero within-cluster variation in choice): default to 0.
-    foreach v of local vvals {
-        if `v' != `v_base' {
-            capture scalar beta_dev_`v' = _b[vchoice_`v']
-            if _rc != 0 {
-                di as text "  beta_dev_`v' unidentified in OLS; using 0"
-                scalar beta_dev_`v' = 0
-            }
-            if missing(scalar(beta_dev_`v')) {
-                di as text "  beta_dev_`v' missing in OLS; using 0"
-                scalar beta_dev_`v' = 0
-            }
-            local initial "`initial' beta_dev:vchoice_`v' beta_dev_`v'"
-        }
-    }
-
-    return local initial "`initial'"
-    return local vchoice_list "`vchoice_list'"
-    return local vvals "`vvals'"
-    return local v_base `v_base'
-    return scalar V = `V'
-
-    if "`print'" != "" {
-        di "Initial local: `initial'"
-    }
-
-    * ----------------------------------------------------------------
-    * Base trajectory selection (identical to initial_values, including
-    * the fallback to the first passed switcher)
-    * ----------------------------------------------------------------
-    quietly xtdescribe
-    scalar T = r(max)
-    local base : word 1 of `switchers'
-    local max_t = -1
-    foreach s of numlist `switchers' {
-        scalar t_`s' = _b[switcher_`s'_choice] / _se[switcher_`s'_choice]
-        quietly sum trajectory if trajectory == `s'
-        scalar N_`s' = r(N)
-        if N_`s' / T > $grc_min_switchers_per_wave {
-            if abs(`=scalar(t_`s')') > `max_t' {
-                local max_t = abs(`=scalar(t_`s')')
-                local base = `s'
-            }
-        }
-    }
-    return local base `base'
-end
+* Fed starting values to run_grc_robust; both are superseded by
+* run_grc_robust_vv, the VV cluster-residualized estimator the
+* Verdier drivers call. Removed as dead code (no callers).
+* **********************************************************************
 
 * **********************************************************************
 * Define switcher parameters
@@ -2823,12 +2707,11 @@ end
 * **********************************************************************
 * Identical to run_grc except for winitial(unadjusted, independent) +
 * onestep options. Exists so the paper can report a simple-spec
-* comparator that is apples-to-apples with run_grc_robust (which uses
-* onestep because the cluster-robust two-step weighting matrix is
-* rank-deficient when #moments > #vfirst clusters). Also serves as the
-* reference for run_grc_robust's degenerate-v (|V|=1) test.
-* Hansen's J is not available under onestep, so estat overid is
-* wrapped in capture.
+* comparator that is apples-to-apples with the onestep Verdier-robust
+* fits (run_grc_robust_vv also runs onestep, because a cluster-robust
+* two-step weighting matrix is rank-deficient when #moments > #vfirst
+* clusters). Hansen's J is not available under onestep, so estat overid
+* is wrapped in capture.
 capture program drop run_grc_onestep
 program define run_grc_onestep
 
@@ -2985,311 +2868,12 @@ end
 * **********************************************************************
 
 * **********************************************************************
-* run_grc_robust: Verdier (2020) Section F robust extrapolation
+* run_grc_robust (DELETED 2026-07-21)
 * **********************************************************************
-* Implements the within-v demeaning estimator as a single-step
-* extension of run_grc: adds |V|-1 cluster dummies x choice to the
-* GMM equation so Delta_{d_0} becomes cluster-specific (beta(v)).
-* See quality_reports/reviews/2026-04-23_robust-grc-derivation.md for the full
-* derivation. Standard errors switch from vce(cluster pid) to
-* vce(cluster vfirst). The always-urban term uses scalar kappa
-* (cross-origin extrapolation) per memo section 6.
-* P1 aggregations: _never uses the cluster-share-weighted aggregate
-* from memo section 7 (weights = never-urban counts per support
-* cluster); _delta, _avg, _always use baseline-cluster beta
-* (= Delta_base) as a placeholder -- proper cross-cluster aggregation
-* deferred to P2.
-capture program drop run_grc_robust
-program define run_grc_robust
-
-    syntax , estname(string) switchers(numlist) base(numlist) balance(string) ///
-        vindex(varname) ///
-        [covars(varlist) iterate(numlist) initial(string) phistart(real -0.1)]
-
-    * ----------------------------------------------------------------
-    * Build vfirst + vchoice_* (idempotent; initial_values_robust may
-    * have already built them and dropped missing-vfirst obs)
-    * ----------------------------------------------------------------
-    gen_vfirst, vname(`vindex') genname(vfirst)
-    qui count if missing(vfirst)
-    if r(N) > 0 {
-        di as text "run_grc_robust: dropping " r(N) " obs with missing vfirst"
-    }
-    qui drop if missing(vfirst)
-
-    qui levelsof vfirst, local(vvals)
-    local V : word count `vvals'
-    local v_base : word 1 of `vvals'
-
-    local vchoice_list ""
-    foreach v of local vvals {
-        if `v' != `v_base' {
-            capture drop vchoice_`v'
-            qui gen vchoice_`v' = (vfirst == `v') * choice
-            local vchoice_list "`vchoice_list' vchoice_`v'"
-        }
-    }
-
-    * ----------------------------------------------------------------
-    * Cluster-support diagnostics (per plan section 3.1 step 2)
-    * ----------------------------------------------------------------
-    tempvar first_obs n_sw_v n_nev_v n_tot_v
-    qui bysort pid (year): gen byte `first_obs' = (_n == 1)
-    qui bysort vfirst: egen `n_sw_v'  = sum(switcher * `first_obs')
-    qui bysort vfirst: egen `n_nev_v' = sum(never    * `first_obs')
-    qui bysort vfirst: egen `n_tot_v' = sum(`first_obs')
-
-    di as txt _newline(1) "run_grc_robust: cluster-support diagnostics"
-    di as txt "  |V| = `V' clusters (baseline v = `v_base')"
-
-    preserve
-        qui duplicates drop vfirst, force
-        qui sum `n_sw_v', detail
-        di as txt "  Switchers per cluster: mean=" %6.2f r(mean) ///
-            ", p50=" %6.0f r(p50) ", max=" %6.0f r(max)
-        qui count if `n_sw_v' >= 10
-        local nclust_ge10 = r(N)
-        qui count if `n_sw_v' > 0 & `n_nev_v' > 0
-        local V_supp = r(N)
-        qui sum `n_nev_v' if `n_sw_v' > 0 & `n_nev_v' > 0
-        local nev_supp = r(sum)
-        qui sum `n_nev_v'
-        local nev_tot = r(sum)
-    restore
-
-    di as txt "  Clusters with >=10 switchers: `nclust_ge10' / `V'"
-    di as txt "  Clusters with both sw & never: `V_supp' / `V'"
-    if `nev_tot' > 0 {
-        di as txt "  Always-rural support share: " ///
-            %5.1f (100 * `nev_supp' / `nev_tot') "%"
-    }
-
-    * ----------------------------------------------------------------
-    * Build covarlist and switcher_traj (same as run_grc)
-    * ----------------------------------------------------------------
-    if "`balance'" == "unb" {
-        local covarlist "`covars' unbalanced unbalanced_choice"
-    }
-    else {
-        capture drop covar_cons
-        gen covar_cons = 0
-        local covarlist "`covars' covar_cons"
-    }
-
-    local switcher_traj
-    foreach s of numlist `switchers' {
-        local switcher_traj "`switcher_traj' switcher_`s'"
-    }
-
-    define_switcherpars, switchers(`switchers') base(`base')
-    local switcherpars `r(switcherpars)'
-    di as text "run_grc_robust: base trajectory = `base'"
-    di as text "run_grc_robust: |V|-1 cluster deviations = " ///
-        `: word count `vchoice_list''
-
-    * ----------------------------------------------------------------
-    * GMM estimation
-    * ----------------------------------------------------------------
-    * Degenerate V=1 branch: vchoice_list empty, equation reduces
-    * exactly to run_grc_onestep. Used by the P1 degenerate-v test
-    * (derivation memo section 8). vce switches to cluster pid
-    * because vce(cluster vfirst) with 1 cluster yields undefined
-    * cluster-robust variance (division by G-1=0). Uses the same
-    * onestep + winitial settings as the non-degenerate branch so the
-    * comparison to run_grc_onestep is apples-to-apples.
-    di as text "run_grc_robust: phi initial value = `phistart'"
-    if "`vchoice_list'" == "" {
-        di as text "run_grc_robust: degenerate |V|=1 branch (no beta_dev parameters)"
-        di as text "run_grc_robust: switching to vce(cluster pid) for |V|=1"
-        eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                ///
-                                - {Delta_base}*choice                                ///
-                                - {phi=`phistart'}*(`switcherpars')                  ///
-                                - ({kappa}+{phi}*({kappa}                            ///
-                                - {mu: switcher_`base'}))*(always#1.choice)          ///
-                                - {xb: `covarlist'})                                 ///
-                               , instruments(                                        ///
-                                `covarlist'                                          ///
-                                never `switcher_traj' choice                         ///
-                                always_choice switcher_*_choice, nocons              ///
-                               )                                                     ///
-                                 vce(cluster pid)                                    ///
-                                 winitial(unadjusted, independent)                   ///
-                                 onestep                                             ///
-                                 from(`initial')                                     ///
-                                 iterate(`iterate')
-    }
-    else {
-        * Q8 (2026-04-23): adopt VV robust.do's GMM settings --
-        * winitial(unadjusted, independent) onestep. VV does one-step
-        * GMM with independence-weighted initial matrix; we match so
-        * the second-step cluster-robust weighting matrix (which is
-        * rank-deficient when #moments > #clusters, typical here --
-        * 47 moments vs 26 TZA clusters) is never computed. This
-        * resolves the non-convergence + singular-SE issues observed
-        * under Stata default two-step GMM. Inference via
-        * vce(cluster vfirst) still uses the cluster-robust formula.
-        eststo `estname': gmm (logpc_consumption - {mu: never `switcher_traj'}                ///
-                                - {Delta_base}*choice                                ///
-                                - {beta_dev: `vchoice_list'}                         ///
-                                - {phi=`phistart'}*(`switcherpars')                  ///
-                                - ({kappa}+{phi}*({kappa}                            ///
-                                - {mu: switcher_`base'}))*(always#1.choice)          ///
-                                - {xb: `covarlist'})                                 ///
-                               , instruments(                                        ///
-                                `covarlist'                                          ///
-                                never `switcher_traj' choice `vchoice_list'          ///
-                                always_choice switcher_*_choice, nocons              ///
-                               )                                                     ///
-                                 vce(cluster vfirst)                                 ///
-                                 winitial(unadjusted, independent)                   ///
-                                 onestep                                             ///
-                                 from(`initial')                                     ///
-                                 iterate(`iterate')
-    }
-
-    * ----------------------------------------------------------------
-    * Joint mu test + Hansen J (same as run_grc)
-    * ----------------------------------------------------------------
-    * loop the switchers() list the moment system was built from, never
-    * the $switchers global, which can hold a wider enumeration
-    local mu_test ""
-    local s0 : word 1 of `switchers'
-    local mu_test "[mu]switcher_`s0'"
-    foreach s of numlist `switchers' {
-        if `s' != `s0' {
-            local mu_test "`mu_test' = [mu]switcher_`s'"
-        }
-    }
-    test `mu_test'
-    estadd scalar joint_chi2 = r(chi2), replace : `estname'
-    estadd scalar joint_p    = r(p),    replace : `estname'
-
-    * Hansen's J: only available under twostep GMM. The non-degenerate
-    * branch uses onestep (Q8 decision, matches VV), so estat overid
-    * would error; capture and skip gracefully. Do-file must not abort
-    * before log close / exit, STATA clear (avoids the Windows batch
-    * "Stata finished" popup).
-    capture estat overid
-    if _rc == 0 {
-        estadd sca Jstat = r(J),    replace : `estname'
-        estadd sca Jdf   = r(J_df), replace : `estname'
-        estadd sca Jpval = r(J_p),  replace : `estname'
-    }
-    else {
-        di as text "run_grc_robust: estat overid unavailable (onestep GMM) -- Jstat not computed"
-    }
-    local converged_str = cond(e(converged)==1, "Y", "N")
-    estadd local converged_str "`converged_str'", replace : `estname'
-
-    * Cluster diagnostics stored on the estimate for table builders
-    estadd scalar V_clusters = `V',           replace : `estname'
-    estadd scalar V_ge10sw   = `nclust_ge10', replace : `estname'
-    estadd scalar V_supp     = `V_supp',      replace : `estname'
-
-    * Save main .ster
-    estimates save "$dir/output/`estname'", replace
-    save_esample_marker, estname(`estname')
-
-    * ----------------------------------------------------------------
-    * Delta_never: cluster-share-weighted aggregate over V_supp
-    *   Delta_never = Delta_base + sum_{v != v_base, v in V_supp} w_v * beta_dev_v
-    *                            + phi * (mu:never - mu:switcher_base)
-    *   w_v = n^N_v / sum_{v' in V_supp} n^N_{v'}
-    * (Delta_base absorbs the baseline-cluster weight since weights sum to 1
-    *  and beta_dev_{v_base} is 0 by the drop-a-dummy convention.)
-    * ----------------------------------------------------------------
-    estimates restore `estname'
-
-    * Recompute support + per-cluster never counts (vchoice_list-indexed only)
-    preserve
-        qui duplicates drop vfirst, force
-        qui keep if `n_sw_v' > 0 & `n_nev_v' > 0
-        qui sum `n_nev_v'
-        local nev_supp_sum = r(sum)
-
-        * Build weighted sum of beta_dev terms
-        local beta_agg_expr "_b[Delta_base:_cons]"
-        if `nev_supp_sum' > 0 & "`vchoice_list'" != "" {
-            forvalues i = 1/`=_N' {
-                local v_i = vfirst[`i']
-                local n_nev_i = `n_nev_v'[`i']
-                if `v_i' != `v_base' {
-                    local w_i = `n_nev_i' / `nev_supp_sum'
-                    local beta_agg_expr "`beta_agg_expr' + `w_i' * _b[beta_dev:vchoice_`v_i']"
-                }
-            }
-        }
-    restore
-
-    di as text "run_grc_robust: Delta_never aggregate expression:"
-    di as text "  `beta_agg_expr' + phi * (mu_never - mu_base)"
-
-    nlcom (Delta_never: `beta_agg_expr' + _b[phi:_cons] * ///
-            (_b[mu:never] - _b[mu:switcher_`base'])), post
-    estadd scalar V_never_supp = `V_supp', replace
-    estimates save "$dir/output/`estname'_n", replace
-
-    * ----------------------------------------------------------------
-    * Delta_always (baseline-cluster beta; proper aggregation in P2)
-    * ----------------------------------------------------------------
-    estimates restore `estname'
-    nlcom (Delta_always: _b[Delta_base:_cons] + (_b[phi:_cons] * ///
-            (_b[kappa:_cons] - _b[mu:switcher_`base']))), post
-    estimates save "$dir/output/`estname'_a", replace
-
-    * ----------------------------------------------------------------
-    * Per-switcher Deltas (baseline-cluster beta) + joint test
-    * ----------------------------------------------------------------
-    estimates restore `estname'
-    local nlcom_expr ""
-    foreach s of numlist `switchers' {
-        local nlcom_expr "`nlcom_expr' (Delta_`s': _b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base'])))"
-    }
-    nlcom `nlcom_expr', post
-
-    local d_test ""
-    local s0 : word 1 of `switchers'
-    local d_test "Delta_`s0'"
-    foreach s of numlist `switchers' {
-        if `s' != `s0' {
-            local d_test "`d_test' = Delta_`s'"
-        }
-    }
-    test `d_test'
-    estadd scalar joint_chi2 = r(chi2), replace
-    estadd scalar joint_p    = r(p),    replace
-    estimates save "$dir/output/`estname'_d", replace
-
-    * ----------------------------------------------------------------
-    * Delta_avg: trajectory-share-weighted average across switchers
-    * (baseline-cluster beta; mirror run_grc structure)
-    * ----------------------------------------------------------------
-    local first_loop = 1
-    local Delta_avg_nlcom ""
-    foreach s of numlist `switchers' {
-        estimates restore `estname'
-        * Within-switcher trajectory share: condition on switcher == 1 so
-        * num_s sums to 1 across $switchers. The previous form
-        *     sum 1.switcher_`s' if e(sample); local num_`s' = r(mean)
-        * gave N_s / N_total (an over-all-sample share summing to the
-        * switcher fraction), which made Delta_avg = sw_frac * E[Delta | switcher]
-        * instead of E[Delta | switcher]. See
-        * quality_reports/reviews/2026-04-29_delta-inversion-validation-gate.md.
-        sum 1.switcher_`s' if e(sample) & switcher == 1
-        local num_`s' = r(mean)
-        if `first_loop' == 0 {
-            local Delta_avg_nlcom "`Delta_avg_nlcom' + (`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-        }
-        else if `first_loop' == 1 {
-            local Delta_avg_nlcom "(`num_`s'' * (_b[Delta_base:_cons] + (_b[phi:_cons] * (_b[mu:switcher_`s'] - _b[mu:switcher_`base']))))"
-            local first_loop = 0
-        }
-    }
-    estimates restore `estname'
-    nlcom (Delta_avg: `Delta_avg_nlcom'), post
-    estimates save "$dir/output/`estname'_g", replace
-
-end
+* Verdier (2020) Section F cluster-dummy estimator, an early
+* robustness variant with known convergence problems. Superseded
+* by run_grc_robust_vv and removed as dead code (no callers).
+* **********************************************************************
 
 * **********************************************************************
 * run_grc_robust_vv: VV-style robust extrapolation via cluster-demeaned
@@ -3298,14 +2882,12 @@ end
 * Ports the core identification idea of Verdier (2020) Online Appendix
 * Section F / Table1/Code/robust.do to CKT's trajectory-pooled GRC.
 *
-* Key difference vs run_grc_robust (single-step cluster-dummy version):
-*   - run_grc_robust adds |V|-1 cluster*choice interactions as free
-*     parameters (beta_dev_v). Asymptotically equivalent to VV's
-*     approach, but in finite sample with few clusters the extra |V|-1
-*     parameters make the GMM objective nearly flat in phi, giving
-*     multiple local minima (confirmed on TZA; hung on CHN).
-*   - run_grc_robust_vv keeps CKT's original parameters (phi, mu_d,
-*     Delta_base, kappa, xb gammas) -- no cluster FEs -- and instead
+* Design choice: rather than adding |V|-1 cluster*choice interactions as
+* free parameters (beta_dev_v) -- asymptotically equivalent to VV's
+* approach, but in finite sample with few clusters the extra |V|-1
+* parameters make the GMM objective nearly flat in phi, giving multiple
+* local minima -- run_grc_robust_vv keeps CKT's original parameters (phi,
+* mu_d, Delta_base, kappa, xb gammas) with no cluster FEs, and instead
 *     replaces the switcher_s_choice instruments with their within-
 *     cluster-demeaned residuals (regressed on i.vfirst among workers
 *     in trajectory s). The within-cluster variation in treatment
