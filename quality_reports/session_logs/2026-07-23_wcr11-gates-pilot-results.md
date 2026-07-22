@@ -2,15 +2,31 @@
 
 ## If you resume
 
-- Branch `wcr11-inversion-port` in the worktree `C:/git/ckt/.claude/worktrees/wcr11-inversion-port`, now at commit `3f80d25` (pilot results); nine commits total on the branch.
-- Open thread: Emilia asked whether to set up runs dropping sparser trajectories.
-  I proposed the cheaper variant: a one-cell J-dial experiment on IDN cuu ca (invert at J in {8, 14, 20, 25} under the count-descending ordering, fixed seed, B = 999) using the sims branch's `restriction_projection` machinery, leaving GMM untouched, to measure whether fewer, denser restrictions narrow the corrected CI.
-  Awaiting her yes/no; if yes, wiring the projection into `grid_lca_inversion` is a self-contained addition, and adopting it for reported CIs would need a short spec addendum.
-- Also awaiting her: the review-fix batch ([2026-07-22-wcr11-port-code-review.md](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/quality_reports/reviews/2026-07-22-wcr11-port-code-review.md)), production B (399 vs 999), the CHN_rf counterfactual-bound consequence of the delta scrub, and the Stage 6 grid widening (extend the phi grid's lower bound past -3 for at least IDN).
-- Definitive master run: still alive at 08:00, about 33.5 hours in (launched Tuesday 2026-07-21 22:33), PID 28684, error count still exactly 1 (the known 5b fossil abort).
-  At 07:49 it was inside `9_GRC_extras` on the birth family with `grc_IDN_cuu_birth_c1_*` freshly written; remaining are two birth cells (cub, cnu), then `10_make_tables`, `11_make_figures`, `17_verdier_robust` (30 GMM fits, the last long block), `17b_cluster_summary`, `11b`.
+- Branch `wcr11-inversion-port` in the worktree `C:/git/ckt/.claude/worktrees/wcr11-inversion-port`, now at commit `826e924` (review fixes closed), working tree clean.
+- Open thread: launch the J-dial experiment in this fresh session.
+  Emilia approved it as purely exploratory ("for now we are just curious").
+  Design: the IDN cuu ca cell, inverting phi using only the J most-populated switcher restrictions under a count-descending, pre-specified ordering, J in {8, 14, 20}, B = 999, the same seed token `grc_IDN_cuu_ca` and the same esample-marker sample as the pilot.
+  The pilot's B = 999 arm already is the J = 25 (full) point, so it should not be re-run.
+  Persist the full p-value curves per J, not just the endpoints.
+  Runs locally, about 3 hours if the three J values run in parallel with threads capped; no gadi run is needed.
+- Implementation route: a pure `explorations/` driver, with zero production-code changes.
+  Retrieve `restriction_projection.py` from `worktree-extension-sims` via `git show` into `explorations/python-grc/`, the same pattern used for the Stage 0 retrievals.
+  Build the restriction matrix C = A_J @ G per grid point and call `wcr_bootstrap.wcr11_test` directly, reusing the one sign matrix across grid points and J values.
+  Counts per kept trajectory come from `drop_sparse_switchers`.
+  The exploration fast-track applies, so no spec is needed; if the dial looks promising and a reported CI would change, a short spec addendum comes first.
+- Validity argument recorded, both asked and accepted by Emilia: coverage only requires the used restrictions to be true at the true phi, and every subset satisfies that under the maintained LCA model.
+  Dropping restrictions affects power and width only, and the subset rule is pre-specified (count-descending) to avoid CI-shopping.
+- Author decisions this morning: leaning toward B = 999 for production, with the final call deferred until after the J-dial since the two interact.
+  Persisting inversion p-value curves in Stage 6 is approved.
+  All seven code-review fixes are approved and now closed at commit `826e924`, with Gate A re-passed on the fixed kernel.
+- Sims backlog item, agreed: a J-dial power-and-width companion study tracking coverage at truth, mean and median 95% CI length plus the SD of length, the share of bound-touching or unbounded intervals, the island-count distribution, and rejection rates at two or three fixed false phi values, plus for the Wald-min point estimate the standard set (mean, median, SD, MAE, RMSE).
+  The SE-calibration ratios do not translate to the inversion, since no SE exists there, and stay only for any GMM comparison arm.
+- Definitive master run: still alive at 08:30, about 34 hours in, PID 28684, error count still exactly 1 (the known 5b fossil abort), inside `9_GRC_extras` on the birth family.
   920 sters on disk; expect roughly 1,020-1,050 at completion.
   Check [definitive_run_rc.txt](file:///C:/git/ckt/RP7/tests/definitive_run_rc.txt) before touching anything under `C:/git/ckt/RP7`.
+  Stage 6 regeneration remains blocked on the sentinel plus Emilia's production-B call.
+- Other open author items carried: the CHN_rf counterfactual-bound breakage from the delta scrub, the Stage 6 grid widening (extend the phi grid's lower bound past -3, at least for IDN), the Stage 7 table-macro diffs and CHN urban-first wording, and the merge at the end.
+- The critic-fixer hook flag is cleared, since fixer-code ran, so new Python file writes are unblocked.
 
 ---
 
@@ -52,3 +68,41 @@ Proposed the one-cell J-dial experiment; awaiting her decision.
 
 Carried from the prior log: review-fix approvals, production-B choice, CHN_rf counterfactual-bound adjudication, Stage 6 after the rc sentinel plus gates (both now green), Stage 7 author items, merge.
 New this session: the J-dial experiment decision, the Stage 6 grid widening for bound-touching cells, and persisting inversion p-value curves in Stage 6.
+
+## 2026-07-23 morning continuation: metrics guidance, review fixes closed, J-dial approved
+
+Goals: Emilia engaged with the overnight results, and this block covered four things: simulation-metrics guidance, the restriction-subset validity question, the code-review fix batch, and the J-dial go-ahead, with wrap-up before a fresh-context launch.
+
+### Decisions
+
+- Emilia leans toward B = 999 for production, driven by the pilot's seed-sensitivity finding that CI endpoints move 5-8 grid steps between seeds at B = 399; she deferred the final call until after the J-dial result, since the two interact.
+- Emilia approved persisting inversion p-value curves in Stage 6, since the pilot saved only endpoints and left island depth impossible to inspect without a re-run.
+- Emilia approved the J-dial as exploratory.
+  The restriction-subset CI stays valid because coverage needs only the used restrictions to be true at the truth, and any subset qualifies under the LCA model.
+  Width is the open question, and the count-descending pre-specification prevents CI-shopping.
+- I delivered the metrics guidance: the standard point-estimator set (mean, median, SD, MAE, RMSE) applies to the Wald-min point, while the CI study tracks coverage, the CI-length distribution, the bound-touching share, island counts, and rejection at fixed alternatives.
+  The two SE-calibration diagnostics do not translate, because the inversion produces no SE, and stay only for GMM comparison arms.
+- Emilia approved all seven review fixes, applied through fixer-code per the Mode 3 loop, at commit `826e924`.
+- I verified the kernel fix (the W_obs singularity guard plus the B >= 1 guard) with a full Gate A oracle re-run rather than trusting the arithmetically-identical claim; the re-run passed in full, covering the toy enumeration plus 12 real anchor cases at 1e-8.
+- The Gate A re-run required temporarily copying the fixed kernel over the sims worktree's copy and restoring it afterward, because the oracle imports sims-only modules and its `sys.path.insert(0)` defeats a PYTHONPATH override.
+- Fix verification used coordinator diff review plus the oracle, the unit suite (now seven tests), and a Stage 9 keep-list re-run, instead of re-spawning both critics; this was proportionate to an 86-line diff of pre-approved changes.
+
+### Files changed
+
+All in the worktree, commit `826e924`.
+
+- [0_programs.do](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/RP7/scripts/0_programs.do): a symmetric provenance scrub on chi2 re-saves in `attach_inversion_ci`.
+- [lca_inversion.py](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/python-grc/lca_inversion.py): `grid_lca_inversion` now requires and verifies `design_names` under wcr11.
+- [wcr_bootstrap.py](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/python-grc/wcr_bootstrap.py): a B >= 1 entry guard, and a singular observed projected covariance now returns a typed-failure result instead of crashing.
+- [wcr11_pilot_idn.py](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/python-grc/wcr11_pilot_idn.py): unused imports removed, and arm-3 wording corrected to an independent higher-B run.
+- [5b_inversion.do](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/RP7/scripts/5b_inversion.do) and [5c_inversion_hukou.do](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/RP7/scripts/5c_inversion_hukou.do): a comment documenting the load-bearing `_rc == 0` conjunct.
+- [test_wcr11_inversion.py](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/python-grc/test_wcr11_inversion.py): the typed-failure test rewritten guard-agnostic, plus a new B = 0 guard test; the suite is now at seven tests.
+- [2026-07-22-wcr11-port-code-review.md](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/quality_reports/reviews/2026-07-22-wcr11-port-code-review.md): disposition updated, all seven findings closed.
+
+### Rejected approaches
+
+None substantive this block, beyond the fix-verification choice noted above.
+
+### Open items
+
+Launching the J-dial is the resume thread, the production-B decision follows it, the sims power-and-width companion study is queued, and the carried items are the CHN_rf bound, the grid widening, Stage 7, and the merge.
