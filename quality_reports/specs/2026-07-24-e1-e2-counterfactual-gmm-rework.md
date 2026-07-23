@@ -40,7 +40,7 @@ All coverage numbers from [derived_quantity_coverage_synthesis.md](file:///C:/gi
 1. The scalars CSVs carry a source column (or companion provenance rows) naming the ster and estimator behind each exported quantity.
 2. [README_counterfactuals.md](file:///C:/git/ckt/RP7/scripts/README_counterfactuals.md) updates to describe the GMM sourcing and the interval's pending status, with no git or branch references (coauthor-facing).
 3. The E2 endpoint-scaling logic itself stays unchanged: scaling CI endpoints by a known positive constant is exact for the delta-method interval just as it was for the test-inversion interval, and the shares' sampling variance remains negligible relative to the CI width.
-4. Wherever the paper or a note reports the $\Delta_{d_N}$ GMM interval, the simulated anchor coverage 0.936 is stated directly, per the synthesis verdict.
+4. The exact simulated coverage rates live in the simulation appendix table only; the text does not restate coverage where the $\Delta_{d_N}$ interval is reported, since 0.936 sits inside the pre-registered band (author ruling 2026-07-24, superseding the synthesis's stronger disclosure suggestion).
 
 ## MAY
 
