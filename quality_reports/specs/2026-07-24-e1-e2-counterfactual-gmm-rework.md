@@ -49,9 +49,10 @@ All coverage numbers from [derived_quantity_coverage_synthesis.md](file:///C:/gi
 
 ## Open questions for the author
 
-1. The always-urban return $\Delta_{d_T}$ in E1's value term ($W_{\text{obs}} - W_{\text{zero}}$ includes $\pi_{d_T} \Delta_{d_T}$ since $\bar D_{d_T} = 1$): the reported gap variant zeroes the $d_T$ row, but if the reported value term keeps it, neither GMM (fails the coverage rule; large finite-sample bias in some designs) nor the scrubbed inversion supplies a defensible number.
-   Options: source the point from the `_a` ster GMM estimate and report no interval for it, zero the $d_T$ row in the value term symmetrically with the gap, or drop the value term's $d_T$ sensitivity to a footnote.
-   The spec implements whichever the author picks; the choice changes a reported number.
+1. RESOLVED 2026-07-24 (author ruling): produce BOTH E1 variants for comparison before deciding what the paper reports.
+   Variant A keeps the always-urban row, sourcing $\Delta_{d_T}$ from the `_a` ster GMM estimate, with a footnote acknowledging the mild undercoverage (simulated 95% coverage 0.85-0.90, distinct from the severe 0.74-0.80 failures that forced the WCR11 correction elsewhere).
+   Variant B zeroes the always-urban row in the value term, symmetrically with the gap term.
+   The author compares the two result sets and then picks; if variant B is chosen, the text gains a sentence explaining the always-urban exclusion.
 2. RESOLVED 2026-07-24: no consumer reads `inv_davg` (verified by grep over `counterfactuals.py` and all do-files outside the exporters and attach machinery), so both exporters drop the `inv_davg` line rather than gaining a GMM substitute.
 
 ## Out of scope
