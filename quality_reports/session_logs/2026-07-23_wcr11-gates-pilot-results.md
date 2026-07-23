@@ -106,3 +106,16 @@ None substantive this block, beyond the fix-verification choice noted above.
 ### Open items
 
 Launching the J-dial is the resume thread, the production-B decision follows it, the sims power-and-width companion study is queued, and the carried items are the CHN_rf bound, the grid widening, Stage 7, and the merge.
+
+## 2026-07-23 evening addendum: J-dial results, production B settled
+
+The three J-dial runs completed cleanly (all rc 0, full draw validity, zero insufficient grid points) in the port worktree; driver and retrieved projection module committed at `8bcb17e`, results under [quality_reports/staging/wcr11/jdial/](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/quality_reports/staging/wcr11/jdial/).
+Emilia confirmed the production bootstrap draw count is DECIDED at B = 999, superseding this log's earlier "leaning" language; no future session should re-open it.
+The remaining production question from the dial is J alone: keep all 25 restrictions or adopt a reduced construction, which requires a spec addendum and the companion power-and-width study before any reported CI changes.
+
+J-dial headline for IDN cuu ca, 95% CIs for phi: J = 25 (pilot) (-3.00, 0.84) hitting the grid edge; J = 20 (-1.30, 0.53) single island, width 1.83; J = 14 (-1.80, 0.32) single island; J = 8 unbounded below with three islands.
+The dial is non-monotone with J = 20 the width sweet spot; the Wald-min point stays between -0.73 and -0.53 at every J, near the GMM -0.525.
+None of the corrected intervals excludes zero at 95% for this cell, and Emilia acknowledged that; choosing J to rescue significance would be CI-shopping, so the J choice rests on the sims evidence only.
+
+E1 detail verified from the 2026-05-18 note this evening: the E1 aggregate consumes inversion values for BOTH the never-migrant and the always-urban trajectories, so the GMM-substitution rework must handle the always-urban piece (where sims show GMM is NOT well calibrated: rel_se_bias up to 6), not just Delta_never; the reported variant zeroes the always-urban row in the gap term, and which pieces survive in the reported numbers is the first thing a rework spec must pin down.
+Sims evidence read directly from [p5b_gadi_summary/summary.csv](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/results/p5b_gadi_summary/summary.csv): GMM 95% coverage for Delta_never 0.86-0.94 and Delta_avg 0.90-0.98 across cells and dials (about nominal at MC precision of roughly 2pp), against inversion 0.74-0.78 in IDN; no CHN-calibrated cell exists, so applying this to CHN_rf is an extrapolation the author must own.
