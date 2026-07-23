@@ -52,7 +52,7 @@ All coverage numbers from [derived_quantity_coverage_synthesis.md](file:///C:/gi
 1. The always-urban return $\Delta_{d_T}$ in E1's value term ($W_{\text{obs}} - W_{\text{zero}}$ includes $\pi_{d_T} \Delta_{d_T}$ since $\bar D_{d_T} = 1$): the reported gap variant zeroes the $d_T$ row, but if the reported value term keeps it, neither GMM (fails the coverage rule; large finite-sample bias in some designs) nor the scrubbed inversion supplies a defensible number.
    Options: source the point from the `_a` ster GMM estimate and report no interval for it, zero the $d_T$ row in the value term symmetrically with the gap, or drop the value term's $d_T$ sensitivity to a footnote.
    The spec implements whichever the author picks; the choice changes a reported number.
-2. Whether $\Delta_{\text{avg}}$ appears anywhere in the counterfactual outputs (the exporters write `inv_davg`; if nothing downstream consumes it, the export drops rather than gaining a GMM substitute).
+2. RESOLVED 2026-07-24: no consumer reads `inv_davg` (verified by grep over `counterfactuals.py` and all do-files outside the exporters and attach machinery), so both exporters drop the `inv_davg` line rather than gaining a GMM substitute.
 
 ## Out of scope
 
