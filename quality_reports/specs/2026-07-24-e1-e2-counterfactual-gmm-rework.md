@@ -55,6 +55,15 @@ All coverage numbers from [derived_quantity_coverage_synthesis.md](file:///C:/gi
    The author compares the two result sets and then picks; if variant B is chosen, the text gains a sentence explaining the always-urban exclusion.
 2. RESOLVED 2026-07-24: no consumer reads `inv_davg` (verified by grep over `counterfactuals.py` and all do-files outside the exporters and attach machinery), so both exporters drop the `inv_davg` line rather than gaining a GMM substitute.
 
+## Amendment 2026-07-24 (author ruling, post-approval)
+
+The E1 table reports the value of observed migration under BOTH zero-migration baselines, as two columns.
+The first-observed-wave baseline (the D3 convention from the 2026-07-08 counterfactual-fixes spec) values only the moves individuals actually made relative to their first observed location: $\sum_{\underline{d}} \pi_{\underline{d}} \Delta_{\underline{d}} (\bar D_{\underline{d}} - \bar D^0_{\underline{d}})$.
+The everyone-rural baseline values all urban person-time against a fully rural counterfactual: $\sum_{\underline{d}} \pi_{\underline{d}} \Delta_{\underline{d}} \bar D_{\underline{d}}$.
+The everyone-rural column includes the always-urban trajectory with $\bar D_{d_T} = 1$, so it depends on $\Delta_{d_T}$ and takes the same variant A / variant B treatment as the gap term (variant A: the `_a`-ster GMM point; variant B: zero).
+The first-observed-wave column is variant-invariant since always-urban workers drop out of it by construction.
+Both columns use the same $\pi_{\underline{d}}$ and $\bar D_{\underline{d}}$ inputs the exporters already write; no new export is needed.
+
 ## Out of scope
 
 - The WCR11 joint-region extension for the misallocation gap (own algorithm note and spec; substantial compute design).
