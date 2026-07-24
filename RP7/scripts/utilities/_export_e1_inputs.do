@@ -101,7 +101,12 @@ foreach country in IDN TZA {
     }
     quietly estimates use "`nster'"
     matrix bn = e(b)
-    scalar delta_never_point = bn[1, colnumb(bn, "Delta_never")]
+    local n_col = colnumb(bn, "Delta_never")
+    if missing(`n_col') {
+        di as error "  Delta_never not found on `nster'"
+        exit 498
+    }
+    scalar delta_never_point = bn[1, `n_col']
     di as text "  delta_never_point = " delta_never_point
 
     * --- 2c. Read _a ster: the Delta_always point (variant A of the E1 value

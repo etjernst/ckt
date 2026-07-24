@@ -1062,7 +1062,7 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
         point_value_allrural_varB=value_allrural_B,
         unb_ols=unb_ols, unb_se_ols=unb_se, unb_gmm=unb_gmm,
         xcheck_gap_unrestricted=r_x.w_opt_minus_obs,
-        xcheck_gap_diff=r_x.w_opt_minus_obs - r_hat.w_opt_minus_obs,
+        xcheck_gap_diff=r_x.w_opt_minus_obs - r_hat_B.w_opt_minus_obs,
         decomposition=decomposition,
     )
 
@@ -1486,6 +1486,16 @@ def _self_check(fresh: pd.DataFrame, baseline_path, atol_log: float = 1e-3) -> N
                 f"  {r['cell']}/{r['quantity']}/{r['version']} {col}: "
                 f"new={a[idx]:+.6f} base={b[idx]:+.6f} |diff|={diff[idx]:.6f}"
             )
+    if "ci_source_new" in merged.columns and "ci_source_base" in merged.columns:
+        sa = merged["ci_source_new"].fillna("").astype(str)
+        sb = merged["ci_source_base"].fillna("").astype(str)
+        for idx in np.flatnonzero((sa != sb).to_numpy()):
+            r = merged.iloc[idx]
+            problems.append(
+                f"  {r['cell']}/{r['quantity']}/{r['version']} ci_source: "
+                f"new={sa.iloc[idx]!r} base={sb.iloc[idx]!r}"
+            )
+
     if problems:
         raise ValueError(
             "self-check FAILED: reproduced numbers drifted from baseline "

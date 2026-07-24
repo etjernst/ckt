@@ -79,6 +79,10 @@ capture noisily {
     * NOTE: this python: invocation MUST stay on a single physical line.
     python: import counterfactuals as _cf; from sfi import Macro as _M; _cf.run_counterfactuals_for_stata(inputs_dir=_M.getGlobal("output")+"/counterfactual_inputs", data_dir=_M.getGlobal("dirdata")+"/processed", out_dir=_M.getGlobal("output"), tables_dir=_M.getGlobal("output")+"/tables", allow_drift=_M.getGlobal("cf_allow_drift")=="1", regenerate_baseline=_M.getGlobal("cf_regen_baseline")=="1", e1_variant=_M.getGlobal("cf_e1_variant"))
 
+    * $cf_regen_baseline is one-shot: clear it right after use so a second
+    * run in the same session cannot silently regenerate the baseline.
+    global cf_regen_baseline ""
+
     confirm file "$output/counterfactual_results.csv"
     confirm file "$output/tables/counterfactual_misallocation_varA.tex"
     confirm file "$output/tables/counterfactual_misallocation_varB.tex"

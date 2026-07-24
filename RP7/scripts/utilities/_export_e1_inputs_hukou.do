@@ -103,14 +103,18 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     }
     quietly estimates use "`nster'"
     matrix bn = e(b)
-    scalar delta_never_point = bn[1, colnumb(bn, "Delta_never")]
+    local n_col = colnumb(bn, "Delta_never")
+    if missing(`n_col') {
+        di as error "  Delta_never not found on `nster'"
+        exit 498
+    }
+    scalar delta_never_point = bn[1, `n_col']
     di as text "  delta_never_point = " delta_never_point
 
     * GMM 95% CI on Delta_never (delta-method, from the _n ster's e(V)):
     * E2 scales these endpoints by the fixed shares to form the hukou-bound
     * CI (consumption gain lower bound).
     matrix Vn = e(V)
-    local n_col = colnumb(bn, "Delta_never")
     scalar dN_se = sqrt(Vn[`n_col', `n_col'])
     if missing(dN_se) | dN_se <= 0 {
         di as error "  Delta_never SE missing or nonpositive on the _n ster for `country_short'"
