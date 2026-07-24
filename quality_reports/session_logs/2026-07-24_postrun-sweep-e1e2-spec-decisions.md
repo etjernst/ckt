@@ -150,3 +150,12 @@ The transition run deliberately waits for the workers since the exporters read t
 Emilia's gates after the memo: drift adjudication, variant A/B pick, preamble macro diffs placed by her, then the additive Overleaf table copy.
 Timeline given to Emilia: tables in Overleaf Friday midday-ish if adjudication is quick; the corrected phi CIs will be much wider than the chi-squared-era ones and the robustness prose may need rewriting (not in the mechanical path).
 CLAUDE.md's ster-suffix documentation (`_always`/`_delta`/`_never` vs actual `_a`/`_d`/`_n`) is stale; fold into the cleanup sweep.
+
+## Addendum, evening (CHN worker stall and recovery)
+
+At the 19:46 status check the CHN worker had been silently stalled since 14:38: zero CPU over 60 s, sters never re-saved, and window enumeration found a modal Stata dialog (class #32770) reading "worker_chn.do has been interrupted. Would you like the batch job to continue?" --- Stata's Break prompt, invisible because the worker launched with -WindowStyle Hidden.
+The interrupt's source is unknown; the first CHN cell's ~3.4 h compute was lost since the attach never persisted.
+The auto-mode classifier blocked a synthetic BM_CLICK into the dialog, so recovery was Stop-Process plus relaunch: CHN restarted at ~19:58 as two split workers (chn1: ct+c1, chn2: c2+ca) via the ${inversion_specs} override, launched Minimized so any future dialog is visible.
+The gotcha (Minimized not Hidden; zero-CPU + #32770 diagnosis) went into the detached-stata-batches memory.
+Progress at the same check: TZA 4/4 and CHN_rf 4/4 done; hukou onto CHN_uf; IDN workers ~1.6x over the pilot-scaled per-cell estimate (cause unclear; machine has 22 cores and 11 GB free, so not contention), still inside their first cells.
+Revised finish estimate: all twenty cells by roughly 03:00-07:00 Saturday; the mechanical post-run sequence and movement memo Saturday morning.
