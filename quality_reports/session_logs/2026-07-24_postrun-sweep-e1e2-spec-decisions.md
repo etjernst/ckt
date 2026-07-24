@@ -116,3 +116,37 @@ The stale-sters purge is approved but not executed, and can fold into the non-ag
 The CHN_uf_cub_ca higher-cap convergence check remains undecided.
 
 After Stage 6 and E1/E2 land, the sequence continues with a movement summary, then author-gated Overleaf/Dropbox shipping, then results-section rewriting (Emilia is eager for this), then the port-branch merge at the end.
+
+---
+
+## Addendum, midday session (Stage 6 launched, E1/E2 implemented)
+
+This session picked up all three threads from the morning hand-off and closed two of them.
+
+Author decisions recorded: the E1 table reports the value of observed migration under BOTH zero-migration baselines (everyone-rural and first-observed-wave; spec amendment committed as 6c26ec4); Stage 6 got the go at B = 999; the E1/E2 plan was approved as amended.
+A correction made during the discussion: Emilia briefly approved "switching E2 to the WCR11 intervals," which is not what the spec does; E2 switches to the plain GMM delta-method CI on the `_n` ster (WCR11 exists only for phi), and she was told so before implementation.
+The everyone-rural value column depends on $\Delta_{d_T}$ (always-urban urban-time is what it values), so it takes the variant A/B treatment; the first-observed-wave column is variant-invariant.
+
+Thread 3 resolved by inspection: the one-step Verdier swap is already the shipped state (17_verdier_robust.do line ~241 copies one-step into the GRC_*_cluster.tex names; main-updated.tex line 1015 references the one-step labels; 17b builds the summary from one-step fits).
+Nothing to stage; the two-step tables are generated but unreferenced.
+Emilia has not yet given the formal "one-step is official" confirmation.
+
+Stage 6 launched at 11:12 as five detached workers (Start-Process, full exe path; `stata-mp` is a bash alias PowerShell cannot resolve).
+Launch plumbing committed on the port branch (b13309e): `phi_lo` threaded end to end (lca_inversion.py `compute_all_inversion_cis`/`attach_inversion_for_stata`, `attach_inversion_ci` gains `philo()`, 5b/5c gain `${inversion_philo}`), 5b gains `${inversion_countries}`/`${inversion_specs}` for worker splits, five launcher .do files under explorations/wcr11-stage6/.
+All cells run at phi grid [-5, 1] (pure superset of the default; the pilot's IDN cell touched -3, and widening leaves interior accept regions unchanged).
+Worker split: IDN ct+c1, IDN c2+ca, TZA, CHN, hukou (5c, both regimes).
+Pre-launch: the whole path smoke-tested on TZA ster copies at B = 9 (passed, overrides verified in the log), and all 100 mainline cuu sters backed up to RP7/output/backup_prestage6_2026-07-24/.
+Progress at 12:26: TZA 3/4 cells done (~25 min/cell); IDN/CHN/hukou inside their first cells; projected finish ~22:00-24:00 with IDN as critical path.
+
+E1/E2 implemented in the main repo (ce16dc2) and taken through the full critic-approval-fixer-verify loop (fix batch 8eaea3d).
+Exporters: inv_* reads dropped, `_a` ster read added (delta_always_point), hukou exporter computes gmm_dN_ci95_{lo,hi} from the `_n` ster e(V), provenance rows added.
+counterfactuals.py: two-variant points (A: `_a` GMM point, B: zeroed), both value baselines, hulls demoted to counterfactual_diagnostics.csv, run_hukou_bound on the new keys with ci_source, write_e1_variant_table replaces the CI table, entry point takes tables_dir/allow_drift/regenerate_baseline/e1_variant.
+Driver: cf_allow_drift / cf_regen_baseline (self-clearing, one-shot) / cf_e1_variant globals; canonical counterfactual_misallocation.tex written only after the variant pick.
+README_counterfactuals.md rewritten (coauthor-facing, no git references).
+Critic loop: critic-python found one CRITICAL (a leftover `r_hat` reference in run_cell's return; fixed to `r_hat_B`); critic-stata scored 92/100 with three MINORs, two applied (Delta_never colnumb guard, one-shot regen flag); both verification passes returned APPROVED.
+
+Open: task #6 tracks the post-Stage-6 sequence (endpoint check at -5, CHN_uf surfaced not rerun if touching, scrub/table verification and rebuild, transition run with cf_allow_drift, movement memo to quality_reports/reviews/).
+The transition run deliberately waits for the workers since the exporters read the sters being re-saved.
+Emilia's gates after the memo: drift adjudication, variant A/B pick, preamble macro diffs placed by her, then the additive Overleaf table copy.
+Timeline given to Emilia: tables in Overleaf Friday midday-ish if adjudication is quick; the corrected phi CIs will be much wider than the chi-squared-era ones and the robustness prose may need rewriting (not in the mechanical path).
+CLAUDE.md's ster-suffix documentation (`_always`/`_delta`/`_never` vs actual `_a`/`_d`/`_n`) is stale; fold into the cleanup sweep.
