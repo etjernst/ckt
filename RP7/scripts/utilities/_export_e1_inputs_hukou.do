@@ -58,20 +58,8 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     local jp    = chi2tail(`jdf', `jstat')
     scalar n_total = e(N)
 
-    scalar inv_phi  = e(inv_phi_at_waldmin)
-    scalar inv_dN   = e(inv_dN_at_waldmin)
-    scalar inv_dT   = e(inv_dT_at_waldmin)
-    scalar inv_davg = e(inv_davg_at_waldmin)
-
-    * 95% inversion CI on Delta_dN: E2 scales these endpoints by the
-    * fixed shares to form the hukou-bound CI (consumption gain lower bound).
-    scalar inv_dN_ci95_lo = e(inv_dN_ci95_lo)
-    scalar inv_dN_ci95_hi = e(inv_dN_ci95_hi)
-
     di as text "  phi_hat   = " phi_hat
     di as text "  beta_hat  = " beta_hat
-    di as text "  inv_dN    = " inv_dN
-    di as text "  inv_dT    = " inv_dT
     di as text "  J = " %6.3f `jstat' "   df = `jdf'   p = " %5.3f `jp'
 
     * --- 2. Read _d ster (per-trajectory LCA-fitted Delta_d) and detect base ---
@@ -117,6 +105,38 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     matrix bn = e(b)
     scalar delta_never_point = bn[1, colnumb(bn, "Delta_never")]
     di as text "  delta_never_point = " delta_never_point
+
+    * GMM 95% CI on Delta_never (delta-method, from the _n ster's e(V)):
+    * E2 scales these endpoints by the fixed shares to form the hukou-bound
+    * CI (consumption gain lower bound).
+    matrix Vn = e(V)
+    local n_col = colnumb(bn, "Delta_never")
+    scalar dN_se = sqrt(Vn[`n_col', `n_col'])
+    if missing(dN_se) | dN_se <= 0 {
+        di as error "  Delta_never SE missing or nonpositive on the _n ster for `country_short'"
+        exit 498
+    }
+    scalar gmm_dN_ci95_lo = delta_never_point - invnormal(0.975) * dN_se
+    scalar gmm_dN_ci95_hi = delta_never_point + invnormal(0.975) * dN_se
+    di as text "  gmm_dN_ci95 = [" gmm_dN_ci95_lo ", " gmm_dN_ci95_hi "]"
+
+    * --- 2c. Read _a ster: the Delta_always point (variant A of the E1 value
+    * and gap terms sources the always-urban return from this GMM estimate) ---
+    local aster "$output/grc_`country_short'_cuu_ca_a.ster"
+    capture confirm file "`aster'"
+    if _rc {
+        di as error "  _a ster missing for `country_short' -- required for delta_always_point"
+        exit 498
+    }
+    quietly estimates use "`aster'"
+    matrix ba = e(b)
+    local a_col = colnumb(ba, "Delta_always")
+    if missing(`a_col') {
+        di as error "  Delta_always not found on `aster'"
+        exit 498
+    }
+    scalar delta_always_point = ba[1, `a_col']
+    di as text "  delta_always_point = " delta_always_point
 
     * --- 3. Reload parent ster for switcher trajectory codes / mu's ---
     * NB: `: colnames` strips equation prefixes, so match on coleq+colnames
@@ -276,18 +296,18 @@ foreach country in CHN_hukou_rural_first CHN_hukou_urban_first {
     file write `scalars_handle' "beta_hat," (beta_hat) _n
     file write `scalars_handle' "kappa_hat," (kappa_hat) _n
     file write `scalars_handle' "unb_choice_hat," (unb_choice_hat) _n
-    file write `scalars_handle' "inv_phi," (inv_phi) _n
-    file write `scalars_handle' "inv_dN,"  (inv_dN) _n
-    file write `scalars_handle' "inv_dN_ci95_lo," (inv_dN_ci95_lo) _n
-    file write `scalars_handle' "inv_dN_ci95_hi," (inv_dN_ci95_hi) _n
-    file write `scalars_handle' "inv_dT,"  (inv_dT) _n
-    file write `scalars_handle' "inv_davg," (inv_davg) _n
     file write `scalars_handle' "n_obs," (n_total) _n
     file write `scalars_handle' "j_stat,`jstat'" _n
     file write `scalars_handle' "j_df,`jdf'" _n
     file write `scalars_handle' "j_pval,`jp'" _n
     file write `scalars_handle' "base,`base_traj'" _n
     file write `scalars_handle' "delta_never_point," (delta_never_point) _n
+    file write `scalars_handle' "delta_always_point," (delta_always_point) _n
+    file write `scalars_handle' "gmm_dN_ci95_lo," (gmm_dN_ci95_lo) _n
+    file write `scalars_handle' "gmm_dN_ci95_hi," (gmm_dN_ci95_hi) _n
+    file write `scalars_handle' "delta_never_source,grc_`country_short'_cuu_ca_n.ster" _n
+    file write `scalars_handle' "delta_always_source,grc_`country_short'_cuu_ca_a.ster" _n
+    file write `scalars_handle' "gmm_dN_ci95_source,grc_`country_short'_cuu_ca_n.ster" _n
     file write `scalars_handle' "n_rows_filtered,`n_rows_filtered'" _n
     file write `scalars_handle' "n_pids_filtered,`n_pids_filtered'" _n
     file close `scalars_handle'

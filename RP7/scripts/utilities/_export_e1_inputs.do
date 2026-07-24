@@ -10,8 +10,8 @@
 *            <country>_e1_mu_d.csv    mu_d_ster (model, per-capita) and
 *                                    mu_d_raw_hh (raw household cross-check)
 *            <country>_e1_delta_d.csv delta_d_lcafit_point per switcher
-*            <country>_e1_scalars.csv phi_hat, beta_hat, base, inversion
-*                                    scalars, delta_never_point, filtered
+*            <country>_e1_scalars.csv phi_hat, beta_hat, base, GMM
+*                                    points and provenance, filtered
 *                                    row/pid counts
 * Input:   $output/grc_<c>_cuu_ca{,_d}.ster, $dirdata/processed/<c>_unb.dta
 * Output:  $output/counterfactual_inputs/<c>_e1_{traj,scalars}.csv
@@ -56,16 +56,8 @@ foreach country in IDN TZA {
     local jp    = chi2tail(`jdf', `jstat')
     scalar n_total = e(N)
 
-    * Inversion CIs at point estimate (e(inv_*_at_waldmin))
-    scalar inv_phi  = e(inv_phi_at_waldmin)
-    scalar inv_dN   = e(inv_dN_at_waldmin)
-    scalar inv_dT   = e(inv_dT_at_waldmin)
-    scalar inv_davg = e(inv_davg_at_waldmin)
-
     di as text "  phi_hat   = " phi_hat
     di as text "  beta_hat  = " beta_hat
-    di as text "  inv_dN    = " inv_dN
-    di as text "  inv_dT    = " inv_dT
     di as text "  J = " %6.3f `jstat' "   df = `jdf'   p = " %5.3f `jp'
 
     * --- 2. Read _d ster (per-trajectory LCA-fitted Delta_d) and detect base ---
@@ -111,6 +103,24 @@ foreach country in IDN TZA {
     matrix bn = e(b)
     scalar delta_never_point = bn[1, colnumb(bn, "Delta_never")]
     di as text "  delta_never_point = " delta_never_point
+
+    * --- 2c. Read _a ster: the Delta_always point (variant A of the E1 value
+    * and gap terms sources the always-urban return from this GMM estimate) ---
+    local aster "$output/grc_`country'_cuu_ca_a.ster"
+    capture confirm file "`aster'"
+    if _rc {
+        di as error "  _a ster missing for `country' -- required for delta_always_point"
+        exit 498
+    }
+    quietly estimates use "`aster'"
+    matrix ba = e(b)
+    local a_col = colnumb(ba, "Delta_always")
+    if missing(`a_col') {
+        di as error "  Delta_always not found on `aster'"
+        exit 498
+    }
+    scalar delta_always_point = ba[1, `a_col']
+    di as text "  delta_always_point = " delta_always_point
 
     * --- 3. From parent ster b matrix: extract mu:never and mu:switcher_k ---
     * NB: `: colnames` strips equation prefixes, so match on coleq+colnames
@@ -275,16 +285,15 @@ foreach country in IDN TZA {
     file write `scalars_handle' "beta_hat," (beta_hat) _n
     file write `scalars_handle' "kappa_hat," (kappa_hat) _n
     file write `scalars_handle' "unb_choice_hat," (unb_choice_hat) _n
-    file write `scalars_handle' "inv_phi," (inv_phi) _n
-    file write `scalars_handle' "inv_dN,"  (inv_dN) _n
-    file write `scalars_handle' "inv_dT,"  (inv_dT) _n
-    file write `scalars_handle' "inv_davg," (inv_davg) _n
     file write `scalars_handle' "n_obs," (n_total) _n
     file write `scalars_handle' "j_stat,`jstat'" _n
     file write `scalars_handle' "j_df,`jdf'" _n
     file write `scalars_handle' "j_pval,`jp'" _n
     file write `scalars_handle' "base,`base_traj'" _n
     file write `scalars_handle' "delta_never_point," (delta_never_point) _n
+    file write `scalars_handle' "delta_always_point," (delta_always_point) _n
+    file write `scalars_handle' "delta_never_source,grc_`country'_cuu_ca_n.ster" _n
+    file write `scalars_handle' "delta_always_source,grc_`country'_cuu_ca_a.ster" _n
     file write `scalars_handle' "n_rows_filtered,`n_rows_filtered'" _n
     file write `scalars_handle' "n_pids_filtered,`n_pids_filtered'" _n
     file close `scalars_handle'

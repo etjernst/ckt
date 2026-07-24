@@ -389,9 +389,12 @@ class CellResult:
     (change in geometric-mean consumption). P3 is the no-d_T variant that
     zeroes the always-urban gap contribution (a lower bound; the region can
     cross the phi = -1 pole); full keeps it. Coverage variant v1 projects the
-    joint 3D (phi, beta, Delta_unb) region (honest >= 95%); v2 folds the
-    Delta_unb 95% CI into the 2D (phi, beta) region by interval arithmetic
-    (joint coverage >= 90%).
+    joint 3D (phi, beta, Delta_unb) region (nominal >= 95%); v2 folds the
+    Delta_unb 95% CI into the 2D (phi, beta) region by interval arithmetic.
+    The hull fields are DIAGNOSTICS ONLY (persisted in the diagnostics CSV,
+    never reported): the joint region's measured coverage is 0.820, and E1
+    interval reporting waits on the WCR11 joint-region extension. The
+    reported quantities are the point_* fields.
     """
     short: str
     n_obs: int
@@ -414,8 +417,11 @@ class CellResult:
     hull_wms_p3_v2: tuple[float, float]
     hull_wmm_full_v2: tuple[float, float]
     hull_wms_full_v2: tuple[float, float]
-    point_wmm_p3: float                 # at (phi_hat, beta_hat, unb_ols), P3
-    point_wms_p3: float
+    point_gap_varA: float               # gap at the GMM point, d_T from the _a ster
+    point_gap_varB: float               # gap at the GMM point, d_T zeroed
+    point_value_d0: float               # value vs first-observed location (variant-invariant)
+    point_value_allrural_varA: float    # value vs everyone rural, d_T from the _a ster
+    point_value_allrural_varB: float    # value vs everyone rural, d_T zeroed
     unb_ols: float                      # lumped-cell return, auxiliary OLS
     unb_se_ols: float
     unb_gmm: float                      # ster xb:unbalanced_choice (diagnostic)
@@ -435,12 +441,15 @@ class HukouBoundResult:
     within-group magnitude sits beside the population-averaged floor.
     ``hull_bound`` and ``delta_dN_rh_ci`` are (lo, hi) tuples; percent
     quantities downstream are exp(x) - 1 (geometric-mean change).
+    ``ci_source`` names the ster behind the CI (GMM delta-method interval
+    from the CHN_rf ``_n`` ster; recorded in the results CSV).
     """
     pi_rh: float
     pi_dN_rh: float
     const: float
     delta_dN_rh_point: float
-    delta_dN_rh_ci: tuple[float, float]   # 95% inversion CI on Delta_dN_rh
+    delta_dN_rh_ci: tuple[float, float]   # 95% GMM CI on Delta_dN_rh
+    ci_source: str
     point_bound: float                    # const * delta_dN_rh_point
     hull_bound: tuple[float, float]       # const * delta_dN_rh_ci
     floor_positive: bool                  # delta_dN_rh_ci lower endpoint > 0
@@ -487,7 +496,7 @@ _TRAJ_COLS = {"traj_for_agg", "n_pids", "dbar_d", "dbar0_d", "pi_d"}
 _MU_COLS = {"traj_for_agg", "mu_d_ster", "mu_d_raw_hh"}
 _DELTA_COLS = {"trajectory", "delta_d_lcafit_point"}
 _SCALAR_KEYS = {"phi_hat", "beta_hat", "unb_choice_hat", "base",
-                "delta_never_point", "inv_dN",
+                "delta_never_point", "delta_always_point",
                 "n_rows_filtered", "n_pids_filtered"}
 
 
@@ -852,6 +861,11 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
     phi_hat = float(scalars["phi_hat"])
     beta_hat = float(scalars["beta_hat"])
     delta_never_point = float(scalars["delta_never_point"])
+    delta_always_point = float(scalars["delta_always_point"])
+    if not np.isfinite(delta_always_point):
+        raise ValueError(
+            f"{short}: delta_always_point is not finite; check the _a ster export"
+        )
     d_dN_ols = beta_hat + phi_hat * (alpha_never - alpha_base)
     dN_gap = d_dN_ols - delta_never_point
     tol = 0.15 if short in WEAK_ID_EXEMPT else 0.01
@@ -863,7 +877,7 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
         )
     print(f"  {short}: Delta_dN ster point {delta_never_point:+.4f}, "
           f"OLS-alpha plug-in {d_dN_ols:+.4f} (gap {dN_gap:+.4f}), "
-          f"inv {float(scalars['inv_dN']):+.4f}, base = {base}")
+          f"base = {base}")
 
     # Unbounded-region probe: under weak identification the S-statistic can
     # accept arbitrarily large |phi| (CHN_uf does, on both sides); those phi
@@ -970,10 +984,12 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
                 elif growth < -0.005:
                     hulls[key] = (float("-inf"), hi)
 
-    # Point estimate from the STER objects (GMM nlcom values: LCA-fitted
-    # switcher returns and Delta_never), matching the paper's GRC tables;
-    # the lumped cell takes the auxiliary-OLS coefficient (the interval
-    # center) and d_T the Mobius echo. P3 gap convention zeroes d_T.
+    # Point estimates from the STER objects (GMM nlcom values: LCA-fitted
+    # switcher returns, Delta_never, and Delta_always), matching the paper's
+    # GRC tables; the lumped cell takes the auxiliary-OLS coefficient (the
+    # interval center). The two reported variants differ only in the
+    # always-urban row: variant A sources it from the _a ster, variant B
+    # zeroes it in both the gap and the all-rural value term.
     lcafit = traj_df["delta_d_lcafit_point"].to_numpy(dtype=float)
     if np.isnan(lcafit[is_switcher]).any():
         bad = traj_df.loc[is_switcher & np.isnan(lcafit), "traj_for_agg"].tolist()
@@ -981,11 +997,16 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
     dv_hat = np.where(is_switcher, lcafit, 0.0)
     dv_hat[is_dN] = delta_never_point
     dv_hat[is_lumped] = unb_ols
-    with np.errstate(invalid="ignore", over="ignore"):
-        dv_hat[is_dT] = lca_delta_dT(phi_hat, beta_hat, alpha_dT, alpha_base)
-    dv_hat_p3 = dv_hat.copy()
-    dv_hat_p3[is_dT] = 0.0
-    r_hat = evaluate_aggregate(dv_hat_p3, pi_arr, dbar_arr, dbar0_arr)
+    dv_hat_A = dv_hat.copy()
+    dv_hat_A[is_dT] = delta_always_point
+    dv_hat_B = dv_hat.copy()
+    dv_hat_B[is_dT] = 0.0
+    r_hat_A = evaluate_aggregate(dv_hat_A, pi_arr, dbar_arr, dbar0_arr)
+    r_hat_B = evaluate_aggregate(dv_hat_B, pi_arr, dbar_arr, dbar0_arr)
+    # Value vs the everyone-rural baseline: all urban person-time is valued,
+    # so the always-urban row enters (with Dbar = 1) and the variant matters.
+    value_allrural_A = float(np.nansum(pi_arr * dv_hat_A * dbar_arr))
+    value_allrural_B = float(np.nansum(pi_arr * dv_hat_B * dbar_arr))
 
     # D1 cross-check: the point gap with genuinely unrestricted switcher
     # returns (beta[s] from a fit that interacts EVERY switcher trajectory
@@ -996,7 +1017,7 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
         df, outcome="lndepvar", trajectory="trajectory", choice="choice",
         hhid="pid", switchers_kept=all_switchers, controls=controls,
     )
-    dv_x = dv_hat_p3.copy()
+    dv_x = dv_hat_B.copy()
     for i, t in enumerate(traj_codes):
         if is_switcher[i]:
             dv_x[i] = float(fit_all.b[fit_all.idx(f"beta[{t}]")])
@@ -1008,9 +1029,13 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
         "pi_d": pi_arr,
         "dbar_d": dbar_arr,
         "dbar0_d": dbar0_arr,
-        "delta_point": dv_hat,
-        "contrib_gap_p3": r_hat.contrib_opt_obs,
-        "contrib_value": r_hat.contrib_obs_zero,
+        "delta_point_varA": dv_hat_A,
+        "delta_point_varB": dv_hat_B,
+        "contrib_gap_varA": r_hat_A.contrib_opt_obs,
+        "contrib_gap_varB": r_hat_B.contrib_opt_obs,
+        "contrib_value_d0": r_hat_B.contrib_obs_zero,
+        "contrib_value_allrural_varA": pi_arr * dv_hat_A * dbar_arr,
+        "contrib_value_allrural_varB": pi_arr * dv_hat_B * dbar_arr,
     })
 
     if marginal_phi is not None:
@@ -1030,8 +1055,11 @@ def run_cell(short: str, inputs_dir, data_dir) -> CellResult:
         hull_wmm_full_v1=hulls_v1["wmm_full"], hull_wms_full_v1=hulls_v1["wms_full"],
         hull_wmm_p3_v2=hulls_v2["wmm_p3"], hull_wms_p3_v2=hulls_v2["wms_p3"],
         hull_wmm_full_v2=hulls_v2["wmm_full"], hull_wms_full_v2=hulls_v2["wms_full"],
-        point_wmm_p3=r_hat.w_opt_minus_obs,
-        point_wms_p3=r_hat.w_obs_minus_zero,
+        point_gap_varA=r_hat_A.w_opt_minus_obs,
+        point_gap_varB=r_hat_B.w_opt_minus_obs,
+        point_value_d0=r_hat_B.w_obs_minus_zero,
+        point_value_allrural_varA=value_allrural_A,
+        point_value_allrural_varB=value_allrural_B,
         unb_ols=unb_ols, unb_se_ols=unb_se, unb_gmm=unb_gmm,
         xcheck_gap_unrestricted=r_x.w_opt_minus_obs,
         xcheck_gap_diff=r_x.w_opt_minus_obs - r_hat.w_opt_minus_obs,
@@ -1058,24 +1086,24 @@ def hukou_population_weights(data_dir) -> dict:
 
 def combine_national(rf: CellResult, uf: CellResult,
                      w_rf: float, w_uf: float) -> dict:
-    """Population-weighted national CHN aggregate via interval arithmetic.
+    """Population-weighted national CHN point aggregates.
 
-    With non-negative weights the bounds are monotone in the inputs, so
-    the combined hull is the weighted sum of the per-cell hulls. Combining
-    two independent 95% regions this way carries joint coverage of at least
-    90% (Bonferroni floor); the paper footnotes this.
+    Weighted sums of the two hukou regimes' point estimates. No intervals
+    are combined: E1 interval reporting is pending the WCR11 joint-region
+    extension, and the per-cell hulls live in the diagnostics CSV only.
     """
-    def comb(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
-        return (w_rf * a[0] + w_uf * b[0], w_rf * a[1] + w_uf * b[1])
+    def comb(a: float, b: float) -> float:
+        return w_rf * a + w_uf * b
 
     return {
         "short": "CHN_national",
-        "hull_wmm_p3_v1": comb(rf.hull_wmm_p3_v1, uf.hull_wmm_p3_v1),
-        "hull_wms_p3_v1": comb(rf.hull_wms_p3_v1, uf.hull_wms_p3_v1),
-        "hull_wmm_p3_v2": comb(rf.hull_wmm_p3_v2, uf.hull_wmm_p3_v2),
-        "hull_wms_p3_v2": comb(rf.hull_wms_p3_v2, uf.hull_wms_p3_v2),
-        "point_wmm_p3": w_rf * rf.point_wmm_p3 + w_uf * uf.point_wmm_p3,
-        "point_wms_p3": w_rf * rf.point_wms_p3 + w_uf * uf.point_wms_p3,
+        "point_gap_varA": comb(rf.point_gap_varA, uf.point_gap_varA),
+        "point_gap_varB": comb(rf.point_gap_varB, uf.point_gap_varB),
+        "point_value_d0": comb(rf.point_value_d0, uf.point_value_d0),
+        "point_value_allrural_varA": comb(rf.point_value_allrural_varA,
+                                          uf.point_value_allrural_varA),
+        "point_value_allrural_varB": comb(rf.point_value_allrural_varB,
+                                          uf.point_value_allrural_varB),
         "w_rf": w_rf, "w_uf": w_uf,
     }
 
@@ -1088,12 +1116,15 @@ def hukou_bound_point(pi_rh: float, pi_dN_rh: float, delta_dN_rh: float) -> floa
 def run_hukou_bound(inputs_dir, data_dir, weights: dict) -> HukouBoundResult:
     """E2 hukou-wedge lower bound for the rural-hukou regime.
 
-    Scales the rural-hukou never-migrant return Delta_dN_rh (already estimated
-    by the weak-ID-robust inversion and stored on the CHN_rf ster, exported in
-    the scalars CSV as inv_dN and inv_dN_ci95_{lo,hi}) by the fixed constant
+    Scales the rural-hukou never-migrant return Delta_dN_rh (the GMM nlcom
+    point on the CHN_rf ``_n`` ster, with its delta-method 95% CI exported in
+    the scalars CSV as gmm_dN_ci95_{lo,hi}) by the fixed constant
     pi_rh * pi_dN_rh. pi_rh is the conditional rural-hukou share of the
     defined-hukou CHN sample (the same base the E1 national figure uses);
     pi_dN_rh is the never-migrant share within the rural-hukou subsample.
+    The GMM CI replaced the test-inversion CI when the WCR11 attach began
+    scrubbing the delta-inversion families; simulated coverage for the GMM
+    Delta_dN interval is 0.915-0.940, inside the pre-registered band.
 
     Endpoint-scaling is the exact test-inversion CI for const * Delta_dN_rh
     because const > 0 is a known constant: the shares' sampling variance is an
@@ -1125,24 +1156,31 @@ def run_hukou_bound(inputs_dir, data_dir, weights: dict) -> HukouBoundResult:
             )
 
     # delta_never_point is the _n-ster nlcom point (matching the RF GRC
-    # table); inv_dN_ci95_{lo,hi} are the CHN_rf-cell-specific inversion CI
-    # endpoints. _export_e1_inputs_hukou.do writes all three.
-    for _key in ("delta_never_point", "inv_dN_ci95_lo", "inv_dN_ci95_hi"):
+    # table); gmm_dN_ci95_{lo,hi} are its delta-method 95% CI endpoints from
+    # the same ster's e(V). _export_e1_inputs_hukou.do writes all three under
+    # these key names only, so inversion-era values cannot silently mix in.
+    for _key in ("delta_never_point", "gmm_dN_ci95_lo", "gmm_dN_ci95_hi"):
         if _key not in scalars:
             raise KeyError(
                 f"CHN_rf: required scalar '{_key}' not found in CHN_rf_e1_scalars.csv"
             )
     delta_point = float(scalars["delta_never_point"])
-    delta_lo = float(scalars["inv_dN_ci95_lo"])
-    delta_hi = float(scalars["inv_dN_ci95_hi"])
+    delta_lo = float(scalars["gmm_dN_ci95_lo"])
+    delta_hi = float(scalars["gmm_dN_ci95_hi"])
     if not all(np.isfinite([delta_point, delta_lo, delta_hi])):
         raise ValueError(
-            f"CHN_rf: non-finite inv_dN scalars (point={delta_point}, "
+            f"CHN_rf: non-finite gmm_dN scalars (point={delta_point}, "
             f"lo={delta_lo}, hi={delta_hi}); check the CHN_rf_e1_scalars.csv export."
         )
     if delta_lo > delta_hi:
         raise ValueError(
-            f"CHN_rf: inv_dN CI endpoints out of order: lo={delta_lo} > hi={delta_hi}"
+            f"CHN_rf: gmm_dN CI endpoints out of order: lo={delta_lo} > hi={delta_hi}"
+        )
+    ci_source = str(scalars.get("gmm_dN_ci95_source", "")).strip()
+    if not ci_source:
+        raise ValueError(
+            "CHN_rf: gmm_dN_ci95_source provenance row missing from "
+            "CHN_rf_e1_scalars.csv; re-run the hukou exporter."
         )
 
     const = pi_rh * pi_dN_rh
@@ -1152,6 +1190,7 @@ def run_hukou_bound(inputs_dir, data_dir, weights: dict) -> HukouBoundResult:
         const=const,
         delta_dN_rh_point=delta_point,
         delta_dN_rh_ci=(delta_lo, delta_hi),
+        ci_source=ci_source,
         point_bound=hukou_bound_point(pi_rh, pi_dN_rh, delta_point),
         hull_bound=(const * delta_lo, const * delta_hi),
         floor_positive=bool(delta_lo > 0.0),
@@ -1190,27 +1229,27 @@ _LABELS = {
 _TABLE_ORDER = ["IDN", "TZA", "CHN_national", "CHN_rf", "CHN_uf"]
 
 
-def _rows_for_cell(short: str, hulls: dict, point_wmm_p3: float,
-                   point_wms_p3: float) -> list[dict]:
-    """Emit one row per (quantity, version) for the results CSV.
+def _rows_for_cell(short: str, gap_A: float, gap_B: float, val_d0: float,
+                   val_ar_A: float, val_ar_B: float) -> list[dict]:
+    """Emit the reported point rows for one cell.
 
-    ``hulls`` maps version labels (e.g. ``p3_v1``) to (lo, hi) tuples per
-    quantity prefix. Values are stored at full precision in log points and
-    as percent (geometric-mean change, exp(x) - 1). The point estimate is
-    attached to the P3 rows; NaN elsewhere (the with-d_T near-pole case).
+    Interval rows are absent by design: the E1 joint-region hull's measured
+    coverage is 0.820, so no E1 interval is reported pending the WCR11
+    joint-region extension. The computed hulls live in the diagnostics CSV.
     """
-    rows = []
-    for version, (wmm, wms) in hulls.items():
-        pt_wmm = point_wmm_p3 if version.startswith("p3") else float("nan")
-        pt_wms = point_wms_p3 if version.startswith("p3") else float("nan")
-        rows.append(_result_row(short, "misallocation", version,
-                                wmm[0], wmm[1], pt_wmm))
-        rows.append(_result_row(short, "value_migration", version,
-                                wms[0], wms[1], pt_wms))
-    return rows
+    nan = float("nan")
+    return [
+        _result_row(short, "misallocation", "point_varA", nan, nan, gap_A),
+        _result_row(short, "misallocation", "point_varB", nan, nan, gap_B),
+        _result_row(short, "value_migration_d0", "point", nan, nan, val_d0),
+        _result_row(short, "value_migration_allrural", "point_varA",
+                    nan, nan, val_ar_A),
+        _result_row(short, "value_migration_allrural", "point_varB",
+                    nan, nan, val_ar_B),
+    ]
 
 
-def _result_row(cell, quantity, version, lo, hi, point) -> dict:
+def _result_row(cell, quantity, version, lo, hi, point, ci_source="") -> dict:
     """One long-format result row in the persisted schema (log + percent)."""
     return {
         "cell": cell, "quantity": quantity, "version": version,
@@ -1218,16 +1257,23 @@ def _result_row(cell, quantity, version, lo, hi, point) -> dict:
         "ci_lo_pct": log_to_pct(lo) * 100.0,
         "ci_hi_pct": log_to_pct(hi) * 100.0,
         "point_pct": log_to_pct(point) * 100.0 if np.isfinite(point) else float("nan"),
+        "ci_source": ci_source,
     }
 
 
 def _hukou_bound_rows(hb: HukouBoundResult) -> list[dict]:
-    """E2 rows: the economy-wide bound and the per-never-migrant return."""
+    """E2 rows: the economy-wide bound and the per-never-migrant return.
+
+    Version ``gmm_ci`` names the CI construction (delta-method GMM interval,
+    scaled by the fixed shares); ``ci_source`` names the ster behind it.
+    """
     return [
-        _result_row("CHN_hukou_bound", "hukou_consumption_gain", "bound",
-                    hb.hull_bound[0], hb.hull_bound[1], hb.point_bound),
-        _result_row("CHN_hukou_bound", "delta_dN_rural_hukou", "inversion",
-                    hb.delta_dN_rh_ci[0], hb.delta_dN_rh_ci[1], hb.delta_dN_rh_point),
+        _result_row("CHN_hukou_bound", "hukou_consumption_gain", "gmm_ci",
+                    hb.hull_bound[0], hb.hull_bound[1], hb.point_bound,
+                    ci_source=hb.ci_source),
+        _result_row("CHN_hukou_bound", "delta_dN_rural_hukou", "gmm_ci",
+                    hb.delta_dN_rh_ci[0], hb.delta_dN_rh_ci[1],
+                    hb.delta_dN_rh_point, ci_source=hb.ci_source),
     ]
 
 
@@ -1235,17 +1281,16 @@ def results_dataframe(res: dict) -> pd.DataFrame:
     """Flatten run_all_cells output into the persisted long-format table."""
     rows: list[dict] = []
     for short, c in res["cells"].items():
-        rows.extend(_rows_for_cell(short, {
-            "p3_v1": (c.hull_wmm_p3_v1, c.hull_wms_p3_v1),
-            "p3_v2": (c.hull_wmm_p3_v2, c.hull_wms_p3_v2),
-            "with_dT_v1": (c.hull_wmm_full_v1, c.hull_wms_full_v1),
-            "with_dT_v2": (c.hull_wmm_full_v2, c.hull_wms_full_v2),
-        }, c.point_wmm_p3, c.point_wms_p3))
+        rows.extend(_rows_for_cell(
+            short, c.point_gap_varA, c.point_gap_varB, c.point_value_d0,
+            c.point_value_allrural_varA, c.point_value_allrural_varB,
+        ))
     nat = res["national"]
-    rows.extend(_rows_for_cell("CHN_national", {
-        "p3_v1": (nat["hull_wmm_p3_v1"], nat["hull_wms_p3_v1"]),
-        "p3_v2": (nat["hull_wmm_p3_v2"], nat["hull_wms_p3_v2"]),
-    }, nat["point_wmm_p3"], nat["point_wms_p3"]))
+    rows.extend(_rows_for_cell(
+        "CHN_national", nat["point_gap_varA"], nat["point_gap_varB"],
+        nat["point_value_d0"], nat["point_value_allrural_varA"],
+        nat["point_value_allrural_varB"],
+    ))
     if "hukou_bound" in res:
         rows.extend(_hukou_bound_rows(res["hukou_bound"]))
     return pd.DataFrame(rows).sort_values(["cell", "quantity", "version"]).reset_index(drop=True)
@@ -1255,8 +1300,12 @@ def diagnostics_dataframes(res: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Cell-level diagnostics and the per-trajectory point decomposition."""
     cell_rows = []
     decomp_frames = []
+    hull_fields = ("hull_wmm_p3_v1", "hull_wms_p3_v1",
+                   "hull_wmm_full_v1", "hull_wms_full_v1",
+                   "hull_wmm_p3_v2", "hull_wms_p3_v2",
+                   "hull_wmm_full_v2", "hull_wms_full_v2")
     for short, c in res["cells"].items():
-        cell_rows.append({
+        row = {
             "cell": short, "n_obs": c.n_obs, "n_pids": c.n_pids,
             "K": c.K, "base": c.base,
             "n_accept_2d": c.n_accept_2d, "n_accept_3d": c.n_accept_3d,
@@ -1271,10 +1320,18 @@ def diagnostics_dataframes(res: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
             "marginal_unb_hi": c.marginal_unb[1] if c.marginal_unb else float("nan"),
             "unb_ols": c.unb_ols, "unb_se_ols": c.unb_se_ols,
             "unb_gmm": c.unb_gmm, "unb_ols_minus_gmm": c.unb_ols - c.unb_gmm,
-            "point_gap_p3": c.point_wmm_p3,
+            "point_gap_varA": c.point_gap_varA,
+            "point_gap_varB": c.point_gap_varB,
             "xcheck_gap_unrestricted": c.xcheck_gap_unrestricted,
             "xcheck_gap_diff": c.xcheck_gap_diff,
-        })
+        }
+        # Unreported joint-region hulls (measured coverage 0.820) are kept
+        # here as diagnostics, not in the results CSV.
+        for h in hull_fields:
+            lo, hi = getattr(c, h)
+            row[f"{h}_lo"] = lo
+            row[f"{h}_hi"] = hi
+        cell_rows.append(row)
         decomp_frames.append(c.decomposition)
     return pd.DataFrame(cell_rows), pd.concat(decomp_frames, ignore_index=True)
 
@@ -1283,64 +1340,60 @@ def _fmt_interval(lo_pct: float, hi_pct: float) -> str:
     return f"$[{lo_pct:+.1f}\\%, {hi_pct:+.1f}\\%]$"
 
 
-def _fmt_hull_pct(lo_log: float, hi_log: float) -> str:
-    """Format a log-points hull as a percent interval, honoring open ends.
+def write_e1_variant_table(res: dict, table_path, variant: str,
+                           label: str | None = None) -> None:
+    """Write one E1 points table for the always-urban treatment ``variant``.
 
-    An infinite upper endpoint (unbounded weak-ID region) renders as
-    $[x\\%, \\infty)$; an infinite lower endpoint as $(-100\\%, x\\%]$
-    (log -> percent maps -inf to the -100% floor).
+    Variant A sources the always-urban return from the ``_a``-ster GMM point;
+    variant B zeroes the always-urban row. Three point columns: misallocation
+    gap, value of migration vs. the first-observed location, and value of
+    migration vs. the everyone-rural baseline. No interval column: the
+    joint-region hull's measured coverage is 0.820, so E1 intervals are
+    unavailable pending the WCR11 joint-region extension.
     """
-    if np.isinf(hi_log) and hi_log > 0:
-        hi_s, rb = r"\infty", ")"
-    else:
-        hi_s, rb = f"{log_to_pct(hi_log) * 100.0:+.1f}\\%", "]"
-    if np.isinf(lo_log) and lo_log < 0:
-        lo_s, lb = r"-100\%", "("
-    else:
-        lo_s, lb = f"{log_to_pct(lo_log) * 100.0:+.1f}\\%", "["
-    return f"${lb}{lo_s}, {hi_s}{rb}$"
+    if variant not in ("A", "B"):
+        raise ValueError(f"write_e1_variant_table: variant must be A or B, got {variant!r}")
+    sfx = f"var{variant}"
 
-
-def write_latex_table(res: dict, table_path, variant: str = "v1") -> None:
-    """Write the paper-facing E1 table (P3 convex-hull intervals).
-
-    Self-contained float so the paper can \\input it directly. The headline
-    is the P3 misallocation gap interval (coverage ``variant``: v1 = joint 3D
-    projection, v2 = 2D region + Delta_unb CI fold) and the (point) value of
-    observed migration per cell.
-    """
-    def cell_pcts(short):
+    def cell_points(short):
         if short == "CHN_national":
             nat = res["national"]
-            return (nat[f"hull_wmm_p3_{variant}"], nat["point_wms_p3"])
+            return (nat[f"point_gap_{sfx}"], nat["point_value_d0"],
+                    nat[f"point_value_allrural_{sfx}"])
         c = res["cells"][short]
-        return (getattr(c, f"hull_wmm_p3_{variant}"), c.point_wms_p3)
+        return (getattr(c, f"point_gap_{sfx}"), c.point_value_d0,
+                getattr(c, f"point_value_allrural_{sfx}"))
 
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
         r"\caption{Counterfactual misallocation accounting, by country.}",
-        r"\label{tab:counterfactual_misallocation}",
-        r"\begin{tabular}{lcc}",
+        rf"\label{{{label or f'tab:counterfactual_misallocation_{sfx}'}}}",
+        r"\begin{tabular}{lccc}",
         r"\toprule",
-        r" & Misallocation gap & Value of observed \\",
-        r" & (95\% CI) & migration \\",
+        r" & Misallocation & Value of migration & Value of migration \\",
+        r" & gap & (vs. first location) & (vs. all rural) \\",
         r"\midrule",
     ]
     for short in _TABLE_ORDER:
-        hull_wmm, pt_wms = cell_pcts(short)
-        # Infinite hull endpoints are legitimate (unbounded weak-ID region,
-        # rendered as an open interval); NaN anywhere is a pipeline error.
-        if (np.isnan(hull_wmm[0]) or np.isnan(hull_wmm[1])
-                or not np.isfinite(pt_wms)):
-            raise ValueError(
-                f"write_latex_table: bad values for {short}: "
-                f"hull={hull_wmm}, value={pt_wms}"
-            )
-        interval = _fmt_hull_pct(hull_wmm[0], hull_wmm[1])
-        value = f"${log_to_pct(pt_wms) * 100.0:+.1f}\\%$"
-        lines.append(f"{_LABELS[short]} & {interval} & {value} \\\\")
-    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+        pts = cell_points(short)
+        for v in pts:
+            if not np.isfinite(v):
+                raise ValueError(
+                    f"write_e1_variant_table: non-finite value for {short}: {pts}"
+                )
+        cells = " & ".join(f"${log_to_pct(v) * 100.0:+.1f}\\%$" for v in pts)
+        lines.append(f"{_LABELS[short]} & {cells} \\\\")
+    note = (
+        "Always-urban workers enter the gap and all-rural value columns at "
+        "their GMM point estimate."
+        if variant == "A" else
+        "Always-urban workers are excluded (their row is set to zero) in the "
+        "gap and all-rural value columns."
+    )
+    lines += [r"\bottomrule", r"\end{tabular}",
+              rf"\par\smallskip {{\footnotesize {note}}}",
+              r"\end{table}", ""]
 
     table_path = Path(table_path)
     table_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1350,7 +1403,7 @@ def write_latex_table(res: dict, table_path, variant: str = "v1") -> None:
 def write_hukou_bound_table(res: dict, table_path) -> None:
     """Write the paper-facing E2 hukou-bound table (rural-hukou regime).
 
-    Self-contained float, parallel to write_latex_table: caption, label, and
+    Self-contained float, parallel to write_e1_variant_table: caption, label, and
     tabular only; the population identity, fixed-share assumption, and
     partial-equilibrium-floor framing live in the paper prose, not embedded
     here. Reports the per-never-migrant return Delta_dN_rh (with its 95%
@@ -1444,27 +1497,36 @@ def run_counterfactuals_for_stata(
     inputs_dir: str,
     data_dir: str,
     out_dir: str,
-    table_path: str,
-    table_path_hukou: str | None = None,
-    baseline_path: str | None = None,
-    regenerate_baseline: bool = False,
+    tables_dir: str,
     allow_drift: bool = False,
-    table_variant: str = "v1",
+    regenerate_baseline: bool = False,
+    e1_variant: str = "",
+    baseline_path: str | None = None,
     atol_log: float = 1e-3,
 ) -> None:
     """Stata-facing entry point (called from 12_counterfactuals.do).
 
     Runs all E1 cells plus the E2 hukou bound, writes the persisted results
     CSV, the diagnostics CSVs, and the paper tables, and self-checks against
-    the committed baseline snapshot. ``allow_drift=True`` prints the drift
-    report loudly but does not raise --- for transition runs whose numbers
-    await approval before the baseline is regenerated.
+    the committed baseline snapshot. Both E1 variant tables
+    (``counterfactual_misallocation_var{A,B}.tex``) are always written for
+    author comparison; the canonical ``counterfactual_misallocation.tex`` the
+    paper inputs is written only when ``e1_variant`` is ``"A"`` or ``"B"``
+    (the author's pick). ``allow_drift=True`` prints the drift report loudly
+    but does not raise --- for transition runs whose numbers await approval
+    before the baseline is regenerated.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    tables_dir = Path(tables_dir)
+    tables_dir.mkdir(parents=True, exist_ok=True)
     results_csv = out_dir / "counterfactual_results.csv"
     if baseline_path is None:
         baseline_path = out_dir / "counterfactual_results_baseline.csv"
+    if e1_variant and e1_variant not in ("A", "B"):
+        raise ValueError(
+            f"e1_variant must be '', 'A', or 'B'; got {e1_variant!r}"
+        )
 
     res = run_all_cells(inputs_dir, data_dir)
     df = results_dataframe(res)
@@ -1488,29 +1550,40 @@ def run_counterfactuals_for_stata(
                 raise
             print(f"  self-check DRIFT (allowed for this transition run):\n{exc}")
 
-    write_latex_table(res, table_path, variant=table_variant)
-    print(f"  wrote table ({table_variant}): {table_path}")
+    for v in ("A", "B"):
+        p = tables_dir / f"counterfactual_misallocation_var{v}.tex"
+        write_e1_variant_table(res, p, v)
+        print(f"  wrote table (variant {v}): {p}")
+    if e1_variant:
+        p = tables_dir / "counterfactual_misallocation.tex"
+        write_e1_variant_table(res, p, e1_variant,
+                               label="tab:counterfactual_misallocation")
+        print(f"  wrote canonical table (variant {e1_variant}): {p}")
 
-    if table_path_hukou is not None:
-        write_hukou_bound_table(res, table_path_hukou)
-        print(f"  wrote table: {table_path_hukou}")
+    write_hukou_bound_table(res, tables_dir / "hukou_bound.tex")
+    print(f"  wrote table: {tables_dir / 'hukou_bound.tex'}")
 
-    # Headline echo for the Stata log: both coverage variants side by side.
+    # Headline echo for the Stata log: both variants' points side by side.
     for short in _TABLE_ORDER:
         if short == "CHN_national":
             nat = res["national"]
-            h1, h2, pt = nat["hull_wmm_p3_v1"], nat["hull_wmm_p3_v2"], nat["point_wms_p3"]
+            ga, gb = nat["point_gap_varA"], nat["point_gap_varB"]
+            v0 = nat["point_value_d0"]
+            va, vb = (nat["point_value_allrural_varA"],
+                      nat["point_value_allrural_varB"])
         else:
             c = res["cells"][short]
-            h1, h2, pt = c.hull_wmm_p3_v1, c.hull_wmm_p3_v2, c.point_wms_p3
-        print(f"  {short:14s} gap v1 "
-              f"[{log_to_pct(h1[0]) * 100:+.2f}%, {log_to_pct(h1[1]) * 100:+.2f}%]"
-              f"  v2 [{log_to_pct(h2[0]) * 100:+.2f}%, {log_to_pct(h2[1]) * 100:+.2f}%]"
-              f"   value {log_to_pct(pt) * 100:+.2f}%")
+            ga, gb, v0 = c.point_gap_varA, c.point_gap_varB, c.point_value_d0
+            va, vb = c.point_value_allrural_varA, c.point_value_allrural_varB
+        print(f"  {short:14s} gap A {log_to_pct(ga) * 100:+.2f}%"
+              f"  B {log_to_pct(gb) * 100:+.2f}%"
+              f"   value d0 {log_to_pct(v0) * 100:+.2f}%"
+              f"   allrural A {log_to_pct(va) * 100:+.2f}%"
+              f"  B {log_to_pct(vb) * 100:+.2f}%")
 
     hb = res["hukou_bound"]
     print(f"  E2 hukou bound: pi_rh={hb.pi_rh:.4f} pi_dN_rh={hb.pi_dN_rh:.4f} "
-          f"const={hb.const:.4f}")
+          f"const={hb.const:.4f}  ci_source={hb.ci_source}")
     print(f"  E2 Delta_dN_rh          "
           f"[{log_to_pct(hb.delta_dN_rh_ci[0]) * 100:+.2f}%, "
           f"{log_to_pct(hb.delta_dN_rh_ci[1]) * 100:+.2f}%]"

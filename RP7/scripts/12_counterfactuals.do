@@ -16,11 +16,19 @@
 *          $output/counterfactual_results_baseline.csv  (drift baseline)
 *          $dirdata/processed/{IDN,TZA,CHN,CHN_hukou_*}_unb.dta
 * Output:  $output/counterfactual_results.csv
-*          $output/tables/counterfactual_misallocation.tex
+*          $output/tables/counterfactual_misallocation_var{A,B}.tex
+*          $output/tables/counterfactual_misallocation.tex (only when
+*            $cf_e1_variant is set to A or B)
 *          $output/tables/hukou_bound.tex
 * Note:    Prerequisites are the inversion sters (5b_inversion.do) and the
 *          hukou sters (7_GrRC_hukou.do, with 5c inversion attach); it can
 *          run any time after those sters exist on disk.
+* Globals: $cf_allow_drift = 1   lets a baseline drift print loudly without
+*            aborting (transition runs pending author adjudication)
+*          $cf_regen_baseline = 1  rewrites the baseline snapshot (one-shot,
+*            after the author approves the new numbers)
+*          $cf_e1_variant = A|B  also writes the chosen variant under the
+*            canonical counterfactual_misallocation.tex name
 * ============================================================
 
 version 17
@@ -69,11 +77,15 @@ capture noisily {
     * Paths are read via sfi inside Python (robust to spaces) rather than
     * interpolated into the Stata string.
     * NOTE: this python: invocation MUST stay on a single physical line.
-    python: import counterfactuals as _cf; from sfi import Macro as _M; _cf.run_counterfactuals_for_stata(inputs_dir=_M.getGlobal("output")+"/counterfactual_inputs", data_dir=_M.getGlobal("dirdata")+"/processed", out_dir=_M.getGlobal("output"), table_path=_M.getGlobal("output")+"/tables/counterfactual_misallocation.tex", table_path_hukou=_M.getGlobal("output")+"/tables/hukou_bound.tex")
+    python: import counterfactuals as _cf; from sfi import Macro as _M; _cf.run_counterfactuals_for_stata(inputs_dir=_M.getGlobal("output")+"/counterfactual_inputs", data_dir=_M.getGlobal("dirdata")+"/processed", out_dir=_M.getGlobal("output"), tables_dir=_M.getGlobal("output")+"/tables", allow_drift=_M.getGlobal("cf_allow_drift")=="1", regenerate_baseline=_M.getGlobal("cf_regen_baseline")=="1", e1_variant=_M.getGlobal("cf_e1_variant"))
 
     confirm file "$output/counterfactual_results.csv"
-    confirm file "$output/tables/counterfactual_misallocation.tex"
+    confirm file "$output/tables/counterfactual_misallocation_varA.tex"
+    confirm file "$output/tables/counterfactual_misallocation_varB.tex"
     confirm file "$output/tables/hukou_bound.tex"
+    if inlist("$cf_e1_variant", "A", "B") {
+        confirm file "$output/tables/counterfactual_misallocation.tex"
+    }
 
     di as text ""
     di as text "{hline 72}"
