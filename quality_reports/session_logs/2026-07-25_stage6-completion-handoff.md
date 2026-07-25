@@ -4,7 +4,9 @@
 
 Read the 2026-07-24 log end to end first, then this file end to end; the narrative below the divider carries the load-bearing detail.
 The open thread is finishing Stage 6's post-run sequence, tracked as task #6 in the task list and enumerated as seven ordered actions in the narrative.
-The first concrete action is checking whether `grc_IDN_cuu_ca` finished (worker idn2, the only cell of 20 still running at 11:49 Saturday; look for [logs/idn2/worker_done.txt](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/wcr11-stage6/logs/idn2/worker_done.txt)).
+The first concrete action is checking whether `grc_IDN_cuu_ca` finished under the RELAUNCHED worker idn2b (look for [logs/idn2b/worker_done.txt](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/wcr11-stage6/logs/idn2b/worker_done.txt); expected completion around 06:30 Sunday).
+The original idn2 worker hit the same invisible Break dialog as CHN did on Friday, at roughly 05:30 Saturday, and sat stalled until 20:34; it was killed and the ca cell relaunched minimized at 20:40 as worker_idn2b.do (covs_all only).
+Verify progress by CPU delta, never by process existence: a live Stata process with zero CPU over 45 s means a stall, and the 11:49 Saturday check missed exactly that.
 The one analytical trap waiting: several attached 95% CIs print a $+\infty$ upper endpoint, which may be truncation at the never-widened +1 upper grid edge rather than a genuine weak-identification unbounded region; the endpoint check must test both edges, and an upper-side rerun needs a not-yet-existing `phihi` override mirroring the `philo` pattern.
 Cached state in one glance: E1/E2 rework implemented, reviewed, and verified on main (ce16dc2 + 8eaea3d) with the transition run NOT yet executed (run `12_counterfactuals.do` with `$cf_allow_drift = 1` only after all workers are done); port worktree at b13309e with the run logs and two chn relaunch launchers untracked; ster backup at `RP7/output/backup_prestage6_2026-07-24/`; Emilia still owes the one-step Verdier formal sign-off and the E1 variant A/B pick (the latter after the movement memo).
 
