@@ -63,3 +63,25 @@ Rerun the eight CHN and CHN_rf cells at phi grid [-5, 5], B = 999, reusing the S
 Timing basis: the Stage 6 run priced CHN at about 3.5 h and CHN_rf at about 1 h per 601-point cell; the 1001-point grid scales those by about 1.67.
 CHN_uf is excluded per Stage 7 (report as-is); including it would add about 7 h and can only relabel where the open regions truncate, not close them.
 The affected tables rebuild once, after the rerun lands, to avoid shipping intermediate CI strings.
+
+## Addendum 2026-08-19: upper-widened rerun on [-5, 5]
+
+The three rerun workers (CHN ct+c1, CHN c2+ca, CHN_rf all four; B = 999, phi grid [-5, 5]) completed between 08:17 and 10:59 on 2026-08-19 with zero failures, and the endpoint check was rerun on all 80 sters with the upper edge set to +5 for CHN and CHN_rf ([endpoint_check.csv](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/wcr11-stage6/logs/endpoint_check.csv); the [-5, 1] version is kept as `endpoint_check_grid_-5_1.csv`).
+IDN, TZA, and CHN_uf are unchanged.
+
+| Cell | 95% region on [-5, 5] | Islands | Edge contact |
+|---|---|---|---|
+| CHN ct | [0.36, $+\infty$] | 1 | upper (+5) |
+| CHN c1 | [-0.35, -0.14] $\cup$ [0.41, $+\infty$] | 2 | upper (+5) |
+| CHN c2 | [-0.30, -0.28] $\cup$ [-0.25, -0.25] $\cup$ [0.48, 4.00] | 3 | none |
+| CHN ca | [-0.53, -0.18] $\cup$ [0.28, 3.85] | 2 | none |
+| CHN_rf ct | [-0.88, $+\infty$] | 1 | upper (+5); 90% closes at 4.04 |
+| CHN_rf c1 | [-0.77, $+\infty$] | 1 | upper (+5); 90% closes at 2.89 |
+| CHN_rf c2 | [-0.53, $+\infty$] | 1 | upper (+5); 90% closes at 0.71 |
+| CHN_rf ca | [-0.59, $+\infty$] | 1 | upper (+5); 90% closes at 0.55 |
+
+Two pooled-CHN cells (c2, ca) close inside the widened grid, at 4.00 and 3.85.
+The other six still reach +5 at 95 percent, while all four CHN_rf 90 percent regions are now interior; the pooled-CHN 90 percent regions remain empty.
+Widening from +1 to +5 moved the CHN_rf 90 percent endpoints from open to interior but left the 95 percent regions open, which is the signature of a weak-identification upper tail rather than of a grid too narrow by a small margin.
+Lean, for the author: report these six cells as open above the grid edge, as CHN_uf is reported, and stop widening; a further widening (say to +20) would cost roughly 3.5 h per CHN cell and 1 h per CHN_rf cell per 601-point grid equivalent and can only relabel where an open region truncates.
+The table rebuild proceeds on these sters; the rendering of an edge-touching endpoint as $+\infty$ does not depend on the edge value.
