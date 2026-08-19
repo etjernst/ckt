@@ -1,11 +1,13 @@
-# Stage W external review round 1, approved fixes in progress; CHN upper rerun landing
+# Stage W external review round 1, approved fixes implemented; CHN upper rerun landed, tables rebuilt, transition run, movement memo written
 
 ## If you resume
 
-Read the 2026-08-18 log first (it carries the launch state), then this file.
-Two live threads: (1) the local upper-widened WCR11 rerun (chnhi1 and chnhi2 finished 08:17, rfhi still on its fourth CHN_rf cell; sentinels under [logs/](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/wcr11-stage6/logs/)), after which the endpoint recheck, table rebuild, counterfactual transition, and movement memo follow as in the 2026-07-25 handoff; (2) the Stage W simulation on branch `worktree-extension-sims`, where an external review held the production launch and Emilia approved a fix bundle now being implemented.
-Three sonnet subagents were dispatched at about 10:45 for the mechanical legs (driver changes, summarizer plus oracle tests, analytical signal report); if their results are not in this log's later sections, check the working tree of the extension-sims worktree for uncommitted files in `sims/src/` and `sims/tests/`.
-The Gadi coarse set-metric pilot (job 176589969) is still running; the power pilot (176589968) finished and its raw rows are fetched locally under `sims/results/power_setmetric/`.
+Read the 2026-08-18 log first, then this file end to end.
+Stage 6 thread: complete through the movement memo.
+The eight CHN and CHN_rf cells were re-attached on [-5, 5] (six still open above at 95 percent, lean is to report as open and stop widening); all 28 GRC tables were rebuilt at 11:15; the counterfactual transition ran at 11:35 with `$cf_allow_drift = 1` (variant B reproduces the baseline points; drift is the new schema); the movement memo for Emilia is [2026-08-19-stage6-movement-memo.md](file:///C:/git/ckt/quality_reports/reviews/2026-08-19-stage6-movement-memo.md).
+Four author gates remain: drift adjudication, E1 variant pick (lean B), presentation of the open regions and the IDN ca islands, Overleaf macro diffs and table copy.
+Stage W thread (extension-sims worktree): the round-1 fix bundle is implemented, reviewed, fixed, and committed (drivers with shared signs, `--offsets`, exact-truth grids; summarizer with 48 tests; plan amended); the outer-grid power pilot is Gadi job 176640720 in `/scratch/dr48/et5292/ckt-sims-r1` (results to `sims/results/power_outer`), and its curves fix the production offset grid.
+Compute is the open decision: the coarse set-metric pilot priced production at about 33,000 SU for the plan's spec against 7.39 KSU available in Q3 plus 10 KSU in Q4; options and a recommendation were put to Emilia at about 11:05 and no answer has arrived.
 
 ---
 
@@ -31,3 +33,18 @@ Files changed and committed on `worktree-extension-sims`: the plan [2026-08-19-s
 
 In flight (sonnet subagents): `run_power_eval.py` and `run_setmetric_eval.py` (shared signs, `--offsets`, exact-truth grids with `grid_role`, `phi0_below_minus1`); `summarize_power_setmetric.py` with oracle tests; `report_projection_signal.py` writing `sims/docs/projection_local_signal.md`.
 Next after they land: review the diffs, critic-python on the drivers and summarizer, push to Gadi, run the outer-grid pilot (offsets $\{0, \pm 0.6, \pm 0.8, \pm 1.0, \pm 1.25, \pm 1.5, \pm 2.0\}$, $R = 25$, about 35 SU), freeze the production grid in the plan, then launch production power (four jobs, one per design, walltime 40 h, all replications from 0).
+
+### Later on 2026-08-19 (11:00 to 11:45)
+
+Subagent legs landed and were committed on `worktree-extension-sims`: drivers (shared sign matrix, `--offsets`, exact-truth grids with `grid_role`, `phi0_below_minus1`, PBS `OFFSETS`/`OUTDIR`/`BASE_DIR`), summarizer `summarize_power_setmetric.py` with oracle tests, projection signal report ([projection_local_signal.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/sims/docs/projection_local_signal.md): equal-weight tail cancels heavily at $q = 14$, ratio 11; $q = 2$ retains 3 to 10 percent; Wald-asymptotic power at $q = 26$, offset 0.5, anchor 0.87 against 0.32 bootstrap-corrected in the pilot).
+Both drivers smoke-ran locally at B = 9.
+critic-python review ([2026-08-19_stage_w_code_review.md](file:///C:/git/ckt/.claude/worktrees/extension-sims/quality_reports/reviews/2026-08-19_stage_w_code_review.md)): no CRITICAL; the MAJOR and MINOR items were applied by fixer-code and committed (c71f434); the default offset grid stays the old 21 points until the outer pilot freezes the production grid, and launch commands pass `--offsets` explicitly.
+The revised tree was pushed to a separate Gadi directory (`ckt-sims-r1`, venv symlinked) so the running coarse pilot was not disturbed; the outer-grid power pilot was submitted from there.
+The coarse set-metric pilot finished at 10:54 (12 h 57 min, 415 SU, 20,500 tests, zero failures): 3.2 h single-core and 8.3 SU per replication; production per the plan prices at about 33,000 SU (coarse) or 162,000 SU (full grid) against 7.39 KSU available; options were put to Emilia.
+The summarizer ran end to end on the two pilots as a preview (winner 26 at R = 25, as expected at that noise).
+
+Stage 6 thread: rfhi finished 10:59 (4/4); the endpoint check was given a per-country upper edge (+5 for CHN and CHN_rf) and rerun; addendum committed to the endpoint memo (dec2da1).
+Tables rebuilt via [rebuild_tables.do](file:///C:/git/ckt/.claude/worktrees/wcr11-inversion-port/explorations/wcr11-stage6/rebuild_tables.do) (main-tree `$dir`, port-branch `0_programs.do` for the renderer; a `/*` opener hidden in a comment path had to be removed first); backup of the previous tables at `RP7/output_tables_backup_2026-08-19/`.
+Counterfactual transition ran with `0_programs.do` loaded (the first attempt failed with `compute_switcher_keeplist` unrecognized because `12_counterfactuals.do` assumes the master has loaded the programs); backup of the previous outputs at `RP7/output_cf_backup_2026-08-19/`.
+Chi-squared-era CIs for the movement memo came from the 2026-07-21 ster vintage (`output_prestage9_2026-07-21`), since the pre-Stage-6 backup sters carried no inversion CI (5b was deferred in the definitive run).
+Movement memo and regenerated outputs committed (15ba872).
