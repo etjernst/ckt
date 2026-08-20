@@ -12,10 +12,12 @@ Full incident detail, verified facts, and the four options (delete the held job,
 Emilia approved the timing probe ("ok go", 23:50); it is Gadi job 176849518 (`sm_probe`), submitted 23:52 at the exact production configuration recovered from the held job's `qstat -f` environment: factors 0.5 and 1.0, `JLIST="20 26"`, coarse grid, $B = 999$, the frozen 33 offsets, master seed 20260710, 2 replications per factor on 2 cores and 8 GB, 15 h walltime cap, output to `sims/results/stagew_timing_probe`.
 Expected wall time is the sum of the two factors' per-replication times (each factor's 2 replications run in parallel), so roughly 4 to 6 h and 16 to 25 SU; the PBS epilogue gives total SU and the two parquet mtimes give the per-factor split.
 
-Next concrete action: poll `qstat -u et5292` for `sm_probe`; when it finishes, read its `.o` file for walltime and SU, compute per-replication cost per factor, reprice Stage one for the 10 KSU Q4 window, and put the rescoping options to Emilia.
+The probe finished cleanly on 2026-08-21 at 03:54 (exit 0, 15.96 SU, 3:59:23 wall on 2 cores); measured per-replication cost is 4.3 SU at factor 0.5 and 3.9 SU at factor 1.0 (from the summed `wall_fit_s + wall_boot_s` columns in the probe parquets, 2 SU per core-hour), so about 4 SU per replication is the planning number and cost does not increase with the factor between 0.5 and 1.0.
+Repricing: Stage one set metrics at 4 factors times 500 replications is roughly 8 KSU of compute, call it 8.5 to 9 KSU with 16-core packing overhead, against the original 6.8 KSU estimate, so Q4's standing 10 KSU covers set metrics alone and the 10 KSU supplement request stands.
+Next concrete action: put the Q4 launch shape to Emilia (full relaunch under the supplement, or a rescoped Stage one if the supplement is refused) and relaunch with the chunked drivers once she picks.
 Still open from the incident memo: qdel of held job 176677719 (recommended, cannot start before Q4 opens).
 The chunking change is done: Emilia approved it at 00:11 on 2026-08-21 ("you set it up so that it won't lose everything next time?"), and both drivers now write one atomically renamed parquet per chunk of `--chunk-size` replications (PBS env `CHUNK`, default 25), resuming past completed chunks on resubmission (worktree commit c4dfeed; output verified invariant to chunk size up to wall-clock columns; 192 tests pass).
-The revised drivers are NOT yet pushed to Gadi: the timing probe must finish first so the queued job does not pick up code that differs from its manifest md5s; push `run_setmetric_eval.py`, `run_power_eval.py`, and the two `.pbs` files to `ckt-sims-r1` after `sm_probe` completes and before any relaunch.
+The revised drivers were pushed to Gadi `ckt-sims-r1` on 2026-08-21 morning, after `sm_probe` completed; all four remote md5s (`run_setmetric_eval.py`, `run_power_eval.py`, `setmetric_eval.pbs`, `power_eval.pbs`) match the worktree copies at commit c4dfeed.
 The summarize-and-memo step from the original plan applies unchanged once a successful run exists.
 The pilot batches live in separate directories (`power_setmetric/`, `power_outer/`) and must not be mixed into the production summarize call except as the descriptive `--power-dir` source.
 
@@ -46,3 +48,11 @@ Incident memo with options written to the sims worktree: [2026-08-20_stagew_stag
 No script changes made (driver chunking needs approval); no jobs deleted.
 Emilia asked whether compute is exhausted; answer: Q3 supports only the probe, Q4's 10 KSU likely cannot cover the original Stage one plus Stage two, so October means a rescoped Stage one (for example $R = 250$, a trimmed offset grid, or one fewer factor) or a supplementary-allocation request.
 She approved the probe at 23:50; submitted as job 176849518 at 23:52 (details in the resume block above).
+
+---
+
+## 2026-08-21 morning
+
+The probe finished at 03:54 with the measured costs and repricing recorded in the resume block; the chunked drivers were pushed to Gadi and md5-verified.
+Emilia asked whether the supplement keeps dr48 within Macquarie's Tier 1 band ("up to 60K SU"); per `nci_account`, dr48's 2026 grants are Q1 0, Q2 0, Q3 10 KSU, Q4 10 KSU, so 20 KSU granted plus the 10 KSU supplement is about 30 KSU for the year, half the Tier 1 ceiling on her per-project reading (the Macquarie staff compute page is behind SSO and returned 403, so the tier definition itself is unverified here).
+The Outlook allocation-request draft was re-staged with the measured figures (just over 4 SU per replication, main arm about 9 KSU, remaining design roughly 20 KSU), replacing the promise of figures to come; the earlier staged copy from last night should be deleted in favor of the new one.
