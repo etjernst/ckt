@@ -13,7 +13,9 @@ Emilia approved the timing probe ("ok go", 23:50); it is Gadi job 176849518 (`sm
 Expected wall time is the sum of the two factors' per-replication times (each factor's 2 replications run in parallel), so roughly 4 to 6 h and 16 to 25 SU; the PBS epilogue gives total SU and the two parquet mtimes give the per-factor split.
 
 Next concrete action: poll `qstat -u et5292` for `sm_probe`; when it finishes, read its `.o` file for walltime and SU, compute per-replication cost per factor, reprice Stage one for the 10 KSU Q4 window, and put the rescoping options to Emilia.
-Still open from the incident memo: qdel of held job 176677719 (recommended, cannot start before Q4 opens) and approval of the driver write-unit chunking change before any relaunch.
+Still open from the incident memo: qdel of held job 176677719 (recommended, cannot start before Q4 opens).
+The chunking change is done: Emilia approved it at 00:11 on 2026-08-21 ("you set it up so that it won't lose everything next time?"), and both drivers now write one atomically renamed parquet per chunk of `--chunk-size` replications (PBS env `CHUNK`, default 25), resuming past completed chunks on resubmission (worktree commit c4dfeed; output verified invariant to chunk size up to wall-clock columns; 192 tests pass).
+The revised drivers are NOT yet pushed to Gadi: the timing probe must finish first so the queued job does not pick up code that differs from its manifest md5s; push `run_setmetric_eval.py`, `run_power_eval.py`, and the two `.pbs` files to `ckt-sims-r1` after `sm_probe` completes and before any relaunch.
 The summarize-and-memo step from the original plan applies unchanged once a successful run exists.
 The pilot batches live in separate directories (`power_setmetric/`, `power_outer/`) and must not be mixed into the production summarize call except as the descriptive `--power-dir` source.
 
